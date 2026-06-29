@@ -1,0 +1,17 @@
+[
+  {
+    "rule_type": "week",
+    "value": "6",
+    "plan_name": "休息日"
+  },
+  {
+    "rule_type": "week",
+    "value": "7",
+    "plan_name": "休息日"
+  },
+  {
+    "rule_type": "default",
+    "value": "default",
+    "plan_name": "工作日"
+  }
+]
