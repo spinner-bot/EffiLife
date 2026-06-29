@@ -1,0 +1,13 @@
+{
+  "overtime_threshold": 105,
+  "whiten_k": 0.5952380952380952,
+  "show_seconds": true,
+  "use_24h": true,
+  "show_ampm": false,
+  "theme": {
+    "bg_window": "#c1ffb7",
+    "bg_button": "#d9fffa",
+    "fg_button": "#c585e7",
+    "bg_frame": "#d9d9d9"
+  }
+}
