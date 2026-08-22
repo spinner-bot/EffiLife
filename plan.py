@@ -481,8 +481,8 @@ def run_full_test():
         print("   ✅ 持久化测试完美通过")
 
         # 8. 清理测试文件
-        if os.path.exists(test_file):
-            os.remove(test_file)
+        #if os.path.exists(test_file):
+        #    os.remove(test_file)
 
         print("-" * 40)
         print("🎉 所有测试通过！代码运行稳定，逻辑完美。")
