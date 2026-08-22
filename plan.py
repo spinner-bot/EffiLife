@@ -308,7 +308,7 @@ class Plan:
             except Exception:
                 raise ValueError("Failed to parse the input as an object")
             obj=input
-        return json.dumps(obj.plan)
+        return json.dumps(obj.plan, indent=4, ensure_ascii=False)
 
     @staticmethod
     def save_json(input, path):
@@ -382,7 +382,7 @@ class Plan:
 # ==========================================
 # 全局功能测试代码 (放在文件最末尾)
 # ==========================================
-def run_full_test():
+def run_test1():
     print("-" * 40)
     print("🚀 开始全功能测试 (包含交叉/嵌套逻辑验证)")
     print("-" * 40)
@@ -481,9 +481,9 @@ def run_full_test():
         print("   ✅ 持久化测试完美通过")
 
         # 8. 清理测试文件
-        #if os.path.exists(test_file):
-        #    os.remove(test_file)
-
+        '''if os.path.exists(test_file):
+            os.remove(test_file)
+'''
         print("-" * 40)
         print("🎉 所有测试通过！代码运行稳定，逻辑完美。")
         print("-" * 40)
@@ -498,4 +498,4 @@ def run_full_test():
 
 # 执行测试
 if __name__ == "__main__":
-    run_full_test()
+    run_test1()
