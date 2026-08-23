@@ -3,16 +3,27 @@
 import pkgutil
 import importlib
 
-# 初始化 __all__ 列表
+# ==========================================
+# 1. 在这里定义你的“别名映射字典”
+# 格式: "原始文件名(不带.py)": "你想用的别名"
+# ==========================================
+MODULE_ALIASES = {
+    "wizard": "wiz",  # wizard.py 将被别名为 wiz
+    "plan": "p",  # plan.py 将被别名为 p
+    # 如果某个模块不需要别名，就不要把它写进这个字典里（比如 text.py）
+}
+
 __all__ = []
 
-# 自动扫描 modules 文件夹下的所有 .py 文件
+# 自动扫描并导入
 for _, module_name, _ in pkgutil.iter_modules(__path__):
-    # 动态导入模块 (相当于 from . import plan, from . import text 等)
     module = importlib.import_module(f".{module_name}", package=__name__)
 
-    # 将模块挂载到 modules 包上，这样主程序才能用 m.plan, m.text
-    globals()[module_name] = module
+    # 2. 决定最终暴露的名字：查字典，有别名就用别名，没别名就用原名
+    exposed_name = MODULE_ALIASES.get(module_name, module_name)
 
-    # 加入 __all__
-    __all__.append(module_name)
+    # 3. 将模块挂载到包上
+    globals()[exposed_name] = module
+
+    # 4. 加入 __all__ 列表
+    __all__.append(exposed_name)
