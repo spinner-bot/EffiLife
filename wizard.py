@@ -1,4 +1,8 @@
-# wizard.py
+"""
+    ====== wizard.py ======
+    No description.
+        by spinner-bot
+"""
 import os
 import json
 import datetime
