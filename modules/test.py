@@ -172,6 +172,9 @@ def base2_test():
         candidate = 10 ** power + 12
         power += 1
 
+    json_path = None
+    txt_path = None
+
     # 2. 创建 Plan 实例并覆盖数据
     try:
         plan = p.Plan(candidate)          # 自动注册
@@ -182,14 +185,14 @@ def base2_test():
         # 3. 标记任务完成（测试 finish 功能）
         print("正在标记任务完成...")
         # 完成 A1：建好仓库并设定连接，完成时间 9:00
-        res1 = plan.finish("A1", 1, "9:00")
+        res1 = plan.finish("A1", 1, (9, 0))
         if res1 == -1:
             print("⚠️ finish A1 失败")
         else:
             print("✅ 任务 A1 已完成")
 
         # 完成 B1：复习OPD相关内容，完成时间 13:25
-        res2 = plan.finish("B1", 1, "13:25")
+        res2 = plan.finish("B1", 1, (13, 25))
         if res2 == -1:
             print("⚠️ finish B1 失败")
         else:
@@ -228,11 +231,12 @@ def base2_test():
     except Exception as e:
         # 异常时也尽量清理文件和注册表
         for f in [json_path, txt_path]:
-            try:
-                if Path(f).exists():
-                    Path(f).unlink()
-            except:
-                pass
+            if f:
+                try:
+                    if Path(f).exists():
+                        Path(f).unlink()
+                except:
+                    pass
         if candidate in p.Plan.registry:
             p.Plan.registry.pop(candidate, None)
         print(f"❌ 测试2出现错误：{e}")
