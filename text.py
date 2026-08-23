@@ -1,4 +1,9 @@
-# text.py
+"""
+    ====== text.py ======
+    No description.
+        by spinner-bot
+"""
+
 import json
 import os
 
