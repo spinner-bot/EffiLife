@@ -378,6 +378,68 @@ class Plan:
         else:
             return -2
 
+    @staticmethod
+    def save_registry(anchor=""):
+        """
+        将当前 registry 中所有 Plan 实例保存到磁盘。
+        每个实例保存为 anchor/plan/{id}.json，
+        同时生成 anchor/registry.json 映射 id -> 相对路径。
+        """
+        base = Path(anchor) if anchor else Path(".")
+        plan_dir = base / "plan"
+        plan_dir.mkdir(parents=True, exist_ok=True)
+
+        registry_map = {}
+        for idx, plan_obj in Plan.registry.items():
+            rel_path = f"plan/{idx}.json"
+            abs_path = base / rel_path
+            plan_obj.save(abs_path)
+            registry_map[str(idx)] = rel_path
+
+        reg_file = base / "registry.json"
+        with open(reg_file, "w", encoding="utf-8") as f:
+            json.dump(registry_map, f, indent=4, ensure_ascii=False)
+
+    @staticmethod
+    def load_registry(anchor=""):
+        """
+        从磁盘读取 registry.json，完全覆盖当前内存中的 registry。
+        每个条目会读取对应 JSON 文件并实例化 Plan 对象。
+        """
+        base = Path(anchor) if anchor else Path(".")
+        reg_file = base / "registry.json"
+        if not reg_file.exists():
+            raise FileNotFoundError(f"registry.json not found at {reg_file}")
+
+        with open(reg_file, "r", encoding="utf-8") as f:
+            registry_map = json.load(f)
+
+        # 清空现有 registry，实现完全覆盖
+        Plan.registry.clear()
+
+        for idx_str, rel_path in registry_map.items():
+            idx = int(idx_str)
+            abs_path = base / rel_path
+            # 直接读取 JSON，Plan.read_json 会自动注册实例
+            Plan.read_json(abs_path, new_id=idx)
+
+    @staticmethod
+    def request_id(preferred_id=None):
+        """
+        申请新的空闲 Plan ID。
+        - 无参数：返回最小的未被占用的正整数 ID。
+        - 带参数 preferred_id：检查该 ID 是否可用，可用返回 True，否则 False。
+        """
+        if preferred_id is None:
+            # 从 1 开始寻找最小空闲整数
+            i = 1
+            while i in Plan.registry:
+                i += 1
+            return i
+        else:
+            # 检查指定 ID 是否被占用
+            return int(preferred_id) not in Plan.registry
+
 
 # ==========================================
 # 全局功能测试代码 (放在文件最末尾)
