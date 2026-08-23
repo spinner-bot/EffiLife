@@ -150,10 +150,16 @@ class Plan:
         temp = Plan.sep_index(index)
         if temp[0] not in (-1,-2,-3) and temp[1] not in (-1,-2,-3):
             self.plan["main"][temp[0]]["plan"][temp[1]]["is_active"] = False
-        return index
+            return index
+        return -1
 
     def pur_plan(self, index):
         pass # 这个功能较难实现，暂时空置
+
+    def finish(self, index, time, date=None):
+        temp = Plan.sep_index(index)
+        if temp[0] not in (-1, -2, -3) and temp[1] not in (-1, -2, -3):
+            self.plan["main"][temp[0]]["plan"][temp[1]]["is_active"] = False
 
     def add_group(self, section, title, description, pre_index,last_index):
         for key in self.plan["main"][section]["group"]:
