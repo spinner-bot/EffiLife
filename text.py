@@ -171,10 +171,8 @@ def convert(path_in: str, path_out: str) -> int:
     return 0
 
 
-# ==========================================
-# 测试代码 (仅在直接运行此文件时执行)
-# ==========================================
-if __name__ == "__main__":
+
+def run_test2():
     test_in = "test_plan_data.json"
     test_out = "output/test_plan_render.txt"
 
@@ -190,3 +188,9 @@ if __name__ == "__main__":
         print(f"❌ 测试失败：{test_in} 不是合法的 JSON 文件")
     except Exception as e:
         print(f"❌ 测试失败：发生未知错误 -> {e}")
+
+# ==========================================
+# 测试代码 (仅在直接运行此文件时执行)
+# ==========================================
+if __name__ == "__main__":
+    run_test2()
