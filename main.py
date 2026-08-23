@@ -9,4 +9,4 @@ import modules as m
 
 
 if __name__ == "__main__":
-    m.test.t(2)
+    m.test.t(input("请输入测试号："))
