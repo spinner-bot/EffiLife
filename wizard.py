@@ -72,7 +72,8 @@ def create_plan_flow():
     print("=" * 40)
 
     # (隐式) 2. 申请 Index (临时逻辑：默认使用 1，或让用户输入)
-    index = 1
+    index = Plan.request_id()
+    print(f"ℹ️ Plan ID: {index}")
 
     # (显式) 3. 询问名称和日期
     name = input("请输入 Plan 名称 (回车跳过): ").strip() or None
