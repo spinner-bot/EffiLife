@@ -1,6 +1,7 @@
 """
-    ====== main.py ======
-    No description.
+    ============ plan-helper ============
+    [repository] https://github.com/spinner-bot/plan-helper
+    [description]
         by spinner-bot
 """
 
