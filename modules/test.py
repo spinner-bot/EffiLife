@@ -179,22 +179,38 @@ def base2_test():
         p.Plan.registry[candidate] = plan # 确保注册表指向同一对象
         print(f"✅ 计划实例已创建，索引：{candidate}")
 
-        # 3. 保存为 JSON
+        # 3. 标记任务完成（测试 finish 功能）
+        print("正在标记任务完成...")
+        # 完成 A1：建好仓库并设定连接，完成时间 9:00
+        res1 = plan.finish("A1", 1, "9:00")
+        if res1 == -1:
+            print("⚠️ finish A1 失败")
+        else:
+            print("✅ 任务 A1 已完成")
+
+        # 完成 B1：复习OPD相关内容，完成时间 13:25
+        res2 = plan.finish("B1", 1, "13:25")
+        if res2 == -1:
+            print("⚠️ finish B1 失败")
+        else:
+            print("✅ 任务 B1 已完成")
+
+        # 4. 保存为 JSON
         json_path = f"plan_{candidate}.json"
         plan.save(json_path)
         print(f"✅ JSON 已保存：{json_path}")
 
-        # 4. 转换为文本
+        # 5. 转换为文本
         txt_path = f"plan_{candidate}.txt"
         tx.convert(json_path, txt_path)
         print(f"✅ 文本已生成：{txt_path}")
 
-        # 5. 打开文本文件，等待用户关闭（Windows 记事本）
+        # 6. 打开文本文件，等待用户关闭（Windows 记事本）
         print("正在用记事本打开文本文件，请查看...")
         subprocess.Popen(['notepad', txt_path]).wait()
         print("记事本已关闭。")
 
-        # 6. 强制删除两个文件（失败则重试）
+        # 7. 强制删除两个文件（失败则重试）
         print("开始清理测试文件...")
         for target, is_dir in [(Path(json_path), False), (Path(txt_path), False)]:
             while True:
@@ -205,7 +221,7 @@ def base2_test():
                 except Exception as e:
                     input(f"[测试2|复原程序] 清理 {target} 失败: {e} 请按回车重试...")
 
-        # 7. 释放索引（从注册表移除）
+        # 8. 释放索引（从注册表移除）
         plan.delete()
         print(f"✅ 索引 {candidate} 已释放。")
 
