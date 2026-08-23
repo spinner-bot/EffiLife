@@ -1,4 +1,5 @@
-import plan
-import text
-import wizard
+import plan as p
+import text as t
+import wizard as w
 
+p.run_test1()
