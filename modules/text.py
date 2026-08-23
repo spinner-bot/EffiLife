@@ -44,72 +44,38 @@ def _build_header(head):
 
 def _build_sections(main, logs):
     """自适应构建章节与任务列表"""
-    text = ""
-    total_minutes = 0
+    tasks = section.get('plan', [])
 
-    # 预构建日志查找表
-    log_map = {}
-    for log in logs:
-        plan_id = log.get('plan')
-        if plan_id:
-            log_map[plan_id] = log.get('time')
+    for task_num, task in enumerate(tasks):
+        if task is None:
+            continue
 
-    for sec_idx, section in enumerate(main):
-        sec_letter = chr(ord('A') + sec_idx)
-        sec_name = section.get('name', '未命名章节')
-        sec_info = section.get('info')
+        task_id = f"{sec_letter}{task_num}"
 
-        sec_title = f"【Section {sec_letter}】{sec_name}"
-        if sec_info:
-            sec_title += f"（{sec_info}）"
-        text += sec_title + "\n"
+        for g_pre, g_last, g_title, g_desc in parsed_groups:
+            if task_num == g_pre:
+                text += f"({g_title}) - {g_desc}\n"
+                active_group_end = g_last
+                break
 
-        # 解析并排序 Groups
-        groups = section.get('group', {})
-        parsed_groups = []
-        for k, v in groups.items():
-            try:
-                pre, last = map(int, k.split('_'))
-                parsed_groups.append((pre, last, v.get('title', '组'), v.get('description', '')))
-            except ValueError:
-                continue
-        parsed_groups.sort(key=lambda x: x[0])
+        t_m = task.get('t_m', 0)
+        minutes = t_m * 6
+        total_minutes += minutes
 
-        active_group_end = -1
-        tasks = section.get('plan', [])
-        task_num = 0
+        indent = "    " if task_num <= active_group_end else ""
+        line = f"{indent}{task_num}.{task.get('content', '')}（{minutes}分钟"
 
-        for task in tasks:
-            if task is None:
-                continue
+        completed_time_list = log_map.get(task_id)
+        if completed_time_list:
+            time_str = _format_time(completed_time_list)
+            if time_str:
+                line += f"。完成于：{time_str}"
 
-            task_num += 1
-            task_id = f"{sec_letter}{task_num}"
+        line += "）\n"
+        text += line
 
-            for g_pre, g_last, g_title, g_desc in parsed_groups:
-                if task_num == g_pre:
-                    text += f"({g_title}) - {g_desc}\n"
-                    active_group_end = g_last
-                    break
-
-            t_m = task.get('t_m', 0)
-            minutes = t_m * 6
-            total_minutes += minutes
-
-            indent = "    " if task_num <= active_group_end else ""
-            line = f"{indent}{task_num}.{task.get('content', '')}（{minutes}分钟"
-
-            completed_time_list = log_map.get(task_id)
-            if completed_time_list:
-                time_str = _format_time(completed_time_list)
-                if time_str:
-                    line += f"。完成于：{time_str}"
-
-            line += "）\n"
-            text += line
-
-            if task_num == active_group_end:
-                active_group_end = -1
+        if task_num == active_group_end:
+            active_group_end = -1
 
         text += "\n"
 
