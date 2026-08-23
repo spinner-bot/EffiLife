@@ -7,6 +7,5 @@
 
 import modules as m
 
-
 if __name__ == "__main__":
     m.test.t(int(input("请输入测试号：")))
