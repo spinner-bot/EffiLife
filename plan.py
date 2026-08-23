@@ -429,13 +429,11 @@ class Plan:
     @staticmethod
     def request_id(preferred_id=None):
         if preferred_id is None:
-            # 从 1 开始寻找最小空闲整数
             i = 1
             while i in Plan.registry:
                 i += 1
             return i
         else:
-            # 检查指定 ID 是否被占用
             return int(preferred_id) not in Plan.registry
 
 
