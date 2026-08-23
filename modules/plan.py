@@ -156,10 +156,17 @@ class Plan:
     def pur_plan(self, index):
         pass # 这个功能较难实现，暂时空置
 
-    def finish(self, index, time, date=None):
+    def finish(self, index, day, time):
         temp = Plan.sep_index(index)
         if temp[0] not in (-1, -2, -3) and temp[1] not in (-1, -2, -3):
-            self.plan["main"][temp[0]]["plan"][temp[1]]["is_active"] = False
+            id = self.add_log(day,"base",time,"temp")
+            self.plan["main"][temp[0]]["plan"][temp[1]]["finish"] = {
+                "time": self.plan["log"][id]["time"],
+                "day": self.plan["log"][id]["day"]
+            }
+            self.pur_log(id)
+            return index
+        return -1
 
     def add_group(self, section, title, description, pre_index,last_index):
         for key in self.plan["main"][section]["group"]:
