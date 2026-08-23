@@ -413,6 +413,18 @@ class Plan:
                 abs_path = base / rel_path
                 # 直接读取 JSON，Plan.read_json 会自动注册实例
                 Plan.read_json(abs_path, new_id=idx)
+        except FileNotFoundError:
+            Plan.registry=backup
+            return -1
+        except ValueError:
+            Plan.registry=backup
+            return -1
+        except IndexError:
+            Plan.registry=backup
+            return -1
+        except Exception:
+            Plan.registry=backup
+            return -2
 
     @staticmethod
     def request_id(preferred_id=None):
