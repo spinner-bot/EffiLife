@@ -87,8 +87,16 @@ def _build_sections(main, logs):
             total_minutes += minutes
 
             indent = "    " if task_num <= active_group_end else ""
-            # 分钟数取整，不显示小数
             line = f"{indent}{task_num}.{task.get('content', '')}（{round(minutes)}分钟"
+
+            # 新增：读取任务自身的 finish 字段，显示完成时间
+            finish_info = task.get('finish')
+            if finish_info and isinstance(finish_info, dict):
+                finish_time = finish_info.get('time')
+                if finish_time:
+                    time_str = _format_time(finish_time)
+                    if time_str:
+                        line += f"。完成于：{time_str}"
 
             line += "）\n"
             text += line
