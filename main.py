@@ -1,7 +1,7 @@
 """
     ============ plan-helper ============
     [repository] https://github.com/spinner-bot/plan-helper
-    [description]
+    [description] 暂时还没写……
         by spinner-bot
 """
 
