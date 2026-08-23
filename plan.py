@@ -428,11 +428,6 @@ class Plan:
 
     @staticmethod
     def request_id(preferred_id=None):
-        """
-        申请新的空闲 Plan ID。
-        - 无参数：返回最小的未被占用的正整数 ID。
-        - 带参数 preferred_id：检查该 ID 是否可用，可用返回 True，否则 False。
-        """
         if preferred_id is None:
             # 从 1 开始寻找最小空闲整数
             i = 1
