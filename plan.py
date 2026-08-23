@@ -437,6 +437,7 @@ class Plan:
             return int(preferred_id) not in Plan.registry
 
 
+
 # ==========================================
 # 全局功能测试代码 (放在文件最末尾)
 # ==========================================
@@ -552,7 +553,6 @@ def run_test1():
         print("-" * 40)
         import traceback
         traceback.print_exc()
-
 
 # 执行测试
 if __name__ == "__main__":
