@@ -380,11 +380,6 @@ class Plan:
 
     @staticmethod
     def save_registry(anchor=""):
-        """
-        将当前 registry 中所有 Plan 实例保存到磁盘。
-        每个实例保存为 anchor/plan/{id}.json，
-        同时生成 anchor/registry.json 映射 id -> 相对路径。
-        """
         base = Path(anchor) if anchor else Path(".")
         plan_dir = base / "plan"
         plan_dir.mkdir(parents=True, exist_ok=True)
