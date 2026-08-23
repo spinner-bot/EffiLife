@@ -411,7 +411,6 @@ class Plan:
             for idx_str, rel_path in registry_map.items():
                 idx = int(idx_str)
                 abs_path = base / rel_path
-                # 直接读取 JSON，Plan.read_json 会自动注册实例
                 Plan.read_json(abs_path, new_id=idx)
         except FileNotFoundError:
             Plan.registry=backup
