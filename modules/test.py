@@ -184,14 +184,14 @@ def base2_test():
 
         # 3. 标记任务完成（测试 finish 功能）
         print("正在标记任务完成...")
-        # 完成 A1：建好仓库并设定连接，完成时间 9:00
-        res1 = plan.finish("A1", 1, (9, 0))
+        # 完成 A1：建好仓库并设定连接，完成时间 9am（模糊时间）
+        res1 = plan.finish("A1", 1, (9, 99))
         if res1 == -1:
             print("⚠️ finish A1 失败")
         else:
             print("✅ 任务 A1 已完成")
 
-        # 完成 B1：复习OPD相关内容，完成时间 13:25
+        # 完成 B1：复习OPD相关内容，完成时间 13:25（精确时间）
         res2 = plan.finish("B1", 1, (13, 25))
         if res2 == -1:
             print("⚠️ finish B1 失败")
