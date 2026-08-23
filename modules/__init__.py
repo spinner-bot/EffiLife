@@ -1,4 +1,8 @@
-# modules/__init__.py
+"""
+    ====== modules/__init__.py ======
+    No description.
+        by spinner-bot
+"""
 
 import pkgutil
 import importlib
