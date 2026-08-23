@@ -1,5 +1,5 @@
 """
-    ====== wizard.py ======
+    ====== modules/wizard.py ======
     No description.
         by spinner-bot
 """
