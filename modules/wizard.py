@@ -7,7 +7,7 @@ import os
 import json
 import datetime
 from .plan import Plan  # 假设 plan.py 在同级目录
-import text  # 假设 text.py 在同级目录
+from . import text  # 假设 text.py 在同级目录
 
 
 # ==========================================
