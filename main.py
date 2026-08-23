@@ -9,4 +9,4 @@ import modules as m
 
 
 if __name__ == "__main__":
-    m.test.t(1)
+    m.test.t(2)
