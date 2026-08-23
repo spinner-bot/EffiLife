@@ -397,10 +397,6 @@ class Plan:
 
     @staticmethod
     def load_registry(anchor=""):
-        """
-        从磁盘读取 registry.json，完全覆盖当前内存中的 registry。
-        每个条目会读取对应 JSON 文件并实例化 Plan 对象。
-        """
         base = Path(anchor) if anchor else Path(".")
         reg_file = base / "registry.json"
         if not reg_file.exists():
