@@ -7,7 +7,7 @@
 
 import modules as m
 
-m.plan.run_test1()
-m.text.run_test2()
+m.p.run_test1()
+m.tx.run_test2()
 while not False:
-    m.wizard.main()
+    m.wz.main()

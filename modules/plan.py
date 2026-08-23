@@ -357,7 +357,7 @@ class Plan:
 
     def upload(self, path, anchor=""):
         id = self.index
-        temp = anchor / Path(f"/temp/upload/{id}.json")
+        temp = anchor / Path(f"temp/upload/{id}.json")
         if not self.archive(temp) == -1:
             try:
                 new_p=Plan.read_json(path, id)
