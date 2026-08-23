@@ -31,3 +31,7 @@ def base1_test():
             except Exception as e:
                 input(f"[测试1|复原程序] 清理 {target} 失败: {e} 请重试...")
     print("[测试1：全部完成] 测试结论未知。测试程序已退出，所有测试文件已被清理")
+
+def t(id):
+    if id == 1:
+        base1_test()
