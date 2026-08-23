@@ -409,14 +409,14 @@ class Plan:
         with open(reg_file, "r", encoding="utf-8") as f:
             registry_map = json.load(f)
 
-        # 清空现有 registry，实现完全覆盖
+        backup=Plan.registry
         Plan.registry.clear()
-
-        for idx_str, rel_path in registry_map.items():
-            idx = int(idx_str)
-            abs_path = base / rel_path
-            # 直接读取 JSON，Plan.read_json 会自动注册实例
-            Plan.read_json(abs_path, new_id=idx)
+        try:
+            for idx_str, rel_path in registry_map.items():
+                idx = int(idx_str)
+                abs_path = base / rel_path
+                # 直接读取 JSON，Plan.read_json 会自动注册实例
+                Plan.read_json(abs_path, new_id=idx)
 
     @staticmethod
     def request_id(preferred_id=None):
