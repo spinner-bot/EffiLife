@@ -1,3 +1,8 @@
+"""
+    ====== main.py ======
+    No description.
+        by spinner-bot
+"""
 import plan as p
 import text as t
 import wizard as w
