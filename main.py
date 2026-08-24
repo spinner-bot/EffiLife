@@ -9,4 +9,6 @@ import modules as m
 
 if __name__ == "__main__":
     print(m.f.report(m.f.build(m.f.TREE,"modules")))
+    if not m.pp.test_prompt():
+        print()
     # m.test.t(int(input("请输入测试号：")))
