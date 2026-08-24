@@ -59,12 +59,12 @@ def step(tree,branch_parsed=False):
         reset()
         return -1
     else:
-        if not len(indexing(tree,location))-1 and not branch_parsed:
+        if len(indexing(tree,location))-1 and not branch_parsed:
             # 情况1：地址访问可行
             location.append(1)
             return 0
         else:
-            if location[-1]==len(indexing(tree,location[:-1]))-1:
+            if not location[-1]==len(indexing(tree,location[:-1]))-1:
                 # 情况2：地址扫描可行
                 location[-1]+=1
                 return 0
