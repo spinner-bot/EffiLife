@@ -101,3 +101,4 @@ def parse(tree):
     while not fully_parsed:
         if scan(tree) and scan(tree)+1:
             paths.add(scan(tree))
+    return paths
