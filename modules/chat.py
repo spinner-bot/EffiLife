@@ -107,3 +107,64 @@ def chat_stream(message, sys_prompt=None, chat_history=None, model="qwen3.5:2b")
         raise ConnectionError(f"无法连接到 Ollama 服务: {e}")
     except Exception as e:
         raise RuntimeError(f"调用 Ollama 出错: {e}")
+
+def chat_loop(history=None, sys_prompt=None, model="qwen3.5:2b", stream=True):
+    """
+    连续对话循环，可接续已有历史。
+
+    参数:
+        history (list|None): 初始历史消息列表，格式 [{"role":"user","content":"..."}, ...]
+                             如果为 None，则创建空列表。
+        sys_prompt: 系统提示词（字符串或列表）
+        model: 模型名称
+        stream: True 使用流式输出，False 使用非流式一次性输出
+    """
+    if history is None:
+        history = []
+    print(f"开始连续对话（模型: {model}），输入 'exit' 退出。")
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n对话结束。")
+            break
+
+        if user_input.lower() in ("exit", "quit", "q"):
+            print("对话结束。")
+            break
+        if not user_input:
+            continue
+
+        # 将用户消息加入历史
+        history.append({"role": "user", "content": user_input})
+
+        print("AI: ", end="", flush=True)
+        try:
+            if stream:
+                # 流式输出，同时收集完整回复用于更新历史
+                full_reply = ""
+                for chunk in chat_stream(
+                    user_input,
+                    sys_prompt=sys_prompt,
+                    chat_history=history[:-1],  # 排除刚加入的用户消息，避免重复
+                    model=model
+                ):
+                    full_reply += chunk
+                    print(chunk, end="", flush=True)
+                print()  # 换行
+                history.append({"role": "assistant", "content": full_reply})
+            else:
+                # 非流式输出
+                reply = chat(
+                    user_input,
+                    sys_prompt=sys_prompt,
+                    chat_history=history[:-1],
+                    model=model
+                )
+                print(reply)
+                history.append({"role": "assistant", "content": reply})
+        except Exception as e:
+            print(f"\n错误: {e}")
+            # 出错时移除刚刚添加的用户消息，避免历史错乱
+            if history and history[-1]["role"] == "user":
+                history.pop()
