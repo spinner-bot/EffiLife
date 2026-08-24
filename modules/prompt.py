@@ -4,6 +4,7 @@
         by spinner-bot
 """
 
+import json
 TEST_INTRODUCTIONS = {
     1: {
         "summary": "运行plan.py和text.py内置测试，启动wizard主循环，清理测试产物。",
@@ -40,3 +41,18 @@ TEST_INTRODUCTIONS = {
         "notes": "索引冲突时按10^x+12递增（x从4开始）"
     }
 }
+
+def test_prompt(mode=0):
+    if not mode-1:
+        TEST_INTRODUCTIONS.clear()
+        return 0
+    try:
+        fp="data/LLM/knowledge_base/product/test_introductions.json"
+        with open(fp,'w',encoding='utf-8') as f:
+            json.dump(TEST_INTRODUCTIONS, f, ensure_ascii=False, indent=4)
+        return 0
+    except Exception as e:
+        return e
+
+def report_tp():
+    return f"\n====== 测试知识库初始化 ======\n\n{f"success:{len(TEST_INTRODUCTIONS)} (data/LLM/knowledge_base/product/test_introductions.json)" if not test_prompt() else "failed to save TEST_INTRODUCTIONS"}{f"\n释放内存成功：TEST_INTRODUCTIONS已清空" if not test_prompt(1) else ""}\n"
