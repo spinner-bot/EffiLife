@@ -408,14 +408,14 @@ class Plan:
             plan_obj.save(abs_path)
             registry_map[str(idx)] = rel_path
 
-        reg_file = base / "registry.json"
+        reg_file = base / "data/system/registry/registry.json"
         with open(reg_file, "w", encoding="utf-8") as f:
             json.dump(registry_map, f, indent=4, ensure_ascii=False)
 
     @staticmethod
     def load_registry(anchor=""):
         base = Path(anchor) if anchor else Path(".")
-        reg_file = base / "registry.json"
+        reg_file = base / "data/system/registry/registry.json"
         if not reg_file.exists():
             raise FileNotFoundError(f"registry.json not found at {reg_file}")
 
