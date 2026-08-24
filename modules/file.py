@@ -45,6 +45,9 @@ TREE = \
                     "knowledge_base",
                     [
                         "product",
+                        [
+                            "test"
+                        ]
                     ],
                     [
                         "oth"
