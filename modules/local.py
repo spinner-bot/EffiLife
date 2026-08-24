@@ -1,5 +1,5 @@
 """
-    ====== modules/local.py ======
+    ====== modules/file.py ======
     No description.
         by spinner-bot
 """
@@ -25,15 +25,12 @@ TREE = \
         [
             "temp",
             [
-                "test",
+                "test"
             ]
         ]
     ]
 
-#plan_dir.mkdir(parents=True, exist_ok=True)
-
 from pathlib import Path
-import os
 
 location = []
 fully_parsed = False
@@ -48,7 +45,8 @@ def reset():
 def indexing(root, *indexes):
     temp = root
     for index in indexes:
-        temp = temp[index]
+        for index2 in index:
+            temp = temp[index2]
     return temp
 
 
@@ -68,20 +66,20 @@ def step(tree, branch_parsed=False):
             location.append(1)
             return 0
         else:
-            if not location[-1] == len(indexing(tree, location[:-1])) - 1 and not location:
-                # 情况2：地址扫描可行
-                location[-1] += 1
-                return 0
-            else:
-                if location:
+            if location:
+                if not location[-1] == len(indexing(tree, location[:-1])) - 1:
+                    # 情况2：地址扫描可行
+                    location[-1] += 1
+                    return 0
+                else:
                     # 情况3：分支解析完全
                     location.pop(-1)
                     return step(tree, True)
-                else:
-                    # 情况4：数据解析完全
-                    reset()
-                    fully_parsed = True
-                    return 0
+            else:
+                # 情况4：数据解析完全
+                reset()
+                fully_parsed = True
+                return 0
 
 
 def convert(tree):
@@ -107,11 +105,22 @@ def parse(tree):
     paths = set()
     while not fully_parsed:
         temp = scan(tree)
-        if temp and temp + 1:
+        if temp != 0 and temp != -1:
             paths.add(temp)
     return paths
 
 
 def build(tree, anchor=""):
+    status = {}
     for path in parse(tree):
-        Path(anchor).joinpath(path).mkdir(parents=True, exist_ok=True)
+        try:
+            Path(anchor).joinpath(path).mkdir(parents=True)
+            status[path] = (0,)
+        except FileExistsError:
+            status[path] = (1,)
+        except Exception as e:
+            status[path] = (2,e,str(e))
+    return status
+
+if __name__ == "__main__":
+    print(parse(TREE))
