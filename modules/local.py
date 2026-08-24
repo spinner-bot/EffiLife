@@ -95,4 +95,9 @@ def scan(tree):
     else:
         return -1
 
-def
+def parse(tree):
+    global fully_parsed
+    paths=set()
+    while not fully_parsed:
+        if scan(tree) and scan(tree)+1:
+            paths.add(scan(tree))
