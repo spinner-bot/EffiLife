@@ -167,7 +167,7 @@ def report(info):
     for i in range(2):
         if status[i]:
             p=(1000*status[i]+0.5*sum(status))//sum(status)
-            lines.append(f"    [{["Created", "Existing", "Failed"][i]}] {status[i]}/{sum(status)} {p//10}.{p%10}%")
+            lines.append(f"    [{["Created", "Existing", "Failed"][i]}] {status[i]}/{sum(status)} {int(p//10)}.{int(p%10)}%")
     lines.append("")
     if err:
         lines.append("【错误信息】")
