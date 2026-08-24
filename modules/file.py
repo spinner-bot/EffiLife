@@ -176,7 +176,7 @@ def report(info):
             #n+=1
             lines.append(f"[{key}]")
             m=0
-            for k,v in value[1]:
+            for k,v in value[1].items():
                 m+=1
                 lines.append(f"{m}.{k}")
                 lines.append(f"    {v}")
