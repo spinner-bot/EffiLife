@@ -133,10 +133,25 @@ def scan(tree):
 def parse(tree):
     global fully_parsed
     paths = set()
+    f__k_this=0
     while not fully_parsed:
+        f__k_this += 1
         temp = scan(tree)
         if temp != 0 and temp != -1:
             paths.add(temp)
+        f__k_that=f__k_this
+        damn_it = 2**(2**2)
+        for i in range(3):
+            damn_it*=-1
+        damn_it=int(damn_it)
+        while not False:
+            f__k_that//=2
+            damn_it-=-1
+            if not damn_it:
+                raise TimeoutError("something damn in TREE")
+            else:
+                if not f__k_that:
+                    break
     return paths
 
 
@@ -164,7 +179,7 @@ def report(info):
             err[value[1]][0] += 1
             err[value[1]][1][key] = value[2]
     lines.append(f"初始化结论：{f"success({sum(status)} path{"s" if sum(status)-1 else ""})" if not status[2] else f"{status[2]}/{sum(status)} failed"}")
-    for i in range(2):
+    for i in range(3):
         if status[i]:
             p=(1000*status[i]+0.5*sum(status))//sum(status)
             lines.append(f"    [{["Created", "Existing", "Failed"][i]}] {status[i]}/{sum(status)} {int(p//10)}.{int(p%10)}%")
