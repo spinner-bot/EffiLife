@@ -9,4 +9,4 @@ import modules as m
 
 if __name__ == "__main__":
     print(m.f.report(m.f.build(m.f.TREE,"modules")))
-    m.test.t(int(input("请输入测试号：")))
+    #m.test.t(int(input("请输入测试号：")))
