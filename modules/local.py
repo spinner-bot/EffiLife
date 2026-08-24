@@ -40,7 +40,7 @@ fully_parsed=False
 def reset():
     global location
     global fully_parsed
-    location=[]
+    location.clear()
     fully_parsed = False
 
 def indexing(root,*indexes):
