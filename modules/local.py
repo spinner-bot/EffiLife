@@ -4,8 +4,6 @@
         by spinner-bot
 """
 
-from pathlib import Path
-
 TREE=\
 [
     "..",
@@ -34,6 +32,7 @@ TREE=\
 
 #plan_dir.mkdir(parents=True, exist_ok=True)
 
+from pathlib import Path
 location=[]
 fully_parsed=False
 
@@ -79,12 +78,21 @@ def step(tree,branch_parsed=False):
                     fully_parsed=True
                     return 0
 
+def convert(tree):
+    global location
+    path=[]
+    for depth in len(location)+1:
+        path.append(indexing(tree, location[:depth])[0])
+    return Path(*path)
+
 def scan(tree):
     global fully_parsed
     if fully_parsed:
         return -1
 
     if not step(tree):
-        return indexing(tree,location)
+        return convert(tree) if not fully_parsed else 0
     else:
         return -1
+
+def
