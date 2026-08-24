@@ -12,3 +12,6 @@ if __name__ == "__main__":
     print(m.pp.report_tp())
     # m.test.t(int(input("请输入测试号：")))
     m.chat.chat_loop("qwen3.5:2b")
+
+    sys1=m.pp.PLAN_PROMPT["prompt"]
+    ass1=[{"role": "assistant", "content": "你好！有什么可以帮你的？"},]
