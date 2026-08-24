@@ -99,6 +99,7 @@ def parse(tree):
     global fully_parsed
     paths=set()
     while not fully_parsed:
-        if scan(tree) and scan(tree)+1:
-            paths.add(scan(tree))
+        temp=scan(tree)
+        if temp and temp+1:
+            paths.add(temp)
     return paths
