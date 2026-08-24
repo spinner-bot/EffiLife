@@ -153,17 +153,17 @@ def build(tree, anchor=""):
     return status
 
 def report(info):
-    lines=["====== 文件系统初始化 ======",""]
+    lines=["","====== 文件系统初始化 ======",""]
     status = [0,0,0]
     err={}
     for key, value in info.items():
         status[value[0]] += 1
         if not value[0]-2:
             if not value[1] in err:
-                err[value[1]] = (0,{})
+                err[value[1]] = [0,{}]
             err[value[1]][0] += 1
             err[value[1]][1][key] = value[2]
-    lines.append(f"初始化结论：{f"success({sum(status)} path{"s" if sum(status)-1 else ""})）" if not status[2] else f"{status[2]}/{sum(status)} failed"}")
+    lines.append(f"初始化结论：{f"success({sum(status)} path{"s" if sum(status)-1 else ""})" if not status[2] else f"{status[2]}/{sum(status)} failed"}")
     for i in range(2):
         if status[i]:
             p=(1000*status[i]+0.5*sum(status))//sum(status)
