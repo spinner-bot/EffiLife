@@ -15,7 +15,7 @@ MODULE_ALIASES = \
     "wizard": "wz",
     "plan": "p",
     "text": "tx",
-    "local": "lc"
+    "file": "f",
 }
 # ==========================================
 
