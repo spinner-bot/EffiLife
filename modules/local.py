@@ -49,6 +49,10 @@ def indexing(root,*indexes):
     return temp
 
 def step(tree,branch_parsed=False):
+    global fully_parsed
+    if fully_parsed:
+        return -1
+
     global location
     if not len(indexing(tree,location)) or not tree or not len(tree)-1:
         # 情况0：数据无法解析
@@ -75,8 +79,12 @@ def step(tree,branch_parsed=False):
                     fully_parsed=True
                     return 0
 
-def parse(tree):
+def scan(tree):
     global fully_parsed
     if fully_parsed:
         return -1
 
+    if not step(tree):
+        return indexing(tree,location)
+    else:
+        return -1
