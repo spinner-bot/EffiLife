@@ -149,11 +149,42 @@ def build(tree, anchor=""):
         except FileExistsError:
             status[path] = (1,)
         except Exception as e:
-            status[path] = (2,e,str(e))
+            status[path] = (2,type(e).__name__,str(e))
     return status
 
 def report(info):
-    lines=["====== 文件系统初始化 ======","",]
+    lines=["====== 文件系统初始化 ======",""]
+    status = [0,0,0]
+    err={}
+    for key, value in info.items():
+        status[value[0]] += 1
+        if not value[0]-2:
+            if not value[1] in err:
+                err[value[1]] = (0,{})
+            err[value[1]][0] += 1
+            err[value[1]][1][key] = value[2]
+    lines.append(f"初始化结论：{f"success({sum(status)} path{"s" if sum(status)-1 else ""})）" if not status[2] else f"{status[2]}/{sum(status)} failed"}")
+    for i in range(2):
+        if status[i]:
+            p=(1000*status[i]+0.5*sum(status))//sum(status)
+            lines.append(f"    [{["Created", "Existing", "Failed"][i]}] {status[i]}/{sum(status)} {p//10}.{p%10}%")
+    lines.append("")
+    if err:
+        lines.append("【错误信息】")
+        #n=0
+        for key, value in err.items():
+            #n+=1
+            lines.append(f"[{key}]")
+            m=0
+            for k,v in value[1]:
+                m+=1
+                lines.append(f"{m}.{k}")
+                lines.append(f"    {v}")
+        lines.append("")
+    r=""
+    for l in lines:
+        r+=l+"\n"
+    return r
 
 if __name__ == "__main__":
     print(build(TREE))
