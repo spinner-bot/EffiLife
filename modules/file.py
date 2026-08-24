@@ -10,7 +10,7 @@ TREE = \
         [
             "plan",
             [
-                "star",
+                "stars",
             ],
             [
                 "test",
@@ -19,7 +19,37 @@ TREE = \
         [
             "data",
             [
-                "registry"
+                "system",
+                [
+                    "registry"
+                ],
+                [
+                    "users"
+                ],
+                [
+                    "settings"
+                ],
+            ],
+            [
+                "LLM",
+                [
+                    "prompt",
+                    [
+                        "sys_prompt",
+                    ],
+                    [
+                        "user_prompt"
+                    ]
+                ],
+                [
+                    "knowledge_base",
+                    [
+                        "product",
+                    ],
+                    [
+                        "oth"
+                    ]
+                ]
             ]
         ],
         [
@@ -122,5 +152,8 @@ def build(tree, anchor=""):
             status[path] = (2,e,str(e))
     return status
 
+def report(info):
+    lines=["====== 文件系统初始化 ======","",]
+
 if __name__ == "__main__":
-    print(parse(TREE))
+    print(build(TREE))
