@@ -44,16 +44,11 @@ def reset():
 
 def indexing(root,*indexes):
     temp=root
-    if indexes:
-        for index in indexes:
-            temp=temp[index]
+    for index in indexes:
+        temp=temp[index]
     return temp
 
 def step(tree,branch_parsed=False):
-    global fully_parsed
-    if fully_parsed:
-        return -1
-
     global location
     if not len(indexing(tree,location)) or not tree or not len(tree)-1:
         # 情况0：数据无法解析
@@ -82,3 +77,6 @@ def step(tree,branch_parsed=False):
 
 def parse(tree):
     global fully_parsed
+    if fully_parsed:
+        return -1
+
