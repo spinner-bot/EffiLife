@@ -81,7 +81,7 @@ def step(tree,branch_parsed=False):
 def convert(tree):
     global location
     path=[]
-    for depth in len(location)+1:
+    for depth in range(len(location)+1):
         path.append(indexing(tree, location[:depth])[0])
     return Path(*path)
 
