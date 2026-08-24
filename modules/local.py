@@ -38,24 +38,43 @@ location=[]
 fully_parsed=False
 
 def reset():
-    global location
     global fully_parsed
     location.clear()
     fully_parsed = False
 
 def indexing(root,*indexes):
-    global fully_parsed
     temp=root
     for index in indexes:
         temp=temp[index]
     return temp
 
-def step(tree):
+def step(tree,branch_parsed=False):
     global fully_parsed
     if fully_parsed:
         return -1
 
     global location
-    depth=len(location)
-    width=len(indexing(tree,location[:-1]))
-
+    if not len(indexing(tree,location)):
+        # 情况0：数据无法解析
+        reset()
+        return -1
+    else:
+        if not len(indexing(tree,location))-1 and not branch_parsed:
+            # 情况1：地址访问可行
+            location.append(1)
+            return 0
+        else:
+            if location[-1]==len(indexing(tree,location[:-1]))-1:
+                # 情况2：地址扫描可行
+                location[-1]+=1
+                return 0
+            else:
+                if location:
+                    # 情况3：分支解析完全
+                    location.pop(-1)
+                    return step(tree,True)
+                else:
+                    # 情况4：数据解析完全
+                    reset()
+                    fully_parsed=True
+                    return 0
