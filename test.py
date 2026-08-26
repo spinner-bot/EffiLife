@@ -1,9 +1,9 @@
 def get_level(score):
-    temp=-1 if score//101 else (109-score)//10+64
+    temp=score%101+score//101 if score//101 else (109-score)//10+64
     if temp<65:
-        return get_level(106+temp)
+        return get_level(temp+101)
     elif temp>69:
-        pass
+        return get_level(temp-101)
     else:
         return chr(temp)
 
