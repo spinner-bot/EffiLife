@@ -8,10 +8,11 @@
 import modules as m
 
 if __name__ == "__main__":
-    print(m.f.report(m.f.build(m.f.TREE,"modules")))
-    print(m.pp.report_tp())
+    #print(m.f.report(m.f.build(m.f.TREE,"modules")))
+    #print(m.pp.report_tp())
     # m.test.t(int(input("请输入测试号：")))
-    m.chat.chat_loop("qwen3.5:2b")
 
     sys1=m.pp.PLAN_PROMPT["prompt"]
-    ass1=[{"role": "assistant", "content": "你好！有什么可以帮你的？"},]
+    ass1=[{"role": "assistant", "content": "你好！我是你的计划定制助手，负责协助您定制个性化计划。请告诉我你的需求吧！"},]
+    print("[message from model] 你好！我是你的计划定制助手，负责协助您定制个性化计划。请告诉我你的需求吧！")
+    m.chat.chat_loop(history=ass1, sys_prompt=sys1, model="qwen3.5:2b", stream=True)
