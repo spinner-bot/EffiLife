@@ -39,6 +39,8 @@ class Plans:
         temp = plan.Plan.registry
         temp2 = self.switch()
         plan.Plan.save_registry(anchor)
+        plan.Plan.registry = temp
+        return temp2
 
 
 if __name__ == "__main__":
