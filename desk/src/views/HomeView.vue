@@ -25,7 +25,7 @@ const updateTime = () => {
     currentTime.value = showSeconds ? `${hours}:${minutes}:${seconds}` : `${hours}:${minutes}`
   } else {
     let hours12 = now.getHours() % 12 || 12
-    const ampm = now.getHours() < 12 ? '上午' : '下午'
+    const ampm = now.getHours() < 12 ? 'AM' : 'PM'
     currentTime.value = showSeconds
       ? `${hours12}:${minutes}:${seconds} ${ampm}`
       : `${hours12}:${minutes} ${ampm}`
