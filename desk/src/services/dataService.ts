@@ -451,4 +451,131 @@ export const DataService = {
       raw_stat: { ...stat },
     }
   },
+
+  // 生成示例数据
+  async generateSampleData(): Promise<void> {
+    const today = new Date()
+    const todayStr = getTodayDate()
+
+    // 添加更多计划
+    const plans = await this.loadPlans()
+    plans['学习日'] = {
+      plan_type: '切分制',
+      items: [
+        { name: '学习', hours: 8 },
+        { name: '休息', hours: 4 },
+        { name: '运动', hours: 2 },
+        { name: '生活', hours: 10 }
+      ],
+      bg_tag: '生活',
+      color: [99, 102, 241]
+    }
+    plans['健身日'] = {
+      plan_type: '分配制',
+      items: [
+        { name: '健身', hours: 2 },
+        { name: '工作', hours: 6 },
+        { name: '休息', hours: 8 }
+      ],
+      bg_tag: '',
+      color: [34, 197, 94]
+    }
+    await this.savePlans(plans)
+
+    // 添加日程规则：周三使用学习日计划
+    const rules = await this.loadScheduleRules()
+    const hasWedRule = rules.some(r => r.rule_type === 'week' && r.value === '3')
+    if (!hasWedRule) {
+      rules.splice(rules.length - 1, 0, {
+        rule_type: 'week',
+        value: '3',
+        plan_name: '学习日'
+      })
+      await this.saveScheduleRules(rules)
+    }
+
+    // 生成过去7天的记录
+    for (let i = 1; i <= 7; i++) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      const dateStr = formatDate(date)
+      const weekDay = date.getDay() === 0 ? 7 : date.getDay()
+
+      // 根据星期选择计划
+      let planName = '工作日'
+      if (weekDay === 6 || weekDay === 7) planName = '休息日'
+      if (weekDay === 3) planName = '学习日'
+
+      await this.saveDayPlan(planName, dateStr)
+
+      const plan = plans[planName]
+      if (!plan) continue
+
+      // 生成该天的记录
+      const records: TimeRecord[] = []
+      let currentHour = 8 // 从8点开始
+
+      for (const item of plan.items) {
+        if (item.name === plan.bg_tag) continue // 跳过背景类别
+        const hours = Math.min(item.hours, 4) // 每条记录最多4小时
+        if (hours <= 0) continue
+
+        const startH = currentHour
+        const startM = Math.floor(Math.random() * 30)
+        const endH = startH + Math.floor(hours)
+        const endM = Math.floor((hours % 1) * 60)
+
+        if (startH + hours > 23) break
+
+        const contents = [
+          '专注工作',
+          '开会讨论',
+          '学习新技术',
+          '写代码',
+          'review代码',
+          '文档编写',
+          '健身训练',
+          '跑步',
+          '阅读',
+          '冥想'
+        ]
+
+        records.push({
+          date: dateStr,
+          start: `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}`,
+          end: `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`,
+          duration: hours,
+          content: contents[Math.floor(Math.random() * contents.length)],
+          tag: item.name
+        })
+
+        currentHour += Math.ceil(hours)
+      }
+
+      if (records.length > 0) {
+        localStorage.setItem(`efflife_records_${dateStr}`, JSON.stringify(records))
+      }
+    }
+
+    // 生成今天的部分记录
+    const todayRecords: TimeRecord[] = [
+      {
+        date: todayStr,
+        start: '09:00',
+        end: '11:30',
+        duration: 2.5,
+        content: '晨会 + 任务规划',
+        tag: '工作'
+      },
+      {
+        date: todayStr,
+        start: '13:00',
+        end: '15:00',
+        duration: 2,
+        content: '编写核心模块',
+        tag: '工作'
+      }
+    ]
+    localStorage.setItem(`efflife_records_${todayStr}`, JSON.stringify(todayRecords))
+  },
 }
