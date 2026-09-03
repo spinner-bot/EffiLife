@@ -118,6 +118,19 @@ function pickColor(target: 'bg' | 'button' | 'fg' | 'frame') {
 // ============ 存档管理 ============
 async function exportArchive() {
   try {
+    // 动态导入 Tauri API
+    const { save } = await import('@tauri-apps/plugin-dialog')
+    const { writeTextFile } = await import('@tauri-apps/plugin-fs')
+
+    // 弹出保存对话框
+    const filePath = await save({
+      title: '导出存档',
+      defaultPath: `efflife_archive_${new Date().toISOString().split('T')[0]}.json`,
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }]
+    })
+
+    if (!filePath) return // 用户取消
+
     // 收集所有数据
     const archive = {
       version: '1.0',
@@ -141,14 +154,8 @@ async function exportArchive() {
       }
     }
 
-    // 创建下载
-    const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `efflife_archive_${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    // 写入文件
+    await writeTextFile(filePath, JSON.stringify(archive, null, 2))
     alert('存档导出成功！')
   } catch (e) {
     alert('导出失败：' + (e as Error).message)
@@ -156,57 +163,63 @@ async function exportArchive() {
 }
 
 async function importArchive() {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-  input.onchange = async () => {
-    const file = input.files?.[0]
-    if (!file) return
+  try {
+    // 动态导入 Tauri API
+    const { open } = await import('@tauri-apps/plugin-dialog')
+    const { readTextFile } = await import('@tauri-apps/plugin-fs')
 
-    try {
-      const text = await file.text()
-      const archive = JSON.parse(text)
+    // 弹出打开对话框
+    const filePath = await open({
+      title: '导入存档',
+      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
+      multiple: false,
+      directory: false
+    })
 
-      if (!archive.version || !archive.config) {
-        alert('无效的存档文件')
-        return
-      }
+    if (!filePath) return // 用户取消
 
-      if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
+    // 读取文件
+    const text = await readTextFile(filePath as string)
+    const archive = JSON.parse(text)
 
-      // 导入配置
-      await appStore.saveConfig(archive.config)
-
-      // 导入计划
-      if (archive.plans) {
-        await appStore.savePlans(archive.plans)
-      }
-
-      // 导入日程规则
-      if (archive.scheduleRules) {
-        await appStore.saveScheduleRules(archive.scheduleRules)
-      }
-
-      // 导入记录
-      if (archive.records) {
-        for (const [date, records] of Object.entries(archive.records)) {
-          localStorage.setItem(`efflife_records_${date}`, JSON.stringify(records))
-        }
-      }
-
-      // 导入手动计划
-      if (archive.manualPlans) {
-        localStorage.setItem('efflife_manual', JSON.stringify(archive.manualPlans))
-      }
-
-      // 刷新数据
-      await appStore.init()
-      alert('存档导入成功！')
-    } catch (e) {
-      alert('导入失败：' + (e as Error).message)
+    if (!archive.version || !archive.config) {
+      alert('无效的存档文件')
+      return
     }
+
+    if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
+
+    // 导入配置
+    await appStore.saveConfig(archive.config)
+
+    // 导入计划
+    if (archive.plans) {
+      await appStore.savePlans(archive.plans)
+    }
+
+    // 导入日程规则
+    if (archive.scheduleRules) {
+      await appStore.saveScheduleRules(archive.scheduleRules)
+    }
+
+    // 导入记录
+    if (archive.records) {
+      for (const [date, records] of Object.entries(archive.records)) {
+        localStorage.setItem(`efflife_records_${date}`, JSON.stringify(records))
+      }
+    }
+
+    // 导入手动计划
+    if (archive.manualPlans) {
+      localStorage.setItem('efflife_manual', JSON.stringify(archive.manualPlans))
+    }
+
+    // 刷新数据
+    await appStore.init()
+    alert('存档导入成功！')
+  } catch (e) {
+    alert('导入失败：' + (e as Error).message)
   }
-  input.click()
 }
 
 // ============ 恢复设置 ============
