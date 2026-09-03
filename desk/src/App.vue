@@ -5,17 +5,50 @@ import { onMounted, watch } from 'vue'
 
 const appStore = useAppStore()
 
+// 计算颜色亮度 (0-255)
+function getLuminance(hex: string): number {
+  const num = parseInt(hex.replace('#', ''), 16)
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  return (r * 299 + g * 587 + b * 114) / 1000
+}
+
+// 根据背景色返回合适的文字颜色
+function getTextColor(bgHex: string): { primary: string; secondary: string; tertiary: string } {
+  const luminance = getLuminance(bgHex)
+  if (luminance > 128) {
+    // 浅色背景 -> 深色文字
+    return { primary: '#18181b', secondary: '#52525b', tertiary: '#a1a1aa' }
+  } else {
+    // 深色背景 -> 浅色文字
+    return { primary: '#fafafa', secondary: '#a1a1aa', tertiary: '#71717a' }
+  }
+}
+
 // 应用主题到 CSS 变量
 function applyTheme() {
   const theme = appStore.config.theme
   const root = document.documentElement
 
   if (theme.type === 'solid' && theme.solid) {
-    root.style.setProperty('--color-bg', theme.solid.bg_window)
-    root.style.setProperty('--color-bg-secondary', adjustColor(theme.solid.bg_window, 10))
-    root.style.setProperty('--color-bg-tertiary', adjustColor(theme.solid.bg_window, 20))
-    root.style.setProperty('--color-border', adjustColor(theme.solid.bg_window, 30))
-    root.style.setProperty('--color-border-hover', adjustColor(theme.solid.bg_window, 40))
+    const bg = theme.solid.bg_window
+    const textColor = getTextColor(bg)
+
+    root.style.setProperty('--color-bg', bg)
+    root.style.setProperty('--color-bg-secondary', adjustColor(bg, 10))
+    root.style.setProperty('--color-bg-tertiary', adjustColor(bg, 20))
+    root.style.setProperty('--color-border', adjustColor(bg, 30))
+    root.style.setProperty('--color-border-hover', adjustColor(bg, 40))
+
+    // 动态设置文字颜色
+    root.style.setProperty('--color-text-primary', textColor.primary)
+    root.style.setProperty('--color-text-secondary', textColor.secondary)
+    root.style.setProperty('--color-text-tertiary', textColor.tertiary)
+
+    // 按钮颜色也根据主题调整
+    root.style.setProperty('--color-button-bg', theme.solid.bg_button)
+    root.style.setProperty('--color-button-text', theme.solid.fg_button)
   }
 }
 
