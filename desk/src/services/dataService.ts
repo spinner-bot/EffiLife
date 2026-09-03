@@ -26,6 +26,27 @@ export const DEFAULT_CONFIG: Config = {
       fg_button: '#000000',
       bg_frame: '#d9d9d9',
     },
+    gradient: {
+      color_start: '#667eea',
+      color_end: '#764ba2',
+      direction: 'to-br',
+      fg_button: '#ffffff',
+      card_bg: 'rgba(255, 255, 255, 0.15)',
+    },
+    glass: {
+      bg_color: '#1a1a2e',
+      glass_opacity: 0.1,
+      blur_amount: 10,
+      fg_button: '#ffffff',
+      border_color: 'rgba(255, 255, 255, 0.2)',
+    },
+    neon: {
+      bg_color: '#0a0a0f',
+      neon_color: '#00ff88',
+      glow_intensity: 10,
+      fg_button: '#00ff88',
+      accent_color: '#ff00ff',
+    },
   },
 }
 
