@@ -45,10 +45,13 @@ function subThreshold() {
 }
 
 // ============ 外观设置 ============
-const whitenK = ref(config.value.whiten_k)
-const themeBgWindow = ref(config.value.theme.bg_window)
-const themeBgButton = ref(config.value.theme.bg_button)
-const themeFgButton = ref(config.value.theme.fg_button)
+const whitenK = ref(parseFloat(String(config.value.whiten_k ?? 0.6)))
+const themeBgWindow = ref(config.value.theme?.bg_window ?? '#f0f0f0')
+const themeBgButton = ref(config.value.theme?.bg_button ?? '#e0e0e0')
+const themeFgButton = ref(config.value.theme?.fg_button ?? '#000000')
+
+// 确保 whitenK 是数字
+const whitenKDisplay = computed(() => Number(whitenK.value).toFixed(2))
 
 async function saveAppearance() {
   const newConfig: Config = {
@@ -140,7 +143,7 @@ function contactDeveloper() {
 <template>
   <div class="settings-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/')">
+      <button class="back-btn" @click="currentView === 'main' ? router.push('/') : currentView = 'main'">
         <ArrowLeft :size="16" />
         <span>返回</span>
       </button>
@@ -223,8 +226,8 @@ function contactDeveloper() {
         <div class="form-section">
           <label>日历背景色白化系数</label>
           <div class="slider-control">
-            <input type="range" v-model="whitenK" min="0" max="1" step="0.01" class="slider" />
-            <span class="slider-value">{{ whitenK.toFixed(2) }}</span>
+            <input type="range" v-model.number="whitenK" min="0" max="1" step="0.01" class="slider" />
+            <span class="slider-value">{{ whitenKDisplay }}</span>
           </div>
         </div>
 
