@@ -55,14 +55,39 @@ export interface SolidThemeConfig {
   bg_frame: string
 }
 
+// 渐变主题配置
+export interface GradientThemeConfig {
+  color_start: string
+  color_end: string
+  direction: 'to-right' | 'to-left' | 'to-bottom' | 'to-top' | 'to-br' | 'to-tl'
+  fg_button: string
+  card_bg: string
+}
+
+// 玻璃主题配置
+export interface GlassThemeConfig {
+  bg_color: string
+  glass_opacity: number
+  blur_amount: number
+  fg_button: string
+  border_color: string
+}
+
+// 霓虹主题配置
+export interface NeonThemeConfig {
+  bg_color: string
+  neon_color: string
+  glow_intensity: number
+  fg_button: string
+  accent_color: string
+}
+
 export interface Theme {
   type: ThemeType
-  // 纯色主题的具体配置
   solid?: SolidThemeConfig
-  // 未来主题类型的配置字段（预留）
-  gradient?: Record<string, string>
-  glass?: Record<string, string>
-  neon?: Record<string, string>
+  gradient?: GradientThemeConfig
+  glass?: GlassThemeConfig
+  neon?: NeonThemeConfig
 }
 
 export interface DayPlanInfo {
