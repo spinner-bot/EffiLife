@@ -1,0 +1,10 @@
+# Build output
+target/
+gen/
+
+# Cargo lock (optional for apps)
+# Cargo.lock
+
+# OS files
+.DS_Store
+Thumbs.db
