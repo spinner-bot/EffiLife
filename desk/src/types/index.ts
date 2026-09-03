@@ -44,11 +44,25 @@ export interface Config {
   theme: Theme
 }
 
-export interface Theme {
+// 主题类型（预留扩展）
+export type ThemeType = 'solid' | 'gradient' | 'glass' | 'neon'
+
+// 纯色主题配置
+export interface SolidThemeConfig {
   bg_window: string
   bg_button: string
   fg_button: string
   bg_frame: string
+}
+
+export interface Theme {
+  type: ThemeType
+  // 纯色主题的具体配置
+  solid?: SolidThemeConfig
+  // 未来主题类型的配置字段（预留）
+  gradient?: Record<string, string>
+  glass?: Record<string, string>
+  neon?: Record<string, string>
 }
 
 export interface DayPlanInfo {

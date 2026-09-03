@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronRight } from 'lucide-vue-next'
-import type { Config } from '@/types'
+import type { Config, ThemeType, SolidThemeConfig } from '@/types'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -11,7 +11,7 @@ const appStore = useAppStore()
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'appearance' | 'help' | 'archive' | 'reset'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset'
 const currentView = ref<ViewType>('main')
 
 // ============ 自定义设置 ============
@@ -44,54 +44,73 @@ function subThreshold() {
   }
 }
 
-// ============ 外观设置 ============
-const whitenK = ref(parseFloat(String(config.value.whiten_k ?? 0.6)))
-const themeBgWindow = ref(config.value.theme?.bg_window ?? '#f0f0f0')
-const themeBgButton = ref(config.value.theme?.bg_button ?? '#e0e0e0')
-const themeFgButton = ref(config.value.theme?.fg_button ?? '#000000')
+// ============ 主题设置 ============
+const themeType = ref<ThemeType>(config.value.theme.type || 'solid')
+const solidConfig = ref<SolidThemeConfig>(config.value.theme.solid || {
+  bg_window: '#f0f0f0',
+  bg_button: '#e0e0e0',
+  fg_button: '#000000',
+  bg_frame: '#d9d9d9'
+})
 
-// 确保 whitenK 是数字
-const whitenKDisplay = computed(() => Number(whitenK.value).toFixed(2))
+// 可用的主题类型（预留扩展）
+const availableThemes = [
+  { type: 'solid' as ThemeType, name: '纯色', description: '简洁的纯色主题', available: true },
+  { type: 'gradient' as ThemeType, name: '渐变', description: '渐变背景主题', available: false },
+  { type: 'glass' as ThemeType, name: '玻璃', description: '毛玻璃效果主题', available: false },
+  { type: 'neon' as ThemeType, name: '霓虹', description: '霓虹灯效果主题', available: false },
+]
 
-async function saveAppearance() {
+async function saveTheme() {
   const newConfig: Config = {
     ...config.value,
-    whiten_k: whitenK.value,
     theme: {
-      bg_window: themeBgWindow.value,
-      bg_button: themeBgButton.value,
-      fg_button: themeFgButton.value,
-      bg_frame: '#d9d9d9'
+      type: themeType.value,
+      solid: themeType.value === 'solid' ? solidConfig.value : undefined,
     }
   }
   await appStore.saveConfig(newConfig)
-  alert('外观已保存')
+  alert('主题已保存')
 }
 
 function applyPreset(preset: 'default' | 'dark' | 'light') {
   if (preset === 'default') {
-    themeBgWindow.value = '#f0f0f0'
-    themeBgButton.value = '#e0e0e0'
-    themeFgButton.value = '#000000'
+    solidConfig.value = {
+      bg_window: '#f0f0f0',
+      bg_button: '#e0e0e0',
+      fg_button: '#000000',
+      bg_frame: '#d9d9d9'
+    }
   } else if (preset === 'dark') {
-    themeBgWindow.value = '#2d2d2d'
-    themeBgButton.value = '#3c3c3c'
-    themeFgButton.value = '#ffffff'
+    solidConfig.value = {
+      bg_window: '#1a1a2e',
+      bg_button: '#16213e',
+      fg_button: '#eaeaea',
+      bg_frame: '#0f3460'
+    }
   } else {
-    themeBgWindow.value = '#ffffff'
-    themeBgButton.value = '#f0f0f0'
-    themeFgButton.value = '#000000'
+    solidConfig.value = {
+      bg_window: '#ffffff',
+      bg_button: '#f5f5f5',
+      fg_button: '#333333',
+      bg_frame: '#e0e0e0'
+    }
   }
 }
 
-function pickColor(target: 'bg' | 'button' | 'fg') {
+function pickColor(target: 'bg' | 'button' | 'fg' | 'frame') {
   const input = document.createElement('input')
   input.type = 'color'
+  input.value = target === 'bg' ? solidConfig.value.bg_window
+    : target === 'button' ? solidConfig.value.bg_button
+    : target === 'fg' ? solidConfig.value.fg_button
+    : solidConfig.value.bg_frame
   input.onchange = () => {
     const color = input.value
-    if (target === 'bg') themeBgWindow.value = color
-    else if (target === 'button') themeBgButton.value = color
-    else themeFgButton.value = color
+    if (target === 'bg') solidConfig.value.bg_window = color
+    else if (target === 'button') solidConfig.value.bg_button = color
+    else if (target === 'fg') solidConfig.value.fg_button = color
+    else solidConfig.value.bg_frame = color
   }
   input.click()
 }
@@ -99,7 +118,6 @@ function pickColor(target: 'bg' | 'button' | 'fg') {
 // ============ 恢复设置 ============
 async function resetPlanData() {
   if (!confirm('确定重置所有日计划为默认？此操作不可恢复！')) return
-  // 重置逻辑
   alert('日计划已重置')
 }
 
@@ -117,27 +135,42 @@ async function resetConfig() {
     use_24h: true,
     show_ampm: false,
     theme: {
-      bg_window: '#f0f0f0',
-      bg_button: '#e0e0e0',
-      fg_button: '#000000',
-      bg_frame: '#d9d9d9'
+      type: 'solid',
+      solid: {
+        bg_window: '#f0f0f0',
+        bg_button: '#e0e0e0',
+        fg_button: '#000000',
+        bg_frame: '#d9d9d9'
+      }
     }
   }
   await appStore.saveConfig(defaultConfig)
   overtimeThreshold.value = 105
-  whitenK.value = 0.6
-  showSeconds.value = true
-  use24h.value = true
-  showAmPm.value = false
-  themeBgWindow.value = '#f0f0f0'
-  themeBgButton.value = '#e0e0e0'
-  themeFgButton.value = '#000000'
+  themeType.value = 'solid'
+  solidConfig.value = {
+    bg_window: '#f0f0f0',
+    bg_button: '#e0e0e0',
+    fg_button: '#000000',
+    bg_frame: '#d9d9d9'
+  }
   alert('设置已重置')
 }
 
 function contactDeveloper() {
   alert('QQ号：3442386217\n抖音：@浪兮有点浪')
 }
+
+// 同步配置到本地状态
+watch(() => config.value, (newConfig) => {
+  overtimeThreshold.value = newConfig.overtime_threshold
+  showSeconds.value = newConfig.show_seconds
+  use24h.value = newConfig.use_24h
+  showAmPm.value = newConfig.show_ampm
+  themeType.value = newConfig.theme.type || 'solid'
+  if (newConfig.theme.solid) {
+    solidConfig.value = { ...newConfig.theme.solid }
+  }
+}, { immediate: true, deep: true })
 </script>
 
 <template>
@@ -158,8 +191,8 @@ function contactDeveloper() {
             <span>自定义</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'appearance'">
-            <span>外观</span>
+          <button class="settings-item" @click="currentView = 'theme'">
+            <span>主题</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="currentView = 'help'">
@@ -219,48 +252,64 @@ function contactDeveloper() {
         </div>
       </template>
 
-      <!-- 外观设置 -->
-      <template v-else-if="currentView === 'appearance'">
-        <h2>外观设置</h2>
+      <!-- 主题设置 -->
+      <template v-else-if="currentView === 'theme'">
+        <h2>主题设置</h2>
 
         <div class="form-section">
-          <label>日历背景色白化系数</label>
-          <div class="slider-control">
-            <input type="range" v-model.number="whitenK" min="0" max="1" step="0.01" class="slider" />
-            <span class="slider-value">{{ whitenKDisplay }}</span>
+          <label>选择主题</label>
+          <div class="theme-list">
+            <button
+              v-for="theme in availableThemes"
+              :key="theme.type"
+              class="theme-card"
+              :class="{ active: themeType === theme.type, disabled: !theme.available }"
+              :disabled="!theme.available"
+              @click="theme.available && (themeType = theme.type)"
+            >
+              <div class="theme-info">
+                <span class="theme-name">{{ theme.name }}</span>
+                <span class="theme-desc">{{ theme.description }}</span>
+              </div>
+              <span v-if="!theme.available" class="coming-soon">即将推出</span>
+              <span v-else-if="themeType === theme.type" class="selected">✓</span>
+            </button>
           </div>
         </div>
 
-        <div class="form-section">
-          <label>界面样式</label>
-          <div class="color-settings">
-            <div class="color-row">
-              <span>窗口背景色</span>
-              <input type="text" v-model="themeBgWindow" class="color-input" />
-              <button class="btn small" @click="pickColor('bg')">选择</button>
+        <!-- 纯色主题配置 -->
+        <template v-if="themeType === 'solid'">
+          <div class="form-section">
+            <label>颜色配置</label>
+            <div class="color-settings">
+              <div class="color-row">
+                <span>窗口背景色</span>
+                <input type="text" v-model="solidConfig.bg_window" class="color-input" />
+                <button class="btn small" @click="pickColor('bg')">选择</button>
+              </div>
+              <div class="color-row">
+                <span>按钮背景色</span>
+                <input type="text" v-model="solidConfig.bg_button" class="color-input" />
+                <button class="btn small" @click="pickColor('button')">选择</button>
+              </div>
+              <div class="color-row">
+                <span>按钮文字色</span>
+                <input type="text" v-model="solidConfig.fg_button" class="color-input" />
+                <button class="btn small" @click="pickColor('fg')">选择</button>
+              </div>
             </div>
-            <div class="color-row">
-              <span>按钮背景色</span>
-              <input type="text" v-model="themeBgButton" class="color-input" />
-              <button class="btn small" @click="pickColor('button')">选择</button>
-            </div>
-            <div class="color-row">
-              <span>按钮文字色</span>
-              <input type="text" v-model="themeFgButton" class="color-input" />
-              <button class="btn small" @click="pickColor('fg')">选择</button>
+            <div class="preset-buttons">
+              <span>预设方案：</span>
+              <button class="btn small" @click="applyPreset('default')">默认</button>
+              <button class="btn small" @click="applyPreset('dark')">深色</button>
+              <button class="btn small" @click="applyPreset('light')">浅色</button>
             </div>
           </div>
-          <div class="preset-buttons">
-            <span>预设方案：</span>
-            <button class="btn small" @click="applyPreset('default')">默认</button>
-            <button class="btn small" @click="applyPreset('dark')">深色</button>
-            <button class="btn small" @click="applyPreset('light')">浅色</button>
-          </div>
-        </div>
+        </template>
 
         <div class="form-actions">
           <button class="btn secondary" @click="currentView = 'main'">返回</button>
-          <button class="btn primary" @click="saveAppearance">保存</button>
+          <button class="btn primary" @click="saveTheme">保存</button>
         </div>
       </template>
 
@@ -453,38 +502,73 @@ h2 {
   cursor: pointer;
 }
 
-.slider-control {
+/* 主题列表 */
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.theme-card {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-}
-
-.slider {
-  flex: 1;
-  height: 4px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--color-bg-tertiary);
-  border-radius: 2px;
-  outline: none;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--color-primary);
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
 }
 
-.slider-value {
-  width: 50px;
-  text-align: right;
-  font-family: var(--font-mono);
+.theme-card:hover:not(:disabled) {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-hover);
 }
 
+.theme-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.theme-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.theme-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.theme-desc {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.coming-soon {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+.selected {
+  color: var(--color-primary);
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+/* 颜色配置 */
 .color-settings {
   display: flex;
   flex-direction: column;

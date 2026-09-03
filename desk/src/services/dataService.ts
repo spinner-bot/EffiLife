@@ -19,10 +19,13 @@ export const DEFAULT_CONFIG: Config = {
   use_24h: true,
   show_ampm: false,
   theme: {
-    bg_window: '#f0f0f0',
-    bg_button: '#e0e0e0',
-    fg_button: '#000000',
-    bg_frame: '#d9d9d9',
+    type: 'solid',
+    solid: {
+      bg_window: '#f0f0f0',
+      bg_button: '#e0e0e0',
+      fg_button: '#000000',
+      bg_frame: '#d9d9d9',
+    },
   },
 }
 
