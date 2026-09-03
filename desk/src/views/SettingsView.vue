@@ -115,6 +115,100 @@ function pickColor(target: 'bg' | 'button' | 'fg' | 'frame') {
   input.click()
 }
 
+// ============ 存档管理 ============
+async function exportArchive() {
+  try {
+    // 收集所有数据
+    const archive = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      config: appStore.config,
+      plans: appStore.plans,
+      scheduleRules: appStore.scheduleRules,
+      records: {} as Record<string, unknown>,
+      manualPlans: {} as Record<string, string>
+    }
+
+    // 收集所有日期的记录
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith('efflife_records_')) {
+        const date = key.replace('efflife_records_', '')
+        archive.records[date] = JSON.parse(localStorage.getItem(key) || '[]')
+      }
+      if (key && key === 'efflife_manual') {
+        archive.manualPlans = JSON.parse(localStorage.getItem(key) || '{}')
+      }
+    }
+
+    // 创建下载
+    const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `efflife_archive_${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    alert('存档导出成功！')
+  } catch (e) {
+    alert('导出失败：' + (e as Error).message)
+  }
+}
+
+async function importArchive() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = async () => {
+    const file = input.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const archive = JSON.parse(text)
+
+      if (!archive.version || !archive.config) {
+        alert('无效的存档文件')
+        return
+      }
+
+      if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
+
+      // 导入配置
+      await appStore.saveConfig(archive.config)
+
+      // 导入计划
+      if (archive.plans) {
+        await appStore.savePlans(archive.plans)
+      }
+
+      // 导入日程规则
+      if (archive.scheduleRules) {
+        await appStore.saveScheduleRules(archive.scheduleRules)
+      }
+
+      // 导入记录
+      if (archive.records) {
+        for (const [date, records] of Object.entries(archive.records)) {
+          localStorage.setItem(`efflife_records_${date}`, JSON.stringify(records))
+        }
+      }
+
+      // 导入手动计划
+      if (archive.manualPlans) {
+        localStorage.setItem('efflife_manual', JSON.stringify(archive.manualPlans))
+      }
+
+      // 刷新数据
+      await appStore.init()
+      alert('存档导入成功！')
+    } catch (e) {
+      alert('导入失败：' + (e as Error).message)
+    }
+  }
+  input.click()
+}
+
 // ============ 恢复设置 ============
 async function resetPlanData() {
   if (!confirm('确定重置所有日计划为默认？此操作不可恢复！')) return
@@ -339,8 +433,8 @@ watch(() => config.value, (newConfig) => {
       <template v-else-if="currentView === 'archive'">
         <h2>存档管理</h2>
         <div class="archive-actions">
-          <button class="btn primary full" @click="alert('导出功能待实现')">导出存档</button>
-          <button class="btn primary full" @click="alert('导入功能待实现')">导入存档</button>
+          <button class="btn primary full" @click="exportArchive">导出存档</button>
+          <button class="btn primary full" @click="importArchive">导入存档</button>
         </div>
         <button class="btn secondary full" @click="currentView = 'main'">返回</button>
       </template>
