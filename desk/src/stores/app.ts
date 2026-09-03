@@ -27,6 +27,28 @@ export const useAppStore = defineStore('app', () => {
       config.value = await DataService.loadConfig()
       plans.value = await DataService.loadPlans()
       scheduleRules.value = await DataService.loadScheduleRules()
+
+      // 如果没有记录数据，生成示例数据
+      const todayRecords = await DataService.loadRecords()
+      if (todayRecords.length === 0) {
+        // 检查是否有任何历史记录
+        let hasAnyRecords = false
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith('efflife_records_')) {
+            hasAnyRecords = true
+            break
+          }
+        }
+        if (!hasAnyRecords) {
+          await DataService.generateSampleData()
+          // 重新加载数据
+          config.value = await DataService.loadConfig()
+          plans.value = await DataService.loadPlans()
+          scheduleRules.value = await DataService.loadScheduleRules()
+        }
+      }
+
       await refreshTodayData()
     } finally {
       isLoading.value = false
