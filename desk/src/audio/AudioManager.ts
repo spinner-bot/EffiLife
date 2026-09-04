@@ -1,5 +1,6 @@
 // 音频管理器 - 统一管理音效和背景音乐
 import { ref, computed } from 'vue'
+import { MusicGenerator } from './MusicGenerator'
 
 export type SoundType =
   | 'click'           // 普通点击
@@ -41,7 +42,7 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   sfxVolume: 70,
   bgmEnabled: true,
   bgmVolume: 30,
-  currentBgm: 'default',
+  currentBgm: 'piano',
   sfxVolumes: {
     click: 80,
     hover: 30,
@@ -57,9 +58,9 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
 
 // 可用的背景音乐列表
 export const BGM_LIST = [
-  { id: 'default', name: '默认轻音乐', builtIn: true },
-  { id: 'piano', name: '钢琴曲', builtIn: true },
-  { id: 'ambient', name: '环境音', builtIn: true },
+  { id: 'piano', name: '轻柔钢琴', builtIn: true },
+  { id: 'ambient', name: '梦幻氛围', builtIn: true },
+  { id: 'night', name: '宁静夜晚', builtIn: true },
   { id: 'none', name: '无背景音乐', builtIn: true }
 ]
 
@@ -67,6 +68,7 @@ class AudioManagerClass {
   private audioContext: AudioContext | null = null
   private settings = ref<AudioSettings>({ ...DEFAULT_AUDIO_SETTINGS })
   private bgmAudio: HTMLAudioElement | null = null
+  private musicGenerator: MusicGenerator | null = null
   private currentBgmId = ref('')
 
   constructor() {
@@ -236,6 +238,12 @@ class AudioManagerClass {
       this.bgmAudio = null
     }
 
+    // 停止音乐生成器
+    if (this.musicGenerator) {
+      this.musicGenerator.stop()
+      this.musicGenerator = null
+    }
+
     if (!this.settings.value.enabled || !this.settings.value.bgmEnabled) {
       return
     }
@@ -257,19 +265,14 @@ class AudioManagerClass {
       return
     }
 
-    // 内置背景音乐需要真实音频文件
-    // 暂时禁用合成音乐，避免噪声
-    // 用户可以添加自定义音乐文件
-    console.log('Built-in BGM not available. Please add custom music files.')
-    return
+    // 使用 MusicGenerator 播放内置轻音乐
+    const ctx = this.getAudioContext()
+    this.musicGenerator = new MusicGenerator(ctx)
+    this.musicGenerator.setVolume(this.settings.value.bgmVolume / 100)
 
-    // 保存引用以便停止
-    this.bgmAudio = {
-      pause: () => oscillator.stop(),
-      volume: 0,
-      loop: true
-    } as any
-
+    // 根据 bgmId 选择风格
+    const style = (bgmId === 'piano' || bgmId === 'ambient' || bgmId === 'night') ? bgmId : 'piano'
+    this.musicGenerator.start(style)
     this.currentBgmId.value = bgmId
   }
 
@@ -283,6 +286,13 @@ class AudioManagerClass {
     if (this.bgmAudio) {
       this.bgmAudio.pause()
       this.bgmAudio = null
+    }
+    if (this.musicGenerator) {
+      this.musicGenerator.stop()
+      this.musicGenerator = null
+    }
+    this.currentBgmId.value = ''
+  }
     }
     this.currentBgmId.value = ''
   }
