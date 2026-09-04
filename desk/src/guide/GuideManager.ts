@@ -1,4 +1,4 @@
-// 引导系统管理器
+// 引导系统管理器 - 重新设计
 import { ref, reactive } from 'vue'
 
 export interface GuideStep {
@@ -6,11 +6,14 @@ export interface GuideStep {
   title: string
   description: string
   target?: string  // CSS 选择器，指向要高亮的元素
-  action?: 'click' | 'navigate' | 'wait'  // 期望的用户行为
-  actionTarget?: string  // 要点击的元素选择器
+  actionRequired?: boolean  // 是否需要用户操作才能继续
+  actionType?: 'click' | 'navigate' | 'input' | 'wait'
+  actionTarget?: string  // 需要点击的元素选择器
+  validateAction?: () => boolean  // 验证操作是否完成的函数
   navigateTo?: string  // 导航目标路由
   highlight?: boolean  // 是否高亮目标元素
-  position?: 'top' | 'bottom' | 'left' | 'right'  // 提示框位置
+  position?: 'top' | 'bottom' | 'left' | 'right'
+  isDemo?: boolean  // 是否是演示步骤（不需要操作）
 }
 
 export interface GuideConfig {
@@ -20,6 +23,7 @@ export interface GuideConfig {
 }
 
 const STORAGE_KEY = 'efflife_guide_completed'
+const BACKUP_KEY = 'efflife_guide_data_backup'
 
 // 全局响应式状态
 export const guideState = reactive({
@@ -27,122 +31,259 @@ export const guideState = reactive({
   currentStepIndex: 0,
   currentGuide: null as GuideConfig | null,
   completed: false,
+  canProceed: false,  // 是否可以进入下一步
   version: 0
 })
 
-// 主引导流程
+// 数据备份
+interface DataBackup {
+  records: Record<string, any[]>
+  plans: any
+  scheduleRules: any[]
+  config: any
+  manualPlans: Record<string, string>
+}
+
+// 主引导流程 - 核心功能操作 + 非核心功能介绍
 export const MAIN_GUIDE: GuideConfig = {
   id: 'main',
   name: '主要功能引导',
   steps: [
+    // ========== 欢迎 ==========
     {
       id: 'welcome',
       title: '欢迎使用浪兮效率时钟！',
-      description: '这是一款帮助你管理时间、追踪效率的工具。让我们花一分钟了解核心功能吧！',
-      position: 'bottom'
+      description: '让我们通过实际操作来了解核心功能。你将亲手体验记录时间、查看日历等功能。准备好了吗？',
+      position: 'bottom',
+      isDemo: true
     },
+
+    // ========== 核心功能：记录时间 ==========
     {
-      id: 'home-overview',
-      title: '主页概览',
-      description: '这里是你的效率中心。显示当前时间、今日计划完成度和连续打卡天数。',
-      target: '.clock-section',
-      highlight: true,
-      position: 'bottom'
-    },
-    {
-      id: 'nav-records',
-      title: '记录时间',
-      description: '点击这里开始记录你的时间。试试添加一条记录吧！',
+      id: 'go-records',
+      title: '第一步：记录时间',
+      description: '点击下方的"记录"按钮，开始体验时间记录功能。',
       target: '.nav-btn:nth-child(1)',
-      action: 'click',
-      navigateTo: '/records',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.nav-btn:nth-child(1)',
+      navigateTo: '/records',
       position: 'bottom'
     },
     {
       id: 'add-record',
-      title: '添加记录',
-      description: '点击"新增"按钮，填写内容、选择类别、设置时间，然后保存。',
+      title: '添加一条记录',
+      description: '点击"新增"按钮，添加一条时间记录。试试填写"测试活动"，时间设为1小时。',
       target: '.add-btn',
-      action: 'click',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.add-btn',
       position: 'bottom'
     },
     {
-      id: 'record-form',
-      title: '填写记录',
-      description: '在这里填写你的活动内容和时间。完成后点击保存，然后返回主页继续引导。',
+      id: 'fill-record',
+      title: '填写记录内容',
+      description: '填写内容（如"测试活动"），选择类别，设置时间为1小时，然后点击"保存"。',
       target: '.modal, .form-section',
       highlight: true,
+      actionRequired: true,
+      actionType: 'input',
+      validateAction: () => {
+        // 检查是否回到了记录列表（说明保存成功）
+        return !document.querySelector('.modal')
+      },
       position: 'bottom'
     },
     {
-      id: 'nav-calendar',
-      title: '查看日历',
-      description: '点击这里查看日历视图，了解你的历史记录和完成度。',
-      target: '.nav-btn:nth-child(2)',
-      action: 'click',
-      navigateTo: '/calendar',
+      id: 'record-saved',
+      title: '记录已保存！',
+      description: '很好！你刚刚添加了一条时间记录。现在点击"返回"回到主页，继续下一步。',
+      target: '.back-btn',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.back-btn',
+      navigateTo: '/',
+      position: 'bottom'
+    },
+
+    // ========== 核心功能：日历视图 ==========
+    {
+      id: 'go-calendar',
+      title: '第二步：查看日历',
+      description: '点击"日历"按钮，查看你的时间记录在日历中的展示。',
+      target: '.nav-btn:nth-child(2)',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.nav-btn:nth-child(2)',
+      navigateTo: '/calendar',
       position: 'bottom'
     },
     {
       id: 'calendar-view',
       title: '日历视图',
-      description: '这里展示你每天的完成度。点击任意日期查看详情。',
-      target: '.calendar-grid',
+      description: '这里展示你每天的记录。点击今天的日期，查看当天的详细记录。',
+      target: '.day-cell.today',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.day-cell.today',
       position: 'bottom'
     },
     {
-      id: 'nav-management',
-      title: '计划管理',
-      description: '点击这里管理你的日计划和预警规则。',
+      id: 'day-detail',
+      title: '日期详情',
+      description: '这里显示当天的计划和记录。你可以切换日计划、查看记录详情。点击"返回日历"继续。',
+      target: '.back-btn',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.back-btn',
+      navigateTo: '/calendar',
+      position: 'bottom'
+    },
+    {
+      id: 'back-home',
+      title: '返回主页',
+      description: '点击"返回"回到主页，继续探索管理功能。',
+      target: '.back-btn',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.back-btn',
+      navigateTo: '/',
+      position: 'bottom'
+    },
+
+    // ========== 核心功能：计划管理 ==========
+    {
+      id: 'go-management',
+      title: '第三步：计划管理',
+      description: '点击"管理"按钮，了解如何设置日计划和预警规则。',
       target: '.nav-btn:nth-child(3)',
-      action: 'click',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.nav-btn:nth-child(3)',
       navigateTo: '/management',
-      highlight: true,
       position: 'bottom'
     },
     {
-      id: 'management-view',
+      id: 'management-overview',
       title: '管理中心',
-      description: '在这里可以设置日程安排、管理日计划、配置临时变更。完成后返回主页。',
-      target: '.action-grid',
+      description: '这里有三个功能：日程安排、日计划管理、临时计划变更。点击"日计划管理"查看详情。',
+      target: '.action-btn:nth-child(2)',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.action-btn:nth-child(2)',
       position: 'bottom'
     },
     {
-      id: 'nav-settings',
-      title: '个性化设置',
-      description: '最后，点击这里探索主题、音效、动效等个性化设置。',
+      id: 'plan-list',
+      title: '日计划列表',
+      description: '这里管理你的所有日计划。你可以创建新计划、编辑现有计划。点击"返回"回到管理中心。',
+      target: '.btn.secondary',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.btn.secondary',
+      position: 'bottom'
+    },
+    {
+      id: 'back-home-2',
+      title: '返回主页',
+      description: '点击管理中心的"返回"按钮回到主页，继续探索设置功能。',
+      target: '.back-btn',
+      highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.back-btn',
+      navigateTo: '/',
+      position: 'bottom'
+    },
+
+    // ========== 非核心功能：设置介绍 ==========
+    {
+      id: 'go-settings',
+      title: '探索设置',
+      description: '点击"设置"按钮，了解个性化选项。这些功能不需要操作，只需了解即可。',
       target: '.nav-btn:nth-child(4)',
-      action: 'click',
-      navigateTo: '/settings',
       highlight: true,
+      actionRequired: true,
+      actionType: 'click',
+      actionTarget: '.nav-btn:nth-child(4)',
+      navigateTo: '/settings',
       position: 'bottom'
     },
     {
-      id: 'settings-view',
-      title: '设置中心',
-      description: '你可以在这里切换主题、调整音效、配置动效、查看帮助等。点击"帮助"了解更多。',
-      target: '.settings-list',
-      action: 'click',
-      actionTarget: '.settings-item:nth-child(5)',  // 帮助按钮
-      navigateTo: '/settings',
+      id: 'settings-theme',
+      title: '主题切换',
+      description: '在"主题"中，你可以选择12种不同风格的主题，包括水墨、赛博朋克、樱花等。每种主题都有独特的视觉效果。',
+      target: '.settings-item:nth-child(2)',
       highlight: true,
+      actionRequired: false,
+      isDemo: true,
       position: 'bottom'
     },
     {
-      id: 'guide-end',
-      title: '引导完成！',
-      description: '恭喜你完成了引导！现在你已了解核心功能。开始使用吧，祝你效率满满！',
+      id: 'settings-audio',
+      title: '声音设置',
+      description: '在"声音"中，你可以配置音效和背景音乐。支持9种环境音，也可以添加自定义音乐文件。',
+      target: '.settings-item:nth-child(3)',
+      highlight: true,
+      actionRequired: false,
+      isDemo: true,
       position: 'bottom'
+    },
+    {
+      id: 'settings-motion',
+      title: '动效设置',
+      description: '在"动效"中，你可以调整帧率（30/60/90/120 FPS）、动画速度，还可以运行自动优化测试。',
+      target: '.settings-item:nth-child(4)',
+      highlight: true,
+      actionRequired: false,
+      isDemo: true,
+      position: 'bottom'
+    },
+    {
+      id: 'settings-events',
+      title: '事件管理',
+      description: '在"事件管理"中，你可以配置事件通知、设置预警规则（如12点完成20%、18点完成50%等）。',
+      target: '.settings-item:nth-child(5)',
+      highlight: true,
+      actionRequired: false,
+      isDemo: true,
+      position: 'bottom'
+    },
+    {
+      id: 'settings-help',
+      title: '帮助与反馈',
+      description: '在"帮助"中查看详细的使用指南和常见问题。如果遇到问题，可以通过"反馈"联系开发者。',
+      target: '.settings-item:nth-child(7)',
+      highlight: true,
+      actionRequired: false,
+      isDemo: true,
+      position: 'bottom'
+    },
+
+    // ========== 完成 ==========
+    {
+      id: 'guide-complete',
+      title: '🎉 引导完成！',
+      description: '恭喜你完成了所有核心功能的体验！现在你已掌握：\n• 记录时间\n• 查看日历\n• 管理计划\n• 个性化设置\n\n开始你的效率之旅吧！',
+      position: 'bottom',
+      isDemo: true
     }
   ]
 }
 
 class GuideManagerClass {
+  private backup: DataBackup | null = null
+
   constructor() {
     this.loadCompleted()
   }
@@ -167,11 +308,95 @@ class GuideManagerClass {
     }
   }
 
+  // 备份数据
+  backupData() {
+    try {
+      this.backup = {
+        records: {},
+        plans: JSON.parse(localStorage.getItem('efflife_plans') || '{}'),
+        scheduleRules: JSON.parse(localStorage.getItem('efflife_schedule_rules') || '[]'),
+        config: JSON.parse(localStorage.getItem('efflife_config') || '{}'),
+        manualPlans: JSON.parse(localStorage.getItem('efflife_manual_plans') || '{}')
+      }
+
+      // 备份所有记录
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('efflife_records_')) {
+          this.backup.records[key] = JSON.parse(localStorage.getItem(key) || '[]')
+        }
+      }
+
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(this.backup))
+      console.log('Guide: Data backed up')
+    } catch (e) {
+      console.warn('Failed to backup data:', e)
+    }
+  }
+
+  // 还原数据
+  restoreData() {
+    try {
+      if (!this.backup) {
+        const backupStr = localStorage.getItem(BACKUP_KEY)
+        if (backupStr) {
+          this.backup = JSON.parse(backupStr)
+        }
+      }
+
+      if (this.backup) {
+        // 还原记录
+        for (const [key, records] of Object.entries(this.backup.records)) {
+          localStorage.setItem(key, JSON.stringify(records))
+        }
+
+        // 还原其他数据
+        localStorage.setItem('efflife_plans', JSON.stringify(this.backup.plans))
+        localStorage.setItem('efflife_schedule_rules', JSON.stringify(this.backup.scheduleRules))
+        localStorage.setItem('efflife_config', JSON.stringify(this.backup.config))
+        localStorage.setItem('efflife_manual_plans', JSON.stringify(this.backup.manualPlans))
+
+        // 清除备份
+        localStorage.removeItem(BACKUP_KEY)
+        this.backup = null
+        console.log('Guide: Data restored')
+      }
+    } catch (e) {
+      console.warn('Failed to restore data:', e)
+    }
+  }
+
   // 开始引导
   startGuide(guide: GuideConfig = MAIN_GUIDE) {
+    // 备份数据
+    this.backupData()
+
     guideState.currentGuide = guide
     guideState.currentStepIndex = 0
     guideState.isActive = true
+    guideState.canProceed = !guide.steps[0].actionRequired
+    guideState.version++
+  }
+
+  // 检查当前步骤是否可以继续
+  checkCanProceed() {
+    const step = this.getCurrentStep()
+    if (!step) return
+
+    if (!step.actionRequired) {
+      guideState.canProceed = true
+    } else if (step.validateAction) {
+      guideState.canProceed = step.validateAction()
+    } else {
+      // 默认：如果是点击操作，检查是否已经点击过
+      guideState.canProceed = false
+    }
+    guideState.version++
+  }
+
+  // 标记操作完成
+  markActionComplete() {
+    guideState.canProceed = true
     guideState.version++
   }
 
@@ -182,6 +407,8 @@ class GuideManagerClass {
     const steps = guideState.currentGuide.steps
     if (guideState.currentStepIndex < steps.length - 1) {
       guideState.currentStepIndex++
+      const nextStep = steps[guideState.currentStepIndex]
+      guideState.canProceed = !nextStep.actionRequired
       guideState.version++
     } else {
       // 引导结束
@@ -189,26 +416,22 @@ class GuideManagerClass {
     }
   }
 
-  // 跳到指定步骤
-  goToStep(index: number) {
-    if (!guideState.currentGuide) return
-    if (index >= 0 && index < guideState.currentGuide.steps.length) {
-      guideState.currentStepIndex = index
-      guideState.version++
-    }
-  }
-
   // 结束引导
   endGuide() {
+    // 还原数据
+    this.restoreData()
+
     guideState.isActive = false
     guideState.currentGuide = null
     guideState.currentStepIndex = 0
+    guideState.canProceed = false
     this.saveCompleted()
     guideState.version++
   }
 
   // 跳过引导
   skipGuide() {
+    this.restoreData()
     this.endGuide()
   }
 
@@ -232,7 +455,7 @@ class GuideManagerClass {
     return guideState.completed
   }
 
-  // 重置引导状态（用于重新体验）
+  // 重置引导状态
   resetCompleted() {
     try {
       localStorage.removeItem(STORAGE_KEY)
