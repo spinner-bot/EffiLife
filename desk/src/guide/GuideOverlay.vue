@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { GuideManager, guideState } from './GuideManager'
 import type { GuideStep } from './GuideManager'
-import { ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-vue-next'
+import { X, MousePointer, Sparkles } from 'lucide-vue-next'
 
 // 当前步骤
 const currentStep = computed(() => GuideManager.getCurrentStep())
 const progress = computed(() => GuideManager.getProgress())
 const isActive = computed(() => guideState.isActive)
+const canProceed = computed(() => guideState.canProceed)
 
 // 目标元素位置
 const targetRect = ref<DOMRect | null>(null)
 let resizeObserver: ResizeObserver | null = null
 let targetElement: Element | null = null
+let mutationObserver: MutationObserver | null = null
 
 // 监听步骤变化，更新目标元素位置
 watch(() => guideState.version, () => {
-  updateTargetElement()
+  nextTick(() => updateTargetElement())
 }, { immediate: true })
 
 function updateTargetElement() {
@@ -24,6 +26,10 @@ function updateTargetElement() {
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null
+  }
+  if (mutationObserver) {
+    mutationObserver.disconnect()
+    mutationObserver = null
   }
 
   const step = currentStep.value
@@ -33,8 +39,8 @@ function updateTargetElement() {
     return
   }
 
-  // 延迟查找元素，确保 DOM 已更新
-  setTimeout(() => {
+  // 查找目标元素
+  const findTarget = () => {
     targetElement = document.querySelector(step.target!)
     if (targetElement) {
       targetRect.value = targetElement.getBoundingClientRect()
@@ -49,27 +55,49 @@ function updateTargetElement() {
 
       // 滚动到目标元素
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return true
     }
-  }, 100)
-}
-
-// 下一步
-function nextStep() {
-  const step = currentStep.value
-
-  // 如果步骤有导航目标，先导航
-  if (step?.navigateTo) {
-    window.location.hash = '#' + step.navigateTo
+    return false
   }
 
-  GuideManager.nextStep()
+  // 尝试查找，如果找不到则监听 DOM 变化
+  if (!findTarget()) {
+    mutationObserver = new MutationObserver(() => {
+      if (findTarget()) {
+        mutationObserver?.disconnect()
+        mutationObserver = null
+      }
+    })
+    mutationObserver.observe(document.body, { childList: true, subtree: true })
+  }
 }
 
-// 上一步
-function prevStep() {
-  if (progress.value.current > 1) {
-    guideState.currentStepIndex--
-    guideState.version++
+// 点击目标元素
+function onTargetClick(e: MouseEvent) {
+  const step = currentStep.value
+  if (!step || !step.actionRequired) return
+
+  // 检查是否点击了目标区域
+  if (targetElement && targetElement.contains(e.target as Node)) {
+    GuideManager.markActionComplete()
+
+    // 如果有导航目标，延迟导航
+    if (step.navigateTo) {
+      setTimeout(() => {
+        window.location.hash = '#' + step.navigateTo
+      }, 300)
+    }
+  }
+}
+
+// 点击屏幕任意位置继续（仅用于介绍类步骤）
+function onBackdropClick() {
+  const step = currentStep.value
+  if (!step) return
+
+  // 只有不需要操作的步骤才能点击继续
+  if (!step.actionRequired) {
+    GuideManager.nextStep()
   }
 }
 
@@ -85,27 +113,57 @@ function finishGuide() {
   GuideManager.endGuide()
 }
 
+// 获取操作提示文字
+function getActionHint(): string {
+  const step = currentStep.value
+  if (!step) return ''
+
+  if (!step.actionRequired) {
+    return '点击屏幕任意位置继续'
+  }
+
+  // 根据操作类型返回提示
+  switch (step.actionType) {
+    case 'click':
+      return '点击上方高亮区域继续'
+    case 'input':
+      return '完成操作后自动继续'
+    case 'navigate':
+      return '点击导航继续'
+    default:
+      return '完成操作后继续'
+  }
+}
+
 // 键盘快捷键
 function handleKeydown(e: KeyboardEvent) {
   if (!isActive.value) return
 
-  if (e.key === 'ArrowRight' || e.key === 'Enter') {
-    nextStep()
-  } else if (e.key === 'ArrowLeft') {
-    prevStep()
-  } else if (e.key === 'Escape') {
+  // 只有不需要操作的步骤才能用键盘
+  if (!currentStep.value?.actionRequired) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      GuideManager.nextStep()
+    }
+  }
+
+  if (e.key === 'Escape') {
     skipGuide()
   }
 }
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
+  document.addEventListener('click', onTargetClick, true)
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('click', onTargetClick, true)
   if (resizeObserver) {
     resizeObserver.disconnect()
+  }
+  if (mutationObserver) {
+    mutationObserver.disconnect()
   }
 })
 
@@ -121,7 +179,7 @@ const tooltipStyle = computed(() => {
 
   const rect = targetRect.value
   const position = currentStep.value.position || 'bottom'
-  const offset = 20
+  const offset = 24
 
   switch (position) {
     case 'top':
@@ -173,24 +231,46 @@ const highlightStyle = computed(() => {
     height: `${rect.height + padding * 2}px`
   }
 })
+
+// 点击指引位置
+const pointerStyle = computed(() => {
+  if (!targetRect.value || !currentStep.value?.actionRequired) {
+    return null
+  }
+
+  const rect = targetRect.value
+  return {
+    top: `${rect.top + rect.height / 2}px`,
+    left: `${rect.left + rect.width / 2}px`
+  }
+})
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="guide-fade">
-      <div v-if="isActive && currentStep" class="guide-overlay">
-        <!-- 背景遮罩 -->
-        <div class="guide-backdrop" @click="skipGuide"></div>
+      <div v-if="isActive && currentStep" class="guide-overlay" @click="onBackdropClick">
+        <!-- 背景遮罩 - 半透明，不模糊 -->
+        <div class="guide-backdrop"></div>
 
-        <!-- 高亮区域 -->
+        <!-- 高亮区域 - 只有目标区域清晰 -->
         <div
           v-if="highlightStyle"
           class="guide-highlight"
           :style="highlightStyle"
         ></div>
 
+        <!-- 点击指引鼠标图标 -->
+        <div
+          v-if="pointerStyle && currentStep.actionRequired"
+          class="guide-pointer"
+          :style="pointerStyle"
+        >
+          <MousePointer :size="32" />
+        </div>
+
         <!-- 提示框 -->
-        <div class="guide-tooltip" :style="tooltipStyle">
+        <div class="guide-tooltip" :style="tooltipStyle" @click.stop>
           <!-- 进度指示 -->
           <div class="guide-progress">
             <span class="progress-text">{{ progress.current }} / {{ progress.total }}</span>
@@ -204,44 +284,31 @@ const highlightStyle = computed(() => {
 
           <!-- 标题 -->
           <h3 class="guide-title">
-            <Sparkles v-if="progress.current === 1 || progress.current === progress.total" :size="18" class="title-icon" />
+            <Sparkles v-if="!currentStep.actionRequired" :size="18" class="title-icon" />
             {{ currentStep.title }}
           </h3>
 
           <!-- 描述 -->
           <p class="guide-description">{{ currentStep.description }}</p>
 
-          <!-- 操作按钮 -->
-          <div class="guide-actions">
-            <button
-              v-if="progress.current > 1"
-              class="guide-btn secondary"
-              @click="prevStep"
-            >
-              <ChevronLeft :size="16" />
-              上一步
-            </button>
+          <!-- 操作提示 -->
+          <div class="guide-hint" :class="{ waiting: currentStep.actionRequired && !canProceed }">
+            <span class="hint-icon">{{ currentStep.actionRequired ? '👆' : '👉' }}</span>
+            <span>{{ getActionHint() }}</span>
+          </div>
 
-            <button
-              class="guide-btn skip"
-              @click="skipGuide"
-            >
-              跳过
-            </button>
-
-            <div class="spacer"></div>
-
+          <!-- 介绍类步骤：点击继续按钮 -->
+          <div v-if="!currentStep.actionRequired" class="guide-actions">
             <button
               v-if="progress.current < progress.total"
               class="guide-btn primary"
-              @click="nextStep"
+              @click="GuideManager.nextStep()"
             >
               下一步
-              <ChevronRight :size="16" />
             </button>
             <button
               v-else
-              class="guide-btn primary finish"
+              class="guide-btn finish"
               @click="finishGuide"
             >
               <Sparkles :size="16" />
@@ -249,15 +316,19 @@ const highlightStyle = computed(() => {
             </button>
           </div>
 
-          <!-- 快捷键提示 -->
-          <div class="guide-shortcuts">
-            <span>← → 切换步骤</span>
-            <span>Esc 跳过</span>
+          <!-- 操作类步骤：等待用户操作 -->
+          <div v-else class="guide-actions">
+            <div class="waiting-indicator">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span>等待操作...</span>
+            </div>
           </div>
         </div>
 
         <!-- 关闭按钮 -->
-        <button class="guide-close" @click="skipGuide" title="跳过引导">
+        <button class="guide-close" @click.stop="skipGuide" title="跳过引导">
           <X :size="20" />
         </button>
       </div>
@@ -270,39 +341,58 @@ const highlightStyle = computed(() => {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .guide-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
   pointer-events: auto;
 }
 
 .guide-highlight {
   position: absolute;
   border-radius: 12px;
+  background: transparent;
   box-shadow:
-    0 0 0 9999px rgba(0, 0, 0, 0.6),
-    0 0 20px rgba(99, 102, 241, 0.5);
-  border: 2px solid rgba(99, 102, 241, 0.8);
+    0 0 0 9999px rgba(0, 0, 0, 0.5),
+    0 0 0 4px rgba(99, 102, 241, 0.8);
   pointer-events: none;
   z-index: 1;
-  animation: pulse-border 2s ease-in-out infinite;
+  animation: pulse-highlight 2s ease-in-out infinite;
 }
 
-@keyframes pulse-border {
+@keyframes pulse-highlight {
   0%, 100% {
     box-shadow:
-      0 0 0 9999px rgba(0, 0, 0, 0.6),
-      0 0 20px rgba(99, 102, 241, 0.5);
+      0 0 0 9999px rgba(0, 0, 0, 0.5),
+      0 0 0 4px rgba(99, 102, 241, 0.8);
   }
   50% {
     box-shadow:
-      0 0 0 9999px rgba(0, 0, 0, 0.6),
-      0 0 30px rgba(99, 102, 241, 0.8);
+      0 0 0 9999px rgba(0, 0, 0, 0.5),
+      0 0 0 6px rgba(99, 102, 241, 1),
+      0 0 20px rgba(99, 102, 241, 0.5);
+  }
+}
+
+.guide-pointer {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: white;
+  pointer-events: none;
+  z-index: 2;
+  animation: pointer-bounce 1s ease-in-out infinite;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes pointer-bounce {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -60%) scale(1.1);
   }
 }
 
@@ -310,15 +400,15 @@ const highlightStyle = computed(() => {
   position: absolute;
   width: 360px;
   max-width: calc(100vw - 40px);
-  background: linear-gradient(135deg, rgba(30, 30, 50, 0.95) 0%, rgba(40, 40, 60, 0.95) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(30, 30, 50, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.5);
   border-radius: 16px;
   padding: 20px;
   pointer-events: auto;
-  z-index: 2;
+  z-index: 3;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 40px rgba(99, 102, 241, 0.2);
+    0 0 40px rgba(99, 102, 241, 0.3);
   animation: tooltip-appear 0.3s ease-out;
 }
 
@@ -376,53 +466,86 @@ const highlightStyle = computed(() => {
 }
 
 .guide-description {
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.guide-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.guide-hint.waiting {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.hint-icon {
+  font-size: 18px;
 }
 
 .guide-actions {
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
-.spacer {
-  flex: 1;
+.waiting-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+.waiting-indicator .dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.waiting-indicator .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.waiting-indicator .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 .guide-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 10px 20px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
-}
-
-.guide-btn.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.guide-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-.guide-btn.skip {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 8px 12px;
-}
-
-.guide-btn.skip:hover {
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .guide-btn.primary {
@@ -437,24 +560,11 @@ const highlightStyle = computed(() => {
 
 .guide-btn.finish {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #1a1a2e;
 }
 
 .guide-btn.finish:hover {
   box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
-}
-
-.guide-shortcuts {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.guide-shortcuts span {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
 }
 
 .guide-close {
@@ -471,8 +581,7 @@ const highlightStyle = computed(() => {
   border-radius: 50%;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  pointer-events: auto;
-  z-index: 3;
+  z-index: 4;
   transition: all 0.2s ease;
 }
 
