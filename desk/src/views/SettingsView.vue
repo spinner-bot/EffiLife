@@ -4,6 +4,17 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
+import { GuideManager } from '@/guide'
+
+// ============ 引导功能 ============
+function startGuide() {
+  // 重置引导状态并启动
+  GuideManager.resetCompleted()
+  router.push('/')
+  setTimeout(() => {
+    GuideManager.startGuide()
+  }, 300)
+}
 
 // ============ 反馈功能 ============
 const FEEDBACK_EMAIL = 'langxibielangle@qq.com'
@@ -393,6 +404,10 @@ watch(() => config.value, (newConfig) => {
           </button>
           <button class="settings-item" @click="currentView = 'feedback'">
             <span>反馈</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="startGuide">
+            <span>使用引导</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="currentView = 'help'">
