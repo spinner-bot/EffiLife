@@ -6,7 +6,7 @@ export interface MotionSettings {
   enabled: boolean
 
   // 帧率设置
-  targetFps: number  // 目标帧率：15, 30, 60
+  targetFps: number  // 目标帧率：30, 60, 90, 120
 
   // 动画效果开关
   themeCanvasEnabled: boolean    // 主题画布动画
@@ -15,6 +15,9 @@ export interface MotionSettings {
 
   // 粒子设置
   particleCountMultiplier: number  // 粒子数量倍率：0.5, 1.0, 1.5, 2.0
+
+  // 动效速度
+  animationSpeed: number  // 动画速度倍率：0.5, 0.75, 1.0, 1.25, 1.5, 2.0
 
   // 自动优化
   autoOptimize: boolean
@@ -28,6 +31,7 @@ export const DEFAULT_MOTION_SETTINGS: MotionSettings = {
   particleEnabled: true,
   transitionEnabled: true,
   particleCountMultiplier: 1.0,
+  animationSpeed: 1.0,
   autoOptimize: false,
   lastAutoOptimizeTime: 0
 }
@@ -108,6 +112,10 @@ class MotionManagerClass {
 
   isTransitionEnabled(): boolean {
     return motionState.settings.enabled && motionState.settings.transitionEnabled
+  }
+
+  getAnimationSpeed(): number {
+    return motionState.settings.animationSpeed
   }
 
   // ========= 自动优化 =========

@@ -166,22 +166,25 @@ export class ParticleSystem {
     const deltaTime = (now - this.lastUpdateTime) / 1000  // 转换为秒
     this.lastUpdateTime = now
 
+    // 获取动画速度倍率
+    const animationSpeed = MotionManager.getAnimationSpeed()
+
     const type = this.config.type
     const speed = this.config.speed
 
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i]
 
-      // 更新位置 - 使用 delta time 保证帧率无关
-      p.x += p.vx * speed * deltaTime * 60  // 乘以60是因为原本基于60fps设计
-      p.y += p.vy * speed * deltaTime * 60
-      p.rotation += p.rotationSpeed * deltaTime * 60
-      p.life += deltaTime * 60  // life 也基于时间
+      // 更新位置 - 使用 delta time 和动画速度保证帧率无关且可调
+      p.x += p.vx * speed * deltaTime * 60 * animationSpeed
+      p.y += p.vy * speed * deltaTime * 60 * animationSpeed
+      p.rotation += p.rotationSpeed * deltaTime * 60 * animationSpeed
+      p.life += deltaTime * 60 * animationSpeed
 
       // 萤火虫特殊处理
       if (type === 'fireflies') {
-        p.vx += (Math.random() - 0.5) * 0.1 * deltaTime * 60
-        p.vy += (Math.random() - 0.5) * 0.1 * deltaTime * 60
+        p.vx += (Math.random() - 0.5) * 0.1 * deltaTime * 60 * animationSpeed
+        p.vy += (Math.random() - 0.5) * 0.1 * deltaTime * 60 * animationSpeed
         p.vx = Math.max(-1, Math.min(1, p.vx))
         p.vy = Math.max(-1, Math.min(1, p.vy))
 

@@ -15,9 +15,10 @@ const recommendation = ref<MotionSettings | null>(null)
 
 // 帧率选项
 const fpsOptions = [
-  { value: 15, label: '15 FPS', description: '省电模式' },
-  { value: 30, label: '30 FPS', description: '平衡模式' },
-  { value: 60, label: '60 FPS', description: '流畅模式' }
+  { value: 30, label: '30 FPS', description: '省电模式' },
+  { value: 60, label: '60 FPS', description: '标准模式' },
+  { value: 90, label: '90 FPS', description: '流畅模式' },
+  { value: 120, label: '120 FPS', description: '极致模式' }
 ]
 
 // 粒子数量倍率选项
@@ -26,6 +27,16 @@ const particleMultiplierOptions = [
   { value: 1.0, label: '100%', description: '标准' },
   { value: 1.5, label: '150%', description: '密集' },
   { value: 2.0, label: '200%', description: '极密' }
+]
+
+// 动效速度选项
+const animationSpeedOptions = [
+  { value: 0.5, label: '0.5x', description: '慢速' },
+  { value: 0.75, label: '0.75x', description: '较慢' },
+  { value: 1.0, label: '1.0x', description: '标准' },
+  { value: 1.25, label: '1.25x', description: '较快' },
+  { value: 1.5, label: '1.5x', description: '快速' },
+  { value: 2.0, label: '2.0x', description: '极速' }
 ]
 
 // 更新设置
@@ -184,6 +195,25 @@ const performanceRating = computed(() => getPerformanceRating())
             @change="updateSetting('transitionEnabled', ($event.target as HTMLInputElement).checked)"
           />
         </label>
+      </section>
+
+      <!-- 动效速度 -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>动效速度</h2>
+        </div>
+        <div class="option-grid speed-grid">
+          <button
+            v-for="opt in animationSpeedOptions"
+            :key="opt.value"
+            class="option-card"
+            :class="{ active: settings.animationSpeed === opt.value }"
+            @click="updateSetting('animationSpeed', opt.value)"
+          >
+            <span class="option-label">{{ opt.label }}</span>
+            <span class="option-desc">{{ opt.description }}</span>
+          </button>
+        </div>
       </section>
 
       <!-- 粒子密度 -->
