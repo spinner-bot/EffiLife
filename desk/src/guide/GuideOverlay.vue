@@ -54,11 +54,39 @@ function onTargetClick(e: MouseEvent) {
   const step = currentStep.value
   if (!step || !step.actionRequired) return
 
-  if (targetElement && targetElement.contains(e.target as Node)) {
+  // 检查是否点击了目标元素或其子元素
+  const clickedTarget = e.target as Node
+  const isTargetClick = targetElement && (
+    targetElement === clickedTarget ||
+    targetElement.contains(clickedTarget)
+  )
+
+  // 也检查是否点击了符合 actionTarget 选择器的元素
+  let isActionTargetClick = false
+  if (step.actionTarget) {
+    const actionEl = document.querySelector(step.actionTarget)
+    if (actionEl && (actionEl === clickedTarget || actionEl.contains(clickedTarget))) {
+      isActionTargetClick = true
+    }
+  }
+
+  if (isTargetClick || isActionTargetClick) {
+    e.stopPropagation()
     GuideManager.markActionComplete()
+
+    // 导航并自动进入下一步
     if (step.navigateTo) {
       setTimeout(() => {
         window.location.hash = '#' + step.navigateTo
+        // 导航后自动进入下一步
+        setTimeout(() => {
+          GuideManager.nextStep()
+        }, 500)
+      }, 200)
+    } else {
+      // 不需要导航，直接进入下一步
+      setTimeout(() => {
+        GuideManager.nextStep()
       }, 300)
     }
   }
