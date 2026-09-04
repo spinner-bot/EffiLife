@@ -257,26 +257,11 @@ class AudioManagerClass {
       return
     }
 
-    // 内置背景音乐使用简单的振荡器生成
-    // 这里使用一个简单的环境音
-    const ctx = this.getAudioContext()
-    const oscillator = ctx.createOscillator()
-    const gainNode = ctx.createGain()
-    const filter = ctx.createBiquadFilter()
-
-    oscillator.connect(filter)
-    filter.connect(gainNode)
-    gainNode.connect(ctx.destination)
-
-    oscillator.type = 'sine'
-    oscillator.frequency.value = 220 // A3
-
-    filter.type = 'lowpass'
-    filter.frequency.value = 400
-
-    gainNode.gain.value = (this.settings.value.bgmVolume / 100) * 0.1
-
-    oscillator.start()
+    // 内置背景音乐需要真实音频文件
+    // 暂时禁用合成音乐，避免噪声
+    // 用户可以添加自定义音乐文件
+    console.log('Built-in BGM not available. Please add custom music files.')
+    return
 
     // 保存引用以便停止
     this.bgmAudio = {
