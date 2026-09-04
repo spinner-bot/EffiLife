@@ -276,6 +276,12 @@ class EventSystemClass {
     this.saveEventInbox()
   }
 
+  // 清空已读
+  clearReadInbox() {
+    this.eventInbox.value = this.eventInbox.value.filter(entry => !entry.read)
+    this.saveEventInbox()
+  }
+
   // 清理：已读超过30天的自动删除
   private cleanOldInboxEntries() {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000

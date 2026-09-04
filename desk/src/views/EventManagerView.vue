@@ -21,6 +21,8 @@ const baseEventTypes: Array<{ type: EventType; name: string; description: string
 // 收件箱
 const inbox = computed(() => EventSystem.getEventInbox())
 const unreadCount = computed(() => EventSystem.getUnreadCount())
+const readCount = computed(() => inbox.value.filter(e => e.read).length)
+const totalCount = computed(() => inbox.value.length)
 const warningRules = computed(() => eventSettings.value.warningRules)
 const sortedRules = computed(() =>
   [...warningRules.value].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute))
@@ -80,6 +82,11 @@ function deleteEntry(entryId: string) {
 function clearAll() {
   if (!confirm('确定清空所有事件记录？此操作不可恢复。')) return
   EventSystem.clearInbox()
+}
+
+function clearRead() {
+  if (!confirm('确定清空所有已读事件记录？此操作不可恢复。')) return
+  EventSystem.clearReadInbox()
 }
 
 function formatTriggerTime(entry: InboxEntry): string {
@@ -199,13 +206,16 @@ function testWarning(rule: WarningRule) {
           <div class="section-header">
             <h2>事件历史</h2>
             <div class="header-actions">
+              <span v-if="inbox.length > 0" class="inbox-stats">
+                已读：{{ readCount }}/{{ totalCount }}
+              </span>
               <button v-if="unreadCount > 0" class="text-btn" @click="markAllAsRead">
                 <Check :size="14" />
                 全部已读
               </button>
-              <button v-if="inbox.length > 0" class="text-btn danger" @click="clearAll">
+              <button v-if="readCount > 0" class="text-btn danger" @click="clearRead">
                 <Trash2 :size="14" />
-                清空
+                清空已读
               </button>
             </div>
           </div>
@@ -487,6 +497,16 @@ function testWarning(rule: WarningRule) {
 .header-actions {
   display: flex;
   gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.inbox-stats {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
 }
 
 .text-btn {
