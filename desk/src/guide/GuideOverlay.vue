@@ -49,38 +49,65 @@ function updateTargetElement() {
   }
 }
 
-// 点击目标元素 - 只标记操作已开始，不自动进入下一步
-function onTargetClick(e: MouseEvent) {
+// 点击事件处理 - 拦截高亮区域外的点击
+function onClickCapture(e: MouseEvent) {
   const step = currentStep.value
-  if (!step || !step.actionRequired) return
+  if (!step || !isActive.value) return
 
-  // 检查是否点击了目标元素或其子元素
   const clickedTarget = e.target as Node
-  const isTargetClick = targetElement && (
-    targetElement === clickedTarget ||
-    targetElement.contains(clickedTarget)
-  )
 
-  // 也检查是否点击了符合 actionTarget 选择器的元素
-  let isActionTargetClick = false
-  if (step.actionTarget) {
-    const actionEl = document.querySelector(step.actionTarget)
-    if (actionEl && (actionEl === clickedTarget || actionEl.contains(clickedTarget))) {
-      isActionTargetClick = true
-    }
+  // 检查是否点击了提示框内部（允许）
+  const tooltip = document.querySelector('.guide-tooltip')
+  if (tooltip && tooltip.contains(clickedTarget)) {
+    return
   }
 
-  if (isTargetClick || isActionTargetClick) {
-    e.stopPropagation()
+  // 检查是否点击了关闭按钮（允许）
+  const closeBtn = document.querySelector('.guide-close')
+  if (closeBtn && closeBtn.contains(clickedTarget)) {
+    return
+  }
 
-    // 导航到目标页面（如果需要）
-    if (step.navigateTo && !window.location.hash.includes(step.navigateTo)) {
-      window.location.hash = '#' + step.navigateTo
+  // 对于操作类步骤，检查是否点击了高亮区域内
+  if (step.actionRequired && targetRect.value) {
+    const rect = targetRect.value
+    const x = e.clientX
+    const y = e.clientY
+    const isInHighlight = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+
+    if (!isInHighlight) {
+      // 点击在高亮区域外，阻止事件
+      e.stopPropagation()
+      e.preventDefault()
+      return
     }
 
-    // 标记操作已完成（由 GuideManager 判断是否可以继续）
-    // 不自动进入下一步，等待用户确认或验证操作完成
-    startActionValidation()
+    // 点击在高亮区域内，检查是否是目标元素
+    const isTargetClick = targetElement && (
+      targetElement === clickedTarget ||
+      targetElement.contains(clickedTarget)
+    )
+
+    let isActionTargetClick = false
+    if (step.actionTarget) {
+      const actionEl = document.querySelector(step.actionTarget)
+      if (actionEl && (actionEl === clickedTarget || actionEl.contains(clickedTarget))) {
+        isActionTargetClick = true
+      }
+    }
+
+    if (isTargetClick || isActionTargetClick) {
+      // 导航到目标页面（如果需要）
+      if (step.navigateTo && !window.location.hash.includes(step.navigateTo)) {
+        window.location.hash = '#' + step.navigateTo
+      }
+
+      // 开始验证操作
+      startActionValidation()
+    }
+  } else {
+    // 介绍类步骤，点击任意位置继续
+    GuideManager.nextStep()
   }
 }
 
@@ -105,13 +132,6 @@ function startActionValidation() {
     // 没有验证函数，点击后标记为可继续状态，但需要用户确认
     GuideManager.markActionComplete()
   }
-}
-
-// 介绍类步骤：点击背景继续
-function onBackdropClick() {
-  const step = currentStep.value
-  if (!step || step.actionRequired) return
-  GuideManager.nextStep()
 }
 
 function skipGuide() {
@@ -147,12 +167,12 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
-  document.addEventListener('click', onTargetClick, true)
+  document.addEventListener('click', onClickCapture, true)
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
-  document.removeEventListener('click', onTargetClick, true)
+  document.removeEventListener('click', onClickCapture, true)
   if (mutationObserver) mutationObserver.disconnect()
   if (validationInterval) clearInterval(validationInterval)
 })
@@ -189,11 +209,7 @@ const tooltipStyle = computed(() => ({
           :style="highlightStyle"
         ></div>
         <!-- 没有目标时显示全屏遮罩 -->
-        <div
-          v-else
-          class="guide-backdrop"
-          @click="onBackdropClick"
-        ></div>
+        <div v-else class="guide-backdrop"></div>
 
         <!-- 鼠标指引 -->
         <div
