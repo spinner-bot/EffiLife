@@ -526,23 +526,104 @@ function drawFlower(ctx: CanvasRenderingContext2D, x: number, y: number, size: n
 
 // 获取主题样式
 export function getThemeStyle(theme: Theme): ThemeStyle {
+  // 检查高级主题预设
   const preset = themePresets[theme.type]
   if (preset) {
     return preset()
   }
 
-  // 回退到基础主题
-  return {
-    bgColor: '#f0f0f0',
-    textColor: '#18181b',
-    textSecondary: '#52525b',
-    textTertiary: '#a1a1aa',
-    borderColor: '#e4e4e7',
-    buttonBg: '#e0e0e0',
-    buttonText: '#000000',
-    accentColor: '#6366f1',
-    cardBg: '#f0f0f0'
+  // 处理基础主题
+  switch (theme.type) {
+    case 'solid': {
+      const solid = theme.solid || { bg_window: '#f0f0f0', bg_button: '#e0e0e0', fg_button: '#000000', bg_frame: '#d9d9d9' }
+      const isDark = getLuminance(solid.bg_window) < 128
+      return {
+        bgColor: solid.bg_window,
+        textColor: isDark ? '#fafafa' : '#18181b',
+        textSecondary: isDark ? '#a1a1aa' : '#52525b',
+        textTertiary: isDark ? '#71717a' : '#a1a1aa',
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e4e4e7',
+        buttonBg: solid.bg_button,
+        buttonText: solid.fg_button,
+        accentColor: '#6366f1',
+        cardBg: isDark ? 'rgba(255,255,255,0.05)' : solid.bg_frame
+      }
+    }
+
+    case 'gradient': {
+      const gradient = theme.gradient || { color_start: '#667eea', color_end: '#764ba2', direction: 'to-br', fg_button: '#ffffff', card_bg: 'rgba(255,255,255,0.15)' }
+      const isDark = getLuminance(gradient.color_start) < 128
+      return {
+        bgColor: gradient.color_start,
+        bgGradient: `linear-gradient(${gradient.direction}, ${gradient.color_start}, ${gradient.color_end})`,
+        textColor: gradient.fg_button,
+        textSecondary: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)',
+        textTertiary: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+        buttonBg: gradient.card_bg,
+        buttonText: gradient.fg_button,
+        accentColor: '#ffffff',
+        cardBg: gradient.card_bg,
+        backdropFilter: 'blur(10px)'
+      }
+    }
+
+    case 'glass': {
+      const glass = theme.glass || { bg_color: '#1a1a2e', glass_opacity: 0.1, blur_amount: 10, fg_button: '#ffffff', border_color: 'rgba(255,255,255,0.2)' }
+      return {
+        bgColor: glass.bg_color,
+        textColor: glass.fg_button,
+        textSecondary: 'rgba(255,255,255,0.8)',
+        textTertiary: 'rgba(255,255,255,0.5)',
+        borderColor: glass.border_color,
+        buttonBg: `rgba(255,255,255,${glass.glass_opacity + 0.1})`,
+        buttonText: glass.fg_button,
+        accentColor: '#6366f1',
+        cardBg: `rgba(255,255,255,${glass.glass_opacity})`,
+        backdropFilter: `blur(${glass.blur_amount}px)`
+      }
+    }
+
+    case 'neon': {
+      const neon = theme.neon || { bg_color: '#0a0a0f', neon_color: '#00ff88', glow_intensity: 10, fg_button: '#00ff88', accent_color: '#ff00ff' }
+      return {
+        bgColor: neon.bg_color,
+        textColor: neon.neon_color,
+        textSecondary: `${neon.neon_color}cc`,
+        textTertiary: `${neon.neon_color}66`,
+        borderColor: `${neon.neon_color}40`,
+        buttonBg: 'rgba(255,255,255,0.05)',
+        buttonText: neon.fg_button,
+        accentColor: neon.accent_color,
+        cardBg: 'rgba(255,255,255,0.03)',
+        boxShadow: `0 0 ${neon.glow_intensity}px ${neon.neon_color}`,
+        textShadow: `0 0 ${neon.glow_intensity / 2}px ${neon.neon_color}`
+      }
+    }
+
+    default:
+      // 默认回退
+      return {
+        bgColor: '#f0f0f0',
+        textColor: '#18181b',
+        textSecondary: '#52525b',
+        textTertiary: '#a1a1aa',
+        borderColor: '#e4e4e7',
+        buttonBg: '#e0e0e0',
+        buttonText: '#000000',
+        accentColor: '#6366f1',
+        cardBg: '#f0f0f0'
+      }
   }
+}
+
+// 计算颜色亮度
+function getLuminance(hex: string): number {
+  const num = parseInt(hex.replace('#', ''), 16)
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  return (r * 299 + g * 587 + b * 114) / 1000
 }
 
 // 获取所有可用的主题类型

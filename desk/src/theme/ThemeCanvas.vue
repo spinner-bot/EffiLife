@@ -13,6 +13,7 @@ const particleCanvasRef = ref<HTMLCanvasElement | null>(null)
 let particleSystem: ParticleSystem | null = null
 let animationId: number | null = null
 let startTime = Date.now()
+let resizeHandler: (() => void) | null = null
 
 function startCanvasAnimation() {
   if (!canvasRef.value) return
@@ -26,6 +27,7 @@ function startCanvasAnimation() {
     canvas.height = window.innerHeight
   }
   resize()
+  resizeHandler = resize
   window.addEventListener('resize', resize)
 
   const style = getThemeStyle(props.theme)
@@ -56,13 +58,36 @@ function initParticleSystem() {
 }
 
 function cleanup() {
+  // 停止动画
   if (animationId !== null) {
     cancelAnimationFrame(animationId)
     animationId = null
   }
+
+  // 移除 resize 监听
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
+  }
+
+  // 停止粒子系统
   if (particleSystem) {
     particleSystem.stop()
     particleSystem = null
+  }
+
+  // 清理两个 canvas 的内容
+  if (canvasRef.value) {
+    const ctx = canvasRef.value.getContext('2d')
+    if (ctx) {
+      ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height)
+    }
+  }
+  if (particleCanvasRef.value) {
+    const ctx = particleCanvasRef.value.getContext('2d')
+    if (ctx) {
+      ctx.clearRect(0, 0, particleCanvasRef.value.width, particleCanvasRef.value.height)
+    }
   }
 }
 
