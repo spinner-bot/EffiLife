@@ -166,6 +166,7 @@ const currentTab = ref<SettingTab>('audio')
             <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">点击 + 添加本地音乐文件</div>
           </div>
         </section>
+      </template>
     </main>
   </div>
 </template>
