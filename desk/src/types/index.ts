@@ -44,8 +44,11 @@ export interface Config {
   theme: Theme
 }
 
-// 主题类型（预留扩展）
-export type ThemeType = 'solid' | 'gradient' | 'glass' | 'neon'
+// 主题类型
+export type ThemeType =
+  | 'solid' | 'gradient' | 'glass' | 'neon'
+  | 'ink' | 'vintage' | 'cyberpunk' | 'pixel'
+  | 'aurora' | 'sakura' | 'ocean' | 'forest' | 'ink' | 'tech' | 'nature' | 'custom'
 
 // 纯色主题配置
 export interface SolidThemeConfig {
@@ -82,12 +85,66 @@ export interface NeonThemeConfig {
   accent_color: string
 }
 
+// 水墨主题配置
+export interface InkThemeConfig {
+  bg_color: string
+  ink_color: string
+  paper_texture: boolean
+  fg_button: string
+  accent_color: string
+}
+
+// 科技主题配置
+export interface TechThemeConfig {
+  bg_color: string
+  primary_color: string
+  grid_color: string
+  scanline_effect: boolean
+  fg_button: string
+  accent_color: string
+}
+
+// 自然主题配置
+export interface NatureThemeConfig {
+  bg_color: string
+  leaf_color: string
+  sky_color: string
+  particle_type: 'leaves' | 'snow' | 'fireflies' | 'none'
+  fg_button: string
+}
+
+// 自定义主题配置
+export interface CustomThemeConfig {
+  bg_type: 'color' | 'image' | 'video' | 'gif'
+  bg_color: string
+  bg_media?: string // base64 or file path
+  bg_opacity: number
+  bg_blur: number
+  fg_button: string
+  accent_color: string
+}
+
+// 粒子效果配置
+export interface ParticleConfig {
+  enabled: boolean
+  type: 'none' | 'stars' | 'snow' | 'leaves' | 'fireflies' | 'bubbles' | 'matrix'
+  count: number
+  speed: number
+  size: number
+  color: string
+}
+
 export interface Theme {
   type: ThemeType
   solid?: SolidThemeConfig
   gradient?: GradientThemeConfig
   glass?: GlassThemeConfig
   neon?: NeonThemeConfig
+  ink?: InkThemeConfig
+  tech?: TechThemeConfig
+  nature?: NatureThemeConfig
+  custom?: CustomThemeConfig
+  particles?: ParticleConfig
 }
 
 export interface DayPlanInfo {
