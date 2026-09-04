@@ -16,7 +16,7 @@ function getEventStyle(event: AppEvent) {
       return 'achievement'
     case 'plan_complete_90':
       return 'success'
-    case 'plan_low_progress':
+    case 'progress_warning':
       return 'warning'
     default:
       return 'info'
