@@ -355,6 +355,10 @@ watch(() => config.value, (newConfig) => {
             <span>声音</span>
             <ChevronRight :size="16" />
           </button>
+          <button class="settings-item" @click="router.push('/event-manager')">
+            <span>事件管理</span>
+            <ChevronRight :size="16" />
+          </button>
           <button class="settings-item" @click="currentView = 'help'">
             <span>帮助</span>
             <ChevronRight :size="16" />
