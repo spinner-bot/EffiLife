@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { DataService, rgbToHex, hoursToHm } from '@/services/dataService'
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -11,8 +10,6 @@ const appStore = useAppStore()
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth() + 1)
 const showQuickNav = ref(false)
-
-const plans = computed(() => appStore.plans)
 
 // 获取月份日历数据
 const calendarDays = computed(() => {
@@ -24,7 +21,7 @@ const calendarDays = computed(() => {
   const daysInMonth = lastDay.getDate()
   const startWeekday = firstDay.getDay() || 7 // 1-7, 周一为1
 
-  const days: Array<{ date: number; dateStr: string; isCurrentMonth: boolean } | null> = []
+  const days: Array<{ date: number; dateStr: string } | null> = []
 
   // 填充前面的空白
   for (let i = 1; i < startWeekday; i++) {
@@ -34,42 +31,11 @@ const calendarDays = computed(() => {
   // 填充日期
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
-    days.push({ date: d, dateStr, isCurrentMonth: true })
+    days.push({ date: d, dateStr })
   }
 
   return days
 })
-
-// 获取某天的统计数据
-async function getDayStat(dateStr: string) {
-  return await DataService.calcRealTimeStat(dateStr)
-}
-
-// 获取某天的颜色
-function getDayColor(dateStr: string): string {
-  // 这里需要异步获取，先用默认颜色
-  const dayPlan = DataService.getDayPlan(dateStr)
-  return dayPlan.then(plan => {
-    const p = plans.value[plan.name]
-    if (p && p.color) {
-      const k = appStore.config.whiten_k
-      const r = Math.floor(p.color[0] * (1 - k) + 255 * k)
-      const g = Math.floor(p.color[1] * (1 - k) + 255 * k)
-      const b = Math.floor(p.color[2] * (1 - k) + 255 * k)
-      return rgbToHex(r, g, b)
-    }
-    return '#e4e4e7'
-  })
-}
-
-// 完成度颜色
-function getProgressColor(progress: number): string {
-  if (progress === 0) return 'var(--color-text-primary)'
-  if (progress < 40) return 'var(--color-progress-low)'
-  if (progress < 70) return 'var(--color-progress-medium)'
-  if (progress < 90) return 'var(--color-progress-good)'
-  return 'var(--color-progress-high)'
-}
 
 // 导航
 function prevMonth() {
@@ -169,9 +135,6 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日']
         <template v-for="(day, index) in calendarDays" :key="index">
           <div v-if="day" class="day-cell" :class="{ today: isToday(day.dateStr) }" @click="onDayClick(day.dateStr)">
             <div class="day-number">{{ day.date }}日</div>
-            <div class="day-progress" :data-date="day.dateStr">
-              <span class="loading">...</span>
-            </div>
           </div>
           <div v-else class="day-cell empty"></div>
         </template>
@@ -344,15 +307,6 @@ const weekDays = ['一', '二', '三', '四', '五', '六', '日']
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-primary);
-}
-
-.day-progress {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.day-progress .loading {
-  color: var(--color-text-tertiary);
 }
 
 .options {
