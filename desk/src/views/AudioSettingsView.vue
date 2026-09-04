@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Volume2, Music, Bell, Plus, Trash2, Play, Clock } from 'lucide-vue-next'
-import { AudioManager, EventSystem } from '@/audio'
-import type { SoundType, AudioSettings, EventSettings, EventType, WarningRule } from '@/audio'
+import { ArrowLeft, Volume2, Music, Plus, Trash2, Play } from 'lucide-vue-next'
+import { AudioManager } from '@/audio'
+import type { SoundType, AudioSettings } from '@/audio'
 
 const router = useRouter()
 
 const audioSettings = ref<AudioSettings>(AudioManager.getSettings())
-const eventSettings = ref<EventSettings>(EventSystem.getSettings())
 
 const soundTypes: Array<{ type: SoundType; name: string; description: string }> = [
   { type: 'click', name: '点击音效', description: '按钮点击时播放' },
@@ -21,22 +20,7 @@ const soundTypes: Array<{ type: SoundType; name: string; description: string }> 
   { type: 'warning', name: '警告音效', description: '警告提示时播放' }
 ]
 
-// 基础事件（非预警）
-const baseEventTypes: Array<{ type: EventType; name: string; description: string }> = [
-  { type: 'plan_complete_100', name: '计划完美完成', description: '当天计划完成度达到100%' },
-  { type: 'plan_complete_90', name: '计划即将完成', description: '当天计划完成度达到90%' },
-  { type: 'record_added', name: '记录添加', description: '添加时间记录时' },
-  { type: 'plan_changed', name: '计划切换', description: '切换日计划时' },
-  { type: 'achievement_unlocked', name: '成就解锁', description: '解锁新成就时' }
-]
-
 const allBgm = computed(() => AudioManager.getAllBgm())
-const warningRules = computed(() => eventSettings.value.warningRules)
-
-// 新增规则表单状态
-const showAddRule = ref(false)
-const newRule = ref({ hour: 12, minute: 0, threshold: 50, enabled: true })
-const editingRuleId = ref<string | null>(null)
 
 // ========= 音效操作 =========
 
@@ -82,102 +66,7 @@ function removeCustomBgm(id: string) {
   audioSettings.value = AudioManager.getSettings()
 }
 
-// ========= 事件操作 =========
-
-function toggleEvent(type: EventType | string) {
-  eventSettings.value.enabled[type] = !eventSettings.value.enabled[type]
-  EventSystem.updateSettings({ enabled: eventSettings.value.enabled })
-}
-
-function testEvent(type: EventType) {
-  switch (type) {
-    case 'plan_complete_100':
-      EventSystem.triggerEvent('plan_complete_100', '完美达成！', '今天的计划已100%完成！')
-      break
-    case 'plan_complete_90':
-      EventSystem.triggerEvent('plan_complete_90', '即将达成！', '计划已完成90%，加油！')
-      break
-    case 'progress_warning':
-      EventSystem.triggerEvent('progress_warning', '进度预警', '已是18:00，完成度仅30%（目标50%）')
-      break
-    case 'record_added':
-      EventSystem.triggerEvent('record_added', '记录已添加', '新的时间记录已保存')
-      break
-    case 'plan_changed':
-      EventSystem.triggerEvent('plan_changed', '计划已切换', '已切换到新的日计划')
-      break
-    case 'achievement_unlocked':
-      EventSystem.triggerEvent('achievement_unlocked', '成就解锁！', '恭喜你达成新成就！')
-      break
-  }
-}
-
-// ========= 预警规则操作 =========
-
-function startAddRule() {
-  editingRuleId.value = null
-  newRule.value = { hour: 12, minute: 0, threshold: 50, enabled: true }
-  showAddRule.value = true
-}
-
-function startEditRule(rule: WarningRule) {
-  editingRuleId.value = rule.id
-  newRule.value = {
-    hour: rule.hour,
-    minute: rule.minute,
-    threshold: rule.threshold,
-    enabled: rule.enabled
-  }
-  showAddRule.value = true
-}
-
-function saveRule() {
-  if (editingRuleId.value) {
-    EventSystem.updateWarningRule(editingRuleId.value, { ...newRule.value })
-  } else {
-    EventSystem.addWarningRule({ ...newRule.value })
-  }
-  eventSettings.value = EventSystem.getSettings()
-  showAddRule.value = false
-}
-
-function cancelRule() {
-  showAddRule.value = false
-  editingRuleId.value = null
-}
-
-function deleteRule(id: string) {
-  if (!confirm('确定删除这条预警规则？')) return
-  EventSystem.removeWarningRule(id)
-  eventSettings.value = EventSystem.getSettings()
-}
-
-function toggleRule(rule: WarningRule) {
-  EventSystem.updateWarningRule(rule.id, { enabled: !rule.enabled })
-  eventSettings.value = EventSystem.getSettings()
-}
-
-function testWarning(rule: WarningRule) {
-  const timeStr = `${rule.hour.toString().padStart(2, '0')}:${rule.minute.toString().padStart(2, '0')}`
-  EventSystem.triggerEvent(
-    'progress_warning',
-    '进度预警',
-    `已是${timeStr}，完成度仅${rule.threshold - 10}%（目标${rule.threshold}%）`
-  )
-}
-
-function formatTime(rule: WarningRule): string {
-  return `${rule.hour.toString().padStart(2, '0')}:${rule.minute.toString().padStart(2, '0')}`
-}
-
-// 按时间排序规则
-const sortedRules = computed(() => {
-  return [...eventSettings.value.warningRules].sort((a, b) => {
-    return (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute)
-  })
-})
-
-type SettingTab = 'audio' | 'events' | 'warnings'
+type SettingTab = 'audio'
 const currentTab = ref<SettingTab>('audio')
 </script>
 
@@ -194,17 +83,9 @@ const currentTab = ref<SettingTab>('audio')
     <main class="main-content">
       <!-- 标签切换 -->
       <div class="tab-bar">
-        <button class="tab-btn" :class="{ active: currentTab === 'audio' }" @click="currentTab = 'audio'">
+        <button class="tab-btn active">
           <Volume2 :size="18" />
           <span>音效</span>
-        </button>
-        <button class="tab-btn" :class="{ active: currentTab === 'events' }" @click="currentTab = 'events'">
-          <Bell :size="18" />
-          <span>事件</span>
-        </button>
-        <button class="tab-btn" :class="{ active: currentTab === 'warnings' }" @click="currentTab = 'warnings'">
-          <Clock :size="18" />
-          <span>预警</span>
         </button>
       </div>
 
@@ -285,108 +166,6 @@ const currentTab = ref<SettingTab>('audio')
             <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">点击 + 添加本地音乐文件</div>
           </div>
         </section>
-      </template>
-
-      <!-- ============ 事件设置 ============ -->
-      <template v-else-if="currentTab === 'events'">
-        <section class="settings-section">
-          <div class="section-header">
-            <h2>事件通知</h2>
-          </div>
-          <p class="section-desc">配置哪些事件触发时显示弹窗并播放音效</p>
-
-          <div class="event-list">
-            <div v-for="event in baseEventTypes" :key="event.type" class="event-item">
-              <div class="event-info">
-                <span class="event-name">{{ event.name }}</span>
-                <span class="event-desc">{{ event.description }}</span>
-              </div>
-              <div class="event-controls">
-                <label class="toggle-inline">
-                  <input type="checkbox" :checked="eventSettings.enabled[event.type]" @change="toggleEvent(event.type)" />
-                </label>
-                <button class="test-btn" @click="testEvent(event.type)"><Bell :size="14" /></button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </template>
-
-      <!-- ============ 预警规则 ============ -->
-      <template v-else-if="currentTab === 'warnings'">
-        <section class="settings-section">
-          <div class="section-header">
-            <h2>进度预警规则</h2>
-            <label class="toggle-inline">
-              <input type="checkbox" :checked="eventSettings.enabled.progress_warning" @change="toggleEvent('progress_warning')" />
-              <span>启用</span>
-            </label>
-          </div>
-          <p class="section-desc">到达指定时间后，若完成度低于阈值，则发出预警。即使软件期间关闭，重新打开后也会补发。</p>
-
-          <div class="warning-list">
-            <div v-for="rule in sortedRules" :key="rule.id" class="warning-item" :class="{ disabled: !rule.enabled }">
-              <div class="warning-main" @click="startEditRule(rule)">
-                <div class="warning-time">
-                  <Clock :size="16" />
-                  <span class="time-text">{{ formatTime(rule) }}</span>
-                </div>
-                <div class="warning-detail">
-                  完成度低于 <strong>{{ rule.threshold }}%</strong> 时预警
-                </div>
-              </div>
-              <div class="warning-actions">
-                <label class="toggle-inline">
-                  <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule)" />
-                </label>
-                <button class="test-btn" @click="testWarning(rule)" title="测试"><Bell :size="14" /></button>
-                <button class="test-btn danger" @click="deleteRule(rule.id)" title="删除"><Trash2 :size="14" /></button>
-              </div>
-            </div>
-
-            <button class="add-rule-btn" @click="startAddRule">
-              <Plus :size="16" />
-              <span>添加预警规则</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- 添加/编辑规则弹窗 -->
-        <div v-if="showAddRule" class="modal-overlay" @click.self="cancelRule">
-          <div class="modal">
-            <h3>{{ editingRuleId ? '编辑预警规则' : '添加预警规则' }}</h3>
-
-            <div class="form-row">
-              <label>触发时间</label>
-              <div class="time-picker">
-                <div class="time-unit">
-                  <label>时</label>
-                  <input type="number" v-model.number="newRule.hour" min="0" max="23" />
-                </div>
-                <span class="time-sep">:</span>
-                <div class="time-unit">
-                  <label>分</label>
-                  <input type="number" v-model.number="newRule.minute" min="0" max="59" step="5" />
-                </div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <label>完成度阈值</label>
-              <div class="threshold-picker">
-                <input type="range" v-model.number="newRule.threshold" min="0" max="100" step="5" />
-                <span class="threshold-value">{{ newRule.threshold }}%</span>
-              </div>
-              <p class="form-hint">当时间到达设定时刻，若完成度低于此值则发出预警</p>
-            </div>
-
-            <div class="modal-actions">
-              <button class="btn secondary" @click="cancelRule">取消</button>
-              <button class="btn primary" @click="saveRule">保存</button>
-            </div>
-          </div>
-        </div>
-      </template>
     </main>
   </div>
 </template>
