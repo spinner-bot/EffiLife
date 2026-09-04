@@ -5,7 +5,7 @@ import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
 import { FileText, Calendar, FolderKanban, Settings, Flame } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
-import { CheckinSystem } from '@/data'
+import { checkinState } from '@/data'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -51,19 +51,12 @@ const getProgressColor = (progress: number): string => {
 
 const stat = computed(() => appStore.todayStat)
 
-// 打卡数据
-const checkinStreak = ref(CheckinSystem.getCurrentStreak())
-const hasCheckedInToday = ref(CheckinSystem.hasCheckedInToday())
-
-// 刷新打卡数据
-function refreshCheckinData() {
-  checkinStreak.value = CheckinSystem.getCurrentStreak()
-  hasCheckedInToday.value = CheckinSystem.hasCheckedInToday()
-}
+// 打卡数据（响应式，来自 CheckinSystem）
+const checkinStreak = computed(() => checkinState.currentStreak)
+const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
 
 onMounted(async () => {
   await appStore.init()
-  refreshCheckinData()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
@@ -75,11 +68,6 @@ onMounted(async () => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
   if (refreshTimer) clearInterval(refreshTimer)
-})
-
-// 暴露刷新方法给父组件
-defineExpose({
-  refreshCheckinData
 })
 </script>
 

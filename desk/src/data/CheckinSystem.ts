@@ -1,7 +1,18 @@
 // 打卡系统 - 记录用户连续完成计划的天数
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 
 const STORAGE_KEY = 'efflife_checkin_data'
+
+// 全局响应式打卡状态（供组件监听）
+export const checkinState = reactive({
+  currentStreak: 0,
+  longestStreak: 0,
+  totalCheckins: 0,
+  lastCheckinDate: '',
+  hasCheckedInToday: false,
+  // 变化计数器，组件可以 watch 这个值来刷新
+  version: 0
+})
 
 // 打卡记录
 export interface CheckinRecord {
@@ -43,6 +54,7 @@ class CheckinSystemClass {
       if (saved) {
         this.data.value = { ...DEFAULT_DATA, ...JSON.parse(saved) }
       }
+      this.syncState()
     } catch (e) {
       console.warn('Failed to load checkin data:', e)
     }
@@ -51,9 +63,20 @@ class CheckinSystemClass {
   private save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data.value))
+      // 更新全局响应式状态
+      this.syncState()
     } catch (e) {
       console.warn('Failed to save checkin data:', e)
     }
+  }
+
+  private syncState() {
+    checkinState.currentStreak = this.data.value.currentStreak
+    checkinState.longestStreak = this.data.value.longestStreak
+    checkinState.totalCheckins = this.data.value.totalCheckins
+    checkinState.lastCheckinDate = this.data.value.lastCheckinDate
+    checkinState.hasCheckedInToday = this.data.value.lastCheckinDate === this.getTodayStr()
+    checkinState.version += 1
   }
 
   // ========= 查询 =========

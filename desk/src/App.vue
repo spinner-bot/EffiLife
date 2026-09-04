@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
 import { getThemeStyle } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
+import { CheckinSystem, CheckinPopup } from './data'
 
 const appStore = useAppStore()
+const route = useRoute()
 
 const themeStyle = computed(() => getThemeStyle(appStore.config.theme))
+
+// 打卡弹窗状态
+const showCheckinPopup = ref(false)
+const checkinPlanName = ref('')
+// 是否已为今天的100%展示过打卡弹窗
+const hasPromptedCheckin = ref(false)
 
 // 应用主题到 CSS 变量
 function applyTheme() {
@@ -25,7 +33,6 @@ function applyTheme() {
   root.style.setProperty('--color-primary', style.accentColor)
   root.style.setProperty('--color-bg-secondary', style.cardBg)
 
-  // 高级效果
   if (style.backdropFilter) {
     root.style.setProperty('--theme-backdrop-filter', style.backdropFilter)
   }
@@ -48,11 +55,34 @@ function checkProgressEvents() {
   const progress = stat.progress
   const planName = stat.plan_name
 
-  // 检查完成度事件
-  EventSystem.checkProgressEvent(progress, planName)
+  // 完成度达到100%且未打卡：触发打卡弹窗（而不是普通事件弹窗）
+  if (progress >= 100 && CheckinSystem.canCheckinToday() && !hasPromptedCheckin.value) {
+    hasPromptedCheckin.value = true
+    checkinPlanName.value = planName
+    showCheckinPopup.value = true
+    return
+  }
+
+  // 完成度90%但未满100%：普通事件弹窗
+  if (progress >= 90 && progress < 100) {
+    EventSystem.checkProgressEvent(progress, planName)
+  }
 
   // 检查多规则预警（支持延迟发布）
   EventSystem.checkWarnings(progress, planName)
+}
+
+// 打卡完成回调
+function onCheckinComplete(streak: number) {
+  showCheckinPopup.value = false
+  // 刷新主页数据
+  const homeView = document.querySelector('.home-view')?.__vue_app__
+  // 通过 store 刷新
+  appStore.refreshTodayData()
+}
+
+function onCheckinClose() {
+  showCheckinPopup.value = false
 }
 
 onMounted(async () => {
@@ -86,6 +116,14 @@ watch(() => appStore.todayStat, () => {
 
     <!-- 事件弹窗 -->
     <EventPopup />
+
+    <!-- 打卡弹窗 -->
+    <CheckinPopup
+      :show="showCheckinPopup"
+      :plan-name="checkinPlanName"
+      @close="onCheckinClose"
+      @checkin="onCheckinComplete"
+    />
   </div>
 </template>
 
