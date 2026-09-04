@@ -74,12 +74,22 @@ const neonConfig = ref<NeonThemeConfig>(config.value.theme.neon || {
   accent_color: '#ff00ff'
 })
 
-// 所有主题都已启用
+// 所有可用主题
 const availableThemes = [
-  { type: 'solid' as ThemeType, name: '纯色', description: '简洁的纯色主题', available: true },
-  { type: 'gradient' as ThemeType, name: '渐变', description: '渐变背景主题', available: true },
-  { type: 'glass' as ThemeType, name: '玻璃', description: '毛玻璃效果主题', available: true },
-  { type: 'neon' as ThemeType, name: '霓虹', description: '霓虹灯效果主题', available: true },
+  // 基础主题
+  { type: 'solid' as ThemeType, name: '纯色', description: '简洁的纯色主题', category: '基础' },
+  { type: 'gradient' as ThemeType, name: '渐变', description: '渐变背景主题', category: '基础' },
+  { type: 'glass' as ThemeType, name: '玻璃', description: '毛玻璃效果主题', category: '基础' },
+  { type: 'neon' as ThemeType, name: '霓虹', description: '霓虹灯效果主题', category: '基础' },
+  // 高级主题
+  { type: 'ink' as ThemeType, name: '水墨', description: '中国水墨画风格，动态墨点晕染', category: '艺术' },
+  { type: 'vintage' as ThemeType, name: '画报', description: '复古画报风格，装饰花纹边框', category: '艺术' },
+  { type: 'cyberpunk' as ThemeType, name: '赛博朋克', description: '未来科技风，网格扫描线效果', category: '科技' },
+  { type: 'pixel' as ThemeType, name: '像素', description: '复古像素风格，星星月亮', category: '艺术' },
+  { type: 'aurora' as ThemeType, name: '极光', description: '北极光效果，流动彩光', category: '自然' },
+  { type: 'sakura' as ThemeType, name: '樱花', description: '日式樱花风格，飘落花瓣', category: '自然' },
+  { type: 'ocean' as ThemeType, name: '深海', description: '深海探索风格，气泡上升', category: '自然' },
+  { type: 'forest' as ThemeType, name: '森林', description: '神秘森林风格，萤火虫飞舞', category: '自然' },
 ]
 
 async function saveTheme() {
@@ -382,10 +392,67 @@ watch(() => config.value, (newConfig) => {
         <h2>主题设置</h2>
 
         <div class="form-section">
-          <label>选择主题</label>
+          <label>基础主题</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes"
+              v-for="theme in availableThemes.filter(t => t.category === '基础')"
+              :key="theme.type"
+              class="theme-card"
+              :class="{ active: themeType === theme.type }"
+              @click="themeType = theme.type"
+            >
+              <div class="theme-info">
+                <span class="theme-name">{{ theme.name }}</span>
+                <span class="theme-desc">{{ theme.description }}</span>
+              </div>
+              <span v-if="themeType === theme.type" class="selected">✓</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label>艺术风格</label>
+          <div class="theme-list">
+            <button
+              v-for="theme in availableThemes.filter(t => t.category === '艺术')"
+              :key="theme.type"
+              class="theme-card"
+              :class="{ active: themeType === theme.type }"
+              @click="themeType = theme.type"
+            >
+              <div class="theme-info">
+                <span class="theme-name">{{ theme.name }}</span>
+                <span class="theme-desc">{{ theme.description }}</span>
+              </div>
+              <span v-if="themeType === theme.type" class="selected">✓</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label>自然风格</label>
+          <div class="theme-list">
+            <button
+              v-for="theme in availableThemes.filter(t => t.category === '自然')"
+              :key="theme.type"
+              class="theme-card"
+              :class="{ active: themeType === theme.type }"
+              @click="themeType = theme.type"
+            >
+              <div class="theme-info">
+                <span class="theme-name">{{ theme.name }}</span>
+                <span class="theme-desc">{{ theme.description }}</span>
+              </div>
+              <span v-if="themeType === theme.type" class="selected">✓</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <label>科技风格</label>
+          <div class="theme-list">
+            <button
+              v-for="theme in availableThemes.filter(t => t.category === '科技')"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
