@@ -2,8 +2,36 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ArrowLeft, ChevronRight } from 'lucide-vue-next'
+import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
+
+// ============ 反馈功能 ============
+const FEEDBACK_EMAIL = 'langxibielangle@qq.com'
+const copySuccess = ref(false)
+
+async function openEmailClient() {
+  try {
+    const { open } = await import('@tauri-apps/plugin-shell')
+    const subject = encodeURIComponent('浪兮效率时钟 - 用户反馈')
+    const body = encodeURIComponent('请在此描述您的问题或建议：\n\n---\n应用版本：0.1.0\n')
+    const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
+    await open(mailto)
+  } catch (e) {
+    // fallback: 复制到剪贴板
+    await copyEmail()
+    alert('无法打开邮件客户端，邮箱地址已复制到剪贴板')
+  }
+}
+
+async function copyEmail() {
+  try {
+    await navigator.clipboard.writeText(FEEDBACK_EMAIL)
+    copySuccess.value = true
+    setTimeout(() => { copySuccess.value = false }, 2000)
+  } catch (e) {
+    alert('复制失败，请手动复制邮箱地址')
+  }
+}
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -11,7 +39,7 @@ const appStore = useAppStore()
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback'
 const currentView = ref<ViewType>('main')
 
 // ============ 自定义设置 ============
@@ -359,6 +387,10 @@ watch(() => config.value, (newConfig) => {
             <span>事件管理</span>
             <ChevronRight :size="16" />
           </button>
+          <button class="settings-item" @click="currentView = 'feedback'">
+            <span>反馈</span>
+            <ChevronRight :size="16" />
+          </button>
           <button class="settings-item" @click="currentView = 'help'">
             <span>帮助</span>
             <ChevronRight :size="16" />
@@ -666,6 +698,43 @@ watch(() => config.value, (newConfig) => {
           <button class="btn secondary full" @click="resetPlanData">重置计划数据</button>
           <button class="btn secondary full" @click="resetScheduleData">重置日程数据</button>
           <button class="btn secondary full" @click="resetConfig">重置设置数据</button>
+        </div>
+        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+      </template>
+
+      <!-- 反馈 -->
+      <template v-else-if="currentView === 'feedback'">
+        <h2>反馈</h2>
+        <div class="feedback-content">
+          <p class="feedback-desc">
+            如果您在使用过程中遇到任何问题，或有改进建议，欢迎通过以下方式联系我们：
+          </p>
+
+          <div class="email-section">
+            <div class="email-row">
+              <Mail :size="20" class="email-icon" />
+              <span class="email-address">{{ FEEDBACK_EMAIL }}</span>
+              <button class="copy-btn" @click="copyEmail" :title="copySuccess ? '已复制' : '复制邮箱'">
+                <Copy :size="16" />
+                <span v-if="copySuccess">已复制</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn primary full email-btn" @click="openEmailClient">
+            <Mail :size="18" />
+            <span>发送邮件</span>
+          </button>
+
+          <div class="feedback-tips">
+            <h3>反馈内容建议</h3>
+            <ul>
+              <li>遇到的问题或 Bug</li>
+              <li>功能改进建议</li>
+              <li>使用体验反馈</li>
+              <li>新功能需求</li>
+            </ul>
+          </div>
         </div>
         <button class="btn secondary full" @click="currentView = 'main'">返回</button>
       </template>
@@ -1035,5 +1104,100 @@ h2 {
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
+}
+
+/* 反馈页面样式 */
+.feedback-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.feedback-desc {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.email-section {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.email-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.email-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.email-address {
+  flex: 1;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.copy-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.email-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  font-size: 1rem;
+}
+
+.feedback-tips {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.feedback-tips h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
+}
+
+.feedback-tips ul {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.feedback-tips li {
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 </style>
