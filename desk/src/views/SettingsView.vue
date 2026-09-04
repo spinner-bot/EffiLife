@@ -159,18 +159,30 @@ function pickColor(target: string) {
   input.type = 'color'
 
   let currentValue = '#000000'
-  if (target.startsWith('solid_')) currentValue = (solidConfig.value as Record<string, string>)[target.slice(6)] || '#000000'
-  else if (target.startsWith('gradient_')) currentValue = (gradientConfig.value as Record<string, string>)[target.slice(9)] || '#000000'
-  else if (target.startsWith('glass_')) currentValue = (glassConfig.value as Record<string, string>)[target.slice(6)] || '#000000'
-  else if (target.startsWith('neon_')) currentValue = (neonConfig.value as Record<string, string>)[target.slice(5)] || '#000000'
+  const key = target.includes('_') ? target.split('_').slice(1).join('_') : target
+
+  if (target.startsWith('solid_')) {
+    currentValue = (solidConfig.value as unknown as Record<string, string>)[key] || '#000000'
+  } else if (target.startsWith('gradient_')) {
+    currentValue = (gradientConfig.value as unknown as Record<string, string>)[key] || '#000000'
+  } else if (target.startsWith('glass_')) {
+    currentValue = (glassConfig.value as unknown as Record<string, string>)[key] || '#000000'
+  } else if (target.startsWith('neon_')) {
+    currentValue = (neonConfig.value as unknown as Record<string, string>)[key] || '#000000'
+  }
 
   input.value = currentValue
   input.onchange = () => {
     const color = input.value
-    if (target.startsWith('solid_')) (solidConfig.value as Record<string, string>)[target.slice(6)] = color
-    else if (target.startsWith('gradient_')) (gradientConfig.value as Record<string, string>)[target.slice(9)] = color
-    else if (target.startsWith('glass_')) (glassConfig.value as Record<string, string>)[target.slice(6)] = color
-    else if (target.startsWith('neon_')) (neonConfig.value as Record<string, string>)[target.slice(5)] = color
+    if (target.startsWith('solid_')) {
+      (solidConfig.value as unknown as Record<string, string>)[key] = color
+    } else if (target.startsWith('gradient_')) {
+      (gradientConfig.value as unknown as Record<string, string>)[key] = color
+    } else if (target.startsWith('glass_')) {
+      (glassConfig.value as unknown as Record<string, string>)[key] = color
+    } else if (target.startsWith('neon_')) {
+      (neonConfig.value as unknown as Record<string, string>)[key] = color
+    }
   }
   input.click()
 }
