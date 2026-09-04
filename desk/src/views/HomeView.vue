@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
 import { FileText, Calendar, FolderKanban, Settings } from 'lucide-vue-next'
+import { AudioManager } from '@/audio'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -112,19 +113,19 @@ onUnmounted(() => {
       </section>
 
       <nav class="nav-buttons">
-        <button class="nav-btn" @click="router.push('/records')">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/records')">
           <FileText :size="24" />
           <span>记录</span>
         </button>
-        <button class="nav-btn" @click="router.push('/calendar')">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
           <Calendar :size="24" />
           <span>日历</span>
         </button>
-        <button class="nav-btn" @click="router.push('/management')">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/management')">
           <FolderKanban :size="24" />
           <span>管理</span>
         </button>
-        <button class="nav-btn" @click="router.push('/settings')">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
           <Settings :size="24" />
           <span>设置</span>
         </button>
