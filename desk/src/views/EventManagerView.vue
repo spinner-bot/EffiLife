@@ -37,6 +37,20 @@ const showRuleForm = ref(false)
 const editingRuleId = ref<string | null>(null)
 const newRule = ref({ hour: 12, minute: 0, threshold: 50, enabled: true })
 
+// 自动清空时限选项
+const autoCleanOptions: Array<{ value: 1 | 3 | 7 | 30 | -1; label: string }> = [
+  { value: 1, label: '24小时' },
+  { value: 3, label: '72小时' },
+  { value: 7, label: '7天' },
+  { value: 30, label: '30天' },
+  { value: -1, label: '永不' }
+]
+
+function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
+  EventSystem.updateSettings({ autoCleanDays: days })
+  eventSettings.value = EventSystem.getSettings()
+}
+
 // ========= 事件开关 =========
 function toggleEvent(type: EventType | string) {
   eventSettings.value.enabled[type] = !eventSettings.value.enabled[type]
@@ -256,9 +270,21 @@ function testWarning(rule: WarningRule) {
             </div>
           </div>
 
-          <p class="auto-clean-hint" v-if="inbox.length > 0">
-            已读事件将在30天后自动删除
-          </p>
+          <!-- 自动清空设置 -->
+          <div class="auto-clean-setting" v-if="inbox.length > 0">
+            <span class="setting-label">已读事件自动清空：</span>
+            <div class="option-pills">
+              <button
+                v-for="opt in autoCleanOptions"
+                :key="opt.value"
+                class="pill-btn"
+                :class="{ active: eventSettings.autoCleanDays === opt.value }"
+                @click="setAutoCleanDays(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
         </section>
       </template>
 
@@ -661,13 +687,47 @@ function testWarning(rule: WarningRule) {
   color: white;
 }
 
-.auto-clean-hint {
-  text-align: center;
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-  margin: var(--spacing-md) 0 0 0;
+.auto-clean-setting {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border);
+}
+
+.setting-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.option-pills {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.pill-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pill-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.pill-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
 }
 
 /* 事件列表 */
