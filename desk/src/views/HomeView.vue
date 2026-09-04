@@ -3,8 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { FileText, Calendar, FolderKanban, Settings } from 'lucide-vue-next'
+import { FileText, Calendar, FolderKanban, Settings, Flame } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
+import { CheckinSystem } from '@/data'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -50,8 +51,19 @@ const getProgressColor = (progress: number): string => {
 
 const stat = computed(() => appStore.todayStat)
 
+// 打卡数据
+const checkinStreak = ref(CheckinSystem.getCurrentStreak())
+const hasCheckedInToday = ref(CheckinSystem.hasCheckedInToday())
+
+// 刷新打卡数据
+function refreshCheckinData() {
+  checkinStreak.value = CheckinSystem.getCurrentStreak()
+  hasCheckedInToday.value = CheckinSystem.hasCheckedInToday()
+}
+
 onMounted(async () => {
   await appStore.init()
+  refreshCheckinData()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
@@ -63,6 +75,11 @@ onMounted(async () => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
   if (refreshTimer) clearInterval(refreshTimer)
+})
+
+// 暴露刷新方法给父组件
+defineExpose({
+  refreshCheckinData
 })
 </script>
 
@@ -76,6 +93,10 @@ onUnmounted(() => {
       <section class="clock-section">
         <div class="time-display">{{ currentTime }}</div>
         <div class="date-display">{{ currentDate }}</div>
+        <div class="checkin-badge" v-if="checkinStreak > 0">
+          <Flame :size="18" class="flame-icon" />
+          <span>连续打卡 <strong>{{ checkinStreak }}</strong> 天</span>
+        </div>
       </section>
 
       <section class="stats-section">
@@ -187,6 +208,42 @@ onUnmounted(() => {
   font-size: 1rem;
   color: var(--color-text-secondary);
   margin-top: var(--spacing-sm);
+}
+
+.checkin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  animation: badgePulse 3s ease-in-out infinite;
+}
+
+.checkin-badge strong {
+  color: #ff8c00;
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+}
+
+.flame-icon {
+  color: #ff8c00;
+  animation: flameFlicker 1.5s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); }
+  50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+}
+
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  50% { transform: scale(1.1) rotate(2deg); }
 }
 
 .stats-section {
