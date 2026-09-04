@@ -182,18 +182,17 @@ const tooltipStyle = computed(() => ({
   <Teleport to="body">
     <Transition name="guide-fade">
       <div v-if="isActive && currentStep" class="guide-overlay">
-        <!-- 背景 - 半透明遮罩，介绍类步骤可点击 -->
-        <div
-          class="guide-backdrop"
-          :class="{ clickable: !currentStep.actionRequired }"
-          @click="onBackdropClick"
-        ></div>
-
-        <!-- 高亮区域 - 允许点击穿透 -->
+        <!-- 高亮区域 + 遮罩（使用 box-shadow 创建遮罩，高亮区域可点击） -->
         <div
           v-if="highlightStyle"
           class="guide-highlight"
           :style="highlightStyle"
+        ></div>
+        <!-- 没有目标时显示全屏遮罩 -->
+        <div
+          v-else
+          class="guide-backdrop"
+          @click="onBackdropClick"
         ></div>
 
         <!-- 鼠标指引 -->
@@ -241,16 +240,13 @@ const tooltipStyle = computed(() => ({
   position: fixed;
   inset: 0;
   z-index: 10000;
+  pointer-events: none;
 }
 
 .guide-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-}
-
-.guide-backdrop.clickable {
+  background: rgba(0, 0, 0, 0.5);
   pointer-events: auto;
 }
 
@@ -258,8 +254,9 @@ const tooltipStyle = computed(() => ({
   position: absolute;
   border-radius: 8px;
   background: transparent;
+  /* 使用 box-shadow 创建遮罩，高亮区域可点击 */
   box-shadow:
-    0 0 0 9999px rgba(0, 0, 0, 0.4),
+    0 0 0 9999px rgba(0, 0, 0, 0.5),
     0 0 0 3px rgba(99, 102, 241, 0.9);
   pointer-events: none;
   z-index: 1;
@@ -267,8 +264,8 @@ const tooltipStyle = computed(() => ({
 }
 
 @keyframes pulse-box {
-  0%, 100% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(99, 102, 241, 0.9); }
-  50% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4), 0 0 0 5px rgba(99, 102, 241, 1), 0 0 15px rgba(99, 102, 241, 0.4); }
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(99, 102, 241, 0.9); }
+  50% { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 0 5px rgba(99, 102, 241, 1), 0 0 15px rgba(99, 102, 241, 0.4); }
 }
 
 .guide-pointer {
