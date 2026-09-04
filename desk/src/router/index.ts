@@ -39,6 +39,11 @@ const router = createRouter({
       name: 'audioSettings',
       component: () => import('@/views/AudioSettingsView.vue'),
     },
+    {
+      path: '/event-manager',
+      name: 'eventManager',
+      component: () => import('@/views/EventManagerView.vue'),
+    },
   ],
 })
 
