@@ -94,7 +94,7 @@ const themePresets: Record<string, () => ThemeStyle> = {
     accentColor: '#8b0000',
     cardBg: 'rgba(244, 228, 193, 0.8)',
     boxShadow: '3px 3px 0px rgba(61, 40, 23, 0.3)',
-    renderCanvas: (ctx, w, h, time) => {
+    renderCanvas: (ctx, w, h) => {
       ctx.save()
 
       // 复古边框装饰
@@ -108,7 +108,7 @@ const themePresets: Record<string, () => ThemeStyle> = {
         [20, 20], [w - 20, 20], [20, h - 20], [w - 20, h - 20]
       ]
 
-      corners.forEach(([x, y], i) => {
+      corners.forEach(([x, y]) => {
         ctx.beginPath()
         const dx = x < w / 2 ? 1 : -1
         const dy = y < h / 2 ? 1 : -1
@@ -344,7 +344,7 @@ const themePresets: Record<string, () => ThemeStyle> = {
       size: 12,
       color: '#ffb6c1'
     },
-    renderCanvas: (ctx, w, h, time) => {
+    renderCanvas: (ctx, w, h) => {
       ctx.save()
 
       // 樱花树枝
@@ -460,7 +460,7 @@ const themePresets: Record<string, () => ThemeStyle> = {
       size: 4,
       color: '#ffff00'
     },
-    renderCanvas: (ctx, w, h, time) => {
+    renderCanvas: (ctx, w, h) => {
       ctx.save()
 
       // 树木轮廓
