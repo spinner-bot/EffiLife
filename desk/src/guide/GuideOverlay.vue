@@ -49,7 +49,7 @@ function updateTargetElement() {
   }
 }
 
-// 点击目标元素 - 标记操作完成
+// 点击目标元素 - 只标记操作已开始，不自动进入下一步
 function onTargetClick(e: MouseEvent) {
   const step = currentStep.value
   if (!step || !step.actionRequired) return
@@ -72,23 +72,38 @@ function onTargetClick(e: MouseEvent) {
 
   if (isTargetClick || isActionTargetClick) {
     e.stopPropagation()
-    GuideManager.markActionComplete()
 
-    // 导航并自动进入下一步
-    if (step.navigateTo) {
-      setTimeout(() => {
-        window.location.hash = '#' + step.navigateTo
-        // 导航后自动进入下一步
-        setTimeout(() => {
-          GuideManager.nextStep()
-        }, 500)
-      }, 200)
-    } else {
-      // 不需要导航，直接进入下一步
-      setTimeout(() => {
-        GuideManager.nextStep()
-      }, 300)
+    // 导航到目标页面（如果需要）
+    if (step.navigateTo && !window.location.hash.includes(step.navigateTo)) {
+      window.location.hash = '#' + step.navigateTo
     }
+
+    // 标记操作已完成（由 GuideManager 判断是否可以继续）
+    // 不自动进入下一步，等待用户确认或验证操作完成
+    startActionValidation()
+  }
+}
+
+// 开始验证操作是否完成
+let validationInterval: number | null = null
+
+function startActionValidation() {
+  const step = currentStep.value
+  if (!step) return
+
+  // 如果有验证函数，定期检查
+  if (step.validateAction) {
+    if (validationInterval) clearInterval(validationInterval)
+    validationInterval = window.setInterval(() => {
+      if (step.validateAction && step.validateAction()) {
+        // 操作已验证完成
+        if (validationInterval) clearInterval(validationInterval)
+        GuideManager.markActionComplete()
+      }
+    }, 500)
+  } else {
+    // 没有验证函数，点击后标记为可继续状态，但需要用户确认
+    GuideManager.markActionComplete()
   }
 }
 
@@ -115,6 +130,10 @@ function getActionHint(): string {
   if (!step.actionRequired) {
     return '点击空白处继续'
   }
+  // 操作已完成，显示继续按钮
+  if (guideState.canProceed) {
+    return '✓ 已完成'
+  }
   return '点击高亮区域'
 }
 
@@ -135,6 +154,7 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('click', onTargetClick, true)
   if (mutationObserver) mutationObserver.disconnect()
+  if (validationInterval) clearInterval(validationInterval)
 })
 
 // 高亮区域样式
@@ -165,7 +185,7 @@ const tooltipStyle = computed(() => ({
         <!-- 背景 - 半透明遮罩，介绍类步骤可点击 -->
         <div
           class="guide-backdrop"
-          :style="{ pointerEvents: currentStep.actionRequired ? 'none' : 'auto' }"
+          :class="{ clickable: !currentStep.actionRequired }"
           @click="onBackdropClick"
         ></div>
 
@@ -198,15 +218,15 @@ const tooltipStyle = computed(() => ({
             </button>
           </div>
           <p class="tooltip-desc">{{ currentStep.description }}</p>
-          <div class="tooltip-hint" :class="{ action: currentStep.actionRequired }">
+          <div class="tooltip-hint" :class="{ action: currentStep.actionRequired, done: guideState.canProceed }">
             <span>{{ getActionHint() }}</span>
-            <span v-if="currentStep.actionRequired" class="waiting-dots">
+            <span v-if="currentStep.actionRequired && !guideState.canProceed" class="waiting-dots">
               <span></span><span></span><span></span>
             </span>
-            <button v-else-if="progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
-              下一步 →
+            <button v-else-if="guideState.canProceed && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
+              继续 →
             </button>
-            <button v-else class="next-btn finish" @click="finishGuide">
+            <button v-else-if="guideState.canProceed" class="next-btn finish" @click="finishGuide">
               开始使用 ✨
             </button>
           </div>
@@ -221,13 +241,17 @@ const tooltipStyle = computed(() => ({
   position: fixed;
   inset: 0;
   z-index: 10000;
-  pointer-events: none;
 }
 
 .guide-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.guide-backdrop.clickable {
+  pointer-events: auto;
 }
 
 .guide-highlight {
@@ -337,6 +361,11 @@ const tooltipStyle = computed(() => ({
 
 .tooltip-hint.action {
   background: rgba(251, 191, 36, 0.15);
+}
+
+.tooltip-hint.done {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.3);
 }
 
 .waiting-dots {
