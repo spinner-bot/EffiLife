@@ -46,11 +46,15 @@ export interface AppEvent {
   data?: any
 }
 
+// 自动清空时限选项（天）
+export type AutoCleanDays = 1 | 3 | 7 | 30 | -1  // -1 表示永不
+
 // 事件配置
 export interface EventSettings {
   enabled: Record<string, boolean>  // key 改为 string 支持动态预警 id
   warningRules: WarningRule[]
   popupDuration: number
+  autoCleanDays: AutoCleanDays  // 自动清空已读事件的时限（天），-1 表示永不
 }
 
 // 默认预警规则
@@ -71,7 +75,8 @@ export const DEFAULT_EVENT_SETTINGS: EventSettings = {
     achievement_unlocked: true
   },
   warningRules: DEFAULT_WARNING_RULES.map(r => ({ ...r })),
-  popupDuration: 8000
+  popupDuration: 8000,
+  autoCleanDays: 30
 }
 
 const WARNING_INBOX_KEY = 'efflife_warning_inbox'
@@ -282,13 +287,18 @@ class EventSystemClass {
     this.saveEventInbox()
   }
 
-  // 清理：已读超过30天的自动删除
+  // 清理：已读超过指定天数的自动删除
   private cleanOldInboxEntries() {
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+    const autoCleanDays = this.settings.value.autoCleanDays
+
+    // 永不自动清空
+    if (autoCleanDays === -1) return
+
+    const cutoffTime = Date.now() - autoCleanDays * 24 * 60 * 60 * 1000
     const before = this.eventInbox.value.length
     this.eventInbox.value = this.eventInbox.value.filter(entry => {
       if (entry.read) {
-        return new Date(entry.triggeredAt).getTime() > thirtyDaysAgo
+        return new Date(entry.triggeredAt).getTime() > cutoffTime
       }
       return true  // 未读的保留
     })
