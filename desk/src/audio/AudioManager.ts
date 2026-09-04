@@ -293,9 +293,6 @@ class AudioManagerClass {
     }
     this.currentBgmId.value = ''
   }
-    }
-    this.currentBgmId.value = ''
-  }
 
   // 添加自定义背景音乐
   addCustomBgm(name: string, path: string): string {
