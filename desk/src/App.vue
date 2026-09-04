@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/app'
 import { onMounted, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
 import { getThemeStyle } from './theme/ThemeEngine'
+import { AudioManager, EventSystem, EventPopup } from './audio'
 
 const appStore = useAppStore()
 
@@ -39,12 +40,38 @@ function applyTheme() {
   }
 }
 
+// 检查进度事件
+function checkProgressEvents() {
+  const stat = appStore.todayStat
+  if (!stat || !stat.plan_exists) return
+
+  const progress = stat.progress
+  const planName = stat.plan_name
+
+  // 检查完成度事件
+  EventSystem.checkProgressEvent(progress, planName)
+
+  // 检查低完成度预警
+  EventSystem.checkLowProgressWarning(progress, planName)
+}
+
 onMounted(async () => {
   await appStore.init()
   applyTheme()
+
+  // 启动背景音乐
+  AudioManager.startBgm()
+
+  // 检查进度事件
+  checkProgressEvents()
 })
 
 watch(() => appStore.config, applyTheme, { deep: true })
+
+// 监听统计数据变化，检查事件
+watch(() => appStore.todayStat, () => {
+  checkProgressEvents()
+}, { deep: true })
 </script>
 
 <template>
@@ -56,6 +83,9 @@ watch(() => appStore.config, applyTheme, { deep: true })
     <div class="app-content">
       <RouterView />
     </div>
+
+    <!-- 事件弹窗 -->
+    <EventPopup />
   </div>
 </template>
 
