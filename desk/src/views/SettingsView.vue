@@ -660,24 +660,130 @@ watch(() => config.value, (newConfig) => {
 
       <!-- 帮助 -->
       <template v-else-if="currentView === 'help'">
-        <div class="help-header">
-          <h2>帮助中心</h2>
-          <button class="btn small" @click="contactDeveloper">联系开发者</button>
+        <h2>帮助中心</h2>
+
+        <!-- 快速入门 -->
+        <div class="help-section">
+          <h3>快速入门</h3>
+          <div class="help-steps">
+            <div class="help-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <strong>设置日计划</strong>
+                <p>进入"管理" → "日计划管理"，创建或选择适合你的计划模板</p>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <strong>记录时间</strong>
+                <p>点击"记录"按钮，添加你花费在各项活动上的时间</p>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <strong>查看进度</strong>
+                <p>主页实时显示今日完成度，追踪你的效率目标</p>
+              </div>
+            </div>
+            <div class="help-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <strong>每日打卡</strong>
+                <p>完成100%计划后，点击打卡按钮记录你的连续成就</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="help-content">
-          <p>浪兮效率时钟是一款基于分类时间管理理念的桌面工具。</p>
-          <p>它借鉴3×8时间管理法，帮助用户将一天的时间按自定义类别进行计划与追踪。</p>
-          <h3>主要功能</h3>
-          <ul>
-            <li>两种计划模式（切分制/分配制）</li>
-            <li>多套日计划预设</li>
-            <li>日程自动分配规则</li>
-            <li>记录管理（增删改查）</li>
-            <li>日历视图</li>
-            <li>4种主题风格</li>
-            <li>数据备份与恢复</li>
-          </ul>
+
+        <!-- 常见问题 -->
+        <div class="help-section">
+          <h3>常见问题</h3>
+          <details class="faq-item">
+            <summary>什么是切分制和分配制？</summary>
+            <div class="faq-answer">
+              <p><strong>切分制</strong>：将24小时切分为多个时间段，所有时间类别加起来必须等于24小时。适合严格的时间管理。</p>
+              <p><strong>分配制</strong>：为每个活动分配目标时长，总时长可以超过或不足24小时。更灵活，适合弹性安排。</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>如何设置自动日程分配？</summary>
+            <div class="faq-answer">
+              <p>进入"管理" → "日程安排"，可以设置规则让系统自动为每天分配计划。例如：周一到周五使用"工作日"计划，周末使用"休息日"计划。</p>
+              <p>规则按优先级排序，系统会从前往后匹配第一条符合的规则。</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>为什么打卡天数没有增加？</summary>
+            <div class="faq-answer">
+              <p>打卡需要在完成100%计划后，手动点击"打卡"按钮。如果关闭了弹窗或没有点击打卡，天数不会增加。</p>
+              <p>另外，如果当天已经打过卡，再次完成计划不会重复计数。</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>如何备份我的数据？</summary>
+            <div class="faq-answer">
+              <p>进入"设置" → "存档管理" → "导出存档"，可以将所有数据保存为JSON文件。</p>
+              <p>建议在更换设备前或重要节点定期备份。</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>背景音乐没有声音？</summary>
+            <div class="faq-answer">
+              <p>请检查：1) 设置 → 声音 → 启用背景音乐已开启；2) 音量不为0；3) 系统音量正常。</p>
+              <p>首次使用可能需要在浏览器中点击页面任意位置激活音频。</p>
+            </div>
+          </details>
         </div>
+
+        <!-- 功能概览 -->
+        <div class="help-section">
+          <h3>功能概览</h3>
+          <div class="feature-grid">
+            <div class="feature-item">
+              <span class="feature-icon">📊</span>
+              <strong>时间统计</strong>
+              <p>实时追踪各类别时间分配</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">📅</span>
+              <strong>日历视图</strong>
+              <p>直观查看历史记录和完成度</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🎯</span>
+              <strong>计划管理</strong>
+              <p>自定义日计划，灵活配置</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🔥</span>
+              <strong>打卡系统</strong>
+              <p>记录连续完成天数，激励坚持</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">⚠️</span>
+              <strong>进度预警</strong>
+              <p>多时段提醒，防止落后计划</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🎵</span>
+              <strong>环境音效</strong>
+              <p>9种背景音乐，专注工作</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🎨</span>
+              <strong>主题切换</strong>
+              <p>12种主题风格，个性定制</p>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">💾</span>
+              <strong>数据备份</strong>
+              <p>导出导入，数据永不丢失</p>
+            </div>
+          </div>
+        </div>
+
         <button class="btn secondary full" @click="currentView = 'main'">返回</button>
       </template>
 
@@ -1104,6 +1210,157 @@ h2 {
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
+}
+
+/* 帮助页面样式 */
+.help-section {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.help-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--color-text-primary);
+}
+
+.help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.help-step {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text-primary);
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-md) 0;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  padding: var(--spacing-xs) 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::after {
+  content: '+';
+  font-size: 1.25rem;
+  color: var(--color-text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.faq-answer {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.faq-answer p {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-answer strong {
+  color: var(--color-text-primary);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--spacing-md);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.feature-item strong {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.feature-item p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
 }
 
 /* 反馈页面样式 */
