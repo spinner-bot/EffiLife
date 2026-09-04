@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
-import { ArrowLeft, Calendar, List, Pencil, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Trash2 } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
 
 const router = useRouter()
