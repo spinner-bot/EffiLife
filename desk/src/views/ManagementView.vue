@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { hoursToHm, rgbToHex, autoBalance } from '@/services/dataService'
+import { rgbToHex, autoBalance } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check, Calendar, FolderKanban, RefreshCw } from 'lucide-vue-next'
-import type { DayPlan, PlanItem, ScheduleRule } from '@/types'
+import type { PlanItem, ScheduleRule } from '@/types'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -261,7 +261,7 @@ function isSelectedWeekDay(day: string): boolean {
         </div>
         <div class="plan-list">
           <div v-for="(plan, name) in plans" :key="name" class="plan-card">
-            <div class="plan-color" :style="{ background: rgbToHex(...plan.color) }"></div>
+            <div class="plan-color" :style="{ background: rgbToHex(plan.color[0], plan.color[1], plan.color[2]) }"></div>
             <div class="plan-info">
               <div class="plan-title">{{ name }} | {{ plan.plan_type }}</div>
               <div class="plan-meta" v-if="plan.plan_type === '分配制'">
