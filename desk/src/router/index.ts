@@ -34,6 +34,11 @@ const router = createRouter({
       name: 'dayDetail',
       component: () => import('@/views/DayDetailView.vue'),
     },
+    {
+      path: '/audio-settings',
+      name: 'audioSettings',
+      component: () => import('@/views/AudioSettingsView.vue'),
+    },
   ],
 })
 
