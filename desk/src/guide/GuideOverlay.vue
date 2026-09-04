@@ -104,6 +104,13 @@ function onClickCapture(e: MouseEvent) {
 
       // 开始验证操作
       startActionValidation()
+
+      // 对于简单点击任务且有 autoAdvance，延迟后自动进入下一步
+      if (step.autoAdvance && !step.validateAction) {
+        setTimeout(() => {
+          GuideManager.nextStep()
+        }, 800)
+      }
     }
   } else {
     // 介绍类步骤，点击任意位置继续
@@ -235,13 +242,16 @@ const tooltipStyle = computed(() => ({
           <p class="tooltip-desc">{{ currentStep.description }}</p>
           <div class="tooltip-hint" :class="{ action: currentStep.actionRequired, done: guideState.canProceed }">
             <span>{{ getActionHint() }}</span>
-            <span v-if="currentStep.actionRequired && !guideState.canProceed" class="waiting-dots">
+            <span v-if="currentStep.actionRequired && !guideState.canProceed && !currentStep.skippable" class="waiting-dots">
               <span></span><span></span><span></span>
             </span>
-            <button v-else-if="guideState.canProceed && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
+            <button v-if="currentStep.skippable && currentStep.actionRequired && !guideState.canProceed" class="skip-step-btn" @click="GuideManager.skipStep()">
+              跳过此步 →
+            </button>
+            <button v-else-if="guideState.canProceed && !currentStep.autoAdvance && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
               继续 →
             </button>
-            <button v-else-if="guideState.canProceed" class="next-btn finish" @click="finishGuide">
+            <button v-else-if="guideState.canProceed && !currentStep.autoAdvance" class="next-btn finish" @click="finishGuide">
               开始使用 ✨
             </button>
           </div>
@@ -425,6 +435,23 @@ const tooltipStyle = computed(() => ({
 
 .next-btn.finish:hover {
   background: rgba(251, 191, 36, 1);
+}
+
+.skip-step-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skip-step-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .guide-fade-enter-active,
