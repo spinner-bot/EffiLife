@@ -44,6 +44,11 @@ const router = createRouter({
       name: 'eventManager',
       component: () => import('@/views/EventManagerView.vue'),
     },
+    {
+      path: '/motion-settings',
+      name: 'motionSettings',
+      component: () => import('@/views/MotionSettingsView.vue'),
+    },
   ],
 })
 
