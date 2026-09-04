@@ -1,5 +1,6 @@
 // 粒子系统 - 支持多种粒子效果
 import type { ParticleConfig } from '@/types'
+import { MotionManager } from '@/motion'
 
 interface Particle {
   x: number
@@ -24,8 +25,6 @@ export class ParticleSystem {
   private width = 0
   private height = 0
   private lastFrameTime = 0
-  private readonly TARGET_FPS = 30
-  private readonly FRAME_INTERVAL = 1000 / this.TARGET_FPS
 
   constructor(canvas: HTMLCanvasElement, config: ParticleConfig) {
     this.canvas = canvas
@@ -328,8 +327,15 @@ export class ParticleSystem {
 
   start() {
     const animate = (currentTime: number) => {
+      // 使用 MotionManager 获取帧间隔
+      const frameInterval = MotionManager.getFrameInterval()
+      if (frameInterval === Infinity) {
+        // 动画被禁用
+        return
+      }
+
       // 帧率控制
-      if (currentTime - this.lastFrameTime >= this.FRAME_INTERVAL) {
+      if (currentTime - this.lastFrameTime >= frameInterval) {
         this.lastFrameTime = currentTime
         this.update()
         this.draw()
