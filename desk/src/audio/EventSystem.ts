@@ -75,16 +75,32 @@ export const DEFAULT_EVENT_SETTINGS: EventSettings = {
 }
 
 const WARNING_INBOX_KEY = 'efflife_warning_inbox'
+const EVENT_INBOX_KEY = 'efflife_event_inbox'
 const DAILY_TRIGGER_KEY = 'efflife_daily_triggers'
+
+// 收件箱条目（所有已发布的事件）
+export interface InboxEntry {
+  id: string
+  type: EventType
+  title: string
+  message: string
+  icon?: string
+  triggeredAt: string  // ISO
+  read: boolean
+  ruleId?: string      // 预警规则ID（仅预警）
+  scheduledTime?: string
+}
 
 class EventSystemClass {
   private settings = ref<EventSettings>({ ...DEFAULT_EVENT_SETTINGS })
   private activeEvents = ref<AppEvent[]>([])
   private warningInbox = ref<WarningRecord[]>([])
+  private eventInbox = ref<InboxEntry[]>([])
 
   constructor() {
     this.loadSettings()
     this.loadWarningInbox()
+    this.loadEventInbox()
   }
 
   // ========= 设置持久化 =========
@@ -183,6 +199,98 @@ class EventSystemClass {
     }
   }
 
+  // ========= 事件收件箱 =========
+
+  private loadEventInbox() {
+    try {
+      const saved = localStorage.getItem(EVENT_INBOX_KEY)
+      if (saved) {
+        this.eventInbox.value = JSON.parse(saved)
+      }
+    } catch (e) {
+      console.warn('Failed to load event inbox:', e)
+    }
+  }
+
+  private saveEventInbox() {
+    try {
+      localStorage.setItem(EVENT_INBOX_KEY, JSON.stringify(this.eventInbox.value))
+    } catch (e) {
+      console.warn('Failed to save event inbox:', e)
+    }
+  }
+
+  getEventInbox(): InboxEntry[] {
+    // 按时间倒序返回
+    return [...this.eventInbox.value].sort((a, b) =>
+      new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime()
+    )
+  }
+
+  getUnreadCount(): number {
+    return this.eventInbox.value.filter(e => !e.read).length
+  }
+
+  // 添加到收件箱
+  private addToInbox(event: AppEvent, ruleId?: string, scheduledTime?: string) {
+    const entry: InboxEntry = {
+      id: event.id,
+      type: event.type,
+      title: event.title,
+      message: event.message,
+      icon: event.icon,
+      triggeredAt: event.triggeredAt.toISOString(),
+      read: false,
+      ruleId,
+      scheduledTime
+    }
+    this.eventInbox.value.push(entry)
+    this.saveEventInbox()
+    this.cleanOldInboxEntries()
+  }
+
+  // 标记已读
+  markAsRead(entryId: string) {
+    const entry = this.eventInbox.value.find(e => e.id === entryId)
+    if (entry) {
+      entry.read = true
+      this.saveEventInbox()
+    }
+  }
+
+  // 标记全部已读
+  markAllAsRead() {
+    this.eventInbox.value.forEach(e => e.read = true)
+    this.saveEventInbox()
+  }
+
+  // 手动删除
+  deleteInboxEntry(entryId: string) {
+    this.eventInbox.value = this.eventInbox.value.filter(e => e.id !== entryId)
+    this.saveEventInbox()
+  }
+
+  // 清空全部
+  clearInbox() {
+    this.eventInbox.value = []
+    this.saveEventInbox()
+  }
+
+  // 清理：已读超过30天的自动删除
+  private cleanOldInboxEntries() {
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+    const before = this.eventInbox.value.length
+    this.eventInbox.value = this.eventInbox.value.filter(entry => {
+      if (entry.read) {
+        return new Date(entry.triggeredAt).getTime() > thirtyDaysAgo
+      }
+      return true  // 未读的保留
+    })
+    if (this.eventInbox.value.length !== before) {
+      this.saveEventInbox()
+    }
+  }
+
   // ========= 每日触发记录（避免同一天同一事件重复） =========
 
   private getDailyTriggers(): Set<string> {
@@ -276,6 +384,9 @@ class EventSystemClass {
 
     this.activeEvents.value.push(event)
     this.markDailyTriggered(eventId)
+
+    // 写入收件箱
+    this.addToInbox(event, data?.ruleId, data?.scheduledTime)
 
     if (sound) {
       AudioManager.playSound(sound)
