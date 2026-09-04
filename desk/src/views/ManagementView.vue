@@ -211,7 +211,7 @@ function isSelectedWeekDay(day: string): boolean {
 <template>
   <div class="management-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/')">
+      <button class="back-btn" @click="currentView === 'main' ? router.push('/') : currentView = 'main'">
         <ArrowLeft :size="16" />
         <span>返回</span>
       </button>
