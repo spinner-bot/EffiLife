@@ -19,7 +19,7 @@ export const DEFAULT_CONFIG: Config = {
   use_24h: true,
   show_ampm: false,
   theme: {
-    type: 'solid',
+    type: 'forest',
     solid: {
       bg_window: '#f0f0f0',
       bg_button: '#e0e0e0',
