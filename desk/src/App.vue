@@ -51,8 +51,8 @@ function checkProgressEvents() {
   // 检查完成度事件
   EventSystem.checkProgressEvent(progress, planName)
 
-  // 检查低完成度预警
-  EventSystem.checkLowProgressWarning(progress, planName)
+  // 检查多规则预警（支持延迟发布）
+  EventSystem.checkWarnings(progress, planName)
 }
 
 onMounted(async () => {
