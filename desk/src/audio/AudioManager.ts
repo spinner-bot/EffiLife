@@ -42,7 +42,7 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   sfxVolume: 70,
   bgmEnabled: true,
   bgmVolume: 30,
-  currentBgm: 'piano',
+  currentBgm: 'ambient',
   sfxVolumes: {
     click: 80,
     hover: 30,
