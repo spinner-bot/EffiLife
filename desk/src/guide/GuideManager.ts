@@ -14,6 +14,8 @@ export interface GuideStep {
   highlight?: boolean  // 是否高亮目标元素
   position?: 'top' | 'bottom' | 'left' | 'right'
   isDemo?: boolean  // 是否是演示步骤（不需要操作）
+  skippable?: boolean  // 是否允许跳过此步骤（复杂操作）
+  autoAdvance?: boolean  // 完成后是否自动进入下一步（点击类任务）
 }
 
 export interface GuideConfig {
@@ -69,6 +71,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.nav-btn:nth-child(1)',
       navigateTo: '/records',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -80,6 +83,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.add-btn',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -90,6 +94,7 @@ export const MAIN_GUIDE: GuideConfig = {
       highlight: true,
       actionRequired: true,
       actionType: 'input',
+      skippable: true,
       validateAction: () => {
         // 检查是否回到了记录列表（说明保存成功）
         return !document.querySelector('.modal')
@@ -106,6 +111,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.back-btn',
       navigateTo: '/',
+      autoAdvance: true,
       position: 'bottom'
     },
 
@@ -120,6 +126,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.nav-btn:nth-child(2)',
       navigateTo: '/calendar',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -131,6 +138,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.day-cell.today',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -143,6 +151,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.back-btn',
       navigateTo: '/calendar',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -155,6 +164,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.back-btn',
       navigateTo: '/',
+      autoAdvance: true,
       position: 'bottom'
     },
 
@@ -169,6 +179,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.nav-btn:nth-child(3)',
       navigateTo: '/management',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -180,6 +191,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.action-btn:nth-child(2)',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -191,6 +203,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.btn.secondary',
+      autoAdvance: true,
       position: 'bottom'
     },
     {
@@ -203,6 +216,7 @@ export const MAIN_GUIDE: GuideConfig = {
       actionType: 'click',
       actionTarget: '.back-btn',
       navigateTo: '/',
+      autoAdvance: true,
       position: 'bottom'
     },
 
@@ -283,6 +297,7 @@ export const MAIN_GUIDE: GuideConfig = {
 
 class GuideManagerClass {
   private backup: DataBackup | null = null
+  private validationInterval: number | null = null
 
   constructor() {
     this.loadCompleted()
@@ -433,6 +448,21 @@ class GuideManagerClass {
   skipGuide() {
     this.restoreData()
     this.endGuide()
+  }
+
+  // 跳过当前步骤（仅用于允许跳过的步骤）
+  skipStep() {
+    const step = this.getCurrentStep()
+    if (!step || !step.skippable) return
+
+    // 停止验证
+    if (this.validationInterval) {
+      clearInterval(this.validationInterval)
+      this.validationInterval = null
+    }
+
+    // 进入下一步
+    this.nextStep()
   }
 
   // 获取当前步骤
