@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ref, onMounted, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
@@ -9,7 +9,6 @@ import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 
 const appStore = useAppStore()
-const route = useRoute()
 
 const themeStyle = computed(() => getThemeStyle(appStore.config.theme))
 
@@ -75,10 +74,8 @@ function checkProgressEvents() {
 }
 
 // 打卡完成回调
-function onCheckinComplete(streak: number) {
+function onCheckinComplete() {
   showCheckinPopup.value = false
-  // 刷新主页数据
-  const homeView = document.querySelector('.home-view')?.__vue_app__
   // 通过 store 刷新
   appStore.refreshTodayData()
 }

@@ -5,7 +5,6 @@ import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 const router = useRouter()
-const appStore = useAppStore()
 
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth() + 1)

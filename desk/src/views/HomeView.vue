@@ -53,7 +53,6 @@ const stat = computed(() => appStore.todayStat)
 
 // 打卡数据（响应式，来自 CheckinSystem）
 const checkinStreak = computed(() => checkinState.currentStreak)
-const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
 
 onMounted(async () => {
   await appStore.init()

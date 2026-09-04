@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Gauge, Sparkles, Zap, RotateCcw, Check } from 'lucide-vue-next'
-import { MotionManager, motionState } from '@/motion'
+import { MotionManager } from '@/motion'
 import type { MotionSettings } from '@/motion'
 
 const router = useRouter()

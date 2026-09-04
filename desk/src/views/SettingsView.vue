@@ -266,10 +266,6 @@ async function resetConfig() {
   alert('设置已重置')
 }
 
-function contactDeveloper() {
-  alert('QQ号：3442386217\n抖音：@浪兮有点浪')
-}
-
 // ============ 存档管理 ============
 async function exportArchive() {
   try {

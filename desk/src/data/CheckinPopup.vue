@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { CheckinSystem } from './CheckinSystem'
 import { AudioManager } from '@/audio'
 import { X, Flame } from 'lucide-vue-next'
@@ -30,13 +30,14 @@ function doCheckin() {
   // 播放打卡音效
   AudioManager.playSound('achievement')
 
-  const newStreak = CheckinSystem.checkin(props.planName, 100)
-  if (newStreak === null) {
+  const result = CheckinSystem.checkin(props.planName, 100)
+  if (result === null) {
     // 今天已经打卡过
     emit('close')
     return
   }
 
+  const newStreak = result
   targetStreak.value = newStreak
   phase.value = 'animating'
 

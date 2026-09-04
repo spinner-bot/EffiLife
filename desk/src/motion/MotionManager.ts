@@ -1,5 +1,5 @@
 // 动效管理器 - 控制动画帧率、粒子效果等
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 
 export interface MotionSettings {
   // 主开关
@@ -156,8 +156,7 @@ class MotionManagerClass {
       const ctx = canvas.getContext('2d')!
       const testDuration = 2000  // 测试2秒
       let frameCount = 0
-      let startTime = performance.now()
-      let lastTime = startTime
+      const startTime = performance.now()
 
       // 模拟一个中等复杂度的渲染任务
       const renderFrame = () => {
@@ -204,7 +203,6 @@ class MotionManagerClass {
         ctx.stroke()
 
         frameCount++
-        lastTime = now
         requestAnimationFrame(renderFrame)
       }
 

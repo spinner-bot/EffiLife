@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Bell, Clock, Inbox, Check, Trash2, AlertTriangle, Star, Trophy, CheckCircle2, RefreshCw, MessageSquare } from 'lucide-vue-next'
-import { AudioManager, EventSystem } from '@/audio'
+import { ArrowLeft, Bell, Clock, Inbox, Check, Trash2 } from 'lucide-vue-next'
+import { EventSystem } from '@/audio'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
 
 const router = useRouter()
@@ -122,11 +122,6 @@ function markAllAsRead() {
 
 function deleteEntry(entryId: string) {
   EventSystem.deleteInboxEntry(entryId)
-}
-
-function clearAll() {
-  if (!confirm('确定清空所有事件记录？此操作不可恢复。')) return
-  EventSystem.clearInbox()
 }
 
 function clearRead() {

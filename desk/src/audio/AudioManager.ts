@@ -1,5 +1,5 @@
 // 音频管理器 - 统一管理音效和背景音乐
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { MusicGenerator } from './MusicGenerator'
 
 export type SoundType =

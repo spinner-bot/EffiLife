@@ -1,5 +1,5 @@
 // 引导系统管理器 - 重新设计
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 
 export interface GuideStep {
   id: string

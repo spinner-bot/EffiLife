@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { GuideManager, guideState } from './GuideManager'
-import { X, MousePointer, Sparkles } from 'lucide-vue-next'
+import { X, MousePointer } from 'lucide-vue-next'
 
 const currentStep = computed(() => GuideManager.getCurrentStep())
 const progress = computed(() => GuideManager.getProgress())
