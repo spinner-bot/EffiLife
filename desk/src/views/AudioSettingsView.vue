@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Volume2, Music, Bell, Plus, Trash2, Play, Upload } from 'lucide-vue-next'
-import { AudioManager, EventSystem, BGM_LIST } from '@/audio'
-import type { SoundType, AudioSettings, EventSettings, EventType } from '@/audio'
+import { ArrowLeft, Volume2, Music, Bell, Plus, Trash2, Play, Clock } from 'lucide-vue-next'
+import { AudioManager, EventSystem } from '@/audio'
+import type { SoundType, AudioSettings, EventSettings, EventType, WarningRule } from '@/audio'
 
 const router = useRouter()
 
-// 音频设置
 const audioSettings = ref<AudioSettings>(AudioManager.getSettings())
-// 事件设置
 const eventSettings = ref<EventSettings>(EventSystem.getSettings())
 
-// 音效类型列表
 const soundTypes: Array<{ type: SoundType; name: string; description: string }> = [
   { type: 'click', name: '点击音效', description: '按钮点击时播放' },
   { type: 'hover', name: '悬停音效', description: '鼠标悬停时播放' },
@@ -24,54 +21,43 @@ const soundTypes: Array<{ type: SoundType; name: string; description: string }> 
   { type: 'warning', name: '警告音效', description: '警告提示时播放' }
 ]
 
-// 事件类型列表
-const eventTypes: Array<{ type: EventType; name: string; description: string }> = [
+// 基础事件（非预警）
+const baseEventTypes: Array<{ type: EventType; name: string; description: string }> = [
   { type: 'plan_complete_100', name: '计划完美完成', description: '当天计划完成度达到100%' },
   { type: 'plan_complete_90', name: '计划即将完成', description: '当天计划完成度达到90%' },
-  { type: 'plan_low_progress', name: '低完成度预警', description: '时间已晚但完成度较低' },
   { type: 'record_added', name: '记录添加', description: '添加时间记录时' },
   { type: 'plan_changed', name: '计划切换', description: '切换日计划时' },
   { type: 'achievement_unlocked', name: '成就解锁', description: '解锁新成就时' }
 ]
 
-// 所有背景音乐
 const allBgm = computed(() => AudioManager.getAllBgm())
+const warningRules = computed(() => eventSettings.value.warningRules)
 
-// 测试音效
+// 新增规则表单状态
+const showAddRule = ref(false)
+const newRule = ref({ hour: 12, minute: 0, threshold: 50, enabled: true })
+const editingRuleId = ref<string | null>(null)
+
+// ========= 音效操作 =========
+
 function testSound(type: SoundType) {
   AudioManager.playSound(type)
 }
 
-// 更新音频设置
 function updateAudioSetting<K extends keyof AudioSettings>(key: K, value: AudioSettings[K]) {
   audioSettings.value[key] = value
   AudioManager.updateSettings({ [key]: value })
 }
 
-// 更新事件设置
-function updateEventSetting<K extends keyof EventSettings>(key: K, value: EventSettings[K]) {
-  eventSettings.value[key] = value
-  EventSystem.updateSettings({ [key]: value })
-}
-
-// 更新单个音效音量
 function updateSfxVolume(type: SoundType, volume: number) {
   audioSettings.value.sfxVolumes[type] = volume
   AudioManager.updateSettings({ sfxVolumes: audioSettings.value.sfxVolumes })
 }
 
-// 切换事件开关
-function toggleEvent(type: EventType) {
-  eventSettings.value.enabled[type] = !eventSettings.value.enabled[type]
-  EventSystem.updateSettings({ enabled: eventSettings.value.enabled })
-}
-
-// 选择背景音乐
 function selectBgm(bgmId: string) {
   updateAudioSetting('currentBgm', bgmId)
 }
 
-// 添加自定义背景音乐
 function addCustomBgm() {
   const input = document.createElement('input')
   input.type = 'file'
@@ -79,13 +65,11 @@ function addCustomBgm() {
   input.onchange = async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0]
     if (!file) return
-
-    // 读取文件为 base64
     const reader = new FileReader()
     reader.onload = () => {
       const base64 = reader.result as string
       const name = file.name.replace(/\.[^/.]+$/, '')
-      const id = AudioManager.addCustomBgm(name, base64)
+      AudioManager.addCustomBgm(name, base64)
       audioSettings.value = AudioManager.getSettings()
     }
     reader.readAsDataURL(file)
@@ -93,13 +77,18 @@ function addCustomBgm() {
   input.click()
 }
 
-// 删除自定义背景音乐
 function removeCustomBgm(id: string) {
   AudioManager.removeCustomBgm(id)
   audioSettings.value = AudioManager.getSettings()
 }
 
-// 测试事件
+// ========= 事件操作 =========
+
+function toggleEvent(type: EventType | string) {
+  eventSettings.value.enabled[type] = !eventSettings.value.enabled[type]
+  EventSystem.updateSettings({ enabled: eventSettings.value.enabled })
+}
+
 function testEvent(type: EventType) {
   switch (type) {
     case 'plan_complete_100':
@@ -108,8 +97,8 @@ function testEvent(type: EventType) {
     case 'plan_complete_90':
       EventSystem.triggerEvent('plan_complete_90', '即将达成！', '计划已完成90%，加油！')
       break
-    case 'plan_low_progress':
-      EventSystem.triggerEvent('plan_low_progress', '时间不早了', '完成度较低，需要加把劲！')
+    case 'progress_warning':
+      EventSystem.triggerEvent('progress_warning', '进度预警', '已是18:00，完成度仅30%（目标50%）')
       break
     case 'record_added':
       EventSystem.triggerEvent('record_added', '记录已添加', '新的时间记录已保存')
@@ -123,8 +112,72 @@ function testEvent(type: EventType) {
   }
 }
 
-// 当前设置项
-type SettingTab = 'audio' | 'events'
+// ========= 预警规则操作 =========
+
+function startAddRule() {
+  editingRuleId.value = null
+  newRule.value = { hour: 12, minute: 0, threshold: 50, enabled: true }
+  showAddRule.value = true
+}
+
+function startEditRule(rule: WarningRule) {
+  editingRuleId.value = rule.id
+  newRule.value = {
+    hour: rule.hour,
+    minute: rule.minute,
+    threshold: rule.threshold,
+    enabled: rule.enabled
+  }
+  showAddRule.value = true
+}
+
+function saveRule() {
+  if (editingRuleId.value) {
+    EventSystem.updateWarningRule(editingRuleId.value, { ...newRule.value })
+  } else {
+    EventSystem.addWarningRule({ ...newRule.value })
+  }
+  eventSettings.value = EventSystem.getSettings()
+  showAddRule.value = false
+}
+
+function cancelRule() {
+  showAddRule.value = false
+  editingRuleId.value = null
+}
+
+function deleteRule(id: string) {
+  if (!confirm('确定删除这条预警规则？')) return
+  EventSystem.removeWarningRule(id)
+  eventSettings.value = EventSystem.getSettings()
+}
+
+function toggleRule(rule: WarningRule) {
+  EventSystem.updateWarningRule(rule.id, { enabled: !rule.enabled })
+  eventSettings.value = EventSystem.getSettings()
+}
+
+function testWarning(rule: WarningRule) {
+  const timeStr = `${rule.hour.toString().padStart(2, '0')}:${rule.minute.toString().padStart(2, '0')}`
+  EventSystem.triggerEvent(
+    'progress_warning',
+    '进度预警',
+    `已是${timeStr}，完成度仅${rule.threshold - 10}%（目标${rule.threshold}%）`
+  )
+}
+
+function formatTime(rule: WarningRule): string {
+  return `${rule.hour.toString().padStart(2, '0')}:${rule.minute.toString().padStart(2, '0')}`
+}
+
+// 按时间排序规则
+const sortedRules = computed(() => {
+  return [...eventSettings.value.warningRules].sort((a, b) => {
+    return (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute)
+  })
+})
+
+type SettingTab = 'audio' | 'events' | 'warnings'
 const currentTab = ref<SettingTab>('audio')
 </script>
 
@@ -141,64 +194,44 @@ const currentTab = ref<SettingTab>('audio')
     <main class="main-content">
       <!-- 标签切换 -->
       <div class="tab-bar">
-        <button
-          class="tab-btn"
-          :class="{ active: currentTab === 'audio' }"
-          @click="currentTab = 'audio'"
-        >
+        <button class="tab-btn" :class="{ active: currentTab === 'audio' }" @click="currentTab = 'audio'">
           <Volume2 :size="18" />
-          <span>音效设置</span>
+          <span>音效</span>
         </button>
-        <button
-          class="tab-btn"
-          :class="{ active: currentTab === 'events' }"
-          @click="currentTab = 'events'"
-        >
+        <button class="tab-btn" :class="{ active: currentTab === 'events' }" @click="currentTab = 'events'">
           <Bell :size="18" />
-          <span>事件设置</span>
+          <span>事件</span>
+        </button>
+        <button class="tab-btn" :class="{ active: currentTab === 'warnings' }" @click="currentTab = 'warnings'">
+          <Clock :size="18" />
+          <span>预警</span>
         </button>
       </div>
 
-      <!-- 音效设置 -->
+      <!-- ============ 音效设置 ============ -->
       <template v-if="currentTab === 'audio'">
-        <!-- 主开关 -->
         <section class="settings-section">
           <div class="section-header">
             <h2>总开关</h2>
           </div>
           <label class="toggle-row">
             <span>启用声音</span>
-            <input
-              type="checkbox"
-              :checked="audioSettings.enabled"
-              @change="updateAudioSetting('enabled', ($event.target as HTMLInputElement).checked)"
-            />
+            <input type="checkbox" :checked="audioSettings.enabled" @change="updateAudioSetting('enabled', ($event.target as HTMLInputElement).checked)" />
           </label>
         </section>
 
-        <!-- 音效设置 -->
         <section class="settings-section">
           <div class="section-header">
             <h2>音效</h2>
             <label class="toggle-inline">
-              <input
-                type="checkbox"
-                :checked="audioSettings.sfxEnabled"
-                @change="updateAudioSetting('sfxEnabled', ($event.target as HTMLInputElement).checked)"
-              />
-              <span>启用音效</span>
+              <input type="checkbox" :checked="audioSettings.sfxEnabled" @change="updateAudioSetting('sfxEnabled', ($event.target as HTMLInputElement).checked)" />
+              <span>启用</span>
             </label>
           </div>
 
           <div class="volume-row">
             <span>主音量</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              :value="audioSettings.sfxVolume"
-              @input="updateAudioSetting('sfxVolume', Number(($event.target as HTMLInputElement).value))"
-            />
+            <input type="range" min="0" max="100" :value="audioSettings.sfxVolume" @input="updateAudioSetting('sfxVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.sfxVolume }}%</span>
           </div>
 
@@ -209,56 +242,31 @@ const currentTab = ref<SettingTab>('audio')
                 <span class="sfx-desc">{{ sfx.description }}</span>
               </div>
               <div class="sfx-controls">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  :value="audioSettings.sfxVolumes[sfx.type]"
-                  @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))"
-                />
-                <button class="test-btn" @click="testSound(sfx.type)">
-                  <Play :size="14" />
-                </button>
+                <input type="range" min="0" max="100" :value="audioSettings.sfxVolumes[sfx.type]" @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))" />
+                <button class="test-btn" @click="testSound(sfx.type)"><Play :size="14" /></button>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- 背景音乐设置 -->
         <section class="settings-section">
           <div class="section-header">
             <h2>背景音乐</h2>
             <label class="toggle-inline">
-              <input
-                type="checkbox"
-                :checked="audioSettings.bgmEnabled"
-                @change="updateAudioSetting('bgmEnabled', ($event.target as HTMLInputElement).checked)"
-              />
-              <span>启用背景音乐</span>
+              <input type="checkbox" :checked="audioSettings.bgmEnabled" @change="updateAudioSetting('bgmEnabled', ($event.target as HTMLInputElement).checked)" />
+              <span>启用</span>
             </label>
           </div>
 
           <div class="volume-row">
             <span>音量</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              :value="audioSettings.bgmVolume"
-              @input="updateAudioSetting('bgmVolume', Number(($event.target as HTMLInputElement).value))"
-            />
+            <input type="range" min="0" max="100" :value="audioSettings.bgmVolume" @input="updateAudioSetting('bgmVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.bgmVolume }}%</span>
           </div>
 
           <div class="bgm-list">
             <div class="bgm-section-title">内置音乐</div>
-            <button
-              v-for="bgm in allBgm.filter(b => !b.custom)"
-              :key="bgm.id"
-              class="bgm-item"
-              :class="{ active: audioSettings.currentBgm === bgm.id }"
-              @click="selectBgm(bgm.id)"
-            >
+            <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ bgm.name }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
@@ -266,98 +274,118 @@ const currentTab = ref<SettingTab>('audio')
 
             <div class="bgm-section-title">
               自定义音乐
-              <button class="add-bgm-btn" @click="addCustomBgm">
-                <Plus :size="14" />
-              </button>
+              <button class="add-bgm-btn" @click="addCustomBgm"><Plus :size="14" /></button>
             </div>
-            <button
-              v-for="bgm in allBgm.filter(b => b.custom)"
-              :key="bgm.id"
-              class="bgm-item"
-              :class="{ active: audioSettings.currentBgm === bgm.id }"
-              @click="selectBgm(bgm.id)"
-            >
+            <button v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ bgm.name }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
-              <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)">
-                <Trash2 :size="14" />
-              </button>
+              <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
             </button>
-            <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">
-              点击 + 添加本地音乐文件
-            </div>
+            <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">点击 + 添加本地音乐文件</div>
           </div>
         </section>
       </template>
 
-      <!-- 事件设置 -->
-      <template v-else>
+      <!-- ============ 事件设置 ============ -->
+      <template v-else-if="currentTab === 'events'">
         <section class="settings-section">
           <div class="section-header">
             <h2>事件通知</h2>
           </div>
-          <p class="section-desc">配置哪些事件触发时显示通知弹窗并播放音效</p>
+          <p class="section-desc">配置哪些事件触发时显示弹窗并播放音效</p>
 
           <div class="event-list">
-            <div v-for="event in eventTypes" :key="event.type" class="event-item">
+            <div v-for="event in baseEventTypes" :key="event.type" class="event-item">
               <div class="event-info">
                 <span class="event-name">{{ event.name }}</span>
                 <span class="event-desc">{{ event.description }}</span>
               </div>
               <div class="event-controls">
                 <label class="toggle-inline">
-                  <input
-                    type="checkbox"
-                    :checked="eventSettings.enabled[event.type]"
-                    @change="toggleEvent(event.type)"
-                  />
+                  <input type="checkbox" :checked="eventSettings.enabled[event.type]" @change="toggleEvent(event.type)" />
                 </label>
-                <button class="test-btn" @click="testEvent(event.type)">
-                  <Bell :size="14" />
-                </button>
+                <button class="test-btn" @click="testEvent(event.type)"><Bell :size="14" /></button>
               </div>
             </div>
           </div>
         </section>
+      </template>
 
+      <!-- ============ 预警规则 ============ -->
+      <template v-else-if="currentTab === 'warnings'">
         <section class="settings-section">
           <div class="section-header">
-            <h2>预警设置</h2>
+            <h2>进度预警规则</h2>
+            <label class="toggle-inline">
+              <input type="checkbox" :checked="eventSettings.enabled.progress_warning" @change="toggleEvent('progress_warning')" />
+              <span>启用</span>
+            </label>
           </div>
+          <p class="section-desc">到达指定时间后，若完成度低于阈值，则发出预警。即使软件期间关闭，重新打开后也会补发。</p>
 
-          <div class="setting-row">
-            <span>低完成度阈值</span>
-            <div class="input-group">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                :value="eventSettings.lowProgressThreshold"
-                @input="updateEventSetting('lowProgressThreshold', Number(($event.target as HTMLInputElement).value))"
-              />
-              <span>%</span>
+          <div class="warning-list">
+            <div v-for="rule in sortedRules" :key="rule.id" class="warning-item" :class="{ disabled: !rule.enabled }">
+              <div class="warning-main" @click="startEditRule(rule)">
+                <div class="warning-time">
+                  <Clock :size="16" />
+                  <span class="time-text">{{ formatTime(rule) }}</span>
+                </div>
+                <div class="warning-detail">
+                  完成度低于 <strong>{{ rule.threshold }}%</strong> 时预警
+                </div>
+              </div>
+              <div class="warning-actions">
+                <label class="toggle-inline">
+                  <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule)" />
+                </label>
+                <button class="test-btn" @click="testWarning(rule)" title="测试"><Bell :size="14" /></button>
+                <button class="test-btn danger" @click="deleteRule(rule.id)" title="删除"><Trash2 :size="14" /></button>
+              </div>
             </div>
-          </div>
 
-          <div class="setting-row">
-            <span>预警时间（24小时制）</span>
-            <div class="input-group">
-              <input
-                type="number"
-                min="0"
-                max="23"
-                :value="eventSettings.warningHour"
-                @input="updateEventSetting('warningHour', Number(($event.target as HTMLInputElement).value))"
-              />
-              <span>时</span>
-            </div>
+            <button class="add-rule-btn" @click="startAddRule">
+              <Plus :size="16" />
+              <span>添加预警规则</span>
+            </button>
           </div>
-
-          <p class="setting-hint">
-            当时间超过 {{ eventSettings.warningHour }}:00 且完成度低于 {{ eventSettings.lowProgressThreshold }}% 时触发预警
-          </p>
         </section>
+
+        <!-- 添加/编辑规则弹窗 -->
+        <div v-if="showAddRule" class="modal-overlay" @click.self="cancelRule">
+          <div class="modal">
+            <h3>{{ editingRuleId ? '编辑预警规则' : '添加预警规则' }}</h3>
+
+            <div class="form-row">
+              <label>触发时间</label>
+              <div class="time-picker">
+                <div class="time-unit">
+                  <label>时</label>
+                  <input type="number" v-model.number="newRule.hour" min="0" max="23" />
+                </div>
+                <span class="time-sep">:</span>
+                <div class="time-unit">
+                  <label>分</label>
+                  <input type="number" v-model.number="newRule.minute" min="0" max="59" step="5" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>完成度阈值</label>
+              <div class="threshold-picker">
+                <input type="range" v-model.number="newRule.threshold" min="0" max="100" step="5" />
+                <span class="threshold-value">{{ newRule.threshold }}%</span>
+              </div>
+              <p class="form-hint">当时间到达设定时刻，若完成度低于此值则发出预警</p>
+            </div>
+
+            <div class="modal-actions">
+              <button class="btn secondary" @click="cancelRule">取消</button>
+              <button class="btn primary" @click="saveRule">保存</button>
+            </div>
+          </div>
+        </div>
       </template>
     </main>
   </div>
@@ -392,25 +420,15 @@ const currentTab = ref<SettingTab>('audio')
   transition: all var(--transition-fast);
 }
 
-.back-btn:hover {
-  background: var(--color-bg-tertiary);
-}
+.back-btn:hover { background: var(--color-bg-tertiary); }
 
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
+.header h1 { font-size: 1.5rem; font-weight: 600; }
 
-.main-content {
-  flex: 1;
-  max-width: 600px;
-  margin: 0 auto;
-  width: 100%;
-}
+.main-content { flex: 1; max-width: 600px; margin: 0 auto; width: 100%; }
 
 .tab-bar {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-xs);
   background: var(--color-bg-secondary);
@@ -422,8 +440,8 @@ const currentTab = ref<SettingTab>('audio')
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -433,9 +451,7 @@ const currentTab = ref<SettingTab>('audio')
   transition: all var(--transition-fast);
 }
 
-.tab-btn:hover {
-  color: var(--color-text-primary);
-}
+.tab-btn:hover { color: var(--color-text-primary); }
 
 .tab-btn.active {
   background: var(--color-bg);
@@ -458,16 +474,13 @@ const currentTab = ref<SettingTab>('audio')
   margin-bottom: var(--spacing-md);
 }
 
-.section-header h2 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
+.section-header h2 { font-size: 1rem; font-weight: 600; margin: 0; }
 
 .section-desc {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-md) 0;
+  line-height: 1.5;
 }
 
 .toggle-row {
@@ -477,9 +490,10 @@ const currentTab = ref<SettingTab>('audio')
   cursor: pointer;
 }
 
-.toggle-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+.toggle-row input[type="checkbox"],
+.toggle-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
   cursor: pointer;
 }
 
@@ -489,12 +503,6 @@ const currentTab = ref<SettingTab>('audio')
   gap: var(--spacing-xs);
   font-size: 0.875rem;
   color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.toggle-inline input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
   cursor: pointer;
 }
 
@@ -530,16 +538,17 @@ const currentTab = ref<SettingTab>('audio')
   text-align: right;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  font-family: var(--font-mono);
 }
 
-.sfx-list {
+.sfx-list, .event-list, .warning-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
 }
 
-.sfx-item {
+.sfx-item, .event-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -548,47 +557,22 @@ const currentTab = ref<SettingTab>('audio')
   border-radius: var(--radius-md);
 }
 
-.sfx-info {
+.sfx-info, .event-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.sfx-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+.sfx-name, .event-name { font-size: 0.875rem; font-weight: 500; }
+.sfx-desc, .event-desc { font-size: 0.75rem; color: var(--color-text-tertiary); }
 
-.sfx-desc {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-}
-
-.sfx-controls {
+.sfx-controls, .event-controls {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
 }
 
-.sfx-controls input[type="range"] {
-  width: 80px;
-  height: 4px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--color-bg-tertiary);
-  border-radius: 2px;
-  outline: none;
-}
-
-.sfx-controls input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  cursor: pointer;
-}
+.sfx-controls input[type="range"] { width: 80px; }
 
 .test-btn {
   display: flex;
@@ -610,11 +594,13 @@ const currentTab = ref<SettingTab>('audio')
   color: white;
 }
 
-.bgm-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
+.test-btn.danger:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
 }
+
+/* 背景音乐 */
+.bgm-list { display: flex; flex-direction: column; gap: var(--spacing-xs); }
 
 .bgm-section-title {
   display: flex;
@@ -660,21 +646,14 @@ const currentTab = ref<SettingTab>('audio')
   transition: all var(--transition-fast);
 }
 
-.bgm-item:hover {
-  background: var(--color-bg-tertiary);
-}
+.bgm-item:hover { background: var(--color-bg-tertiary); }
 
 .bgm-item.active {
   border-color: var(--color-primary);
-  background: var(--color-primary);
   background: rgba(99, 102, 241, 0.1);
 }
 
-.check-mark {
-  margin-left: auto;
-  color: var(--color-primary);
-  font-weight: bold;
-}
+.check-mark { margin-left: auto; color: var(--color-primary); font-weight: bold; }
 
 .remove-btn {
   display: flex;
@@ -691,10 +670,7 @@ const currentTab = ref<SettingTab>('audio')
   margin-left: auto;
 }
 
-.remove-btn:hover {
-  background: var(--color-error);
-  color: white;
-}
+.remove-btn:hover { background: var(--color-error); color: white; }
 
 .empty-hint {
   text-align: center;
@@ -703,76 +679,241 @@ const currentTab = ref<SettingTab>('audio')
   font-size: 0.875rem;
 }
 
-.event-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.event-item {
+/* 预警规则 */
+.warning-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm);
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
   background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
 }
 
-.event-info {
+.warning-item:hover { border-color: var(--color-border-hover); }
+
+.warning-item.disabled { opacity: 0.5; }
+
+.warning-main {
+  flex: 1;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
-.event-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.event-desc {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-}
-
-.event-controls {
+.warning-time {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  color: var(--color-primary);
 }
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) 0;
+.time-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
 }
 
-.input-group {
+.warning-detail {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.warning-detail strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.warning-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
 }
 
-.input-group input[type="number"] {
-  width: 60px;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  text-align: center;
-}
-
-.input-group span {
-  font-size: 0.875rem;
+.add-rule-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: var(--spacing-sm);
 }
 
-.setting-hint {
+.add-rule-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast);
+}
+
+.modal {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  width: 90%;
+  max-width: 420px;
+  animation: slideUp var(--transition-normal);
+}
+
+.modal h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.form-row {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-row > label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.time-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.time-unit {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.time-unit label {
   font-size: 0.75rem;
   color: var(--color-text-tertiary);
-  margin: var(--spacing-sm) 0 0 0;
-  padding-top: var(--spacing-sm);
-  border-top: 1px solid var(--color-border);
+}
+
+.time-unit input {
+  width: 60px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  text-align: center;
+  font-size: 1.125rem;
+  font-family: var(--font-mono);
+}
+
+.time-sep {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text-secondary);
+  margin-top: 16px;
+}
+
+.threshold-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.threshold-picker input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+}
+
+.threshold-picker input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+}
+
+.threshold-value {
+  width: 50px;
+  text-align: right;
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--color-primary);
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin: var(--spacing-xs) 0 0 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn.secondary {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.btn.secondary:hover { background: var(--color-bg-tertiary); }
+
+.btn.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.btn.primary:hover { background: var(--color-primary-hover); }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>
