@@ -115,6 +115,16 @@ button {
   transition: all var(--transition-fast);
 }
 
+/* 按钮悬停时文字颜色处理 - 使用主题色 */
+button:hover:not(:disabled) {
+  color: var(--color-accent, var(--color-primary));
+}
+
+/* 自带颜色的按钮不改变文字颜色 */
+button[style*="color"]:hover:not(:disabled) {
+  color: inherit;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;

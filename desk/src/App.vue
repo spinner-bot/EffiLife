@@ -32,6 +32,7 @@ function applyTheme() {
   root.style.setProperty('--color-button-bg', style.buttonBg)
   root.style.setProperty('--color-button-text', style.buttonText)
   root.style.setProperty('--color-primary', style.accentColor)
+  root.style.setProperty('--color-accent', style.accentColor)  // 用于按钮悬停文字
   root.style.setProperty('--color-bg-secondary', style.cardBg)
 
   if (style.backdropFilter) {
