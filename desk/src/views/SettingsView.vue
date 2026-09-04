@@ -383,6 +383,10 @@ watch(() => config.value, (newConfig) => {
             <span>声音</span>
             <ChevronRight :size="16" />
           </button>
+          <button class="settings-item" @click="router.push('/motion-settings')">
+            <span>动效</span>
+            <ChevronRight :size="16" />
+          </button>
           <button class="settings-item" @click="router.push('/event-manager')">
             <span>事件管理</span>
             <ChevronRight :size="16" />
