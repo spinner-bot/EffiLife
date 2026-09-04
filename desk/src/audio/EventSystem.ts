@@ -1,17 +1,38 @@
 // 事件系统 - 管理应用事件和触发音效/弹窗
-import { ref, computed, reactive } from 'vue'
+import { ref } from 'vue'
 import { AudioManager } from './AudioManager'
 import type { SoundType } from './AudioManager'
 
 // 事件类型
 export type EventType =
-  | 'plan_complete_100'      // 当天计划完成度达到100%
-  | 'plan_complete_90'       // 当天计划完成度达到90%
-  | 'plan_low_progress'      // 完成度低但时间已晚
-  | 'record_added'           // 添加记录
-  | 'record_deleted'         // 删除记录
-  | 'plan_changed'           // 计划切换
-  | 'achievement_unlocked'   // 成就解锁
+  | 'plan_complete_100'
+  | 'plan_complete_90'
+  | 'progress_warning'       // 进度预警（基于规则）
+  | 'record_added'
+  | 'record_deleted'
+  | 'plan_changed'
+  | 'achievement_unlocked'
+
+// 预警规则
+export interface WarningRule {
+  id: string
+  hour: number        // 触发时间（小时，24小时制）
+  minute: number      // 触发时间（分钟）
+  threshold: number   // 完成度阈值（百分比）
+  enabled: boolean
+}
+
+// 预警状态（收件箱）
+export interface WarningRecord {
+  id: string
+  ruleId: string
+  date: string        // 日期 YYYY-MM-DD
+  triggeredAt: string // ISO 时间
+  progress: number
+  threshold: number
+  scheduledTime: string  // 预定触发时间 HH:mm
+  dismissed: boolean
+}
 
 // 事件定义
 export interface AppEvent {
@@ -27,57 +48,65 @@ export interface AppEvent {
 
 // 事件配置
 export interface EventSettings {
-  // 各事件的开关
-  enabled: Record<EventType, boolean>
-
-  // 低完成度预警阈值
-  lowProgressThreshold: number  // 百分比
-
-  // 预警时间（小时，24小时制）
-  warningHour: number  // 超过这个时间且完成度低则预警
-
-  // 弹窗显示时长（毫秒）
+  enabled: Record<string, boolean>  // key 改为 string 支持动态预警 id
+  warningRules: WarningRule[]
   popupDuration: number
 }
+
+// 默认预警规则
+export const DEFAULT_WARNING_RULES: WarningRule[] = [
+  { id: 'warn_12_20', hour: 12, minute: 0, threshold: 20, enabled: true },
+  { id: 'warn_18_50', hour: 18, minute: 0, threshold: 50, enabled: true },
+  { id: 'warn_22_70', hour: 22, minute: 0, threshold: 70, enabled: true },
+]
 
 export const DEFAULT_EVENT_SETTINGS: EventSettings = {
   enabled: {
     plan_complete_100: true,
     plan_complete_90: true,
-    plan_low_progress: true,
+    progress_warning: true,
     record_added: false,
     record_deleted: false,
     plan_changed: false,
     achievement_unlocked: true
   },
-  lowProgressThreshold: 50,
-  warningHour: 21,  // 晚上9点后
-  popupDuration: 5000
+  warningRules: DEFAULT_WARNING_RULES.map(r => ({ ...r })),
+  popupDuration: 8000
 }
+
+const WARNING_INBOX_KEY = 'efflife_warning_inbox'
+const DAILY_TRIGGER_KEY = 'efflife_daily_triggers'
 
 class EventSystemClass {
   private settings = ref<EventSettings>({ ...DEFAULT_EVENT_SETTINGS })
   private activeEvents = ref<AppEvent[]>([])
-  private triggeredEvents = ref<Set<string>>(new Set())  // 记录已触发的事件，避免重复
+  private warningInbox = ref<WarningRecord[]>([])
 
   constructor() {
     this.loadSettings()
+    this.loadWarningInbox()
   }
 
-  // 加载设置
+  // ========= 设置持久化 =========
+
   private loadSettings() {
     try {
       const saved = localStorage.getItem('efflife_event_settings')
       if (saved) {
         const parsed = JSON.parse(saved)
-        this.settings.value = { ...DEFAULT_EVENT_SETTINGS, ...parsed }
+        this.settings.value = {
+          ...DEFAULT_EVENT_SETTINGS,
+          ...parsed,
+          warningRules: parsed.warningRules && parsed.warningRules.length > 0
+            ? parsed.warningRules
+            : DEFAULT_WARNING_RULES.map(r => ({ ...r }))
+        }
       }
     } catch (e) {
       console.warn('Failed to load event settings:', e)
     }
   }
 
-  // 保存设置
   saveSettings() {
     try {
       localStorage.setItem('efflife_event_settings', JSON.stringify(this.settings.value))
@@ -86,87 +115,154 @@ class EventSystemClass {
     }
   }
 
-  // 获取设置
   getSettings() {
     return this.settings.value
   }
 
-  // 更新设置
   updateSettings(newSettings: Partial<EventSettings>) {
     this.settings.value = { ...this.settings.value, ...newSettings }
     this.saveSettings()
   }
 
-  // 获取活跃事件列表
-  getActiveEvents() {
-    return this.activeEvents.value
+  // ========= 预警规则管理 =========
+
+  getWarningRules(): WarningRule[] {
+    return this.settings.value.warningRules
   }
 
-  // 生成事件ID
+  addWarningRule(rule: Omit<WarningRule, 'id'>): string {
+    const id = `warn_${Date.now()}`
+    this.settings.value.warningRules.push({ ...rule, id })
+    this.saveSettings()
+    return id
+  }
+
+  updateWarningRule(id: string, updates: Partial<WarningRule>) {
+    const rule = this.settings.value.warningRules.find(r => r.id === id)
+    if (rule) {
+      Object.assign(rule, updates)
+      this.saveSettings()
+    }
+  }
+
+  removeWarningRule(id: string) {
+    this.settings.value.warningRules = this.settings.value.warningRules.filter(r => r.id !== id)
+    this.saveSettings()
+  }
+
+  // ========= 预警收件箱 =========
+
+  private loadWarningInbox() {
+    try {
+      const saved = localStorage.getItem(WARNING_INBOX_KEY)
+      if (saved) {
+        this.warningInbox.value = JSON.parse(saved)
+      }
+    } catch (e) {
+      console.warn('Failed to load warning inbox:', e)
+    }
+  }
+
+  private saveWarningInbox() {
+    try {
+      localStorage.setItem(WARNING_INBOX_KEY, JSON.stringify(this.warningInbox.value))
+    } catch (e) {
+      console.warn('Failed to save warning inbox:', e)
+    }
+  }
+
+  getWarningInbox(): WarningRecord[] {
+    return this.warningInbox.value
+  }
+
+  dismissWarning(recordId: string) {
+    const record = this.warningInbox.value.find(r => r.id === recordId)
+    if (record) {
+      record.dismissed = true
+      this.saveWarningInbox()
+    }
+  }
+
+  // ========= 每日触发记录（避免同一天同一事件重复） =========
+
+  private getDailyTriggers(): Set<string> {
+    try {
+      const saved = localStorage.getItem(DAILY_TRIGGER_KEY)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.date === this.getTodayStr()) {
+          return new Set(data.triggers || [])
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return new Set()
+  }
+
+  private markDailyTriggered(key: string) {
+    const triggers = this.getDailyTriggers()
+    triggers.add(key)
+    localStorage.setItem(DAILY_TRIGGER_KEY, JSON.stringify({
+      date: this.getTodayStr(),
+      triggers: Array.from(triggers)
+    }))
+  }
+
+  private isDailyTriggered(key: string): boolean {
+    return this.getDailyTriggers().has(key)
+  }
+
+  private getTodayStr(): string {
+    const d = new Date()
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+  }
+
+  // ========= 事件触发 =========
+
   private generateEventId(type: EventType, data?: any): string {
-    const date = new Date().toDateString()
+    const date = this.getTodayStr()
     const dataKey = data ? JSON.stringify(data) : ''
     return `${type}_${date}_${dataKey}`
   }
 
-  // 触发事件
   triggerEvent(type: EventType, title: string, message: string, data?: any) {
-    // 检查事件是否启用
     if (!this.settings.value.enabled[type]) {
       return
     }
 
-    // 检查是否已触发（同一天同一类型只触发一次）
     const eventId = this.generateEventId(type, data)
-    if (this.triggeredEvents.value.has(eventId)) {
+    if (this.isDailyTriggered(eventId)) {
       return
     }
 
-    // 确定音效类型
     let sound: SoundType | undefined
+    let icon = ''
+
     switch (type) {
       case 'plan_complete_100':
       case 'achievement_unlocked':
         sound = 'achievement'
+        icon = type === 'plan_complete_100' ? '🎉' : '🏆'
         break
       case 'plan_complete_90':
         sound = 'success'
-        break
-      case 'plan_low_progress':
-        sound = 'warning'
-        break
-      case 'record_added':
-        sound = 'notification'
-        break
-      case 'plan_changed':
-        sound = 'toggle'
-        break
-    }
-
-    // 确定图标
-    let icon = ''
-    switch (type) {
-      case 'plan_complete_100':
-        icon = '🎉'
-        break
-      case 'plan_complete_90':
         icon = '⭐'
         break
-      case 'plan_low_progress':
+      case 'progress_warning':
+        sound = 'warning'
         icon = '⚠️'
         break
       case 'record_added':
+        sound = 'notification'
         icon = '📝'
         break
       case 'plan_changed':
+        sound = 'toggle'
         icon = '🔄'
-        break
-      case 'achievement_unlocked':
-        icon = '🏆'
         break
     }
 
-    // 创建事件
     const event: AppEvent = {
       id: eventId,
       type,
@@ -178,16 +274,13 @@ class EventSystemClass {
       data
     }
 
-    // 添加到活跃事件
     this.activeEvents.value.push(event)
-    this.triggeredEvents.value.add(eventId)
+    this.markDailyTriggered(eventId)
 
-    // 播放音效
     if (sound) {
       AudioManager.playSound(sound)
     }
 
-    // 自动移除（根据设置时长）
     setTimeout(() => {
       this.dismissEvent(eventId)
     }, this.settings.value.popupDuration)
@@ -195,22 +288,20 @@ class EventSystemClass {
     return event
   }
 
-  // 关闭事件弹窗
   dismissEvent(eventId: string) {
     this.activeEvents.value = this.activeEvents.value.filter(e => e.id !== eventId)
   }
 
-  // 关闭所有事件弹窗
   dismissAllEvents() {
     this.activeEvents.value = []
   }
 
-  // 重置每日触发记录（每天零点调用）
-  resetDailyTriggers() {
-    this.triggeredEvents.value.clear()
+  getActiveEvents() {
+    return this.activeEvents.value
   }
 
-  // 检查计划完成度事件
+  // ========= 完成度事件检查 =========
+
   checkProgressEvent(progress: number, planName: string) {
     if (progress >= 100) {
       this.triggerEvent(
@@ -229,23 +320,64 @@ class EventSystemClass {
     }
   }
 
-  // 检查低完成度预警
-  checkLowProgressWarning(progress: number, planName: string) {
-    const now = new Date()
-    const currentHour = now.getHours()
+  // ========= 预警检查（核心：支持延迟发布） =========
 
-    // 如果当前时间超过预警时间，且完成度低于阈值
-    if (currentHour >= this.settings.value.warningHour &&
-        progress < this.settings.value.lowProgressThreshold) {
+  /**
+   * 检查所有预警规则。
+   * 逻辑：对每个启用的规则，如果当前时间已过规则的触发时间，
+   * 且当天完成度低于阈值，且该规则今天还未触发过，
+   * 则补发预警。
+   */
+  checkWarnings(progress: number, planName: string) {
+    if (!this.settings.value.enabled.progress_warning) {
+      return
+    }
+
+    const now = new Date()
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+    const todayStr = this.getTodayStr()
+
+    for (const rule of this.settings.value.warningRules) {
+      if (!rule.enabled) continue
+
+      const ruleMinutes = rule.hour * 60 + rule.minute
+      // 已过了触发时间
+      if (currentMinutes < ruleMinutes) continue
+
+      // 完成度达标，无需预警
+      if (progress >= rule.threshold) continue
+
+      // 今天这条规则已经触发过
+      const triggerKey = `warning_${rule.id}_${todayStr}`
+      if (this.isDailyTriggered(triggerKey)) continue
+
+      // 触发预警
+      const scheduledTime = `${rule.hour.toString().padStart(2, '0')}:${rule.minute.toString().padStart(2, '0')}`
+
+      const record: WarningRecord = {
+        id: `warn_record_${Date.now()}_${rule.id}`,
+        ruleId: rule.id,
+        date: todayStr,
+        triggeredAt: now.toISOString(),
+        progress,
+        threshold: rule.threshold,
+        scheduledTime,
+        dismissed: false
+      }
+
+      this.warningInbox.value.push(record)
+      this.saveWarningInbox()
+      this.markDailyTriggered(triggerKey)
+
+      // 弹出预警弹窗
       this.triggerEvent(
-        'plan_low_progress',
-        '时间不早了',
-        `当前完成度仅${progress}%，「${planName}」计划还需努力！`,
-        { progress, planName, hour: currentHour }
+        'progress_warning',
+        '进度预警',
+        `已是${scheduledTime}，「${planName}」完成度仅${progress}%（目标${rule.threshold}%）`,
+        { ruleId: rule.id, progress, threshold: rule.threshold, scheduledTime, recordId: record.id }
       )
     }
   }
 }
 
-// 导出单例
 export const EventSystem = new EventSystemClass()
