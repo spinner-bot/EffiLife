@@ -23,6 +23,9 @@ export class ParticleSystem {
   private animationId: number | null = null
   private width = 0
   private height = 0
+  private lastFrameTime = 0
+  private readonly TARGET_FPS = 30
+  private readonly FRAME_INTERVAL = 1000 / this.TARGET_FPS
 
   constructor(canvas: HTMLCanvasElement, config: ParticleConfig) {
     this.canvas = canvas
@@ -324,12 +327,16 @@ export class ParticleSystem {
   }
 
   start() {
-    const animate = () => {
-      this.update()
-      this.draw()
+    const animate = (currentTime: number) => {
+      // 帧率控制
+      if (currentTime - this.lastFrameTime >= this.FRAME_INTERVAL) {
+        this.lastFrameTime = currentTime
+        this.update()
+        this.draw()
+      }
       this.animationId = requestAnimationFrame(animate)
     }
-    animate()
+    this.animationId = requestAnimationFrame(animate)
   }
 
   stop() {
