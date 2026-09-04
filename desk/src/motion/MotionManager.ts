@@ -23,7 +23,7 @@ export interface MotionSettings {
 
 export const DEFAULT_MOTION_SETTINGS: MotionSettings = {
   enabled: true,
-  targetFps: 60,
+  targetFps: 120,
   themeCanvasEnabled: true,
   particleEnabled: true,
   transitionEnabled: true,
@@ -207,8 +207,30 @@ class MotionManagerClass {
   private generateRecommendation(result: { fps: number; score: number }): MotionSettings {
     const base = { ...DEFAULT_MOTION_SETTINGS }
 
-    if (result.score >= 80) {
-      // 高性能设备
+    if (result.score >= 90) {
+      // 顶级设备 - 120fps
+      return {
+        ...base,
+        enabled: true,
+        targetFps: 120,
+        themeCanvasEnabled: true,
+        particleEnabled: true,
+        transitionEnabled: true,
+        particleCountMultiplier: 2.0
+      }
+    } else if (result.score >= 75) {
+      // 高性能设备 - 90fps
+      return {
+        ...base,
+        enabled: true,
+        targetFps: 90,
+        themeCanvasEnabled: true,
+        particleEnabled: true,
+        transitionEnabled: true,
+        particleCountMultiplier: 1.5
+      }
+    } else if (result.score >= 50) {
+      // 中等性能设备 - 60fps
       return {
         ...base,
         enabled: true,
@@ -216,21 +238,10 @@ class MotionManagerClass {
         themeCanvasEnabled: true,
         particleEnabled: true,
         transitionEnabled: true,
-        particleCountMultiplier: 1.5
-      }
-    } else if (result.score >= 50) {
-      // 中等性能设备
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 30,
-        themeCanvasEnabled: true,
-        particleEnabled: true,
-        transitionEnabled: true,
         particleCountMultiplier: 1.0
       }
-    } else if (result.score >= 25) {
-      // 低性能设备
+    } else {
+      // 低性能设备 - 30fps
       return {
         ...base,
         enabled: true,
@@ -238,17 +249,6 @@ class MotionManagerClass {
         themeCanvasEnabled: true,
         particleEnabled: false,
         transitionEnabled: true,
-        particleCountMultiplier: 0.5
-      }
-    } else {
-      // 极低性能设备
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 15,
-        themeCanvasEnabled: false,
-        particleEnabled: false,
-        transitionEnabled: false,
         particleCountMultiplier: 0.5
       }
     }

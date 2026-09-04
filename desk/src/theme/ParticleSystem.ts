@@ -25,6 +25,7 @@ export class ParticleSystem {
   private width = 0
   private height = 0
   private lastFrameTime = 0
+  private lastUpdateTime = 0
 
   constructor(canvas: HTMLCanvasElement, config: ParticleConfig) {
     this.canvas = canvas
@@ -32,6 +33,7 @@ export class ParticleSystem {
     this.config = config
     this.resize()
     this.init()
+    this.lastUpdateTime = performance.now()
   }
 
   resize() {
@@ -160,22 +162,26 @@ export class ParticleSystem {
   }
 
   update() {
+    const now = performance.now()
+    const deltaTime = (now - this.lastUpdateTime) / 1000  // 转换为秒
+    this.lastUpdateTime = now
+
     const type = this.config.type
     const speed = this.config.speed
 
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i]
 
-      // 更新位置
-      p.x += p.vx * speed
-      p.y += p.vy * speed
-      p.rotation += p.rotationSpeed
-      p.life++
+      // 更新位置 - 使用 delta time 保证帧率无关
+      p.x += p.vx * speed * deltaTime * 60  // 乘以60是因为原本基于60fps设计
+      p.y += p.vy * speed * deltaTime * 60
+      p.rotation += p.rotationSpeed * deltaTime * 60
+      p.life += deltaTime * 60  // life 也基于时间
 
       // 萤火虫特殊处理
       if (type === 'fireflies') {
-        p.vx += (Math.random() - 0.5) * 0.1
-        p.vy += (Math.random() - 0.5) * 0.1
+        p.vx += (Math.random() - 0.5) * 0.1 * deltaTime * 60
+        p.vy += (Math.random() - 0.5) * 0.1 * deltaTime * 60
         p.vx = Math.max(-1, Math.min(1, p.vx))
         p.vy = Math.max(-1, Math.min(1, p.vy))
 
@@ -197,7 +203,6 @@ export class ParticleSystem {
       // 星星闪烁
       if (type === 'stars') {
         p.opacity = 0.3 + Math.sin(p.life * 0.02 + i) * 0.3
-        p.life++
       }
 
       // 边界处理
