@@ -47,6 +47,37 @@ const autoCleanOptions: Array<{ value: 1 | 3 | 7 | 30 | -1; label: string }> = [
 ]
 
 function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
+  const currentDays = eventSettings.value.autoCleanDays
+
+  // 如果是相同的设置，不需要确认
+  if (currentDays === days) return
+
+  // 计算会被删除的事件数量
+  // 只有当新时限比旧时限更短时，才会删除事件
+  let willDeleteCount = 0
+  let willDelete = false
+
+  if (days !== -1) {
+    const cutoffTime = Date.now() - days * 24 * 60 * 60 * 1000
+    willDeleteCount = inbox.value.filter(entry => {
+      if (!entry.read) return false
+      return new Date(entry.triggeredAt).getTime() <= cutoffTime
+    }).length
+    willDelete = willDeleteCount > 0
+  }
+
+  // 生成确认信息
+  let confirmMsg = `将已读事件自动清空时间修改为"${autoCleanOptions.find(o => o.value === days)?.label}"？`
+
+  if (willDelete) {
+    confirmMsg += `\n\n⚠️ 注意：这会导致 ${willDeleteCount} 个已读事件被立即删除，且无法恢复！`
+  } else if (days !== -1 && currentDays !== -1 && days < currentDays) {
+    // 新时限更短，但当前没有符合条件的事件
+    confirmMsg += `\n\n当前没有符合新时限的已读事件，设置后将立即生效。`
+  }
+
+  if (!confirm(confirmMsg)) return
+
   EventSystem.updateSettings({ autoCleanDays: days })
   eventSettings.value = EventSystem.getSettings()
 }
