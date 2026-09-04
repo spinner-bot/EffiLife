@@ -14,6 +14,9 @@ let particleSystem: ParticleSystem | null = null
 let animationId: number | null = null
 let startTime = Date.now()
 let resizeHandler: (() => void) | null = null
+let lastFrameTime = 0
+const TARGET_FPS = 30 // 降低帧率到30fps以提升性能
+const FRAME_INTERVAL = 1000 / TARGET_FPS
 
 function startCanvasAnimation() {
   if (!canvasRef.value) return
@@ -32,7 +35,20 @@ function startCanvasAnimation() {
 
   const style = getThemeStyle(props.theme)
 
-  const animate = () => {
+  // 如果主题没有动画效果，只渲染一次
+  if (!style.renderCanvas) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    return
+  }
+
+  const animate = (currentTime: number) => {
+    // 帧率控制
+    if (currentTime - lastFrameTime < FRAME_INTERVAL) {
+      animationId = requestAnimationFrame(animate)
+      return
+    }
+    lastFrameTime = currentTime
+
     const time = Date.now() - startTime
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -43,7 +59,7 @@ function startCanvasAnimation() {
     animationId = requestAnimationFrame(animate)
   }
 
-  animate()
+  animationId = requestAnimationFrame(animate)
 }
 
 function initParticleSystem() {
