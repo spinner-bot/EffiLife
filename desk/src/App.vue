@@ -6,6 +6,7 @@ import ThemeCanvas from './theme/ThemeCanvas.vue'
 import { getThemeStyle } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
+import { GuideManager, GuideOverlay } from './guide'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -92,6 +93,14 @@ onMounted(async () => {
   // 启动背景音乐
   AudioManager.startBgm()
 
+  // 检查是否需要启动引导
+  if (!GuideManager.isCompleted()) {
+    // 延迟启动引导，确保页面已加载
+    setTimeout(() => {
+      GuideManager.startGuide()
+    }, 500)
+  }
+
   // 检查进度事件
   checkProgressEvents()
 })
@@ -124,6 +133,9 @@ watch(() => appStore.todayStat, () => {
       @close="onCheckinClose"
       @checkin="onCheckinComplete"
     />
+
+    <!-- 引导覆盖层 -->
+    <GuideOverlay />
   </div>
 </template>
 
