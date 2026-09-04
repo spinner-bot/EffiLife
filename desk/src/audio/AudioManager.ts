@@ -58,9 +58,15 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
 
 // 可用的背景音乐列表
 export const BGM_LIST = [
-  { id: 'piano', name: '轻柔钢琴', builtIn: true },
   { id: 'ambient', name: '梦幻氛围', builtIn: true },
+  { id: 'piano', name: '轻柔钢琴', builtIn: true },
   { id: 'night', name: '宁静夜晚', builtIn: true },
+  { id: 'rain', name: '雨声', builtIn: true },
+  { id: 'ocean', name: '海浪', builtIn: true },
+  { id: 'forest', name: '森林', builtIn: true },
+  { id: 'cafe', name: '咖啡厅', builtIn: true },
+  { id: 'campfire', name: '篝火', builtIn: true },
+  { id: 'jazz', name: '爵士', builtIn: true },
   { id: 'none', name: '无背景音乐', builtIn: true }
 ]
 
@@ -271,8 +277,7 @@ class AudioManagerClass {
     this.musicGenerator.setVolume(this.settings.value.bgmVolume / 100)
 
     // 根据 bgmId 选择风格
-    const style = (bgmId === 'piano' || bgmId === 'ambient' || bgmId === 'night') ? bgmId : 'piano'
-    this.musicGenerator.start(style)
+    this.musicGenerator.start(bgmId)
     this.currentBgmId.value = bgmId
   }
 

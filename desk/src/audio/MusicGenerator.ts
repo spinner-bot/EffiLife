@@ -9,6 +9,10 @@ export class MusicGenerator {
     gain: GainNode
     endTime: number
   }> = []
+  private noiseNodes: Array<{
+    source: AudioBufferSourceNode
+    gain: GainNode
+  }> = []
 
   constructor(ctx: AudioContext) {
     this.ctx = ctx
@@ -80,6 +84,263 @@ export class MusicGenerator {
     notes.forEach(note => {
       this.playNote(note, startTime, duration, volume / notes.length)
     })
+  }
+
+  // 生成白噪声缓冲区
+  private createNoiseBuffer(duration: number, type: 'white' | 'pink' | 'brown' = 'white'): AudioBuffer {
+    const sampleRate = this.ctx.sampleRate
+    const length = sampleRate * duration
+    const buffer = this.ctx.createBuffer(1, length, sampleRate)
+    const data = buffer.getChannelData(0)
+
+    if (type === 'white') {
+      // 白噪声：完全随机
+      for (let i = 0; i < length; i++) {
+        data[i] = Math.random() * 2 - 1
+      }
+    } else if (type === 'pink') {
+      // 粉噪声：低频增强
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
+      for (let i = 0; i < length; i++) {
+        const white = Math.random() * 2 - 1
+        b0 = 0.99886 * b0 + white * 0.0555179
+        b1 = 0.99332 * b1 + white * 0.0750759
+        b2 = 0.96900 * b2 + white * 0.1538520
+        b3 = 0.86650 * b3 + white * 0.3104856
+        b4 = 0.55000 * b4 + white * 0.5329522
+        b5 = -0.7616 * b5 - white * 0.0168980
+        data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
+        b6 = white * 0.115926
+      }
+    } else if (type === 'brown') {
+      // 棕噪声：低频更强
+      let lastOut = 0
+      for (let i = 0; i < length; i++) {
+        const white = Math.random() * 2 - 1
+        data[i] = (lastOut + 0.02 * white) / 1.02
+        lastOut = data[i]
+        data[i] *= 3.5
+      }
+    }
+
+    return buffer
+  }
+
+  // 播放噪声
+  private playNoise(type: 'white' | 'pink' | 'brown', volume: number, filterFreq?: number): AudioBufferSourceNode {
+    const buffer = this.createNoiseBuffer(10, type) // 10秒循环
+    const source = this.ctx.createBufferSource()
+    source.buffer = buffer
+    source.loop = true
+
+    const gain = this.ctx.createGain()
+    gain.gain.value = volume
+
+    // 添加滤波器让声音更柔和
+    if (filterFreq) {
+      const filter = this.ctx.createBiquadFilter()
+      filter.type = 'lowpass'
+      filter.frequency.value = filterFreq
+      source.connect(filter)
+      filter.connect(gain)
+    } else {
+      source.connect(gain)
+    }
+
+    gain.connect(this.masterGain)
+    source.start()
+
+    this.noiseNodes.push({ source, gain })
+    return source
+  }
+
+  // 风格：雨声
+  private playRain(): number {
+    // 粉色噪声作为基础雨声
+    this.playNoise('pink', 0.4, 800)
+    // 加一点白噪声作为细雨
+    this.playNoise('white', 0.15, 2000)
+    // 加一点棕噪声作为远处雷声
+    this.playNoise('brown', 0.2, 200)
+    return 60 // 持续60秒
+  }
+
+  // 风格：海浪
+  private playOcean(): number {
+    // 棕噪声作为海浪基础
+    const brownGain = this.ctx.createGain()
+    brownGain.gain.value = 0
+    brownGain.connect(this.masterGain)
+
+    const buffer = this.createNoiseBuffer(10, 'brown')
+    const source = this.ctx.createBufferSource()
+    source.buffer = buffer
+    source.loop = true
+
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 400
+    source.connect(filter)
+    filter.connect(brownGain)
+    source.start()
+
+    // 海浪起伏效果
+    const now = this.ctx.currentTime
+    for (let i = 0; i < 12; i++) {
+      const t = now + i * 5
+      brownGain.gain.setValueAtTime(0.1, t)
+      brownGain.gain.linearRampToValueAtTime(0.4, t + 2)
+      brownGain.gain.linearRampToValueAtTime(0.1, t + 4)
+    }
+
+    this.noiseNodes.push({ source, gain: brownGain })
+
+    // 加一点白噪声作为浪花
+    this.playNoise('white', 0.08, 3000)
+
+    return 60
+  }
+
+  // 风格：森林
+  private playForest(): number {
+    // 轻柔的棕噪声作为风声
+    this.playNoise('brown', 0.15, 300)
+
+    // 添加鸟鸣效果（使用振荡器模拟）
+    const now = this.ctx.currentTime
+    for (let i = 0; i < 20; i++) {
+      const time = now + Math.random() * 55
+      const freq = 2000 + Math.random() * 2000
+      const duration = 0.1 + Math.random() * 0.3
+
+      const osc = this.ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, time)
+      osc.frequency.linearRampToValueAtTime(freq * 1.2, time + duration * 0.5)
+      osc.frequency.linearRampToValueAtTime(freq * 0.8, time + duration)
+
+      const gain = this.ctx.createGain()
+      gain.gain.setValueAtTime(0, time)
+      gain.gain.linearRampToValueAtTime(0.05, time + 0.02)
+      gain.gain.linearRampToValueAtTime(0, time + duration)
+
+      osc.connect(gain)
+      gain.connect(this.masterGain)
+      osc.start(time)
+      osc.stop(time + duration)
+
+      this.scheduledNotes.push({ oscillator: osc, gain, endTime: time + duration })
+    }
+
+    return 60
+  }
+
+  // 风格：咖啡厅
+  private playCafe(): number {
+    // 粉噪声作为背景人声
+    this.playNoise('pink', 0.25, 1000)
+    // 加一点白噪声作为杯碟声
+    this.playNoise('white', 0.05, 4000)
+
+    // 添加轻柔的爵士和弦
+    const now = this.ctx.currentTime
+    const bpm = 80
+    const beat = 60 / bpm
+
+    const chords = [
+      ['C4', 'E4', 'G4', 'B4'],
+      ['A3', 'C4', 'E4', 'G4'],
+      ['F3', 'A3', 'C4', 'E4'],
+      ['G3', 'B3', 'D4', 'F4']
+    ]
+
+    for (let i = 0; i < 16; i++) {
+      const chord = chords[i % chords.length]
+      const time = now + i * beat * 4
+      this.playChord(chord, time, beat * 3.5, 0.15)
+    }
+
+    return 64 * beat
+  }
+
+  // 风格：篝火
+  private playCampfire(): number {
+    // 棕噪声作为火焰噼啪声
+    const buffer = this.createNoiseBuffer(10, 'brown')
+    const source = this.ctx.createBufferSource()
+    source.buffer = buffer
+    source.loop = true
+
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.value = 600
+    filter.Q.value = 2
+
+    const gain = this.ctx.createGain()
+    gain.gain.value = 0.3
+
+    source.connect(filter)
+    filter.connect(gain)
+    gain.connect(this.masterGain)
+    source.start()
+
+    this.noiseNodes.push({ source, gain })
+
+    // 添加噼啪声
+    const now = this.ctx.currentTime
+    for (let i = 0; i < 30; i++) {
+      const time = now + Math.random() * 55
+      const duration = 0.05 + Math.random() * 0.1
+
+      const osc = this.ctx.createOscillator()
+      osc.type = 'square'
+      osc.frequency.value = 100 + Math.random() * 200
+
+      const crackGain = this.ctx.createGain()
+      crackGain.gain.setValueAtTime(0, time)
+      crackGain.gain.linearRampToValueAtTime(0.1, time + 0.01)
+      crackGain.gain.linearRampToValueAtTime(0, time + duration)
+
+      osc.connect(crackGain)
+      crackGain.connect(this.masterGain)
+      osc.start(time)
+      osc.stop(time + duration)
+
+      this.scheduledNotes.push({ oscillator: osc, gain: crackGain, endTime: time + duration })
+    }
+
+    return 60
+  }
+
+  // 风格：爵士
+  private playJazz(): number {
+    const now = this.ctx.currentTime
+    const bpm = 120
+    const beat = 60 / bpm
+
+    // walking bass
+    const bassNotes = ['C3', 'E3', 'G3', 'A3', 'C3', 'F3', 'A3', 'G3']
+    for (let i = 0; i < 32; i++) {
+      const note = bassNotes[i % bassNotes.length]
+      const time = now + i * beat
+      this.playNote(note, time, beat * 0.8, 0.4)
+    }
+
+    // 爵士和弦
+    const chords = [
+      ['C4', 'E4', 'G4', 'B4'],
+      ['A3', 'C4', 'E4', 'G4'],
+      ['F3', 'A3', 'C4', 'E4'],
+      ['G3', 'B3', 'D4', 'F4']
+    ]
+
+    for (let i = 0; i < 8; i++) {
+      const chord = chords[i % chords.length]
+      const time = now + i * beat * 4
+      this.playChord(chord, time, beat * 3.5, 0.2)
+    }
+
+    return 32 * beat
   }
 
   // 风格1：轻柔钢琴
@@ -212,7 +473,7 @@ export class MusicGenerator {
   }
 
   // 开始播放指定风格
-  start(style: 'piano' | 'ambient' | 'night' = 'piano') {
+  start(style: string = 'ambient') {
     if (this.isPlaying) return
 
     this.isPlaying = true
@@ -221,15 +482,33 @@ export class MusicGenerator {
 
       let duration: number
       switch (style) {
-        case 'ambient':
-          duration = this.playDreamyAmbient()
+        case 'piano':
+          duration = this.playSoftPiano()
           break
         case 'night':
           duration = this.playPeacefulNight()
           break
-        case 'piano':
+        case 'rain':
+          duration = this.playRain()
+          break
+        case 'ocean':
+          duration = this.playOcean()
+          break
+        case 'forest':
+          duration = this.playForest()
+          break
+        case 'cafe':
+          duration = this.playCafe()
+          break
+        case 'campfire':
+          duration = this.playCampfire()
+          break
+        case 'jazz':
+          duration = this.playJazz()
+          break
+        case 'ambient':
         default:
-          duration = this.playSoftPiano()
+          duration = this.playDreamyAmbient()
           break
       }
 
@@ -259,6 +538,18 @@ export class MusicGenerator {
       }
     })
     this.scheduledNotes = []
+
+    // 停止所有噪声
+    this.noiseNodes.forEach(({ source, gain }) => {
+      try {
+        gain.gain.cancelScheduledValues(this.ctx.currentTime)
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5)
+        source.stop(this.ctx.currentTime + 0.5)
+      } catch (e) {
+        // 忽略已停止的噪声
+      }
+    })
+    this.noiseNodes = []
   }
 
   // 设置音量
