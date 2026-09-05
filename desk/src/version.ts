@@ -11,29 +11,36 @@ export const GIT_COMMIT_COUNT = '__GIT_COMMIT_COUNT__'
 export const APP_NAME = '浪兮效率时钟'
 
 // 是否是开发版本
-export const isDevVersion = BUILD_MODE === 'development' || APP_VERSION.includes('-dev')
+export const isDevVersion = BUILD_MODE === 'development' || APP_VERSION.includes('-dev') || APP_VERSION.startsWith('__')
 
 // 获取完整版本信息
 export function getVersionInfo(): string {
+  const version = APP_VERSION.startsWith('__') ? '0.0.0-dev' : APP_VERSION
+  const hash = GIT_COMMIT_HASH.startsWith('__') ? 'unknown' : GIT_COMMIT_HASH
   if (isDevVersion) {
-    return `${APP_NAME} v${APP_VERSION} (${GIT_COMMIT_HASH})`
+    return `${APP_NAME} v${version} (${hash})`
   }
-  return `${APP_NAME} v${APP_VERSION}`
+  return `${APP_NAME} v${version}`
 }
 
 // 获取简短版本信息
 export function getShortVersion(): string {
-  return `v${APP_VERSION}`
+  const version = APP_VERSION.startsWith('__') ? '0.0.0-dev' : APP_VERSION
+  return `v${version}`
 }
 
 // 获取构建信息（用于调试）
 export function getBuildInfo(): string {
+  const commitCount = GIT_COMMIT_COUNT.startsWith('__') ? '0' : GIT_COMMIT_COUNT
+  const timestamp = BUILD_TIMESTAMP.startsWith('__') ? Date.now().toString() : BUILD_TIMESTAMP
+
   if (isDevVersion) {
-    const date = new Date(parseInt(BUILD_TIMESTAMP) || Date.now())
-    const dateStr = date.toLocaleString('zh-CN')
-    return `开发版 #${GIT_COMMIT_COUNT} · ${dateStr}`
+    const date = new Date(parseInt(timestamp) || Date.now())
+    const dateStr = isNaN(date.getTime()) ? new Date().toLocaleString('zh-CN') : date.toLocaleString('zh-CN')
+    return `开发版 #${commitCount} · ${dateStr}`
   }
-  return `正式版 · ${BUILD_TIMESTAMP}`
+  const displayTimestamp = BUILD_TIMESTAMP.startsWith('__') ? new Date().toISOString().split('T')[0] : BUILD_TIMESTAMP
+  return `正式版 · ${displayTimestamp}`
 }
 
 // 版本历史（手动维护）

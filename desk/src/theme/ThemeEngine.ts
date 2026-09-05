@@ -525,7 +525,12 @@ function drawFlower(ctx: CanvasRenderingContext2D, x: number, y: number, size: n
 }
 
 // 获取主题样式
-export function getThemeStyle(theme: Theme): ThemeStyle {
+export function getThemeStyle(theme: Theme | undefined): ThemeStyle {
+  // 防护：如果 theme 未定义，返回默认主题
+  if (!theme) {
+    theme = { type: 'forest' }
+  }
+
   // 检查高级主题预设
   const preset = themePresets[theme.type]
   if (preset) {

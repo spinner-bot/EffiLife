@@ -238,7 +238,12 @@ export const DataService = {
     try {
       const stored = localStorage.getItem(STORAGE_PREFIX + 'config')
       if (stored) {
-        return JSON.parse(stored)
+        const parsed = JSON.parse(stored)
+        // 确保 theme 属性存在
+        if (!parsed.theme) {
+          parsed.theme = DEFAULT_CONFIG.theme
+        }
+        return { ...DEFAULT_CONFIG, ...parsed }
       }
     } catch {
       // ignore
