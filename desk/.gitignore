@@ -10,8 +10,7 @@ src-tauri/target/
 src-tauri/gen/
 src-tauri/Cargo.lock
 
-# Installer packages
-*.exe
+# Installer packages (keep .exe for installers)
 *.msi
 
 # IDE

@@ -1,5 +1,4 @@
-# Build artifacts
-*.exe
+# Build artifacts (but keep installer packages)
 *.msi
 *.dmg
 *.AppImage
