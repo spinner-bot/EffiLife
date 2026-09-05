@@ -146,7 +146,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   if (isTauri()) {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog')
-      const { writeBinaryFile } = await import('@tauri-apps/plugin-fs')
+      const { writeFile } = await import('@tauri-apps/plugin-fs')
 
       const filePath = await save({
         title: '导出存档',
@@ -160,7 +160,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 
       // 保存文件
       const buffer = await blob.arrayBuffer()
-      await writeBinaryFile(filePath, new Uint8Array(buffer))
+      await writeFile(filePath, new Uint8Array(buffer))
 
       // 记住用户选择的目录
       const dir = filePath.substring(0, filePath.lastIndexOf('\\')) || filePath.substring(0, filePath.lastIndexOf('/'))
@@ -205,7 +205,7 @@ export async function importArchiveWithDialog(): Promise<{ success: boolean; mes
 
   try {
     const { open } = await import('@tauri-apps/plugin-dialog')
-    const { readBinaryFile } = await import('@tauri-apps/plugin-fs')
+    const { readFile } = await import('@tauri-apps/plugin-fs')
 
     const filePath = await open({
       title: '导入存档',
@@ -219,7 +219,7 @@ export async function importArchiveWithDialog(): Promise<{ success: boolean; mes
     }
 
     // 读取文件
-    const data = await readBinaryFile(filePath as string)
+    const data = await readFile(filePath as string)
     const blob = new Blob([data])
     const zip = await JSZip.loadAsync(blob)
 

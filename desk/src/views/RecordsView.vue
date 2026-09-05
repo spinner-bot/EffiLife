@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { hoursToHm, timeStrToMinutes, isTimeOverlap, getTodayDate } from '@/services/dataService'
+import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
 

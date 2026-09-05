@@ -11,7 +11,7 @@ export const GIT_COMMIT_COUNT = '__GIT_COMMIT_COUNT__'
 export const APP_NAME = '浪兮效率时钟'
 
 // 是否是开发版本
-export const isDevVersion = BUILD_MODE === 'development' || APP_VERSION.includes('-dev') || APP_VERSION.startsWith('__')
+export const isDevVersion = (BUILD_MODE as string) === 'development' || APP_VERSION.includes('-dev') || APP_VERSION.startsWith('__')
 
 // 获取完整版本信息
 export function getVersionInfo(): string {
