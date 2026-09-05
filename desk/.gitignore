@@ -7,8 +7,15 @@ dist/
 
 # Tauri build artifacts
 src-tauri/target/
-src-tauri/gen/
+src-tauri/gen/jsonSchema/
 src-tauri/Cargo.lock
+
+# Keep Android project but ignore build output
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/build/
+src-tauri/gen/android/app/build/
+src-tauri/gen/android/local.properties
+src-tauri/gen/android/.idea/
 
 # Installer packages (keep .exe for installers)
 *.msi
