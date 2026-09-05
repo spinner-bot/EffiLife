@@ -94,6 +94,8 @@ export interface InboxEntry {
   read: boolean
   ruleId?: string      // 预警规则ID（仅预警）
   scheduledTime?: string
+  checkinPlanName?: string  // 可用于打卡的计划名（遗漏打卡提醒）
+  checkinDate?: string      // 补打卡的日期
 }
 
 class EventSystemClass {
@@ -284,6 +286,36 @@ class EventSystemClass {
   // 清空已读
   clearReadInbox() {
     this.eventInbox.value = this.eventInbox.value.filter(entry => !entry.read)
+    this.saveEventInbox()
+  }
+
+  // 添加遗漏打卡提醒到收件箱
+  addMissedCheckinReminder(planName: string, date: string): string {
+    const id = `missed_checkin_${Date.now()}`
+    const entry: InboxEntry = {
+      id,
+      type: 'achievement_unlocked',  // 使用成就类型图标
+      title: '补打卡',
+      message: `${date} 完成了「${planName}」但未打卡，点击此处补打`,
+      icon: '🔥',
+      triggeredAt: new Date().toISOString(),
+      read: false,
+      checkinPlanName: planName,
+      checkinDate: date
+    }
+    this.eventInbox.value.push(entry)
+    this.saveEventInbox()
+    return id
+  }
+
+  // 获取可打卡的收件箱条目
+  getCheckinableEntries(): InboxEntry[] {
+    return this.eventInbox.value.filter(e => e.checkinPlanName && e.checkinDate)
+  }
+
+  // 删除打卡提醒（打卡完成后调用）
+  removeCheckinReminder(entryId: string) {
+    this.eventInbox.value = this.eventInbox.value.filter(e => e.id !== entryId)
     this.saveEventInbox()
   }
 

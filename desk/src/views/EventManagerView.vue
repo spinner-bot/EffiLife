@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Bell, Clock, Inbox, Check, Trash2 } from 'lucide-vue-next'
 import { EventSystem } from '@/audio'
+import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
 
 const router = useRouter()
@@ -127,6 +128,24 @@ function deleteEntry(entryId: string) {
 function clearRead() {
   if (!confirm('确定清空所有已读事件记录？此操作不可恢复。')) return
   EventSystem.clearReadInbox()
+}
+
+// 从收件箱条目进行补打卡
+function handleCheckinFromInbox(entry: InboxEntry) {
+  if (!entry.checkinPlanName || !entry.checkinDate) return
+
+  // 执行补打卡
+  const result = CheckinSystem.checkinForDate(entry.checkinDate, entry.checkinPlanName, 100)
+
+  if (result !== null) {
+    // 打卡成功，显示成功提示
+    alert(`补打卡成功！\n日期：${entry.checkinDate}\n计划：${entry.checkinPlanName}\n连续 ${result} 天 🔥`)
+
+    // 删除这个收件箱条目
+    EventSystem.removeCheckinReminder(entry.id)
+  } else {
+    alert('打卡失败，可能已经打过卡或日期无效')
+  }
 }
 
 function formatTriggerTime(entry: InboxEntry): string {
@@ -271,7 +290,7 @@ function testWarning(rule: WarningRule) {
               v-for="entry in inbox"
               :key="entry.id"
               class="inbox-item"
-              :class="[getEventStyle(entry.type), { unread: !entry.read }]"
+              :class="[getEventStyle(entry.type), { unread: !entry.read, checkinable: entry.checkinPlanName }]"
               @click="markAsRead(entry)"
             >
               <div class="inbox-icon">
@@ -290,6 +309,16 @@ function testWarning(rule: WarningRule) {
                   </span>
                 </div>
               </div>
+              <!-- 打卡按钮（仅对可打卡条目显示） -->
+              <button
+                v-if="entry.checkinPlanName && entry.checkinDate"
+                class="checkin-btn"
+                @click.stop="handleCheckinFromInbox(entry)"
+                title="补打卡"
+              >
+                <Check :size="14" />
+                <span>打卡</span>
+              </button>
               <button class="delete-btn" @click.stop="deleteEntry(entry.id)" title="删除">
                 <Trash2 :size="14" />
               </button>
@@ -711,6 +740,38 @@ function testWarning(rule: WarningRule) {
 .delete-btn:hover {
   background: var(--color-error);
   color: white;
+}
+
+/* 可打卡条目样式 */
+.inbox-item.checkinable {
+  border-left-color: var(--color-primary, #f59e0b);
+  background: linear-gradient(90deg, rgba(var(--color-primary-rgb, 245, 158, 11), 0.05) 0%, transparent 50%);
+}
+
+.checkin-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary, #f59e0b);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.checkin-btn:hover {
+  background: var(--color-primary-hover, #d97706);
+  transform: scale(1.05);
+}
+
+.checkin-btn:active {
+  transform: scale(0.95);
 }
 
 .auto-clean-setting {

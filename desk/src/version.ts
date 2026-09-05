@@ -46,8 +46,17 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.6',
+    version: '1.0.7',
     date: '开发中',
+    changes: [
+      '新增自动补打卡：进入新一天时若昨天完成了计划但未打卡，自动补打',
+      '新增收件箱打卡：遗漏的打卡可在事件管理收件箱中补打',
+      '打卡提醒会以特殊样式显示在收件箱中，点击即可补打卡'
+    ]
+  },
+  {
+    version: '1.0.6',
+    date: '2026-09-05',
     changes: [
       'Tauri 环境下存档导出使用原生对话框选择保存路径',
       'Tauri 环境下存档导入使用原生文件选择对话框',
