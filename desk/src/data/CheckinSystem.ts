@@ -229,12 +229,19 @@ class CheckinSystemClass {
 
   /**
    * 为指定日期打卡（用于补打卡）
+   * 注意：调用前需确保该日期有100%完成的任务记录
    */
   checkinForDate(date: string, planName: string, progress: number): number | null {
     // 检查该日期是否已经打过卡
     const existingRecord = this.data.value.records.find(r => r.date === date)
     if (existingRecord) {
       return null  // 该日期已经打过卡
+    }
+
+    // 验证该日期确实有100%完成的任务
+    const completedRecords = this.getCompletedRecordsForDate(date)
+    if (completedRecords.length === 0) {
+      return null  // 该日期没有完成的任务，无法打卡
     }
 
     // 添加打卡记录
