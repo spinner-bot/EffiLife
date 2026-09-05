@@ -46,8 +46,18 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.11',
+    version: '1.0.12',
     date: '开发中',
+    changes: [
+      '开始 Android 移动端适配',
+      '存档服务适配移动端文件操作',
+      '反馈功能适配移动端邮件客户端',
+      '添加 Android 平台配置'
+    ]
+  },
+  {
+    version: '1.0.11',
+    date: '2026-09-05',
     changes: [
       '添加预警规则验证：小时0-23、分钟0-59、阈值0-100',
       '添加计划管理验证：每个时间类别时长不能为负或超过24小时'
