@@ -55,7 +55,7 @@ const appStore = useAppStore()
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'changelog'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more'
 const currentView = ref<ViewType>('main')
 
 // ============ 自定义设置 ============
@@ -403,20 +403,8 @@ watch(() => config.value, (newConfig) => {
             <span>事件管理</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'feedback'">
-            <span>反馈</span>
-            <ChevronRight :size="16" />
-          </button>
-          <button class="settings-item" @click="startGuide">
-            <span>使用引导</span>
-            <ChevronRight :size="16" />
-          </button>
-          <button class="settings-item" @click="currentView = 'help'">
-            <span>帮助</span>
-            <ChevronRight :size="16" />
-          </button>
-          <button class="settings-item" @click="currentView = 'changelog'">
-            <span>更新记录</span>
+          <button class="settings-item" @click="currentView = 'more'">
+            <span>更多设置</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="currentView = 'archive'">
@@ -871,21 +859,65 @@ watch(() => config.value, (newConfig) => {
         <button class="btn secondary full" @click="currentView = 'main'">返回</button>
       </template>
 
-      <!-- 更新记录 -->
-      <template v-else-if="currentView === 'changelog'">
-        <h2>更新记录</h2>
-        <div class="changelog-content">
-          <div v-for="(release, index) in VERSION_HISTORY" :key="release.version" class="changelog-version" :class="{ latest: index === 0 }">
-            <div class="version-header">
-              <span class="version-number">v{{ release.version }}</span>
-              <span class="version-date">{{ release.date }}</span>
-            </div>
-            <ul class="version-changes">
-              <li v-for="(change, i) in release.changes" :key="i">{{ change }}</li>
-            </ul>
-          </div>
+      <!-- 更多设置 -->
+      <template v-else-if="currentView === 'more'">
+        <h2>更多设置</h2>
+        <div class="settings-group">
+          <button class="settings-item" @click="currentView = 'version-info'">
+            <span>版本信息</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="currentView = 'feedback'">
+            <span>反馈</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="startGuide">
+            <span>使用引导</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="currentView = 'help'">
+            <span>帮助</span>
+            <ChevronRight :size="16" />
+          </button>
         </div>
         <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+      </template>
+
+      <!-- 版本信息 -->
+      <template v-else-if="currentView === 'version-info'">
+        <div class="version-info-view">
+          <!-- 当前版本 - 突出显示 -->
+          <div class="current-version-card">
+            <div class="version-badge" :class="{ dev: isDev }">
+              {{ isDev ? '开发版' : '正式版' }}
+            </div>
+            <h1 class="current-version-number">v{{ appVersion }}</h1>
+            <p class="current-version-build">{{ buildInfo }}</p>
+            <div v-if="VERSION_HISTORY[0]" class="current-version-changes">
+              <p class="changes-label">最新版本更新：</p>
+              <ul>
+                <li v-for="(change, i) in VERSION_HISTORY[0].changes" :key="i">{{ change }}</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 历史更新记录 -->
+          <div class="version-history">
+            <h3 class="history-title">历史更新记录</h3>
+            <div class="history-list">
+              <div v-for="release in VERSION_HISTORY.slice(1)" :key="release.version" class="history-item">
+                <div class="history-header">
+                  <span class="history-version">v{{ release.version }}</span>
+                  <span class="history-date">{{ release.date }}</span>
+                </div>
+                <ul class="history-changes">
+                  <li v-for="(change, i) in release.changes" :key="i">{{ change }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn secondary full" @click="currentView = 'more'">返回</button>
       </template>
     </main>
   </div>
@@ -1518,61 +1550,138 @@ h2 {
   line-height: 1.5;
 }
 
-/* 更新记录样式 */
-.changelog-content {
+/* 版本信息样式 */
+.version-info-view {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
 }
 
-.changelog-version {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+.current-version-card {
+  background: linear-gradient(135deg, var(--color-bg-secondary), rgba(var(--color-primary-rgb, 99, 102, 241), 0.1));
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-xl, 16px);
+  padding: var(--spacing-xl);
+  text-align: center;
+  position: relative;
 }
 
-.changelog-version.latest {
-  border-color: var(--color-primary);
-  background: linear-gradient(135deg, var(--color-bg-secondary), rgba(var(--color-primary-rgb, 99, 102, 241), 0.05));
-}
-
-.version-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-md);
-}
-
-.version-number {
-  font-size: 1.125rem;
+.version-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  border-radius: 20px;
+  margin-bottom: var(--spacing-sm);
 }
 
-.changelog-version.latest .version-number {
+.version-badge.dev {
+  background: var(--color-warning, #fbbf24);
+  color: #000;
+}
+
+.current-version-number {
+  font-size: 2.5rem;
+  font-weight: 700;
   color: var(--color-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  letter-spacing: -1px;
 }
 
-.version-date {
-  font-size: 0.8125rem;
+.current-version-build {
+  font-size: 0.875rem;
   color: var(--color-text-tertiary);
+  margin: 0 0 var(--spacing-md) 0;
 }
 
-.version-changes {
+.current-version-changes {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  text-align: left;
+}
+
+.changes-label {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--spacing-xs) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.current-version-changes ul {
   margin: 0;
   padding-left: var(--spacing-lg);
 }
 
-.version-changes li {
-  margin-bottom: var(--spacing-xs);
+.current-version-changes li {
   color: var(--color-text-secondary);
   font-size: 0.875rem;
   line-height: 1.6;
+  margin-bottom: 2px;
 }
 
-.version-changes li:last-child {
+/* 历史更新记录 */
+.version-history {
+  margin-top: var(--spacing-sm);
+}
+
+.history-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.history-item {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.history-version {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.history-changes {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.history-changes li {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  margin-bottom: 2px;
+}
+
+.history-changes li:last-child {
   margin-bottom: 0;
 }
 </style>

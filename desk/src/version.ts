@@ -39,10 +39,11 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.2',
+    version: '1.0.3',
     date: '开发中',
     changes: [
-      '新增"更新记录"页面，可在设置中查看版本历史'
+      '设置页面优化：不常用选项收纳至"更多设置"',
+      '新增"版本信息"页面，突出显示当前版本和历史记录'
     ]
   },
   {
