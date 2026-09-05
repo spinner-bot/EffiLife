@@ -15,11 +15,6 @@ function isMobile(): boolean {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 }
 
-// 检测是否在 Tauri 移动端
-function isTauriMobile(): boolean {
-  return isTauri() && isMobile()
-}
-
 // 获取下载路径设置
 function getDownloadPath(): string | null {
   return localStorage.getItem('efflife_download_path')
