@@ -10,6 +10,16 @@ function isTauri(): boolean {
   return !!(window as any).__TAURI__
 }
 
+// 检测是否在移动端（Android/iOS）
+function isMobile(): boolean {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+// 检测是否在 Tauri 移动端
+function isTauriMobile(): boolean {
+  return isTauri() && isMobile()
+}
+
 // 获取下载路径设置
 function getDownloadPath(): string | null {
   return localStorage.getItem('efflife_download_path')
@@ -142,8 +152,8 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const dateStr = new Date().toISOString().split('T')[0]
   const fileName = `efflife_archive_${dateStr}.efl`
 
-  // 如果在 Tauri 环境，使用原生对话框
-  if (isTauri()) {
+  // 如果在 Tauri 桌面环境，使用原生对话框
+  if (isTauri() && !isMobile()) {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog')
       const { writeFile } = await import('@tauri-apps/plugin-fs')
@@ -175,7 +185,8 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
     }
   }
 
-  // 浏览器环境或 Tauri 失败时，使用浏览器下载
+  // 移动端 Tauri 或浏览器环境，使用浏览器下载
+  // Tauri Mobile 的 WebView 也支持 saveAs 下载
   saveAs(blob, fileName)
   return { success: true }
 }
@@ -197,10 +208,11 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
   }
 }
 
-// 在 Tauri 环境下打开文件对话框导入
+// 在 Tauri 桌面环境下打开文件对话框导入
 export async function importArchiveWithDialog(): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
-  if (!isTauri()) {
-    return { success: false, message: '请在浏览器中使用文件选择器导入' }
+  // 移动端使用文件选择器，不使用此函数
+  if (!isTauri() || isMobile()) {
+    return { success: false, message: '请使用文件选择器导入' }
   }
 
   try {
