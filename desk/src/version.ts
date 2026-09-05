@@ -46,8 +46,16 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.10',
+    version: '1.0.11',
     date: '开发中',
+    changes: [
+      '添加预警规则验证：小时0-23、分钟0-59、阈值0-100',
+      '添加计划管理验证：每个时间类别时长不能为负或超过24小时'
+    ]
+  },
+  {
+    version: '1.0.10',
+    date: '2026-09-05',
     changes: [
       '添加记录创建时的完整验证：时间范围、小时/分钟边界、时长限制等',
       '防止创建结束时间早于开始时间的无效记录'

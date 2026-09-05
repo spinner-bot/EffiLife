@@ -197,6 +197,22 @@ function startEditRule(rule: WarningRule) {
 }
 
 function saveRule() {
+  // 验证小时
+  if (newRule.value.hour < 0 || newRule.value.hour > 23) {
+    alert('小时必须在 0-23 之间')
+    return
+  }
+  // 验证分钟
+  if (newRule.value.minute < 0 || newRule.value.minute > 59) {
+    alert('分钟必须在 0-59 之间')
+    return
+  }
+  // 验证阈值
+  if (newRule.value.threshold < 0 || newRule.value.threshold > 100) {
+    alert('阈值必须在 0-100 之间')
+    return
+  }
+
   if (editingRuleId.value) {
     EventSystem.updateWarningRule(editingRuleId.value, { ...newRule.value })
   } else {

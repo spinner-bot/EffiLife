@@ -71,6 +71,18 @@ async function savePlan() {
     return
   }
 
+  // 验证每个时间类别的时长
+  for (const item of items) {
+    if (item.hours < 0) {
+      alert(`「${item.name}」的时长不能为负数`)
+      return
+    }
+    if (item.hours > 24) {
+      alert(`「${item.name}」的时长不能超过 24 小时`)
+      return
+    }
+  }
+
   if (editingPlanType.value === '切分制') {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
     if (Math.abs(total - 24) > 0.01) {
