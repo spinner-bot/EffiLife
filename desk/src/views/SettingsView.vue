@@ -26,17 +26,35 @@ function startGuide() {
 const FEEDBACK_EMAIL = 'langxibielangle@qq.com'
 const copySuccess = ref(false)
 
+// 检测是否在移动端
+function isMobileDevice(): boolean {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
 async function openEmailClient() {
+  const subject = encodeURIComponent('浪兮效率时钟 - 用户反馈')
+  const body = encodeURIComponent('请在此描述您的问题或建议：\n\n---\n应用版本：0.1.0\n')
+  const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
+
+  // 移动端直接使用 window.location
+  if (isMobileDevice()) {
+    window.location.href = mailto
+    return
+  }
+
+  // 桌面端尝试使用 Tauri shell
   try {
     const { open } = await import('@tauri-apps/plugin-shell')
-    const subject = encodeURIComponent('浪兮效率时钟 - 用户反馈')
-    const body = encodeURIComponent('请在此描述您的问题或建议：\n\n---\n应用版本：0.1.0\n')
-    const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
     await open(mailto)
   } catch (e) {
-    // fallback: 复制到剪贴板
-    await copyEmail()
-    alert('无法打开邮件客户端，邮箱地址已复制到剪贴板')
+    // fallback: 使用 window.location
+    try {
+      window.location.href = mailto
+    } catch {
+      // 最后 fallback: 复制到剪贴板
+      await copyEmail()
+      alert('无法打开邮件客户端，邮箱地址已复制到剪贴板')
+    }
   }
 }
 
