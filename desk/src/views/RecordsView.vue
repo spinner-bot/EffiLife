@@ -96,40 +96,105 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
 
 // 保存记录
 async function saveRecord() {
+  // 验证内容
   if (!formContent.value.trim()) {
     alert('请填写内容')
     return
   }
 
+  // 验证标签
+  if (!formTag.value.trim()) {
+    alert('请选择标签')
+    return
+  }
+
   let start: string, end: string
+  let startMinutes: number, endMinutes: number
 
   if (formMode.value === 'time') {
-    const sh = String(formStart.value.h).padStart(2, '0')
-    const sm = String(formStart.value.m).padStart(2, '0')
-    const eh = String(formEnd.value.h).padStart(2, '0')
-    const em = String(formEnd.value.m).padStart(2, '0')
-    start = `${sh}:${sm}`
-    end = `${eh}:${em}`
+    // 解析并验证时间
+    const sh = parseInt(String(formStart.value.h)) || 0
+    const sm = parseInt(String(formStart.value.m)) || 0
+    const eh = parseInt(String(formEnd.value.h)) || 0
+    const em = parseInt(String(formEnd.value.m)) || 0
+
+    // 验证小时范围
+    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) {
+      alert('小时必须在 0-23 之间')
+      return
+    }
+    // 验证分钟范围
+    if (sm < 0 || sm > 59 || em < 0 || em > 59) {
+      alert('分钟必须在 0-59 之间')
+      return
+    }
+
+    start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
+    end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+    startMinutes = sh * 60 + sm
+    endMinutes = eh * 60 + em
+
+    // 验证结束时间必须大于开始时间
+    if (endMinutes <= startMinutes) {
+      alert('结束时间必须晚于开始时间')
+      return
+    }
   } else {
+    // 时长模式
     const dh = parseInt(formDuration.value.h) || 0
     const dm = parseInt(formDuration.value.m) || 0
-    const durationHours = dh + dm / 60
     const refH = parseInt(formDurationTime.value.h) || 0
     const refM = parseInt(formDurationTime.value.m) || 0
+
+    // 验证时长
+    if (dh === 0 && dm === 0) {
+      alert('时长不能为 0')
+      return
+    }
+    if (dh < 0 || dm < 0) {
+      alert('时长不能为负数')
+      return
+    }
+    if (dm > 59) {
+      alert('分钟必须在 0-59 之间')
+      return
+    }
+    // 验证时长不超过 24 小时
+    const totalMinutes = dh * 60 + dm
+    if (totalMinutes > 24 * 60) {
+      alert('时长不能超过 24 小时')
+      return
+    }
+
+    // 验证参考时间
+    if (refH < 0 || refH > 23) {
+      alert('小时必须在 0-23 之间')
+      return
+    }
+    if (refM < 0 || refM > 59) {
+      alert('分钟必须在 0-59 之间')
+      return
+    }
+
+    const durationHours = dh + dm / 60
     const refMinutes = refH * 60 + refM
 
     if (formDurationRef.value === 'start') {
       start = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
-      const endMinutes = refMinutes + durationHours * 60
-      const eh = Math.floor(endMinutes / 60) % 24
-      const em = Math.floor(endMinutes % 60)
+      startMinutes = refMinutes
+      const endMins = refMinutes + durationHours * 60
+      const eh = Math.floor(endMins / 60) % 24
+      const em = Math.floor(endMins % 60)
       end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+      endMinutes = endMins % (24 * 60)
     } else {
       end = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
-      const startMinutes = refMinutes - durationHours * 60
-      const sh = Math.floor((startMinutes + 24 * 60) / 60) % 24
-      const sm = Math.floor(((startMinutes + 24 * 60) % 60))
+      endMinutes = refMinutes
+      const startMins = refMinutes - durationHours * 60
+      const sh = Math.floor((startMins + 24 * 60) / 60) % 24
+      const sm = Math.floor(((startMins + 24 * 60) % 60))
       start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
+      startMinutes = (startMins + 24 * 60) % (24 * 60)
     }
   }
 
@@ -140,7 +205,7 @@ async function saveRecord() {
     return
   }
 
-  const duration = (timeStrToMinutes(end) - timeStrToMinutes(start)) / 60
+  const duration = (endMinutes - startMinutes) / 60
 
   const record: TimeRecord = {
     date: getTodayDate(),

@@ -46,8 +46,16 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.9',
+    version: '1.0.10',
     date: '开发中',
+    changes: [
+      '添加记录创建时的完整验证：时间范围、小时/分钟边界、时长限制等',
+      '防止创建结束时间早于开始时间的无效记录'
+    ]
+  },
+  {
+    version: '1.0.9',
+    date: '2026-09-05',
     changes: [
       '修复记录创建：修改时间后无法保存的问题',
       '原因是 input[type=number] 返回数字类型，调用字符串方法 padStart 报错'
