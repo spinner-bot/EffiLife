@@ -57,6 +57,24 @@ const config = computed(() => appStore.config)
 // 当前视图
 type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more'
 const currentView = ref<ViewType>('main')
+// 导航历史栈（用于返回上一级）
+const viewHistory = ref<ViewType[]>(['main'])
+
+// 导航到指定视图（记录历史）
+function navigateTo(view: ViewType) {
+  viewHistory.value.push(view)
+  currentView.value = view
+}
+
+// 返回上一级
+function goBack() {
+  if (viewHistory.value.length > 1) {
+    viewHistory.value.pop()
+    currentView.value = viewHistory.value[viewHistory.value.length - 1]
+  } else {
+    router.push('/')
+  }
+}
 
 // ============ 自定义设置 ============
 const overtimeThreshold = ref(config.value.overtime_threshold)
@@ -372,7 +390,7 @@ watch(() => config.value, (newConfig) => {
 <template>
   <div class="settings-view">
     <header class="header">
-      <button class="back-btn" @click="currentView === 'main' ? router.push('/') : currentView = 'main'">
+      <button class="back-btn" @click="goBack">
         <ArrowLeft :size="16" />
         <span>返回</span>
       </button>
@@ -383,11 +401,11 @@ watch(() => config.value, (newConfig) => {
       <!-- 主视图 -->
       <template v-if="currentView === 'main'">
         <div class="settings-list">
-          <button class="settings-item" @click="currentView = 'custom'">
+          <button class="settings-item" @click="navigateTo('custom')">
             <span>自定义</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'theme'">
+          <button class="settings-item" @click="navigateTo('theme')">
             <span>主题</span>
             <ChevronRight :size="16" />
           </button>
@@ -403,16 +421,12 @@ watch(() => config.value, (newConfig) => {
             <span>事件管理</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'more'">
-            <span>更多设置</span>
-            <ChevronRight :size="16" />
-          </button>
-          <button class="settings-item" @click="currentView = 'archive'">
+          <button class="settings-item" @click="navigateTo('archive')">
             <span>存档管理</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'reset'">
-            <span>恢复</span>
+          <button class="settings-item" @click="navigateTo('more')">
+            <span>更多设置</span>
             <ChevronRight :size="16" />
           </button>
         </div>
@@ -448,7 +462,7 @@ watch(() => config.value, (newConfig) => {
         </div>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="currentView = 'main'">返回</button>
+          <button class="btn secondary" @click="goBack">返回</button>
           <button class="btn primary" @click="saveCustomSettings">保存</button>
         </div>
       </template>
@@ -667,7 +681,7 @@ watch(() => config.value, (newConfig) => {
         </template>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="currentView = 'main'">返回</button>
+          <button class="btn secondary" @click="goBack">返回</button>
           <button class="btn primary" @click="saveTheme">保存</button>
         </div>
       </template>
@@ -798,7 +812,7 @@ watch(() => config.value, (newConfig) => {
           </div>
         </div>
 
-        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 存档管理 -->
@@ -808,7 +822,7 @@ watch(() => config.value, (newConfig) => {
           <button class="btn primary full" @click="exportArchive">导出存档</button>
           <button class="btn primary full" @click="importArchive">导入存档</button>
         </div>
-        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 恢复 -->
@@ -819,7 +833,7 @@ watch(() => config.value, (newConfig) => {
           <button class="btn secondary full" @click="resetScheduleData">重置日程数据</button>
           <button class="btn secondary full" @click="resetConfig">重置设置数据</button>
         </div>
-        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 反馈 -->
@@ -856,18 +870,18 @@ watch(() => config.value, (newConfig) => {
             </ul>
           </div>
         </div>
-        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 更多设置 -->
       <template v-else-if="currentView === 'more'">
         <h2>更多设置</h2>
-        <div class="settings-group">
-          <button class="settings-item" @click="currentView = 'version-info'">
+        <div class="settings-list">
+          <button class="settings-item" @click="navigateTo('version-info')">
             <span>版本信息</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'feedback'">
+          <button class="settings-item" @click="navigateTo('feedback')">
             <span>反馈</span>
             <ChevronRight :size="16" />
           </button>
@@ -875,12 +889,16 @@ watch(() => config.value, (newConfig) => {
             <span>使用引导</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="currentView = 'help'">
+          <button class="settings-item" @click="navigateTo('help')">
             <span>帮助</span>
             <ChevronRight :size="16" />
           </button>
+          <button class="settings-item" @click="navigateTo('reset')">
+            <span>恢复</span>
+            <ChevronRight :size="16" />
+          </button>
         </div>
-        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 版本信息 -->
@@ -917,7 +935,7 @@ watch(() => config.value, (newConfig) => {
             </div>
           </div>
         </div>
-        <button class="btn secondary full" @click="currentView = 'more'">返回</button>
+        <button class="btn secondary full" @click="goBack">返回</button>
       </template>
     </main>
   </div>

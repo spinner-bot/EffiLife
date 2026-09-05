@@ -46,8 +46,17 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.3',
+    version: '1.0.4',
     date: '开发中',
+    changes: [
+      '设置导航支持层级返回，不会直接跳回主页',
+      '"更多设置"排版优化，与主设置保持一致',
+      '"恢复"移入"更多设置"，"更多设置"移至主设置底部'
+    ]
+  },
+  {
+    version: '1.0.3',
+    date: '2026-09-05',
     changes: [
       '设置页面优化：不常用选项收纳至"更多设置"',
       '新增"版本信息"页面，突出显示当前版本和历史记录'
