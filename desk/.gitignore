@@ -3,12 +3,16 @@ node_modules/
 
 # Build output
 dist/
+.vite/
+
+# Tauri build artifacts
 src-tauri/target/
 src-tauri/gen/
 src-tauri/Cargo.lock
 
 # Installer packages
 *.exe
+*.msi
 
 # IDE
 .idea/
@@ -17,3 +21,7 @@ src-tauri/Cargo.lock
 # OS files
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,6 +1,26 @@
-# Installer packages at root
+# Build artifacts
 *.exe
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
