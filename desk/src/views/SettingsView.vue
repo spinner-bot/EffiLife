@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
-import { exportArchive, importArchive, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
+import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -272,17 +272,37 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 async function handleExportArchive() {
   try {
-    await exportArchive()
-    alert('存档导出成功！')
+    const result = await exportArchive()
+    if (result.success) {
+      if (result.path) {
+        alert(`存档已保存到：\n${result.path}`)
+      } else {
+        alert('存档已下载！')
+      }
+    }
   } catch (e) {
     alert('导出失败：' + (e as Error).message)
   }
 }
 
-function handleImportArchive() {
-  // 触发文件选择
-  if (fileInputRef.value) {
-    fileInputRef.value.click()
+async function handleImportArchive() {
+  // 检测是否在 Tauri 环境
+  if ((window as any).__TAURI__) {
+    // Tauri 环境：使用原生文件对话框
+    const result = await importArchiveWithDialog()
+    if (result.cancelled) return
+    if (result.success) {
+      if (confirm(result.message + '\n\n需要刷新页面以应用更改，是否立即刷新？')) {
+        window.location.reload()
+      }
+    } else {
+      alert(result.message)
+    }
+  } else {
+    // 浏览器环境：使用文件选择器
+    if (fileInputRef.value) {
+      fileInputRef.value.click()
+    }
   }
 }
 

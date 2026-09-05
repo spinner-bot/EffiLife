@@ -5,6 +5,21 @@ import { saveAs } from 'file-saver'
 // 存档版本
 const ARCHIVE_VERSION = '2.0'
 
+// 检测是否在 Tauri 环境
+function isTauri(): boolean {
+  return !!(window as any).__TAURI__
+}
+
+// 获取下载路径设置
+function getDownloadPath(): string | null {
+  return localStorage.getItem('efflife_download_path')
+}
+
+// 设置下载路径
+export function setDownloadPath(path: string): void {
+  localStorage.setItem('efflife_download_path', path)
+}
+
 // 所有需要保存的 localStorage 键
 const STORAGE_KEYS = {
   // 基础配置
@@ -98,7 +113,7 @@ function collectAllData(): ArchiveData {
 }
 
 // 导出数据为 .efl 文件
-export async function exportArchive(): Promise<void> {
+export async function exportArchive(): Promise<{ success: boolean; path?: string }> {
   const data = collectAllData()
   const zip = new JSZip()
 
@@ -120,15 +135,49 @@ export async function exportArchive(): Promise<void> {
 导入方法: 设置 → 更多设置 → 存档管理 → 导入存档
 `)
 
-  // 生成 zip 并下载
+  // 生成 zip blob
   const blob = await zip.generateAsync({ type: 'blob' })
 
   // 生成文件名
   const dateStr = new Date().toISOString().split('T')[0]
   const fileName = `efflife_archive_${dateStr}.efl`
 
-  // 使用 file-saver 下载
+  // 如果在 Tauri 环境，使用原生对话框
+  if (isTauri()) {
+    try {
+      const { save } = await import('@tauri-apps/plugin-dialog')
+      const { writeBinaryFile } = await import('@tauri-apps/plugin-fs')
+
+      const filePath = await save({
+        title: '导出存档',
+        defaultPath: getDownloadPath() || fileName,
+        filters: [{ name: '效率时钟存档', extensions: ['efl'] }]
+      })
+
+      if (!filePath) {
+        return { success: false }
+      }
+
+      // 保存文件
+      const buffer = await blob.arrayBuffer()
+      await writeBinaryFile(filePath, new Uint8Array(buffer))
+
+      // 记住用户选择的目录
+      const dir = filePath.substring(0, filePath.lastIndexOf('\\')) || filePath.substring(0, filePath.lastIndexOf('/'))
+      if (dir) {
+        setDownloadPath(dir + '/' + fileName.replace(/_[\d-]+\.efl$/, '_'))
+      }
+
+      return { success: true, path: filePath }
+    } catch (e) {
+      // Tauri API 失败，回退到浏览器下载
+      console.warn('Tauri export failed, falling back to browser:', e)
+    }
+  }
+
+  // 浏览器环境或 Tauri 失败时，使用浏览器下载
   saveAs(blob, fileName)
+  return { success: true }
 }
 
 // 从 .efl 文件导入数据
@@ -142,7 +191,47 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
     // 读取 zip 文件
     const zip = await JSZip.loadAsync(file)
 
-    // 读取主数据文件
+    return await processArchiveData(zip)
+  } catch (e) {
+    return { success: false, message: `导入失败：${(e as Error).message}` }
+  }
+}
+
+// 在 Tauri 环境下打开文件对话框导入
+export async function importArchiveWithDialog(): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
+  if (!isTauri()) {
+    return { success: false, message: '请在浏览器中使用文件选择器导入' }
+  }
+
+  try {
+    const { open } = await import('@tauri-apps/plugin-dialog')
+    const { readBinaryFile } = await import('@tauri-apps/plugin-fs')
+
+    const filePath = await open({
+      title: '导入存档',
+      filters: [{ name: '效率时钟存档', extensions: ['efl'] }],
+      multiple: false,
+      directory: false
+    })
+
+    if (!filePath) {
+      return { success: false, message: '', cancelled: true }
+    }
+
+    // 读取文件
+    const data = await readBinaryFile(filePath as string)
+    const blob = new Blob([data])
+    const zip = await JSZip.loadAsync(blob)
+
+    return await processArchiveData(zip)
+  } catch (e) {
+    return { success: false, message: `导入失败：${(e as Error).message}` }
+  }
+}
+
+// 处理存档数据（内部函数）
+async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
+  // 读取主数据文件
     const archiveFile = zip.file('archive.json')
     if (!archiveFile) {
       return { success: false, message: '存档文件格式无效：缺少 archive.json' }
@@ -183,10 +272,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
       }
     }
 
-    return { success: true, message: '存档导入成功' }
-  } catch (e) {
-    return { success: false, message: `导入失败：${(e as Error).message}` }
-  }
+  return { success: true, message: '存档导入成功' }
 }
 
 // 重置类型

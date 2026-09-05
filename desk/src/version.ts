@@ -46,8 +46,17 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.5',
+    version: '1.0.6',
     date: '开发中',
+    changes: [
+      'Tauri 环境下存档导出使用原生对话框选择保存路径',
+      'Tauri 环境下存档导入使用原生文件选择对话框',
+      '浏览器环境自动回退到默认下载/文件选择'
+    ]
+  },
+  {
+    version: '1.0.5',
+    date: '2026-09-05',
     changes: [
       '重构存档系统：使用 .efl 格式（ZIP 压缩），包含所有数据',
       '新增数据统计展示（记录天数、条数等）',
