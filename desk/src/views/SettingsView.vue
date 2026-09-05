@@ -5,7 +5,7 @@ import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
-import { APP_VERSION, getBuildInfo, isDevVersion } from '@/version'
+import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -55,7 +55,7 @@ const appStore = useAppStore()
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'changelog'
 const currentView = ref<ViewType>('main')
 
 // ============ 自定义设置 ============
@@ -413,6 +413,10 @@ watch(() => config.value, (newConfig) => {
           </button>
           <button class="settings-item" @click="currentView = 'help'">
             <span>帮助</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="currentView = 'changelog'">
+            <span>更新记录</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="currentView = 'archive'">
@@ -861,6 +865,23 @@ watch(() => config.value, (newConfig) => {
               <li>功能改进建议</li>
               <li>使用体验反馈</li>
               <li>新功能需求</li>
+            </ul>
+          </div>
+        </div>
+        <button class="btn secondary full" @click="currentView = 'main'">返回</button>
+      </template>
+
+      <!-- 更新记录 -->
+      <template v-else-if="currentView === 'changelog'">
+        <h2>更新记录</h2>
+        <div class="changelog-content">
+          <div v-for="(release, index) in VERSION_HISTORY" :key="release.version" class="changelog-version" :class="{ latest: index === 0 }">
+            <div class="version-header">
+              <span class="version-number">v{{ release.version }}</span>
+              <span class="version-date">{{ release.date }}</span>
+            </div>
+            <ul class="version-changes">
+              <li v-for="(change, i) in release.changes" :key="i">{{ change }}</li>
             </ul>
           </div>
         </div>
@@ -1495,5 +1516,63 @@ h2 {
   color: var(--color-text-secondary);
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+/* 更新记录样式 */
+.changelog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.changelog-version {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.changelog-version.latest {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-bg-secondary), rgba(var(--color-primary-rgb, 99, 102, 241), 0.05));
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.version-number {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.changelog-version.latest .version-number {
+  color: var(--color-primary);
+}
+
+.version-date {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+.version-changes {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.version-changes li {
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.version-changes li:last-child {
+  margin-bottom: 0;
 }
 </style>

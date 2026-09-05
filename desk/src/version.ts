@@ -39,8 +39,15 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.1',
+    version: '1.0.2',
     date: '开发中',
+    changes: [
+      '新增"更新记录"页面，可在设置中查看版本历史'
+    ]
+  },
+  {
+    version: '1.0.1',
+    date: '2026-09-05',
     changes: [
       '默认背景音乐改为爵士'
     ]
