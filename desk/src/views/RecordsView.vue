@@ -104,26 +104,32 @@ async function saveRecord() {
   let start: string, end: string
 
   if (formMode.value === 'time') {
-    start = `${formStart.value.h.padStart(2, '0')}:${formStart.value.m.padStart(2, '0')}`
-    end = `${formEnd.value.h.padStart(2, '0')}:${formEnd.value.m.padStart(2, '0')}`
+    const sh = String(formStart.value.h).padStart(2, '0')
+    const sm = String(formStart.value.m).padStart(2, '0')
+    const eh = String(formEnd.value.h).padStart(2, '0')
+    const em = String(formEnd.value.m).padStart(2, '0')
+    start = `${sh}:${sm}`
+    end = `${eh}:${em}`
   } else {
     const dh = parseInt(formDuration.value.h) || 0
     const dm = parseInt(formDuration.value.m) || 0
     const durationHours = dh + dm / 60
-    const refMinutes = (parseInt(formDurationTime.value.h) || 0) * 60 + (parseInt(formDurationTime.value.m) || 0)
+    const refH = parseInt(formDurationTime.value.h) || 0
+    const refM = parseInt(formDurationTime.value.m) || 0
+    const refMinutes = refH * 60 + refM
 
     if (formDurationRef.value === 'start') {
-      start = `${formDurationTime.value.h.padStart(2, '0')}:${formDurationTime.value.m.padStart(2, '0')}`
+      start = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       const endMinutes = refMinutes + durationHours * 60
       const eh = Math.floor(endMinutes / 60) % 24
       const em = Math.floor(endMinutes % 60)
-      end = `${eh.toString().padStart(2, '0')}:${em.toString().padStart(2, '0')}`
+      end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
     } else {
-      end = `${formDurationTime.value.h.padStart(2, '0')}:${formDurationTime.value.m.padStart(2, '0')}`
+      end = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       const startMinutes = refMinutes - durationHours * 60
       const sh = Math.floor((startMinutes + 24 * 60) / 60) % 24
       const sm = Math.floor(((startMinutes + 24 * 60) % 60))
-      start = `${sh.toString().padStart(2, '0')}:${sm.toString().padStart(2, '0')}`
+      start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
     }
   }
 

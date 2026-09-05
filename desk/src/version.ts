@@ -46,8 +46,16 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.8',
+    version: '1.0.9',
     date: '开发中',
+    changes: [
+      '修复记录创建：修改时间后无法保存的问题',
+      '原因是 input[type=number] 返回数字类型，调用字符串方法 padStart 报错'
+    ]
+  },
+  {
+    version: '1.0.8',
+    date: '2026-09-05',
     changes: [
       '修复打卡逻辑：确保只有任务100%完成才能打卡',
       '连续天数断开时，完成的计划仍可在收件箱中手动打卡',
