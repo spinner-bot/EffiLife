@@ -5,9 +5,11 @@ import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
-import { APP_VERSION } from '@/version'
+import { APP_VERSION, getBuildInfo, isDevVersion } from '@/version'
 
 const appVersion = APP_VERSION
+const buildInfo = getBuildInfo()
+const isDev = isDevVersion
 
 // ============ 引导功能 ============
 function startGuide() {
@@ -425,6 +427,7 @@ watch(() => config.value, (newConfig) => {
 
         <footer class="credits">
           <p class="version">浪兮效率时钟 v{{ appVersion }}</p>
+          <p class="build-info" :class="{ dev: isDev }">{{ buildInfo }}</p>
           <p>开发者：浪兮spinner_bot</p>
           <p>抖音@浪兮有点浪</p>
         </footer>
@@ -949,7 +952,17 @@ watch(() => config.value, (newConfig) => {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.credits .build-info {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary, rgba(255,255,255,0.4));
   margin-bottom: var(--spacing-xs);
+}
+
+.credits .build-info.dev {
+  color: var(--color-warning, #fbbf24);
 }
 
 h2 {

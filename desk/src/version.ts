@@ -1,9 +1,42 @@
-// 版本管理
-export const APP_VERSION = '1.0.0'
-export const APP_NAME = '浪兮效率时钟'
-export const BUILD_DATE = new Date().toISOString().split('T')[0]
+// 版本管理 - 构建时自动生成
+// 此文件由 vite 插件在每次构建时更新
 
-// 版本历史
+// 以下值会在构建时被替换
+export const APP_VERSION = '__APP_VERSION__'
+export const BUILD_TIMESTAMP = '__BUILD_TIMESTAMP__'
+export const BUILD_MODE = '__BUILD_MODE__'
+export const GIT_COMMIT_HASH = '__GIT_COMMIT_HASH__'
+export const GIT_COMMIT_COUNT = '__GIT_COMMIT_COUNT__'
+
+export const APP_NAME = '浪兮效率时钟'
+
+// 是否是开发版本
+export const isDevVersion = BUILD_MODE === 'development' || APP_VERSION.includes('-dev')
+
+// 获取完整版本信息
+export function getVersionInfo(): string {
+  if (isDevVersion) {
+    return `${APP_NAME} v${APP_VERSION} (${GIT_COMMIT_HASH})`
+  }
+  return `${APP_NAME} v${APP_VERSION}`
+}
+
+// 获取简短版本信息
+export function getShortVersion(): string {
+  return `v${APP_VERSION}`
+}
+
+// 获取构建信息（用于调试）
+export function getBuildInfo(): string {
+  if (isDevVersion) {
+    const date = new Date(parseInt(BUILD_TIMESTAMP) || Date.now())
+    const dateStr = date.toLocaleString('zh-CN')
+    return `开发版 #${GIT_COMMIT_COUNT} · ${dateStr}`
+  }
+  return `正式版 · ${BUILD_TIMESTAMP}`
+}
+
+// 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
     version: '1.0.0',
@@ -20,13 +53,3 @@ export const VERSION_HISTORY = [
     ]
   }
 ]
-
-// 获取完整版本信息
-export function getVersionInfo(): string {
-  return `${APP_NAME} v${APP_VERSION}`
-}
-
-// 获取简短版本信息
-export function getShortVersion(): string {
-  return `v${APP_VERSION}`
-}
