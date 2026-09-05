@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
+import { exportArchive, importArchive, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -250,126 +251,57 @@ function pickColor(target: string) {
 }
 
 // ============ 恢复设置 ============
-async function resetPlanData() {
-  if (!confirm('确定重置所有日计划为默认？此操作不可恢复！')) return
-  alert('日计划已重置')
-}
+const dataStats = computed(() => getDataStats())
 
-async function resetScheduleData() {
-  if (!confirm('确定重置日程规则为默认？此操作不可恢复！')) return
-  alert('日程规则已重置')
-}
-
-async function resetConfig() {
-  if (!confirm('确定重置所有设置为默认？')) return
-  const defaultConfig: Config = {
-    overtime_threshold: 105,
-    whiten_k: 0.6,
-    show_seconds: true,
-    use_24h: true,
-    show_ampm: false,
-    theme: {
-      type: 'solid',
-      solid: { bg_window: '#f0f0f0', bg_button: '#e0e0e0', fg_button: '#000000', bg_frame: '#d9d9d9' },
-      gradient: { color_start: '#667eea', color_end: '#764ba2', direction: 'to-br', fg_button: '#ffffff', card_bg: 'rgba(255, 255, 255, 0.15)' },
-      glass: { bg_color: '#1a1a2e', glass_opacity: 0.1, blur_amount: 10, fg_button: '#ffffff', border_color: 'rgba(255, 255, 255, 0.2)' },
-      neon: { bg_color: '#0a0a0f', neon_color: '#00ff88', glow_intensity: 10, fg_button: '#00ff88', accent_color: '#ff00ff' },
-    }
+function handleReset(type: ResetType) {
+  const messages: Record<ResetType, string> = {
+    all: '确定清除所有数据？包括配置、计划、记录、设置等。此操作不可恢复！',
+    records: '确定清除所有时间记录和打卡数据？此操作不可恢复！',
+    plans: '确定清除所有计划和日程规则？此操作不可恢复！',
+    config: '确定重置所有设置为默认值？',
+    settings: '确定重置音频和事件设置？',
   }
-  await appStore.saveConfig(defaultConfig)
-  overtimeThreshold.value = 105
-  themeType.value = 'solid'
-  solidConfig.value = defaultConfig.theme.solid!
-  gradientConfig.value = defaultConfig.theme.gradient!
-  glassConfig.value = defaultConfig.theme.glass!
-  neonConfig.value = defaultConfig.theme.neon!
-  alert('设置已重置')
+
+  if (!confirm(messages[type])) return
+  resetData(type)
 }
 
 // ============ 存档管理 ============
-async function exportArchive() {
+// 文件选择输入框引用
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+async function handleExportArchive() {
   try {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const { writeTextFile } = await import('@tauri-apps/plugin-fs')
-
-    const filePath = await save({
-      title: '导出存档',
-      defaultPath: `efflife_archive_${new Date().toISOString().split('T')[0]}.json`,
-      filters: [{ name: 'JSON 文件', extensions: ['json'] }]
-    })
-
-    if (!filePath) return
-
-    const archive = {
-      version: '1.0',
-      exportDate: new Date().toISOString(),
-      config: appStore.config,
-      plans: appStore.plans,
-      scheduleRules: appStore.scheduleRules,
-      records: {} as Record<string, unknown>,
-      manualPlans: {} as Record<string, string>
-    }
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith('efflife_records_')) {
-        const date = key.replace('efflife_records_', '')
-        archive.records[date] = JSON.parse(localStorage.getItem(key) || '[]')
-      }
-      if (key && key === 'efflife_manual') {
-        archive.manualPlans = JSON.parse(localStorage.getItem(key) || '{}')
-      }
-    }
-
-    await writeTextFile(filePath, JSON.stringify(archive, null, 2))
+    await exportArchive()
     alert('存档导出成功！')
   } catch (e) {
     alert('导出失败：' + (e as Error).message)
   }
 }
 
-async function importArchive() {
-  try {
-    const { open } = await import('@tauri-apps/plugin-dialog')
-    const { readTextFile } = await import('@tauri-apps/plugin-fs')
+function handleImportArchive() {
+  // 触发文件选择
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
+}
 
-    const filePath = await open({
-      title: '导入存档',
-      filters: [{ name: 'JSON 文件', extensions: ['json'] }],
-      multiple: false,
-      directory: false
-    })
+async function onFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
 
-    if (!filePath) return
+  // 重置 input 以便可以再次选择同一文件
+  input.value = ''
 
-    const text = await readTextFile(filePath as string)
-    const archive = JSON.parse(text)
+  if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
 
-    if (!archive.version || !archive.config) {
-      alert('无效的存档文件')
-      return
-    }
+  const result = await importArchive(file)
+  alert(result.message)
 
-    if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
-
-    await appStore.saveConfig(archive.config)
-    if (archive.plans) await appStore.savePlans(archive.plans)
-    if (archive.scheduleRules) await appStore.saveScheduleRules(archive.scheduleRules)
-
-    if (archive.records) {
-      for (const [date, records] of Object.entries(archive.records)) {
-        localStorage.setItem(`efflife_records_${date}`, JSON.stringify(records))
-      }
-    }
-
-    if (archive.manualPlans) {
-      localStorage.setItem('efflife_manual', JSON.stringify(archive.manualPlans))
-    }
-
-    await appStore.init()
-    alert('存档导入成功！')
-  } catch (e) {
-    alert('导入失败：' + (e as Error).message)
+  if (result.success) {
+    // 刷新页面以应用更改
+    window.location.reload()
   }
 }
 
@@ -818,21 +750,75 @@ watch(() => config.value, (newConfig) => {
       <!-- 存档管理 -->
       <template v-else-if="currentView === 'archive'">
         <h2>存档管理</h2>
-        <div class="archive-actions">
-          <button class="btn primary full" @click="exportArchive">导出存档</button>
-          <button class="btn primary full" @click="importArchive">导入存档</button>
+
+        <!-- 数据统计 -->
+        <div class="data-stats">
+          <h3>当前数据</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.recordDays }}</span>
+              <span class="stat-label">天记录</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.totalRecords }}</span>
+              <span class="stat-label">条记录</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.hasCheckin ? '✓' : '—' }}</span>
+              <span class="stat-label">打卡数据</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.hasPlans ? '✓' : '—' }}</span>
+              <span class="stat-label">计划数据</span>
+            </div>
+          </div>
         </div>
+
+        <!-- 操作按钮 -->
+        <div class="archive-actions">
+          <button class="btn primary full" @click="handleExportArchive">
+            导出存档 (.efl)
+          </button>
+          <button class="btn primary full" @click="handleImportArchive">
+            导入存档 (.efl)
+          </button>
+        </div>
+
+        <!-- 隐藏的文件输入 -->
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".efl"
+          style="display: none"
+          @change="onFileSelected"
+        />
+
+        <p class="archive-hint">
+          存档文件为 .efl 格式，包含所有数据（配置、计划、记录、设置等）。<br>
+          可用于备份或在设备间迁移数据。
+        </p>
+
         <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
       <!-- 恢复 -->
       <template v-else-if="currentView === 'reset'">
         <h2>恢复设置</h2>
-        <div class="reset-actions">
-          <button class="btn secondary full" @click="resetPlanData">重置计划数据</button>
-          <button class="btn secondary full" @click="resetScheduleData">重置日程数据</button>
-          <button class="btn secondary full" @click="resetConfig">重置设置数据</button>
+        <p class="reset-warning">⚠️ 以下操作不可恢复，建议先导出存档备份</p>
+
+        <div class="reset-section">
+          <h3>数据清除</h3>
+          <button class="btn danger full" @click="handleReset('all')">清除所有数据</button>
+          <button class="btn secondary full" @click="handleReset('records')">清除时间记录</button>
+          <button class="btn secondary full" @click="handleReset('plans')">清除计划数据</button>
         </div>
+
+        <div class="reset-section">
+          <h3>设置重置</h3>
+          <button class="btn secondary full" @click="handleReset('config')">重置应用设置</button>
+          <button class="btn secondary full" @click="handleReset('settings')">重置音频/事件设置</button>
+        </div>
+
         <button class="btn secondary full" @click="goBack">返回</button>
       </template>
 
@@ -1320,6 +1306,87 @@ h2 {
   flex-direction: column;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
+}
+
+/* 数据统计样式 */
+.data-stats {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.data-stats h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.archive-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+/* 恢复页面样式 */
+.reset-warning {
+  font-size: 0.875rem;
+  color: var(--color-warning, #f59e0b);
+  background: rgba(245, 158, 11, 0.1);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.reset-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.reset-section h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.btn.danger {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border-color: rgba(239, 68, 68, 1);
+}
+
+.btn.danger:hover {
+  background: rgba(239, 68, 68, 1);
 }
 
 /* 帮助页面样式 */

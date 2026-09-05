@@ -46,8 +46,18 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.4',
+    version: '1.0.5',
     date: '开发中',
+    changes: [
+      '重构存档系统：使用 .efl 格式（ZIP 压缩），包含所有数据',
+      '新增数据统计展示（记录天数、条数等）',
+      '重构恢复功能：分类清除（全部/记录/计划/设置）',
+      '修复存档功能在非 Tauri 环境下无法使用的问题'
+    ]
+  },
+  {
+    version: '1.0.4',
+    date: '2026-09-05',
     changes: [
       '设置导航支持层级返回，不会直接跳回主页',
       '"更多设置"排版优化，与主设置保持一致',
