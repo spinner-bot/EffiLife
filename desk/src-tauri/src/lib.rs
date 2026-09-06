@@ -1,7 +1,61 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
+
+// 崩溃日志处理器
+fn setup_panic_handler() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        // 尝试写入崩溃日志
+        let log_path = get_crash_log_path();
+        let payload = if let Some(s) = info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic".to_string()
+        };
+        let location = info.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()));
+        let time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let msg = format!(
+            "[{}] PANIC at {:?}\n{}\n---\n",
+            time,
+            location,
+            payload
+        );
+
+        if let Some(path) = log_path {
+            if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(&path) {
+                let _ = f.write_all(msg.as_bytes());
+            }
+        }
+
+        // 调用默认处理器
+        default_hook(info);
+    }));
+}
+
+// 获取崩溃日志路径
+fn get_crash_log_path() -> Option<PathBuf> {
+    // 尝试多个可能的路径
+    let candidates = [
+        dirs::data_local_dir().map(|d| d.join("crash.log")),
+        dirs::data_dir().map(|d| d.join("crash.log")),
+        std::env::current_dir().ok().map(|d| d.join("crash.log")),
+    ];
+
+    for candidate in candidates.iter().flatten() {
+        if let Some(parent) = candidate.parent() {
+            if fs::create_dir_all(parent).is_ok() {
+                return Some(candidate.clone());
+            }
+        }
+    }
+    None
+}
 
 // 数据结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,6 +150,9 @@ fn save_config(config: Config) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 设置崩溃日志处理器
+    setup_panic_handler();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
