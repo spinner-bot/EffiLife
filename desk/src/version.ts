@@ -46,13 +46,11 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.12',
+    version: '1.0.13',
     date: '开发中',
     changes: [
-      '开始 Android 移动端适配',
-      '存档服务适配移动端文件操作',
-      '反馈功能适配移动端邮件客户端',
-      '添加 Android 平台配置'
+      '修复 Android APK 闪退问题：启用 custom-protocol 特性',
+      'APK 使用 debug 密钥签名，可直接安装'
     ]
   },
   {
