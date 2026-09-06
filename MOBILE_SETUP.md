@@ -59,11 +59,44 @@ npm run tauri android dev
 
 ## 构建 APK
 
+### 重要：Windows 构建需要分步执行
+
+由于 Tauri CLI 在 Windows 上的已知问题（`rustBuildArm64Release` 任务崩溃），
+需要手动分离 Rust 编译和 Gradle 打包步骤：
+
 ```bash
-npm run tauri android build -- --apk
+# 步骤 1：编译 Rust 库（如果还没编译）
+cargo build --release --lib --features tauri/custom-protocol --target aarch64-linux-android
+
+# 步骤 2：复制 .so 文件到 Android 项目
+mkdir -p src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a
+cp src-tauri/target/aarch64-linux-android/release/libefflife_desk_lib.so \
+   src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a/
+
+# 步骤 3：设置环境变量
+export JAVA_HOME="/d/dev-tools/jdk-17.0.2"
+export ANDROID_HOME="/d/dev-tools/android-sdk"
+export NDK_HOME="/d/dev-tools/android-sdk/ndk/25.2.9519653"
+
+# 步骤 4：执行 Gradle 打包，跳过 Rust 构建任务
+cd src-tauri/gen/android
+./gradlew assembleArm64Release \
+  -x rustBuildArm64Release \
+  -x rustBuildArmRelease \
+  -x rustBuildX86Release \
+  -x rustBuildX86_64Release \
+  -x rustBuildUniversalRelease \
+  --no-daemon \
+  -Pkotlin.incremental=false
 ```
 
-输出位置：`src-tauri/gen/android/app/build/outputs/apk/`
+输出位置：`src-tauri/gen/android/app/build/outputs/apk/arm64/release/`
+
+### 注意
+
+- APK 默认为未签名版本（`-unsigned.apk`），可直接用于测试安装
+- 如需发布到应用商店，需要配置签名密钥
+- 参考：https://github.com/tauri-apps/tauri/issues/6502
 
 ## 已知问题
 
