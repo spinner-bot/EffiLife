@@ -65,20 +65,27 @@ npm run tauri android dev
 需要手动分离 Rust 编译和 Gradle 打包步骤：
 
 ```bash
-# 步骤 1：编译 Rust 库（如果还没编译）
+# 步骤 1：构建前端
+npm run build
+
+# 步骤 2：编译 Rust 库（如果还没编译）
 cargo build --release --lib --features tauri/custom-protocol --target aarch64-linux-android
 
-# 步骤 2：复制 .so 文件到 Android 项目
+# 步骤 3：复制 .so 文件到 Android 项目
 mkdir -p src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a
 cp src-tauri/target/aarch64-linux-android/release/libefflife_desk_lib.so \
    src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a/
 
-# 步骤 3：设置环境变量
+# 步骤 4：复制前端资源到 Android assets（关键！否则闪退）
+rm -rf src-tauri/gen/android/app/src/main/assets/*
+cp -r dist/* src-tauri/gen/android/app/src/main/assets/
+
+# 步骤 5：设置环境变量
 export JAVA_HOME="/d/dev-tools/jdk-17.0.2"
 export ANDROID_HOME="/d/dev-tools/android-sdk"
 export NDK_HOME="/d/dev-tools/android-sdk/ndk/25.2.9519653"
 
-# 步骤 4：执行 Gradle 打包，跳过 Rust 构建任务
+# 步骤 6：执行 Gradle 打包，跳过 Rust 构建任务
 cd src-tauri/gen/android
 ./gradlew assembleArm64Release \
   -x rustBuildArm64Release \
@@ -89,6 +96,9 @@ cd src-tauri/gen/android
   --no-daemon \
   -Pkotlin.incremental=false
 ```
+
+**注意：** 步骤 4 是必须的！跳过 Rust 构建任务意味着前端资源不会被自动打包，
+必须手动复制 `dist/` 到 Android assets 目录，否则应用启动时会闪退。
 
 输出位置：`src-tauri/gen/android/app/build/outputs/apk/arm64/release/`
 
