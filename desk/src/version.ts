@@ -46,12 +46,11 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
-    version: '1.0.14',
+    version: '1.0.15',
     date: '开发中',
     changes: [
-      '添加 Android 崩溃日志捕获，写入 crash.log',
-      '修复 Windows cargo 链接器配置',
-      'APK 使用 debug 密钥签名'
+      '修复 Android APK 启动闪退：前端资源未打包问题',
+      '手动复制 dist/ 到 Android assets 目录'
     ]
   },
   {
