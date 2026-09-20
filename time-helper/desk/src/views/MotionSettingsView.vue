@@ -80,7 +80,7 @@ function resetToDefault() {
   if (!confirm('确定恢复默认动效设置？')) return
   MotionManager.updateSettings({
     enabled: true,
-    targetFps: 30,
+    targetFps: 15,
     themeCanvasEnabled: true,
     particleEnabled: true,
     transitionEnabled: true,

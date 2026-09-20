@@ -26,7 +26,7 @@ export interface MotionSettings {
 
 export const DEFAULT_MOTION_SETTINGS: MotionSettings = {
   enabled: true,
-  targetFps: 30,
+  targetFps: 15,
   themeCanvasEnabled: true,
   particleEnabled: true,
   transitionEnabled: true,
