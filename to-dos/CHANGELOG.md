@@ -1,5 +1,85 @@
 # to-dos - 更新日志
 
+## [0.5.0] - 2026-09-20
+
+### 新增 - 优先排位分算法（核心）
+- **算法实现**：创建 `src/priority.py` 模块，实现完整的优先排位分计算
+  - `calc_priority_score`: 计算单个待办的优先排位分
+  - `format_score_display`: 格式化分数显示（EL 前缀 + 对数压缩）
+  - `calc_category_score`: 计算分类分数（sum/sqrt(count)）
+  - `calc_all_scores`: 批量计算所有待办分数
+- **对数域计算**：全程使用对数域，避免大数溢出
+- **软封顶机制**：超过 1e10 使用对数压缩显示
+- **前端同步**：创建 `ui/src/utils/priority.ts`，TypeScript 版本算法与后端一致
+
+### 新增 - 数据模型增强
+- **Todo 新增字段**：
+  - `priority_rank`: 优先级排位（int，0 最高）
+  - `urgent`: 是否紧急（boolean）
+  - `important`: 是否重要（boolean）
+  - `start_time`: 开始时间（默认=创建时间）
+  - `estimated_time`: 用户填写的预估时间（分钟）
+- **Category 新增字段**：
+  - `difficulty`: 类别难度（int，默认 5）
+  - `ascii_icon`: ASCII 图标（A-Z, a-z, 0-9）
+  - `pinned`: 分类置顶
+
+### 新增 - 图标选择器
+- 创建 `IconPicker.vue` 图标选择器组件
+- 96 种 lucide 图标
+- 62 种 ASCII 图标（A-Z, a-z, 0-9）
+- 20 种预设颜色 + 自定义颜色选择
+- 搜索过滤功能
+
+### 新增 - UI 重大变化
+- **左侧栏重构**：
+  - 分类按优先排位分动态排序
+  - 前 X 名展开显示（X 可设置，默认 5）
+  - X+1 及以后折叠收纳
+  - 无有效待办的类别单独折叠
+  - 支持分类置顶
+  - 显示分类分数和待办数量
+- **任务卡片**：
+  - 直接显示优先排位分数字
+  - 高分数（≥1000）使用主题色高亮
+  - 已过期分数显示红色
+- **设置面板**：
+  - 分数更新频率（1秒/5秒/30秒/手动）
+  - 分类展开数量（3/5/8/10/全部）
+  - 手动刷新按钮
+
+### 新增 - 实时更新
+- 优先排位分实时计算
+- 设置中指定更新频率
+- 使用 setInterval 定时刷新
+- 数据变更后自动重算
+
+### 新增 - 日期格式统一
+- TimeHelper 统一使用 `yyyy/mm/dd` 格式
+- 新增 `format_date`、`format_datetime`、`parse_display` 方法
+- 新增 `iso_to_display`、`display_to_iso` 转换方法
+- 内部存储保持 ISO 格式，显示时转换
+
+### 技术改进
+- 后端：新增 `priority.py` 模块（242 行）
+- 后端：Todo/Category dataclass 新增字段
+- 后端：storage.py 支持新字段的 CRUD
+- 后端：utils.py 新增日期格式工具
+- 前端：新增 `utils/priority.ts`（150 行）
+- 前端：新增 `IconPicker.vue`、`SettingsPanel.vue`
+- 前端：types/index.ts 新增类型定义
+- 前端：Pinia Store 新增分数计算和设置管理
+- 前端：TodoItem 显示分数徽章
+- 前端：CategorySidebar 动态排序 + 折叠
+- 前端：TodoForm 添加新字段表单
+- 前端：FilterBar 添加分数排序选项
+- 43 项优先排位分算法测试全部通过
+
+### 向后兼容
+- 旧数据自动使用默认值迁移
+- 新字段都有合理的默认值
+- ISO 日期格式仍可解析
+
 ## [0.3.0] - 2026-09-20
 
 ### 新增 - UI 视觉打磨
