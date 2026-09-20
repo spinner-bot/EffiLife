@@ -39,6 +39,61 @@ const sortedRules = computed(() =>
 type ViewType = 'inbox' | 'events' | 'warnings'
 const currentView = ref<ViewType>('inbox')
 
+// 收件箱分类过滤
+type InboxFilter = 'all' | 'achievement' | 'event' | 'reminder'
+const inboxFilter = ref<InboxFilter>('all')
+
+// 分类过滤后的收件箱
+const filteredInbox = computed(() => {
+  if (inboxFilter.value === 'all') return inbox.value
+  return inbox.value.filter(entry => {
+    switch (inboxFilter.value) {
+      case 'achievement':
+        return entry.type === 'plan_complete_100' ||
+               entry.type === 'achievement_unlocked' ||
+               entry.type === 'checkin_complete' ||
+               entry.type === 'streak_milestone'
+      case 'event':
+        return entry.type === 'plan_complete_90' ||
+               entry.type === 'plan_complete_50' ||
+               entry.type === 'record_added' ||
+               entry.type === 'record_deleted' ||
+               entry.type === 'plan_changed' ||
+               entry.type === 'weekly_summary' ||
+               entry.type === 'daily_first_record'
+      case 'reminder':
+        return entry.type === 'progress_warning' ||
+               entry.type === 'idle_reminder' ||
+               !!entry.checkinPlanName
+      default:
+        return true
+    }
+  })
+})
+
+// 各分类的未读数
+const filterCounts = computed(() => {
+  const all = inbox.value.length
+  const achievement = inbox.value.filter(e =>
+    e.type === 'plan_complete_100' || e.type === 'achievement_unlocked' ||
+    e.type === 'checkin_complete' || e.type === 'streak_milestone'
+  ).length
+  const event = inbox.value.filter(e =>
+    e.type === 'plan_complete_90' || e.type === 'plan_complete_50' ||
+    e.type === 'record_added' || e.type === 'record_deleted' ||
+    e.type === 'plan_changed' || e.type === 'weekly_summary' ||
+    e.type === 'daily_first_record'
+  ).length
+  const reminder = inbox.value.filter(e =>
+    e.type === 'progress_warning' || e.type === 'idle_reminder' || !!e.checkinPlanName
+  ).length
+  return { all, achievement, event, reminder }
+})
+
+function setFilter(filter: InboxFilter) {
+  inboxFilter.value = filter
+}
+
 // 预警规则编辑
 const showRuleForm = ref(false)
 const editingRuleId = ref<string | null>(null)
@@ -322,15 +377,52 @@ function testWarning(rule: WarningRule) {
             </div>
           </div>
 
-          <div v-if="inbox.length === 0" class="empty-state">
+          <!-- 分类过滤器 -->
+          <div class="inbox-filters" v-if="inbox.length > 0">
+            <button
+              class="filter-pill"
+              :class="{ active: inboxFilter === 'all' }"
+              @click="setFilter('all')"
+            >
+              全部
+              <span class="filter-count">{{ filterCounts.all }}</span>
+            </button>
+            <button
+              class="filter-pill"
+              :class="{ active: inboxFilter === 'achievement' }"
+              @click="setFilter('achievement')"
+            >
+              🏆 成就
+              <span class="filter-count">{{ filterCounts.achievement }}</span>
+            </button>
+            <button
+              class="filter-pill"
+              :class="{ active: inboxFilter === 'event' }"
+              @click="setFilter('event')"
+            >
+              📋 事件
+              <span class="filter-count">{{ filterCounts.event }}</span>
+            </button>
+            <button
+              class="filter-pill"
+              :class="{ active: inboxFilter === 'reminder' }"
+              @click="setFilter('reminder')"
+            >
+              🔔 提醒
+              <span class="filter-count">{{ filterCounts.reminder }}</span>
+            </button>
+          </div>
+
+          <div v-if="filteredInbox.length === 0" class="empty-state">
             <Inbox :size="48" class="empty-icon" />
-            <p>暂无事件记录</p>
-            <p class="hint">触发的事件会显示在这里</p>
+            <p v-if="inbox.length === 0">暂无事件记录</p>
+            <p v-else>该分类下暂无事件</p>
+            <p class="hint" v-if="inbox.length === 0">触发的事件会显示在这里</p>
           </div>
 
           <div v-else class="inbox-list">
             <div
-              v-for="entry in inbox"
+              v-for="entry in filteredInbox"
               :key="entry.id"
               class="inbox-item"
               :class="[getEventStyle(entry.type), { unread: !entry.read, checkinable: entry.checkinPlanName }]"
@@ -662,6 +754,60 @@ function testWarning(rule: WarningRule) {
   color: var(--color-text-secondary);
   margin: 0 0 var(--spacing-md) 0;
   line-height: 1.5;
+}
+
+/* 收件箱过滤器 */
+.inbox-filters {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-xs);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.filter-pill:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.filter-pill.active {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+}
+
+.filter-count {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  padding: 0 4px;
+  background: var(--color-bg-tertiary);
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+.filter-pill.active .filter-count {
+  background: var(--color-primary);
+  color: white;
 }
 
 /* 收件箱 */
