@@ -1016,6 +1016,10 @@ onMounted(() => {
   color: white;
 }
 
+.pv-add-btn:active {
+  transform: scale(0.95);
+}
+
 /* ============ Content ============ */
 .pv-content {
   flex: 1;
@@ -1667,6 +1671,10 @@ onMounted(() => {
   color: white;
 }
 
+.pv-primary-btn:active {
+  transform: scale(0.96);
+}
+
 .pv-secondary-btn {
   display: flex;
   align-items: center;
@@ -1682,6 +1690,10 @@ onMounted(() => {
 }
 .pv-secondary-btn:hover {
   background: var(--color-bg-tertiary);
+}
+
+.pv-secondary-btn:active {
+  transform: scale(0.96);
 }
 
 .pv-icon-btn {
