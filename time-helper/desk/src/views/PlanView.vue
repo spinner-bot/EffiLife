@@ -13,6 +13,8 @@ import {
   Clock, Layers, ChevronRight
 } from 'lucide-vue-next'
 import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
+import EmptyState from '@/components/EmptyState.vue'
+import { useFormValidation } from '@/composables/useFormValidation'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -99,8 +101,12 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
 }
 
 async function saveRecord() {
-  if (!formContent.value.trim()) { alert('请填写内容'); return }
-  if (!formTag.value.trim()) { alert('请选择标签'); return }
+  // 使用表单验证
+  const valid = recordValidation.validate({
+    content: formContent.value,
+    tag: formTag.value,
+  })
+  if (!valid) return
 
   let start: string, end: string
   let startMinutes: number, endMinutes: number
@@ -210,7 +216,9 @@ function removePlanItem(index: number) {
 }
 async function savePlan() {
   const name = editingPlanName.value.trim()
-  if (!name) { alert('请输入计划名称'); return }
+  // 使用表单验证
+  const valid = planValidation.validate({ planName: name })
+  if (!valid) return
   const items = editingPlanItems.value.filter(item => item.name.trim())
   if (items.length === 0) { alert('请至少添加一个时间类别'); return }
   for (const item of items) {
@@ -358,6 +366,31 @@ function getPlanItemColor(itemName: string): string {
   return getTagColorForName(itemName)
 }
 
+// 记录表单验证规则
+const recordValidation = useFormValidation({
+  content: { required: '请填写内容', min: 1 },
+  tag: { required: '请选择标签' },
+})
+
+const recordFormErrors = recordValidation.errors
+
+// 计划表单验证规则
+const planValidation = useFormValidation({
+  planName: { required: '请输入计划名称', min: 1 },
+})
+
+const planFormErrors = planValidation.errors
+
+// 实时验证 - 记录表单
+function validateRecordField(field: 'content' | 'tag', value: string) {
+  recordValidation.validateOne(field, value)
+}
+
+// 实时验证 - 计划表单
+function validatePlanField(field: 'planName', value: string) {
+  planValidation.validateOne(field, value)
+}
+
 onMounted(() => {
   formTag.value = availableTags.value[0] || ''
 })
@@ -448,11 +481,13 @@ onMounted(() => {
           </div>
 
           <!-- 空状态 -->
-          <div class="pv-empty" v-else>
-            <ClipboardList :size="48" class="pv-empty-icon" />
-            <p class="pv-empty-title">暂无记录</p>
-            <p class="pv-empty-hint">点击「新增」按钮开始记录你的时间</p>
-          </div>
+          <EmptyState
+            v-else
+            :icon="ClipboardList"
+            title="暂无记录"
+            description="点击上方「新增」按钮开始记录你的时间"
+            @action="AudioManager.playSound('click'); openAddForm()"
+          />
         </div>
 
         <!-- ============ 管理 Tab ============ -->
@@ -571,7 +606,15 @@ onMounted(() => {
 
             <div class="pv-form-group">
               <label>计划名称</label>
-              <input type="text" v-model="editingPlanName" class="pv-text-input" placeholder="输入计划名称" />
+              <input
+                type="text"
+                v-model="editingPlanName"
+                class="pv-text-input"
+                :class="{ 'has-error': planFormErrors.planName }"
+                placeholder="输入计划名称"
+                @blur="validatePlanField('planName', editingPlanName)"
+              />
+              <p v-if="planFormErrors.planName" class="pv-field-error">{{ planFormErrors.planName }}</p>
             </div>
 
             <div class="pv-form-group">
@@ -826,14 +869,28 @@ onMounted(() => {
 
             <div class="pv-form-group">
               <label>内容</label>
-              <input type="text" v-model="formContent" placeholder="请输入内容" class="pv-text-input" />
+              <input
+                type="text"
+                v-model="formContent"
+                placeholder="请输入内容"
+                class="pv-text-input"
+                :class="{ 'has-error': recordFormErrors.content }"
+                @blur="validateRecordField('content', formContent)"
+              />
+              <p v-if="recordFormErrors.content" class="pv-field-error">{{ recordFormErrors.content }}</p>
             </div>
 
             <div class="pv-form-group">
               <label>类别</label>
-              <select v-model="formTag" class="pv-select">
+              <select
+                v-model="formTag"
+                class="pv-select"
+                :class="{ 'has-error': recordFormErrors.tag }"
+                @blur="validateRecordField('tag', formTag)"
+              >
                 <option v-for="tag in availableTags" :key="tag" :value="tag">{{ tag }}</option>
               </select>
+              <p v-if="recordFormErrors.tag" class="pv-field-error">{{ recordFormErrors.tag }}</p>
             </div>
           </div>
           <div class="pv-modal-footer">
@@ -1117,29 +1174,7 @@ onMounted(() => {
 .list-move { transition: transform 0.25s ease; }
 
 /* ============ Empty State ============ */
-.pv-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl);
-  text-align: center;
-}
-.pv-empty-icon {
-  color: var(--color-text-tertiary);
-  opacity: 0.3;
-  margin-bottom: var(--spacing-md);
-}
-.pv-empty-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-xs);
-}
-.pv-empty-hint {
-  font-size: 0.8125rem;
-  color: var(--color-text-tertiary);
-}
+/* 使用通用 EmptyState 组件 */
 
 /* ============ Management Views ============ */
 .pv-plan-hero {
@@ -1442,7 +1477,29 @@ onMounted(() => {
   outline: none;
   border-color: var(--color-primary);
 }
+.pv-text-input.has-error {
+  border-color: var(--color-error);
+}
 .pv-text-input.flex-1 { flex: 1; }
+
+/* 字段错误提示 */
+.pv-field-error {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin: var(--spacing-xs) 0 0 0;
+  animation: fieldErrorIn 0.2s ease-out;
+}
+
+@keyframes fieldErrorIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .pv-select {
   width: 100%;
@@ -1456,6 +1513,9 @@ onMounted(() => {
 .pv-select:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+.pv-select.has-error {
+  border-color: var(--color-error);
 }
 
 .pv-num-input {
