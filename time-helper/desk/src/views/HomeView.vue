@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell } from 'lucide-vue-next'
+import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell, CheckCircle } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -58,6 +58,12 @@ const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
 
 // 收件箱未读数量
 const unreadCount = computed(() => EventSystem.getUnreadCount())
+
+// 今天是否可打卡（计划100%完成但还没打卡）
+const canCheckinToday = computed(() => {
+  if (hasCheckedInToday.value) return false
+  return stat.value && stat.value.plan_exists && stat.value.progress >= 100
+})
 
 // 每个类别的进度百分比
 function getTagProgress(tag: string): number {
@@ -200,6 +206,11 @@ onUnmounted(() => {
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
           <Calendar :size="22" />
           <span>日历</span>
+        </button>
+        <button class="nav-btn checkin-nav" @click="AudioManager.playSound('click'); router.push('/checkin')">
+          <CheckCircle :size="22" />
+          <span>打卡</span>
+          <span v-if="canCheckinToday && !hasCheckedInToday" class="nav-red-dot"></span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/management')">
           <FolderKanban :size="22" />
@@ -558,8 +569,8 @@ onUnmounted(() => {
 
 .nav-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-sm);
   width: 100%;
 }
 
@@ -586,6 +597,21 @@ onUnmounted(() => {
 
 .nav-btn:active {
   transform: translateY(0);
+}
+
+.checkin-nav {
+  position: relative;
+}
+
+.nav-red-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-error);
+  border-radius: 50%;
+  animation: dotPulse 1.5s ease-in-out infinite;
 }
 
 .footer {

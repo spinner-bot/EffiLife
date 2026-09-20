@@ -49,6 +49,11 @@ const router = createRouter({
       name: 'motionSettings',
       component: () => import('@/views/MotionSettingsView.vue'),
     },
+    {
+      path: '/checkin',
+      name: 'checkin',
+      component: () => import('@/views/CheckinView.vue'),
+    },
   ],
 })
 
