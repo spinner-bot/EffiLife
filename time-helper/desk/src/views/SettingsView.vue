@@ -287,7 +287,7 @@ function pickColor(target: string) {
 // ============ 恢复设置 ============
 const dataStats = computed(() => getDataStats())
 
-function handleReset(type: ResetType) {
+async function handleReset(type: ResetType) {
   const messages: Record<ResetType, string> = {
     all: '确定清除所有数据？包括配置、计划、记录、设置等。此操作不可恢复！',
     records: '确定清除所有时间记录和打卡数据？此操作不可恢复！',
@@ -297,7 +297,7 @@ function handleReset(type: ResetType) {
   }
 
   if (!confirm(messages[type])) return
-  resetData(type)
+  await resetData(type)
 }
 
 // ============ 存档管理 ============

@@ -252,17 +252,50 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       return { success: false, message: '存档文件格式无效：缺少版本信息' }
     }
 
-    // 恢复数据
-    if (data.config) writeJSON(STORAGE_KEYS.CONFIG, data.config)
-    if (data.plans) writeJSON(STORAGE_KEYS.PLANS, data.plans)
-    if (data.scheduleRules) writeJSON(STORAGE_KEYS.SCHEDULE_RULES, data.scheduleRules)
-    if (data.manualPlans) writeJSON(STORAGE_KEYS.MANUAL_PLANS, data.manualPlans)
-    if (data.audioSettings) writeJSON(STORAGE_KEYS.AUDIO_SETTINGS, data.audioSettings)
-    if (data.eventSettings) writeJSON(STORAGE_KEYS.EVENT_SETTINGS, data.eventSettings)
-    if (data.eventInbox) writeJSON(STORAGE_KEYS.EVENT_INBOX, data.eventInbox)
-    if (data.warningInbox) writeJSON(STORAGE_KEYS.WARNING_INBOX, data.warningInbox)
-    if (data.dailyTrigger) writeJSON(STORAGE_KEYS.DAILY_TRIGGER, data.dailyTrigger)
-    if (data.checkin) writeJSON(STORAGE_KEYS.CHECKIN, data.checkin)
+    // 导入存储模块
+    const { set: idbSet, STORE_NAMES, clear: idbClear } = await import('@/storage')
+
+    // 恢复数据（同时写入 localStorage 和 IndexedDB）
+    if (data.config) {
+      writeJSON(STORAGE_KEYS.CONFIG, data.config)
+      await idbSet(STORE_NAMES.CONFIG, 'config', data.config)
+    }
+    if (data.plans) {
+      writeJSON(STORAGE_KEYS.PLANS, data.plans)
+      await idbSet(STORE_NAMES.PLANS, 'plans', data.plans)
+    }
+    if (data.scheduleRules) {
+      writeJSON(STORAGE_KEYS.SCHEDULE_RULES, data.scheduleRules)
+      await idbSet(STORE_NAMES.SCHEDULE_RULES, 'rules', data.scheduleRules)
+    }
+    if (data.manualPlans) {
+      writeJSON(STORAGE_KEYS.MANUAL_PLANS, data.manualPlans)
+      await idbSet(STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans)
+    }
+    if (data.audioSettings) {
+      writeJSON(STORAGE_KEYS.AUDIO_SETTINGS, data.audioSettings)
+      await idbSet(STORE_NAMES.AUDIO_SETTINGS, 'settings', data.audioSettings)
+    }
+    if (data.eventSettings) {
+      writeJSON(STORAGE_KEYS.EVENT_SETTINGS, data.eventSettings)
+      await idbSet(STORE_NAMES.EVENT_SETTINGS, 'settings', data.eventSettings)
+    }
+    if (data.eventInbox) {
+      writeJSON(STORAGE_KEYS.EVENT_INBOX, data.eventInbox)
+      await idbSet(STORE_NAMES.EVENT_INBOX, 'inbox', data.eventInbox)
+    }
+    if (data.warningInbox) {
+      writeJSON(STORAGE_KEYS.WARNING_INBOX, data.warningInbox)
+      await idbSet(STORE_NAMES.WARNING_INBOX, 'inbox', data.warningInbox)
+    }
+    if (data.dailyTrigger) {
+      writeJSON(STORAGE_KEYS.DAILY_TRIGGER, data.dailyTrigger)
+      await idbSet(STORE_NAMES.DAILY_TRIGGER, 'trigger', data.dailyTrigger)
+    }
+    if (data.checkin) {
+      writeJSON(STORAGE_KEYS.CHECKIN, data.checkin)
+      await idbSet(STORE_NAMES.CHECKIN, 'data', data.checkin)
+    }
 
     // 恢复日期记录
     if (data.records) {
@@ -273,9 +306,13 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
           localStorage.removeItem(key)
         }
       }
+      // 清除 IndexedDB 记录
+      await idbClear(STORE_NAMES.RECORDS)
+
       // 写入新记录
       for (const [date, records] of Object.entries(data.records)) {
         writeJSON(`efflife_records_${date}`, records)
+        await idbSet(STORE_NAMES.RECORDS, date, records)
       }
     }
 
@@ -285,8 +322,11 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 // 重置类型
 export type ResetType = 'all' | 'records' | 'plans' | 'config' | 'settings'
 
-// 重置数据
-export function resetData(type: ResetType): void {
+// 重置数据（同时清除 localStorage 和 IndexedDB）
+export async function resetData(type: ResetType): Promise<void> {
+  // 导入存储模块
+  const { clear: idbClear, STORE_NAMES } = await import('@/storage')
+
   switch (type) {
     case 'all':
       // 清除所有 efflife_ 开头的键
@@ -298,6 +338,18 @@ export function resetData(type: ResetType): void {
         }
       }
       keysToRemove.forEach(key => localStorage.removeItem(key))
+      // 清除 IndexedDB
+      await idbClear(STORE_NAMES.CONFIG)
+      await idbClear(STORE_NAMES.PLANS)
+      await idbClear(STORE_NAMES.RECORDS)
+      await idbClear(STORE_NAMES.SCHEDULE_RULES)
+      await idbClear(STORE_NAMES.MANUAL_PLANS)
+      await idbClear(STORE_NAMES.AUDIO_SETTINGS)
+      await idbClear(STORE_NAMES.EVENT_SETTINGS)
+      await idbClear(STORE_NAMES.EVENT_INBOX)
+      await idbClear(STORE_NAMES.WARNING_INBOX)
+      await idbClear(STORE_NAMES.DAILY_TRIGGER)
+      await idbClear(STORE_NAMES.CHECKIN)
       break
 
     case 'records':
@@ -310,16 +362,23 @@ export function resetData(type: ResetType): void {
       }
       localStorage.removeItem(STORAGE_KEYS.CHECKIN)
       localStorage.removeItem(STORAGE_KEYS.MANUAL_PLANS)
+      await idbClear(STORE_NAMES.RECORDS)
+      await idbClear(STORE_NAMES.CHECKIN)
+      await idbClear(STORE_NAMES.MANUAL_PLANS)
       break
 
     case 'plans':
       localStorage.removeItem(STORAGE_KEYS.PLANS)
       localStorage.removeItem(STORAGE_KEYS.SCHEDULE_RULES)
       localStorage.removeItem(STORAGE_KEYS.MANUAL_PLANS)
+      await idbClear(STORE_NAMES.PLANS)
+      await idbClear(STORE_NAMES.SCHEDULE_RULES)
+      await idbClear(STORE_NAMES.MANUAL_PLANS)
       break
 
     case 'config':
       localStorage.removeItem(STORAGE_KEYS.CONFIG)
+      await idbClear(STORE_NAMES.CONFIG)
       break
 
     case 'settings':
@@ -328,6 +387,11 @@ export function resetData(type: ResetType): void {
       localStorage.removeItem(STORAGE_KEYS.EVENT_INBOX)
       localStorage.removeItem(STORAGE_KEYS.WARNING_INBOX)
       localStorage.removeItem(STORAGE_KEYS.DAILY_TRIGGER)
+      await idbClear(STORE_NAMES.AUDIO_SETTINGS)
+      await idbClear(STORE_NAMES.EVENT_SETTINGS)
+      await idbClear(STORE_NAMES.EVENT_INBOX)
+      await idbClear(STORE_NAMES.WARNING_INBOX)
+      await idbClear(STORE_NAMES.DAILY_TRIGGER)
       break
   }
 
