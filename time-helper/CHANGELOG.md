@@ -1,5 +1,40 @@
 # 浪兮效率时钟 - 更新日志
 
+## [1.4.0] - 2026-09-20
+
+### 新增
+- **数据持久化改进**
+  - IndexedDB 存储层：封装 IndexedDB 操作（open/get/set/delete/getAll/clear）
+  - 数据库名 `efflife_db`，包含 config/records/plans/events/todos 等对象存储
+  - localStorage 自动降级方案：IndexedDB 不可用时自动切换
+  - 自动备份模块：数据变更时自动创建备份（防抖5秒），保留最近10个
+  - 支持桌面端（Tauri fs API）和 Web 端（localStorage）双备份
+  - 数据迁移模块：首次启动时自动从 localStorage 迁移到 IndexedDB
+  - 数据恢复机制：启动时检测数据状态，支持从备份恢复
+  - 紧急备份导出功能：一键导出所有数据为 JSON
+  - 设置页面新增"数据恢复"菜单项
+
+### 优化
+- **dataService 重构**
+  - 底层存储从 localStorage 切换到 IndexedDB
+  - 保持 API 不变，向后兼容
+  - 数据变更时自动触发防抖备份
+  - 同时写入 localStorage 保持兼容性
+
+- **存档服务增强**
+  - 导入存档时同步写入 IndexedDB
+  - 重置数据时同时清除 IndexedDB
+  - resetData 改为异步操作
+
+### 技术改进
+- 新增 `storage/` 模块目录
+  - `indexedDB.ts`: IndexedDB 封装层
+  - `backup.ts`: 自动备份模块
+  - `migration.ts`: 数据迁移模块
+  - `recovery.ts`: 数据恢复机制
+  - `index.ts`: 统一导出入口
+- 新增存储层测试套件（`storage/__tests__/storage.test.ts`）
+
 ## [1.5.1] - 2026-09-20
 
 ### 新增
