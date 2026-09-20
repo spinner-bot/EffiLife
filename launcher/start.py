@@ -184,11 +184,6 @@ def run_module(choice, modules):
             print(f"   {' '.join(module['setup'])}")
             return
 
-    # Open browser if has URL
-    if module.get("url"):
-        print(f"将在浏览器打开: {module['url']}")
-        webbrowser.open(module["url"])
-
     # Run the command
     print(f"执行: {' '.join(module['cmd'])}")
     print(f"工作目录: {module['cwd']}")
@@ -198,7 +193,39 @@ def run_module(choice, modules):
     try:
         # On Windows, use shell=True to inherit full PATH
         use_shell = os.name == "nt"
-        subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell, env=env)
+
+        # Use Popen to capture output and detect actual URL
+        if module.get("url"):
+            import re
+            process = subprocess.Popen(
+                module["cmd"],
+                cwd=module["cwd"],
+                shell=use_shell,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace"
+            )
+
+            # Wait for server to start and detect URL
+            url_opened = False
+            for line in process.stdout:
+                print(line, end="")
+                # Detect actual URL from Vite output
+                if not url_opened and "Local:" in line:
+                    match = re.search(r"http://localhost:\d+/?", line)
+                    if match:
+                        actual_url = match.group(0)
+                        print(f"\n>>> 打开浏览器: {actual_url}")
+                        webbrowser.open(actual_url)
+                        url_opened = True
+
+            process.wait()
+        else:
+            subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell, env=env)
+
     except KeyboardInterrupt:
         print("\n已停止")
     except FileNotFoundError as e:
