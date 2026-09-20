@@ -48,7 +48,10 @@ export interface Config {
 export type ThemeType =
   | 'solid' | 'gradient' | 'glass' | 'neon'
   | 'ink' | 'vintage' | 'cyberpunk' | 'pixel'
-  | 'aurora' | 'sakura' | 'ocean' | 'forest' | 'ink' | 'tech' | 'nature' | 'custom'
+  | 'aurora' | 'sakura' | 'ocean' | 'forest'
+  | 'nordic_polar_night' | 'japanese_garden' | 'victorian_study' | 'underwater_temple'
+  | 'midnight_library' | 'star_voyage' | 'rainy_city' | 'desert_dusk' | 'bamboo_dawn'
+  | 'tech' | 'nature' | 'custom'
 
 // 纯色主题配置
 export interface SolidThemeConfig {

@@ -1,0 +1,138 @@
+
+  // ============ 北欧极夜 ============
+  nordic_polar_night: () => ({
+    bgColor: '#081530',
+    bgGradient: 'linear-gradient(to bottom, #040b18 0%, #081530 30%, #0c1e3a 70%, #101825 100%)',
+    textColor: '#c8d8e8',
+    textSecondary: '#8a9ab0',
+    textTertiary: '#5a6a80',
+    borderColor: 'rgba(100, 160, 220, 0.15)',
+    buttonBg: 'rgba(100, 160, 220, 0.1)',
+    buttonText: '#c8d8e8',
+    accentColor: '#ffa050',
+    cardBg: 'rgba(10, 20, 40, 0.7)',
+    backdropFilter: 'blur(10px)',
+    boxShadow: '0 4px 20px rgba(0, 20, 60, 0.5)',
+    renderCanvas: (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+      // ===== 北欧极夜 — 极光 + 雪 + 小屋 =====
+      const snowCount = Math.max(10, Math.floor(w * h / 5000))
+      const auroraBands = [
+        { y: 0.15, width: 0.12, hue: 150, speed: 0.00025, amp: 35, phase: 0 },
+        { y: 0.22, width: 0.10, hue: 180, speed: 0.00018, amp: 45, phase: 2.1 },
+        { y: 0.28, width: 0.08, hue: 280, speed: 0.00032, amp: 28, phase: 4.3 },
+        { y: 0.18, width: 0.06, hue: 120, speed: 0.00015, amp: 55, phase: 1.2 },
+      ]
+      const snow: { x: number; y: number; vx: number; vy: number; s: number; o: number; wp: number; wf: number }[] = []
+      for (let i = 0; i < snowCount; i++) {
+        snow.push({
+          x: Math.random() * w, y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.3, vy: Math.random() * 0.4 + 0.2,
+          s: Math.random() * 2.5 + 0.5, o: Math.random() * 0.6 + 0.3,
+          wp: Math.random() * Math.PI * 2, wf: Math.random() * 0.02 + 0.005
+        })
+      }
+      const cabins = Array.from({ length: 8 }, () => ({
+        x: Math.random() * w, y: h * (0.72 + Math.random() * 0.15),
+        w: Math.random() * 16 + 8, h: Math.random() * 10 + 5,
+        fo: Math.random() * Math.PI * 2, fs: Math.random() * 0.003 + 0.001
+      }))
+
+      return (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+        // Layer 1: Sky gradient
+        const bg = ctx.createLinearGradient(0, 0, 0, h)
+        bg.addColorStop(0, '#040b18'); bg.addColorStop(0.3, '#081530')
+        bg.addColorStop(0.7, '#0c1e3a'); bg.addColorStop(1, '#101825')
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h)
+
+        // Layer 2: Subtle stars
+        for (let i = 0; i < 60; i++) {
+          const sx = (i * 137.508 + 50) % w, sy = (i * 73.137 + 20) % (h * 0.4)
+          const sb = (Math.sin(t * 0.0005 + i * 1.7) + 1) * 0.5
+          ctx.beginPath(); ctx.arc(sx, sy, 0.5 + sb * 0.8, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(200,220,255,${0.1 + sb * 0.3})`; ctx.fill()
+        }
+
+        // Layer 3: Aurora bands (multi-frequency sine for organic flow)
+        ctx.save(); ctx.globalCompositeOperation = 'screen'
+        for (const band of auroraBands) {
+          const by = h * band.y
+          for (let x = 0; x < w; x += 2) {
+            const wave = Math.sin(x * 0.003 + t * band.speed + band.phase) * band.amp
+              + Math.sin(x * 0.007 + t * band.speed * 1.3 + band.phase * 0.5) * band.amp * 0.4
+              + Math.sin(x * 0.001 + t * band.speed * 0.7) * band.amp * 0.6
+            const cy = by + wave
+            const intensity = (Math.sin(x * 0.002 + t * band.speed * 0.5 + band.phase) + 1) * 0.5
+            const grad = ctx.createRadialGradient(x, cy, 0, x, cy, h * band.width)
+            grad.addColorStop(0, `hsla(${band.hue},80%,60%,${0.06 * intensity})`)
+            grad.addColorStop(0.5, `hsla(${band.hue},70%,50%,${0.03 * intensity})`)
+            grad.addColorStop(1, `hsla(${band.hue},60%,40%,0)`)
+            ctx.fillStyle = grad
+            ctx.fillRect(x - h * band.width, cy - h * band.width, h * band.width * 2, h * band.width * 2)
+          }
+        }
+        ctx.restore()
+
+        // Layer 4: Snow particles (wind + wobble)
+        const windF = Math.sin(t * 0.0003) * 0.3
+        for (const p of snow) {
+          p.wp += p.wf; p.vx += windF * 0.005
+          p.vx += Math.sin(p.wp) * 0.008; p.vx *= 0.99; p.x += p.vx; p.y += p.vy
+          if (p.y > h + 5) { p.y = -5; p.x = Math.random() * w }
+          if (p.x > w + 10) p.x = -10; if (p.x < -10) p.x = w + 10
+          if (p.s > 1.5) {
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.s * 2, 0, Math.PI * 2)
+            ctx.fillStyle = `rgba(200,220,255,${p.o * 0.08})`; ctx.fill()
+          }
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(230,240,255,${p.o})`; ctx.fill()
+        }
+
+        // Layer 5: Mountain silhouettes (atmospheric perspective)
+        const mts = [
+          { y: 0.68, c: 'rgba(8,16,32,0.9)', f: 0.002, a: 60 },
+          { y: 0.75, c: 'rgba(12,20,38,0.95)', f: 0.003, a: 45 },
+          { y: 0.82, c: 'rgba(16,24,42,1)', f: 0.005, a: 30 },
+        ]
+        for (const m of mts) {
+          ctx.beginPath(); ctx.moveTo(0, h)
+          for (let x = 0; x <= w; x += 3) {
+            const y = h * m.y + Math.sin(x * m.f) * m.a + Math.sin(x * m.f * 2.3 + 1) * m.a * 0.5
+            ctx.lineTo(x, y)
+          }
+          ctx.lineTo(w, h); ctx.closePath(); ctx.fillStyle = m.c; ctx.fill()
+        }
+
+        // Layer 6: Ground snow
+        const gnd = ctx.createLinearGradient(0, h * 0.88, 0, h)
+        gnd.addColorStop(0, '#1a2540'); gnd.addColorStop(0.5, '#253050'); gnd.addColorStop(1, '#2a3558')
+        ctx.fillStyle = gnd; ctx.fillRect(0, h * 0.88, w, h * 0.12)
+
+        // Layer 7: Cabin windows (warm flickering glow)
+        for (const cb of cabins) {
+          const fl = (Math.sin(t * cb.fs + cb.fo) + 1) * 0.5
+            * (Math.sin(t * cb.fs * 2.7 + cb.fo * 1.5) + 1) * 0.5
+          const warm = 0.4 + fl * 0.6
+          const wg = ctx.createRadialGradient(cb.x, cb.y, 0, cb.x, cb.y, cb.w * 4)
+          wg.addColorStop(0, `rgba(255,180,80,${0.25 * warm})`)
+          wg.addColorStop(0.5, `rgba(255,150,50,${0.1 * warm})`)
+          wg.addColorStop(1, 'rgba(255,150,50,0)')
+          ctx.fillStyle = wg
+          ctx.fillRect(cb.x - cb.w * 4, cb.y - cb.w * 4, cb.w * 8, cb.w * 8)
+          ctx.fillStyle = `rgba(255,200,120,${warm})`
+          ctx.fillRect(cb.x - cb.w / 2, cb.y - cb.h / 2, cb.w, cb.h)
+        }
+
+        // Layer 8: Title
+        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.font = `bold ${Math.min(36, w * 0.03)}px "PingFang SC","Microsoft YaHei",sans-serif`
+        ctx.shadowColor = 'rgba(100,200,255,0.3)'; ctx.shadowBlur = 20
+        ctx.fillStyle = 'rgba(180,210,240,0.12)'; ctx.fillText('北欧极夜', w / 2, h / 2)
+        ctx.shadowBlur = 0; ctx.restore()
+
+        // Layer 9: Vignette
+        const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7)
+        vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.5)')
+        ctx.fillStyle = vig; ctx.fillRect(0, 0, w, h)
+      }
+    }
+  }),

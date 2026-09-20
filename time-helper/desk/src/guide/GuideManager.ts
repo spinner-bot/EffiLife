@@ -234,7 +234,7 @@ export const MAIN_GUIDE: GuideConfig = {
     {
       id: 'settings-theme',
       title: '主题切换',
-      description: '在"主题"中，你可以选择12种不同风格的主题，包括水墨、赛博朋克、樱花等。每种主题都有独特的视觉效果。',
+      description: '在"主题"中，你可以选择17种不同风格的主题，包括森林、午夜图书馆、星际航行等。每种主题都有独特的视觉效果。',
       target: '.settings-item:nth-child(2)',
       highlight: true,
       actionRequired: false,

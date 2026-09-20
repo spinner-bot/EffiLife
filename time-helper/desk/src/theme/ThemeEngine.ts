@@ -504,6 +504,1280 @@ const themePresets: Record<string, () => ThemeStyle> = {
       ctx.restore()
     }
   }),
+
+  // ============ 午夜图书馆风格 ============
+  // 电影调色：参考《哈利波特》图书馆场景 + 伦勃朗光影
+  // 三层：背景书架 → 中景烛光漫射 → 前景烛焰+飘页+尘埃
+  midnight_library: () => ({
+    bgColor: '#1a0e08',
+    bgGradient: 'linear-gradient(180deg, #0f0805 0%, #1a0e08 30%, #2c1810 60%, #1a0e08 100%)',
+    textColor: '#f5e6c8',
+    textSecondary: '#d4b896',
+    textTertiary: '#8b7355',
+    borderColor: 'rgba(212, 184, 150, 0.15)',
+    buttonBg: 'rgba(212, 184, 150, 0.1)',
+    buttonText: '#f5e6c8',
+    accentColor: '#f4a460',
+    cardBg: 'rgba(44, 24, 16, 0.7)',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5), 0 0 60px rgba(244, 164, 96, 0.04)',
+    textShadow: '0 0 10px rgba(244, 164, 96, 0.15)',
+    particles: {
+      enabled: true,
+      type: 'stars',
+      count: 10,
+      speed: 0.15,
+      size: 4,
+      color: '#f4a460'
+    },
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+
+      // ===== 背景层：远景拱窗 + 月光 =====
+      // 哥特式拱窗（远处透入微弱月光）
+      ctx.globalAlpha = 0.06
+      ctx.fillStyle = '#4a6080'
+      const windowX = w * 0.5
+      const windowY = h * 0.05
+      const windowW = w * 0.12
+      const windowH = h * 0.25
+      // 拱形窗框
+      ctx.beginPath()
+      ctx.moveTo(windowX - windowW / 2, windowY + windowH)
+      ctx.lineTo(windowX - windowW / 2, windowY + windowH * 0.4)
+      ctx.arc(windowX, windowY + windowH * 0.4, windowW / 2, Math.PI, 0, false)
+      ctx.lineTo(windowX + windowW / 2, windowY + windowH)
+      ctx.closePath()
+      ctx.fill()
+      // 月光从窗户透入（淡蓝光柱）
+      ctx.globalAlpha = 0.03
+      const moonBeam = ctx.createLinearGradient(windowX, windowY + windowH, windowX, h)
+      moonBeam.addColorStop(0, 'rgba(150, 180, 220, 0.3)')
+      moonBeam.addColorStop(0.5, 'rgba(150, 180, 220, 0.1)')
+      moonBeam.addColorStop(1, 'rgba(150, 180, 220, 0)')
+      ctx.fillStyle = moonBeam
+      ctx.beginPath()
+      ctx.moveTo(windowX - windowW / 2, windowY + windowH)
+      ctx.lineTo(windowX - windowW * 1.5, h)
+      ctx.lineTo(windowX + windowW * 1.5, h)
+      ctx.lineTo(windowX + windowW / 2, windowY + windowH)
+      ctx.closePath()
+      ctx.fill()
+
+      // ===== 中景层：两侧木质书架（丰富的书本细节）=====
+      const drawBookshelf = (startX: number, endX: number, direction: number) => {
+        const shelfW = Math.abs(endX - startX)
+        const rows = 5
+        for (let row = 0; row < rows; row++) {
+          const shelfY = h * 0.08 + row * (h * 0.18)
+          // 木质架板
+          ctx.globalAlpha = 0.18
+          ctx.fillStyle = '#3a2010'
+          ctx.fillRect(startX, shelfY, shelfW, 4)
+          // 架板底部阴影
+          ctx.globalAlpha = 0.06
+          ctx.fillStyle = '#000000'
+          ctx.fillRect(startX, shelfY + 4, shelfW, 2)
+
+          // 书本（每本有独立颜色、高度、宽度）
+          const bookCount = Math.floor(shelfW / 8)
+          let bx = startX + 3
+          for (let b = 0; b < bookCount; b++) {
+            const seed = row * 100 + b * 7 + direction * 50
+            const bookW = 4 + (Math.sin(seed * 0.7) + 1) * 2
+            const bookH = 20 + Math.sin(seed * 1.3) * 10 + Math.cos(seed * 0.3) * 5
+            const hue = 10 + (seed * 17) % 50  // 棕色系
+            const sat = 25 + (seed * 13) % 25
+            const light = 15 + (seed * 11) % 15
+
+            ctx.globalAlpha = 0.22
+            ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`
+            ctx.fillRect(bx, shelfY - bookH, bookW, bookH)
+
+            // 书脊金色装饰线
+            ctx.globalAlpha = 0.08
+            ctx.fillStyle = '#d4a060'
+            ctx.fillRect(bx + bookW * 0.3, shelfY - bookH + 4, bookW * 0.4, 1)
+            ctx.fillRect(bx + bookW * 0.3, shelfY - bookH + bookH - 5, bookW * 0.4, 1)
+
+            bx += bookW + 1
+            if (bx > endX - 3) break
+          }
+        }
+      }
+
+      drawBookshelf(0, w * 0.2, 1)
+      drawBookshelf(w * 0.8, w, -1)
+
+      // ===== 环境光层：烛光漫射（物理精确的平方反比衰减）=====
+      const flickerA = Math.sin(time * 0.008) * 0.4 + Math.sin(time * 0.013) * 0.3 + Math.sin(time * 0.021) * 0.2
+      const flickerB = Math.cos(time * 0.011) * 0.3 + Math.sin(time * 0.017) * 0.2
+      const candleX = w * 0.5
+      const candleY = h * 0.22
+      const intensity = 0.85 + flickerA * 0.15  // 烛光强度波动
+
+      // 整体环境暖光（模拟光线在空气中的散射）
+      ctx.globalAlpha = 0.12 * intensity
+      const ambientWarm = ctx.createRadialGradient(
+        candleX, candleY, 0,
+        candleX, candleY, w * 0.8
+      )
+      ambientWarm.addColorStop(0, 'rgba(255, 170, 70, 0.4)')
+      ambientWarm.addColorStop(0.15, 'rgba(255, 140, 50, 0.2)')
+      ambientWarm.addColorStop(0.4, 'rgba(200, 80, 20, 0.06)')
+      ambientWarm.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = ambientWarm
+      ctx.fillRect(0, 0, w, h)
+
+      // 书架受光面（光线从中心向两侧衰减）
+      const leftShelfLight = ctx.createLinearGradient(w * 0.2, 0, 0, 0)
+      leftShelfLight.addColorStop(0, `rgba(255, 160, 60, ${0.08 * intensity})`)
+      leftShelfLight.addColorStop(1, 'rgba(255, 160, 60, 0)')
+      ctx.globalAlpha = 1
+      ctx.fillStyle = leftShelfLight
+      ctx.fillRect(0, 0, w * 0.2, h)
+
+      const rightShelfLight = ctx.createLinearGradient(w * 0.8, 0, w, 0)
+      rightShelfLight.addColorStop(0, `rgba(255, 160, 60, ${0.08 * intensity})`)
+      rightShelfLight.addColorStop(1, 'rgba(255, 160, 60, 0)')
+      ctx.fillStyle = rightShelfLight
+      ctx.fillRect(w * 0.8, 0, w * 0.2, h)
+
+      // ===== 前景层：烛台 + 烛焰 + 光晕 =====
+      // 烛台
+      ctx.globalAlpha = 0.35
+      ctx.fillStyle = '#2a1a0a'
+      // 烛台底座
+      ctx.beginPath()
+      ctx.ellipse(candleX, candleY + 30, 12, 4, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // 烛台柱
+      ctx.fillRect(candleX - 3, candleY + 8, 6, 22)
+      // 蜡烛本体
+      ctx.globalAlpha = 0.4
+      ctx.fillStyle = '#f5e6c8'
+      ctx.fillRect(candleX - 4, candleY - 5, 8, 15)
+      // 蜡烛顶部融化的蜡
+      ctx.beginPath()
+      ctx.ellipse(candleX, candleY - 5, 5, 2, 0, 0, Math.PI * 2)
+      ctx.fill()
+
+      // 烛焰外层光晕（大范围柔光）
+      ctx.globalAlpha = 0.2 * intensity
+      const outerHalo = ctx.createRadialGradient(
+        candleX + flickerA * 3, candleY - 8 + flickerB * 2, 0,
+        candleX, candleY - 5, 80
+      )
+      outerHalo.addColorStop(0, 'rgba(255, 200, 100, 0.5)')
+      outerHalo.addColorStop(0.3, 'rgba(255, 150, 50, 0.2)')
+      outerHalo.addColorStop(0.7, 'rgba(255, 100, 20, 0.05)')
+      outerHalo.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = outerHalo
+      ctx.beginPath()
+      ctx.arc(candleX, candleY - 5, 80, 0, Math.PI * 2)
+      ctx.fill()
+
+      // 烛焰本体（三层结构：外层橙色 → 中层黄色 → 内层白色）
+      const flameH = 16 + Math.sin(time * 0.018) * 3 + Math.sin(time * 0.027) * 2
+      const flameW = 5 + Math.cos(time * 0.022) * 1
+      const flameX = candleX + flickerA * 2
+      const flameY = candleY - 12
+
+      // 外层火焰（橙红色）
+      ctx.globalAlpha = 0.5 * intensity
+      const flameOuter = ctx.createRadialGradient(flameX, flameY + 3, 0, flameX, flameY, flameH)
+      flameOuter.addColorStop(0, 'rgba(255, 160, 40, 0.8)')
+      flameOuter.addColorStop(0.5, 'rgba(255, 100, 20, 0.4)')
+      flameOuter.addColorStop(1, 'rgba(255, 50, 10, 0)')
+      ctx.fillStyle = flameOuter
+      ctx.beginPath()
+      ctx.moveTo(flameX, flameY - flameH)
+      ctx.bezierCurveTo(
+        flameX - flameW * 1.5, flameY - flameH * 0.3,
+        flameX - flameW * 1.2, flameY + flameH * 0.3,
+        flameX, flameY + flameH * 0.4
+      )
+      ctx.bezierCurveTo(
+        flameX + flameW * 1.2, flameY + flameH * 0.3,
+        flameX + flameW * 1.5, flameY - flameH * 0.3,
+        flameX, flameY - flameH
+      )
+      ctx.fill()
+
+      // 内层火焰（亮黄色）
+      ctx.globalAlpha = 0.7 * intensity
+      const flameInner = ctx.createRadialGradient(flameX, flameY, 0, flameX, flameY, flameH * 0.6)
+      flameInner.addColorStop(0, 'rgba(255, 255, 200, 1)')
+      flameInner.addColorStop(0.4, 'rgba(255, 220, 100, 0.8)')
+      flameInner.addColorStop(1, 'rgba(255, 180, 50, 0)')
+      ctx.fillStyle = flameInner
+      ctx.beginPath()
+      ctx.moveTo(flameX, flameY - flameH * 0.7)
+      ctx.bezierCurveTo(
+        flameX - flameW * 0.8, flameY - flameH * 0.1,
+        flameX - flameW * 0.6, flameY + flameH * 0.2,
+        flameX, flameY + flameH * 0.25
+      )
+      ctx.bezierCurveTo(
+        flameX + flameW * 0.6, flameY + flameH * 0.2,
+        flameX + flameW * 0.8, flameY - flameH * 0.1,
+        flameX, flameY - flameH * 0.7
+      )
+      ctx.fill()
+
+      // 焰心（白热区域）
+      ctx.globalAlpha = 0.6 * intensity
+      ctx.fillStyle = 'rgba(255, 255, 240, 0.9)'
+      ctx.beginPath()
+      ctx.ellipse(flameX, flameY + flameH * 0.1, flameW * 0.3, flameH * 0.15, 0, 0, Math.PI * 2)
+      ctx.fill()
+
+      // ===== 飘动的书页（有物理感的曲线运动）=====
+      for (let i = 0; i < 4; i++) {
+        const phase = time * 0.0003 + i * 2.3
+        const drift = Math.sin(phase * 1.7) * 0.5 + Math.cos(phase * 0.9) * 0.3
+        const px = w * 0.3 + drift * w * 0.3 + Math.sin(phase * 0.5) * w * 0.1
+        const py = ((time * 0.008 + i * h * 0.3) % (h * 1.2)) - h * 0.1
+        const rot = Math.sin(time * 0.002 + i * 1.8) * 0.7 + Math.cos(time * 0.001 + i) * 0.3
+        // 书页随距离烛光的远近改变亮度
+        const distToCandle = Math.sqrt((px - candleX) ** 2 + (py - candleY) ** 2)
+        const pageLit = Math.max(0.1, 1 - distToCandle / (w * 0.5))
+
+        ctx.save()
+        ctx.translate(px, py)
+        ctx.rotate(rot)
+
+        // 书页阴影
+        ctx.globalAlpha = 0.06
+        ctx.fillStyle = '#000000'
+        ctx.beginPath()
+        ctx.moveTo(-10 + 2, -7 + 3)
+        ctx.quadraticCurveTo(2, -9 + 3, 10 + 2, -7 + 3)
+        ctx.quadraticCurveTo(12, 0 + 3, 10 + 2, 7 + 3)
+        ctx.quadraticCurveTo(2, 5 + 3, -10 + 2, 7 + 3)
+        ctx.quadraticCurveTo(-12, 0 + 3, -10 + 2, -7 + 3)
+        ctx.fill()
+
+        // 书页本体（受烛光照亮）
+        ctx.globalAlpha = 0.15 + pageLit * 0.1
+        ctx.fillStyle = `rgba(245, 230, 200, ${0.8 + pageLit * 0.2})`
+        ctx.beginPath()
+        ctx.moveTo(-10, -7)
+        ctx.quadraticCurveTo(0, -9, 10, -7)
+        ctx.quadraticCurveTo(12, 0, 10, 7)
+        ctx.quadraticCurveTo(0, 5, -10, 7)
+        ctx.quadraticCurveTo(-12, 0, -10, -7)
+        ctx.fill()
+
+        // 书页上的文字线条
+        ctx.globalAlpha = 0.06 + pageLit * 0.04
+        ctx.strokeStyle = '#5c3d2e'
+        ctx.lineWidth = 0.5
+        for (let line = -4; line <= 4; line += 3) {
+          ctx.beginPath()
+          ctx.moveTo(-7, line)
+          ctx.lineTo(7, line)
+          ctx.stroke()
+        }
+
+        ctx.restore()
+      }
+
+      // ===== 烛光中的尘埃粒子（微小但可见）=====
+      for (let i = 0; i < 15; i++) {
+        const seed = i * 73.7
+        const orbit = time * 0.0002 + seed
+        const radius = 30 + (i * 17) % 80
+        const dx = candleX + Math.cos(orbit * (1 + i * 0.1)) * radius
+        const dy = candleY + Math.sin(orbit * (0.8 + i * 0.05)) * radius * 0.6 - 20
+        const dustSize = 0.6 + Math.sin(time * 0.003 + i * 2.1) * 0.3
+
+        // 尘埃受烛光照亮的程度
+        const distToCandle = Math.sqrt((dx - candleX) ** 2 + (dy - candleY) ** 2)
+        const brightness = Math.max(0, 1 - distToCandle / 120)
+
+        ctx.globalAlpha = brightness * 0.35
+        ctx.fillStyle = `rgba(255, 210, 140, ${brightness})`
+        ctx.beginPath()
+        ctx.arc(dx, dy, dustSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // ===== 地面阴影（烛光投射的渐变暗角）=====
+      ctx.globalAlpha = 0.3
+      const floorShadow = ctx.createLinearGradient(0, h * 0.85, 0, h)
+      floorShadow.addColorStop(0, 'rgba(0, 0, 0, 0)')
+      floorShadow.addColorStop(1, 'rgba(0, 0, 0, 0.4)')
+      ctx.fillStyle = floorShadow
+      ctx.fillRect(0, h * 0.85, w, h * 0.15)
+
+      ctx.restore()
+    }
+  }),
+
+  // ============ 星际航行风格 ============
+  // 电影调色：参考《星际穿越》+ 《银翼杀手2049》太空场景
+  // 三层：远景星云 → 中景星星场 → 前景飞船轨迹+飞船
+  star_voyage: () => ({
+    bgColor: '#05051a',
+    bgGradient: 'linear-gradient(135deg, #05051a 0%, #0d0d3a 30%, #1a0a3a 60%, #0a0520 100%)',
+    textColor: '#e0e8ff',
+    textSecondary: '#b0b8dd',
+    textTertiary: '#7078aa',
+    borderColor: 'rgba(120, 140, 255, 0.15)',
+    buttonBg: 'rgba(120, 140, 255, 0.08)',
+    buttonText: '#e0e8ff',
+    accentColor: '#88aaff',
+    cardBg: 'rgba(15, 15, 45, 0.6)',
+    backdropFilter: 'blur(5px)',
+    boxShadow: '0 0 30px rgba(100, 120, 255, 0.12), inset 0 0 20px rgba(100, 120, 255, 0.04)',
+    textShadow: '0 0 8px rgba(136, 170, 255, 0.25)',
+    particles: {
+      enabled: true,
+      type: 'stars',
+      count: 30,
+      speed: 0.3,
+      size: 2,
+      color: '#ffffff'
+    },
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+
+      // ===== 背景层：深空渐变 + 远景星云 =====
+      // 深空基底（已有 bgGradient，这里添加微妙的颜色偏移）
+      const deepSpaceShift = Math.sin(time * 0.0002) * 0.02
+      ctx.globalAlpha = 0.08 + deepSpaceShift
+      const deepGlow = ctx.createRadialGradient(w * 0.3, h * 0.4, 0, w * 0.3, h * 0.4, w * 0.5)
+      deepGlow.addColorStop(0, 'rgba(40, 20, 80, 0.3)')
+      deepGlow.addColorStop(0.5, 'rgba(20, 10, 50, 0.1)')
+      deepGlow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = deepGlow
+      ctx.fillRect(0, 0, w, h)
+
+      // 星云团（3个主星云，各自独立旋转和脉动）
+      const nebulae = [
+        { cx: 0.25, cy: 0.3, r: 0.18, hue: 260, sat: 70, rotSpeed: 0.00015 },
+        { cx: 0.7, cy: 0.5, r: 0.15, hue: 300, sat: 60, rotSpeed: -0.00012 },
+        { cx: 0.5, cy: 0.75, r: 0.12, hue: 220, sat: 80, rotSpeed: 0.00018 },
+      ]
+
+      nebulae.forEach((neb, n) => {
+        const cx = w * neb.cx
+        const cy = h * neb.cy
+        const baseR = w * neb.r
+        const pulse = 1 + Math.sin(time * 0.0005 + n * 2) * 0.05
+        const r = baseR * pulse
+        const rot = time * neb.rotSpeed
+        const hue = neb.hue + Math.sin(time * 0.0003 + n) * 15
+
+        ctx.save()
+        ctx.translate(cx, cy)
+        ctx.rotate(rot)
+
+        // 星云主体（椭圆+径向渐变）
+        ctx.globalAlpha = 0.07
+        const nebGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r)
+        nebGrad.addColorStop(0, `hsla(${hue}, ${neb.sat}%, 55%, 0.5)`)
+        nebGrad.addColorStop(0.25, `hsla(${hue + 20}, ${neb.sat - 10}%, 40%, 0.3)`)
+        nebGrad.addColorStop(0.6, `hsla(${hue + 40}, ${neb.sat - 20}%, 25%, 0.1)`)
+        nebGrad.addColorStop(1, `hsla(${hue + 60}, 30%, 15%, 0)`)
+        ctx.fillStyle = nebGrad
+        ctx.scale(1, 0.55)
+        ctx.beginPath()
+        ctx.arc(0, 0, r, 0, Math.PI * 2)
+        ctx.fill()
+
+        // 星云内部结构（旋涡臂）
+        ctx.globalAlpha = 0.04
+        for (let arm = 0; arm < 3; arm++) {
+          const armAngle = (arm / 3) * Math.PI * 2
+          ctx.strokeStyle = `hsla(${hue + arm * 20}, ${neb.sat}%, 60%, 0.3)`
+          ctx.lineWidth = 2
+          ctx.beginPath()
+          for (let t = 0; t < 3; t += 0.1) {
+            const spiralR = t * r * 0.3
+            const spiralAngle = armAngle + t * 1.5
+            const sx = Math.cos(spiralAngle) * spiralR
+            const sy = Math.sin(spiralAngle) * spiralR * 0.55
+            if (t === 0) ctx.moveTo(sx, sy)
+            else ctx.lineTo(sx, sy)
+          }
+          ctx.stroke()
+        }
+
+        ctx.restore()
+      })
+
+      // ===== 中景层：星星场（多色温、多大小、有闪烁）=====
+      // 使用确定性伪随机保证每帧一致
+      for (let i = 0; i < 100; i++) {
+        const seed1 = Math.sin(i * 127.1 + 311.7) * 43758.5453
+        const seed2 = Math.sin(i * 269.5 + 183.3) * 43758.5453
+        const seed3 = Math.sin(i * 419.2 + 371.9) * 43758.5453
+        const x = (seed1 - Math.floor(seed1)) * w
+        const y = (seed2 - Math.floor(seed2)) * h
+        const temp = seed3 - Math.floor(seed3)  // 色温 0-1
+
+        const twinkle = Math.sin(time * 0.003 + i * 1.7) * 0.3 + 0.7
+        const baseSize = (seed1 * 10 - Math.floor(seed1 * 10)) * 1.8 + 0.4
+        const size = baseSize * twinkle
+
+        // 星星色温（蓝白 → 白 → 黄橙）
+        let starColor: string
+        if (temp < 0.3) starColor = '#aaccff'      // 蓝白（高温星）
+        else if (temp < 0.6) starColor = '#ffffff'   // 白色
+        else if (temp < 0.85) starColor = '#ffeedd'  // 暖白
+        else starColor = '#ffccaa'                     // 黄橙（低温星）
+
+        ctx.globalAlpha = twinkle * 0.85
+        ctx.fillStyle = starColor
+        ctx.beginPath()
+        ctx.arc(x, y, size, 0, Math.PI * 2)
+        ctx.fill()
+
+        // 亮星（size > 1.5）画十字衍射光芒
+        if (baseSize > 1.5) {
+          ctx.globalAlpha = twinkle * 0.25
+          ctx.strokeStyle = starColor
+          ctx.lineWidth = 0.5
+          const rayLen = size * 4
+          ctx.beginPath()
+          ctx.moveTo(x - rayLen, y)
+          ctx.lineTo(x + rayLen, y)
+          ctx.moveTo(x, y - rayLen)
+          ctx.lineTo(x, y + rayLen)
+          ctx.stroke()
+          // 对角光芒（较弱）
+          ctx.globalAlpha = twinkle * 0.1
+          const diagLen = size * 2.5
+          ctx.beginPath()
+          ctx.moveTo(x - diagLen, y - diagLen)
+          ctx.lineTo(x + diagLen, y + diagLen)
+          ctx.moveTo(x + diagLen, y - diagLen)
+          ctx.lineTo(x - diagLen, y + diagLen)
+          ctx.stroke()
+        }
+      }
+
+      // ===== 前景层：飞船轨迹 + 飞船 + 引擎光 =====
+      // 飞船轨迹（贝塞尔曲线，有流动感）
+      const trailProgress = (time * 0.00015) % 1
+      ctx.globalAlpha = 0.12
+      ctx.strokeStyle = '#88aaff'
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([3, 6])
+      ctx.lineDashOffset = -time * 0.02
+      ctx.beginPath()
+      ctx.moveTo(-10, h * 0.75)
+      ctx.bezierCurveTo(
+        w * 0.2, h * 0.55,
+        w * 0.5, h * 0.85,
+        w * 0.75, h * 0.45
+      )
+      ctx.bezierCurveTo(
+        w * 0.9, h * 0.3,
+        w * 1.05, h * 0.35,
+        w + 10, h * 0.25
+      )
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // 飞船位置（沿轨迹运动，有加减速感）
+      const shipT = trailProgress
+      // 使用三次贝塞尔插值计算飞船位置
+      const t = shipT
+      const shipX = (1 - t) ** 3 * 0 + 3 * (1 - t) ** 2 * t * w * 0.3 +
+        3 * (1 - t) * t ** 2 * w * 0.65 + t ** 3 * w
+      const shipY = (1 - t) ** 3 * h * 0.7 + 3 * (1 - t) ** 2 * t * h * 0.4 +
+        3 * (1 - t) * t ** 2 * h * 0.5 + t ** 3 * h * 0.3
+
+      // 飞船尾部光迹（渐变拖尾）
+      ctx.globalAlpha = 0.15
+      const trailGrad = ctx.createLinearGradient(shipX - 30, shipY + 10, shipX, shipY)
+      trailGrad.addColorStop(0, 'rgba(136, 170, 255, 0)')
+      trailGrad.addColorStop(1, 'rgba(136, 170, 255, 0.4)')
+      ctx.strokeStyle = trailGrad
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(shipX - 30, shipY + 10)
+      ctx.quadraticCurveTo(shipX - 15, shipY + 5, shipX, shipY)
+      ctx.stroke()
+
+      // 飞船本体（三角形飞船）
+      ctx.globalAlpha = 0.7
+      ctx.fillStyle = '#ccddff'
+      ctx.beginPath()
+      ctx.moveTo(shipX + 8, shipY - 2)
+      ctx.lineTo(shipX - 5, shipY - 5)
+      ctx.lineTo(shipX - 3, shipY)
+      ctx.lineTo(shipX - 5, shipY + 5)
+      ctx.closePath()
+      ctx.fill()
+      // 飞船高光
+      ctx.globalAlpha = 0.3
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.moveTo(shipX + 6, shipY - 2)
+      ctx.lineTo(shipX - 2, shipY - 4)
+      ctx.lineTo(shipX - 1, shipY - 1)
+      ctx.closePath()
+      ctx.fill()
+
+      // 引擎光（蓝白色发光）
+      ctx.globalAlpha = 0.5
+      const engineGlow = ctx.createRadialGradient(
+        shipX - 6, shipY, 0,
+        shipX - 6, shipY, 10
+      )
+      engineGlow.addColorStop(0, 'rgba(180, 210, 255, 0.8)')
+      engineGlow.addColorStop(0.3, 'rgba(136, 170, 255, 0.4)')
+      engineGlow.addColorStop(1, 'rgba(136, 170, 255, 0)')
+      ctx.fillStyle = engineGlow
+      ctx.beginPath()
+      ctx.arc(shipX - 6, shipY, 10, 0, Math.PI * 2)
+      ctx.fill()
+
+      // 引擎喷流（小粒子）
+      for (let p = 0; p < 5; p++) {
+        const pAge = (time * 0.005 + p * 0.3) % 2
+        const px = shipX - 8 - pAge * 8
+        const py = shipY + Math.sin(pAge * 3 + p) * 2
+        const pAlpha = Math.max(0, 0.3 - pAge * 0.15)
+        const pSize = 1 + pAge * 0.5
+
+        ctx.globalAlpha = pAlpha
+        ctx.fillStyle = 'rgba(136, 170, 255, 0.6)'
+        ctx.beginPath()
+        ctx.arc(px, py, pSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // ===== 镜头光晕（当飞船在特定位置时）=====
+      if (shipT > 0.3 && shipT < 0.7) {
+        const lensFlareIntensity = 1 - Math.abs(shipT - 0.5) * 5
+        ctx.globalAlpha = lensFlareIntensity * 0.05
+        const flare = ctx.createRadialGradient(shipX, shipY, 0, shipX, shipY, w * 0.3)
+        flare.addColorStop(0, 'rgba(180, 210, 255, 0.3)')
+        flare.addColorStop(0.5, 'rgba(136, 170, 255, 0.05)')
+        flare.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = flare
+        ctx.fillRect(0, 0, w, h)
+      }
+
+      ctx.restore()
+    }
+  }),
+
+  // ============ 雨夜城市风格 ============
+  // 电影调色：参考《银翼杀手2049》+ 《迷失东京》雨夜场景
+  // 三层：背景天空+云层 → 中景建筑天际线 → 前景雨滴+霓虹倒影+窗户水雾
+  rainy_city: () => ({
+    bgColor: '#0a0f1a',
+    bgGradient: 'linear-gradient(180deg, #050810 0%, #0a0f1a 25%, #111828 50%, #0d1520 100%)',
+    textColor: '#c8d8e8',
+    textSecondary: '#8898aa',
+    textTertiary: '#556070',
+    borderColor: 'rgba(100, 160, 220, 0.12)',
+    buttonBg: 'rgba(100, 160, 220, 0.08)',
+    buttonText: '#c8d8e8',
+    accentColor: '#4488cc',
+    cardBg: 'rgba(10, 20, 40, 0.75)',
+    backdropFilter: 'blur(5px)',
+    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(68, 136, 204, 0.03)',
+    textShadow: '0 0 6px rgba(68, 136, 204, 0.15)',
+    particles: {
+      enabled: true,
+      type: 'snow',
+      count: 35,
+      speed: 3.5,
+      size: 1.5,
+      color: 'rgba(150, 200, 255, 0.35)'
+    },
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+
+      // ===== 背景层：阴沉天空 + 流动云层 =====
+      // 天空的微弱光照变化（远处城市光污染）
+      const skyPulse = Math.sin(time * 0.0003) * 0.02
+      ctx.globalAlpha = 0.08 + skyPulse
+      const cityGlow = ctx.createRadialGradient(w * 0.5, h, 0, w * 0.5, h, h * 0.8)
+      cityGlow.addColorStop(0, 'rgba(100, 140, 180, 0.25)')
+      cityGlow.addColorStop(0.4, 'rgba(80, 100, 140, 0.1)')
+      cityGlow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = cityGlow
+      ctx.fillRect(0, 0, w, h)
+
+      // 低垂的云层（缓慢移动）
+      ctx.globalAlpha = 0.06
+      for (let c = 0; c < 3; c++) {
+        const cloudY = h * (0.1 + c * 0.08)
+        const cloudDrift = (time * 0.003 + c * 100) % (w * 1.5) - w * 0.25
+        const cloudW = w * (0.3 + c * 0.1)
+        const cloudH = 20 + c * 8
+
+        const cloudGrad = ctx.createRadialGradient(
+          cloudDrift + cloudW / 2, cloudY, 0,
+          cloudDrift + cloudW / 2, cloudY, cloudW / 2
+        )
+        cloudGrad.addColorStop(0, 'rgba(60, 80, 100, 0.4)')
+        cloudGrad.addColorStop(0.5, 'rgba(40, 60, 80, 0.2)')
+        cloudGrad.addColorStop(1, 'rgba(20, 30, 50, 0)')
+        ctx.fillStyle = cloudGrad
+        ctx.beginPath()
+        ctx.ellipse(cloudDrift + cloudW / 2, cloudY, cloudW / 2, cloudH, 0, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // ===== 中景层：建筑群天际线（前后两层，有深度感）=====
+      // 远景建筑（较暗，较小）
+      ctx.globalAlpha = 0.15
+      ctx.fillStyle = '#080c15'
+      const farBuildings = [
+        { x: 0, w: 35, h: 80 }, { x: 30, w: 25, h: 110 }, { x: 50, w: 40, h: 90 },
+        { x: 85, w: 20, h: 130 }, { x: 100, w: 35, h: 100 }, { x: 130, w: 30, h: 120 },
+        { x: 155, w: 45, h: 95 }, { x: 195, w: 25, h: 140 }, { x: 215, w: 35, h: 105 },
+        { x: 245, w: 40, h: 125 }, { x: 280, w: 30, h: 115 }, { x: 305, w: 35, h: 135 },
+        { x: 335, w: 40, h: 100 }, { x: 370, w: 30, h: 120 },
+      ]
+      const farScale = w / 400
+      farBuildings.forEach(b => {
+        const bx = b.x * farScale
+        const bw = b.w * farScale
+        const bh = b.h * (h / 500)
+        ctx.fillRect(bx, h - bh - 20, bw, bh + 20)
+      })
+
+      // 近景建筑（更暗，更高，有详细窗户）
+      ctx.globalAlpha = 0.3
+      ctx.fillStyle = '#0a1020'
+      const nearBuildings = [
+        { x: -5, w: 45, h: 140, windows: true },
+        { x: 35, w: 32, h: 200, windows: true },
+        { x: 62, w: 55, h: 165, windows: true },
+        { x: 112, w: 28, h: 220, windows: true },
+        { x: 135, w: 48, h: 150, windows: true },
+        { x: 178, w: 38, h: 190, windows: true },
+        { x: 210, w: 58, h: 160, windows: true },
+        { x: 262, w: 32, h: 230, windows: true },
+        { x: 288, w: 42, h: 175, windows: true },
+        { x: 325, w: 52, h: 210, windows: true },
+        { x: 372, w: 38, h: 165, windows: true },
+        { x: 405, w: 48, h: 195, windows: true },
+      ]
+      const nearScale = w / 450
+      nearBuildings.forEach(b => {
+        const bx = b.x * nearScale
+        const bw = b.w * nearScale
+        const bh = b.h * (h / 450)
+        ctx.fillRect(bx, h - bh, bw, bh)
+
+        // 建筑顶部细节（天线/冷却塔）
+        if (b.h > 180) {
+          ctx.fillRect(bx + bw * 0.4, h - bh - 15, bw * 0.2, 15)
+          ctx.fillRect(bx + bw * 0.45, h - bh - 25, bw * 0.1, 10)
+        }
+
+        // 窗户灯光（有随机性但有规律）
+        if (b.windows) {
+          const winW = 5
+          const winH = 7
+          const winGapX = 10
+          const winGapY = 16
+          for (let wy = h - bh + 12; wy < h - 20; wy += winGapY) {
+            for (let wx = bx + 6; wx < bx + bw - 8; wx += winGapX) {
+              // 使用确定性伪随机判断是否亮灯
+              const winSeed = wx * 7.3 + wy * 13.7
+              const isLit = Math.sin(winSeed) > -0.3
+              if (isLit) {
+                // 窗户颜色有细微差异（暖黄 → 暖白）
+                const hue = 38 + Math.sin(winSeed * 0.5) * 8
+                const sat = 70 + Math.cos(winSeed * 0.3) * 15
+                const light = 60 + Math.sin(winSeed * 0.7) * 10
+                const winAlpha = 0.35 + Math.sin(time * 0.001 + winSeed) * 0.05
+
+                ctx.globalAlpha = winAlpha
+                ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`
+                ctx.fillRect(wx, wy, winW, winH)
+
+                // 窗户光晕（微弱）
+                ctx.globalAlpha = winAlpha * 0.3
+                const winGlow = ctx.createRadialGradient(
+                  wx + winW / 2, wy + winH / 2, 0,
+                  wx + winW / 2, wy + winH / 2, winW * 1.5
+                )
+                winGlow.addColorStop(0, `hsla(${hue}, ${sat}%, ${light}%, 0.3)`)
+                winGlow.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`)
+                ctx.fillStyle = winGlow
+                ctx.fillRect(wx - winW, wy - winH, winW * 3, winH * 3)
+              }
+            }
+          }
+          ctx.globalAlpha = 0.3
+          ctx.fillStyle = '#0a1020'
+        }
+      })
+
+      // ===== 前景层：雨滴 + 地面水洼 + 雾气 =====
+      // 雨滴（有速度感和方向感）
+      ctx.globalAlpha = 0.25
+      ctx.strokeStyle = 'rgba(150, 200, 255, 0.35)'
+      ctx.lineWidth = 1
+      const rainAngle = 0.08  // 雨滴倾斜角度
+      for (let i = 0; i < 60; i++) {
+        const seed = i * 73.1
+        const rx = (Math.sin(seed) * 43758.5453 % 1) * w
+        const adjustedRx = rx < 0 ? rx + w : rx
+        const ry = (time * 2.5 + i * 31) % (h + 40) - 20
+        const len = 12 + (i % 6) * 3
+        const windOffset = ry * rainAngle
+
+        ctx.beginPath()
+        ctx.moveTo(adjustedRx + windOffset, ry)
+        ctx.lineTo(adjustedRx + windOffset - 1.5, ry + len)
+        ctx.stroke()
+      }
+
+      // 地面水洼（反射霓虹灯光）
+      const puddleY = h * 0.9
+      ctx.globalAlpha = 0.08
+      // 水洼基底
+      const puddleGrad = ctx.createLinearGradient(0, puddleY, 0, h)
+      puddleGrad.addColorStop(0, 'rgba(20, 30, 50, 0.3)')
+      puddleGrad.addColorStop(1, 'rgba(10, 15, 25, 0.6)')
+      ctx.fillStyle = puddleGrad
+      ctx.fillRect(0, puddleY, w, h - puddleY)
+
+      // 水洼中的霓虹反射（蓝、紫、绿）
+      const neonColors = [
+        { x: 0.2, color: 'rgba(68, 136, 204, 0.4)' },
+        { x: 0.5, color: 'rgba(136, 68, 204, 0.3)' },
+        { x: 0.8, color: 'rgba(68, 204, 136, 0.25)' },
+      ]
+      neonColors.forEach(neon => {
+        const neonX = w * neon.x
+        const ripple = Math.sin(time * 0.002 + neon.x * 10) * 3
+        ctx.globalAlpha = 0.06
+        const neonGlow = ctx.createRadialGradient(
+          neonX + ripple, puddleY + 10, 0,
+          neonX, puddleY + 15, w * 0.15
+        )
+        neonGlow.addColorStop(0, neon.color)
+        neonGlow.addColorStop(0.5, neon.color.replace('0.4', '0.15').replace('0.3', '0.1').replace('0.25', '0.08'))
+        neonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = neonGlow
+        ctx.beginPath()
+        ctx.ellipse(neonX, puddleY + 15, w * 0.15, 15, 0, 0, Math.PI * 2)
+        ctx.fill()
+      })
+
+      // 雾气（贴近地面的薄雾）
+      ctx.globalAlpha = 0.05
+      for (let i = 0; i < 3; i++) {
+        const fogY = h * (0.75 + i * 0.05)
+        const fogDrift = Math.sin(time * 0.0004 + i * 2) * 15
+        const fogGrad = ctx.createLinearGradient(0, fogY - 20, 0, fogY + 20)
+        fogGrad.addColorStop(0, 'rgba(120, 150, 180, 0)')
+        fogGrad.addColorStop(0.5, 'rgba(120, 150, 180, 0.3)')
+        fogGrad.addColorStop(1, 'rgba(120, 150, 180, 0)')
+        ctx.fillStyle = fogGrad
+        ctx.fillRect(fogDrift, fogY - 20, w, 40)
+      }
+
+      // 窗户上的水雾（前景玻璃效果）
+      ctx.globalAlpha = 0.03
+      for (let i = 0; i < 8; i++) {
+        const dropX = (Math.sin(i * 47.3) * 43758.5453 % 1) * w
+        const adjDropX = dropX < 0 ? dropX + w : dropX
+        const dropY = (Math.cos(i * 23.7) * 43758.5453 % 1) * h * 0.6 + h * 0.1
+        const dropR = 2 + Math.sin(time * 0.001 + i) * 1
+
+        const dropGrad = ctx.createRadialGradient(
+          adjDropX, dropY, 0,
+          adjDropX, dropY, dropR
+        )
+        dropGrad.addColorStop(0, 'rgba(200, 220, 240, 0.4)')
+        dropGrad.addColorStop(1, 'rgba(200, 220, 240, 0)')
+        ctx.fillStyle = dropGrad
+        ctx.beginPath()
+        ctx.arc(adjDropX, dropY, dropR, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      ctx.restore()
+    }
+  }),
+
+  // ============ 沙漠黄昏风格 ============
+  // 电影调色：参考《阿拉伯的劳伦斯》+ 《沙丘》黄昏场景
+  // 三层：背景天空+落日 → 中景沙丘+热浪 → 前景沙粒+地面纹理
+  desert_dusk: () => ({
+    bgColor: '#1a0a20',
+    bgGradient: 'linear-gradient(180deg, #2d1040 0%, #5a1a3a 20%, #a04020 45%, #d07030 65%, #c08040 80%, #6a4020 100%)',
+    textColor: '#f5e0c0',
+    textSecondary: '#d4b080',
+    textTertiary: '#907050',
+    borderColor: 'rgba(208, 112, 48, 0.15)',
+    buttonBg: 'rgba(208, 112, 48, 0.1)',
+    buttonText: '#f5e0c0',
+    accentColor: '#e08030',
+    cardBg: 'rgba(45, 16, 64, 0.5)',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 4px 24px rgba(160, 64, 32, 0.25), 0 0 50px rgba(224, 128, 48, 0.05)',
+    textShadow: '0 0 10px rgba(224, 128, 48, 0.2)',
+    particles: {
+      enabled: true,
+      type: 'stars',
+      count: 10,
+      speed: 0.25,
+      size: 1.5,
+      color: '#d4a060'
+    },
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+
+      // ===== 背景层：天空渐变 + 落日 =====
+      // 天空颜色随时间微妙变化（模拟黄昏过渡）
+      const duskProgress = Math.sin(time * 0.0001) * 0.1 + 0.5
+      ctx.globalAlpha = 0.08
+      const skyTint = ctx.createLinearGradient(0, 0, 0, h * 0.5)
+      skyTint.addColorStop(0, `rgba(45, 16, 64, ${0.3 + duskProgress * 0.1})`)
+      skyTint.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = skyTint
+      ctx.fillRect(0, 0, w, h * 0.5)
+
+      // 落日（多层光晕，模拟大气散射）
+      const sunX = w * 0.65
+      const sunY = h * 0.32
+      const sunR = 45
+
+      // 最外层光晕（大气散射）
+      ctx.globalAlpha = 0.12
+      const sunAtmosphere = ctx.createRadialGradient(sunX, sunY, sunR * 2, sunX, sunY, sunR * 6)
+      sunAtmosphere.addColorStop(0, 'rgba(255, 140, 40, 0.25)')
+      sunAtmosphere.addColorStop(0.4, 'rgba(255, 100, 30, 0.1)')
+      sunAtmosphere.addColorStop(1, 'rgba(255, 60, 20, 0)')
+      ctx.fillStyle = sunAtmosphere
+      ctx.fillRect(0, 0, w, h)
+
+      // 中层光晕（日落光辉）
+      ctx.globalAlpha = 0.2
+      const sunMidGlow = ctx.createRadialGradient(sunX, sunY, sunR * 0.8, sunX, sunY, sunR * 3)
+      sunMidGlow.addColorStop(0, 'rgba(255, 180, 60, 0.5)')
+      sunMidGlow.addColorStop(0.5, 'rgba(255, 120, 40, 0.2)')
+      sunMidGlow.addColorStop(1, 'rgba(255, 80, 25, 0)')
+      ctx.fillStyle = sunMidGlow
+      ctx.beginPath()
+      ctx.arc(sunX, sunY, sunR * 3, 0, Math.PI * 2)
+      ctx.fill()
+
+      // 太阳本体（明亮核心）
+      ctx.globalAlpha = 0.7
+      const sunCore = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunR)
+      sunCore.addColorStop(0, 'rgba(255, 240, 150, 1)')
+      sunCore.addColorStop(0.3, 'rgba(255, 200, 80, 0.9)')
+      sunCore.addColorStop(0.7, 'rgba(255, 140, 50, 0.5)')
+      sunCore.addColorStop(1, 'rgba(255, 100, 30, 0)')
+      ctx.fillStyle = sunCore
+      ctx.beginPath()
+      ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2)
+      ctx.fill()
+
+      // 太阳表面细节（微弱的光斑）
+      ctx.globalAlpha = 0.15
+      for (let s = 0; s < 3; s++) {
+        const spotAngle = time * 0.0002 + s * 2
+        const spotX = sunX + Math.cos(spotAngle) * sunR * 0.4
+        const spotY = sunY + Math.sin(spotAngle) * sunR * 0.3
+        const spotR = sunR * 0.15
+
+        const spotGrad = ctx.createRadialGradient(spotX, spotY, 0, spotX, spotY, spotR)
+        spotGrad.addColorStop(0, 'rgba(255, 255, 200, 0.4)')
+        spotGrad.addColorStop(1, 'rgba(255, 255, 200, 0)')
+        ctx.fillStyle = spotGrad
+        ctx.beginPath()
+        ctx.arc(spotX, spotY, spotR, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // ===== 中景层：沙丘（三层深度）+ 热浪效果 =====
+      // 远景沙丘（最暗，最模糊）
+      ctx.globalAlpha = 0.25
+      ctx.fillStyle = '#2a1510'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.68)
+      for (let x = 0; x <= w; x += 4) {
+        const y = h * 0.68 + Math.sin(x * 0.007 + 0.5) * 28 + Math.sin(x * 0.003 + 1) * 15
+        ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.closePath()
+      ctx.fill()
+
+      // 中景沙丘（中等色调）
+      ctx.globalAlpha = 0.45
+      ctx.fillStyle = '#1a0a08'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.76)
+      for (let x = 0; x <= w; x += 4) {
+        const y = h * 0.76 + Math.sin(x * 0.005 + 2) * 22 + Math.sin(x * 0.012 + time * 0.00008) * 10
+        ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.closePath()
+      ctx.fill()
+
+      // 近景沙丘（最亮，最清晰）
+      ctx.globalAlpha = 0.65
+      ctx.fillStyle = '#0f0505'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.84)
+      for (let x = 0; x <= w; x += 4) {
+        const y = h * 0.84 + Math.sin(x * 0.009 + 1) * 18 + Math.sin(x * 0.004 + 0.5) * 22
+        ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.closePath()
+      ctx.fill()
+
+      // 沙丘受光面（落日从右侧照射）
+      ctx.globalAlpha = 0.08
+      const duneLight = ctx.createLinearGradient(w * 0.5, 0, w, 0)
+      duneLight.addColorStop(0, 'rgba(255, 160, 60, 0)')
+      duneLight.addColorStop(0.7, 'rgba(255, 160, 60, 0.2)')
+      duneLight.addColorStop(1, 'rgba(255, 140, 50, 0.35)')
+      ctx.fillStyle = duneLight
+      ctx.fillRect(0, h * 0.68, w, h * 0.32)
+
+      // 热浪效果（贴近地面的空气扭曲）
+      ctx.globalAlpha = 0.03
+      for (let i = 0; i < 4; i++) {
+        const heatY = h * (0.72 + i * 0.04)
+        const heatWave = Math.sin(time * 0.001 + i * 1.5) * 2
+        const heatGrad = ctx.createLinearGradient(0, heatY - 15, 0, heatY + 15)
+        heatGrad.addColorStop(0, 'rgba(255, 200, 100, 0)')
+        heatGrad.addColorStop(0.5, 'rgba(255, 200, 100, 0.3)')
+        heatGrad.addColorStop(1, 'rgba(255, 200, 100, 0)')
+        ctx.fillStyle = heatGrad
+        ctx.fillRect(heatWave, heatY - 15, w, 30)
+      }
+
+      // ===== 前景层：飘动沙粒 + 地面纹理 =====
+      // 飘动沙粒（有风速变化）
+      const windSpeed = 0.025 + Math.sin(time * 0.0005) * 0.008
+      ctx.globalAlpha = 0.3
+      ctx.fillStyle = '#d4a060'
+      for (let i = 0; i < 20; i++) {
+        const seed = i * 37.3
+        const baseX = (time * windSpeed * (1 + i * 0.05) + seed) % (w * 1.2) - w * 0.1
+        const baseY = h * 0.5 + Math.sin(time * 0.002 + seed) * h * 0.25
+        const size = 0.8 + Math.sin(seed) * 0.5
+        const alpha = 0.2 + Math.sin(time * 0.003 + seed * 2) * 0.15
+
+        // 沙粒受落日照亮
+        const distToSun = Math.sqrt((baseX - sunX) ** 2 + (baseY - sunY) ** 2)
+        const sunLit = Math.max(0.3, 1 - distToSun / (w * 0.6))
+
+        ctx.globalAlpha = alpha * sunLit
+        ctx.fillStyle = `rgba(212, 160, 96, ${sunLit})`
+        ctx.beginPath()
+        ctx.arc(baseX, baseY, size, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // 地面纹理（沙丘表面的细微纹理）
+      ctx.globalAlpha = 0.04
+      ctx.strokeStyle = '#d4a060'
+      ctx.lineWidth = 0.5
+      for (let i = 0; i < 8; i++) {
+        const rippleY = h * (0.88 + i * 0.015)
+        ctx.beginPath()
+        for (let x = 0; x <= w; x += 3) {
+          const y = rippleY + Math.sin(x * 0.02 + i * 0.8) * 2
+          if (x === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        ctx.stroke()
+      }
+
+      // 黄昏星星（只在天空上方，很微弱）
+      for (let i = 0; i < 12; i++) {
+        const seed1 = Math.sin(i * 47.3) * 43758.5453
+        const seed2 = Math.cos(i * 23.7) * 43758.5453
+        const sx = (seed1 - Math.floor(seed1)) * w
+        const sy = (seed2 - Math.floor(seed2)) * h * 0.25
+        const twinkle = Math.sin(time * 0.003 + i * 2.3) * 0.3 + 0.5
+
+        ctx.globalAlpha = twinkle * 0.35
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(sx, sy, 0.8, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      ctx.restore()
+    }
+  }),
+
+  // ============ 竹林清晨风格 ============
+  // 电影调色：参考《卧虎藏龙》竹林场景 + 日本枯山水美学
+  // 三层：背景远山+晨雾 → 中景竹林 → 前景近竹+露珠+光线
+  bamboo_dawn: () => ({
+    bgColor: '#e8f0e0',
+    bgGradient: 'linear-gradient(180deg, #c8d8c0 0%, #d8e8d0 20%, #e8f0e0 45%, #f0f5ea 70%, #e0ecd8 100%)',
+    textColor: '#2a3a2a',
+    textSecondary: '#4a5a4a',
+    textTertiary: '#7a8a7a',
+    borderColor: 'rgba(60, 100, 60, 0.15)',
+    buttonBg: 'rgba(60, 100, 60, 0.08)',
+    buttonText: '#2a3a2a',
+    accentColor: '#5a8a5a',
+    cardBg: 'rgba(255, 255, 255, 0.55)',
+    backdropFilter: 'blur(4px)',
+    boxShadow: '0 2px 16px rgba(60, 100, 60, 0.12), 0 0 40px rgba(120, 160, 120, 0.04)',
+    textShadow: '0 0 4px rgba(120, 160, 120, 0.15)',
+    particles: {
+      enabled: true,
+      type: 'leaves',
+      count: 8,
+      speed: 0.4,
+      size: 7,
+      color: '#6a9a5a'
+    },
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+
+      // ===== 背景层：远山轮廓 + 弥漫晨雾 =====
+      // 远山（2-3层，越远越淡）
+      ctx.globalAlpha = 0.08
+      ctx.fillStyle = '#8a9a8a'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.35)
+      for (let x = 0; x <= w; x += 6) {
+        const y = h * 0.35 + Math.sin(x * 0.004 + 0.5) * 30 + Math.sin(x * 0.002) * 20
+        ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.closePath()
+      ctx.fill()
+
+      ctx.globalAlpha = 0.12
+      ctx.fillStyle = '#7a8a7a'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.42)
+      for (let x = 0; x <= w; x += 5) {
+        const y = h * 0.42 + Math.sin(x * 0.005 + 1) * 25 + Math.sin(x * 0.003 + 2) * 18
+        ctx.lineTo(x, y)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.closePath()
+      ctx.fill()
+
+      // 晨雾（多层，有流动感）
+      for (let i = 0; i < 4; i++) {
+        const fogY = h * (0.3 + i * 0.1)
+        const fogDrift = Math.sin(time * 0.0004 + i * 1.7) * 25
+        const fogH = 40 + i * 10
+
+        ctx.globalAlpha = 0.06 - i * 0.008
+        const fogGrad = ctx.createLinearGradient(0, fogY - fogH / 2, 0, fogY + fogH / 2)
+        fogGrad.addColorStop(0, 'rgba(240, 245, 235, 0)')
+        fogGrad.addColorStop(0.3, 'rgba(240, 245, 235, 0.4)')
+        fogGrad.addColorStop(0.7, 'rgba(240, 245, 235, 0.4)')
+        fogGrad.addColorStop(1, 'rgba(240, 245, 235, 0)')
+        ctx.fillStyle = fogGrad
+        ctx.fillRect(fogDrift, fogY - fogH / 2, w, fogH)
+      }
+
+      // ===== 中景层：竹林（左右两侧，有深度）=====
+      // 竹干绘制函数（更自然的曲线）
+      const drawBambooStalk = (baseX: number, segments: number, sway: number, thickness: number) => {
+        ctx.globalAlpha = 0.22
+        ctx.strokeStyle = '#3a5a3a'
+        ctx.lineWidth = thickness
+
+        let curX = baseX
+        let curY = h
+        let prevSway = 0
+
+        for (let s = 0; s < segments; s++) {
+          const segH = h / segments
+          const topY = curY - segH
+          // 竹子的摇摆有惯性感（越顶端摆幅越大）
+          const swayX = Math.sin(time * 0.001 + s * 0.6 + baseX * 0.01) * sway * (s / segments + 0.3)
+
+          // 竹节（略带弧度）
+          ctx.beginPath()
+          ctx.moveTo(curX, curY)
+          ctx.quadraticCurveTo(
+            (curX + curX + swayX) / 2 + prevSway * 0.3,
+            (curY + topY) / 2,
+            curX + swayX, topY
+          )
+          ctx.stroke()
+
+          // 竹节环（更立体）
+          ctx.globalAlpha = 0.3
+          ctx.lineWidth = thickness + 2
+          ctx.beginPath()
+          ctx.ellipse(curX + swayX, topY, thickness * 0.7, thickness * 0.3, 0, 0, Math.PI * 2)
+          ctx.stroke()
+
+          // 竹叶（更自然，有层次）
+          if (s > 1 && s % 2 === 0) {
+            const leafDir = (s + Math.floor(baseX / 50)) % 2 === 0 ? 1 : -1
+            const leafCount = 2 + (s % 2)
+            const leafBaseX = curX + swayX
+            const leafBaseY = topY + segH * 0.35
+
+            for (let l = 0; l < leafCount; l++) {
+              const leafAngle = (l / leafCount) * 0.5 - 0.25
+              const leafLen = 25 + l * 5
+              const leafWidth = 6 + l * 2
+
+              ctx.globalAlpha = 0.18 - l * 0.03
+              ctx.fillStyle = l === 0 ? '#4a7a3a' : '#5a8a4a'
+              ctx.beginPath()
+              ctx.moveTo(leafBaseX, leafBaseY)
+              ctx.quadraticCurveTo(
+                leafBaseX + leafDir * leafLen * 0.6,
+                leafBaseY - leafWidth + leafAngle * 10,
+                leafBaseX + leafDir * leafLen,
+                leafBaseY + leafAngle * 15
+              )
+              ctx.quadraticCurveTo(
+                leafBaseX + leafDir * leafLen * 0.6,
+                leafBaseY + leafWidth + leafAngle * 10,
+                leafBaseX, leafBaseY
+              )
+              ctx.fill()
+            }
+          }
+
+          prevSway = swayX
+          curX = curX + swayX
+          curY = topY
+          ctx.lineWidth = thickness
+        }
+      }
+
+      // 远景竹子（较细，较淡）
+      ctx.globalAlpha = 0.15
+      drawBambooStalk(w * 0.05, 5, 2, 5)
+      drawBambooStalk(w * 0.95, 5, 1.8, 5)
+
+      // 中景竹子（主体）
+      ctx.globalAlpha = 0.22
+      drawBambooStalk(w * 0.1, 6, 3, 8)
+      drawBambooStalk(w * 0.18, 7, 2.8, 7)
+      drawBambooStalk(w * 0.85, 6, 2.5, 7)
+      drawBambooStalk(w * 0.92, 7, 3.2, 8)
+
+      // ===== 前景层：近景竹 + 露珠 + 光线 =====
+      // 近景竹子（更粗，更清晰）
+      ctx.globalAlpha = 0.28
+      drawBambooStalk(w * 0.02, 8, 4, 10)
+      drawBambooStalk(w * 0.97, 8, 3.5, 10)
+
+      // 晨光光线（从左上角斜射）
+      const lightAngle = Math.PI * 0.25
+      const lightX = w * 0.1
+      const lightY = h * 0.1
+      ctx.globalAlpha = 0.04
+      for (let i = 0; i < 3; i++) {
+        const rayWidth = 30 + i * 15
+        const rayLen = h * 1.2
+        const rayDrift = Math.sin(time * 0.0003 + i * 2) * 10
+
+        ctx.save()
+        ctx.translate(lightX + rayDrift, lightY)
+        ctx.rotate(lightAngle + i * 0.05)
+
+        const rayGrad = ctx.createLinearGradient(0, 0, 0, rayLen)
+        rayGrad.addColorStop(0, 'rgba(255, 255, 240, 0.4)')
+        rayGrad.addColorStop(0.5, 'rgba(255, 255, 240, 0.15)')
+        rayGrad.addColorStop(1, 'rgba(255, 255, 240, 0)')
+        ctx.fillStyle = rayGrad
+
+        ctx.beginPath()
+        ctx.moveTo(-rayWidth / 2, 0)
+        ctx.lineTo(rayWidth / 2, 0)
+        ctx.lineTo(rayWidth / 4, rayLen)
+        ctx.lineTo(-rayWidth / 4, rayLen)
+        ctx.closePath()
+        ctx.fill()
+
+        ctx.restore()
+      }
+
+      // 露珠（在竹叶上闪烁，有呼吸感）
+      for (let i = 0; i < 12; i++) {
+        const seed = i * 73.7 + 100
+        const dx = (Math.sin(seed * 0.7) * 43758.5453 % 1) * w * 0.8 + w * 0.1
+        const dy = (Math.cos(seed * 0.3) * 43758.5453 % 1) * h * 0.6 + h * 0.2
+        const sparkle = Math.sin(time * 0.004 + i * 1.9) * 0.5 + 0.5
+
+        // 露珠只在特定亮度时才可见（呼吸效果）
+        if (sparkle > 0.6) {
+          const intensity = (sparkle - 0.6) * 2.5
+
+          // 露珠本体（小圆点）
+          ctx.globalAlpha = intensity * 0.7
+          ctx.fillStyle = '#ffffff'
+          ctx.beginPath()
+          ctx.arc(dx, dy, 1.5, 0, Math.PI * 2)
+          ctx.fill()
+
+          // 露珠光晕
+          ctx.globalAlpha = intensity * 0.3
+          const dewGlow = ctx.createRadialGradient(dx, dy, 0, dx, dy, 4)
+          dewGlow.addColorStop(0, 'rgba(255, 255, 255, 0.6)')
+          dewGlow.addColorStop(1, 'rgba(255, 255, 255, 0)')
+          ctx.fillStyle = dewGlow
+          ctx.beginPath()
+          ctx.arc(dx, dy, 4, 0, Math.PI * 2)
+          ctx.fill()
+
+          // 十字光芒（只在最亮时出现）
+          if (intensity > 0.8) {
+            ctx.globalAlpha = (intensity - 0.8) * 2
+            ctx.strokeStyle = '#ffffff'
+            ctx.lineWidth = 0.5
+            const rayLen = 3 + intensity * 2
+            ctx.beginPath()
+            ctx.moveTo(dx - rayLen, dy)
+            ctx.lineTo(dx + rayLen, dy)
+            ctx.moveTo(dx, dy - rayLen)
+            ctx.lineTo(dx, dy + rayLen)
+            ctx.stroke()
+          }
+        }
+      }
+
+      // 地面光斑（阳光透过竹叶的斑驳光影）
+      ctx.globalAlpha = 0.03
+      for (let i = 0; i < 6; i++) {
+        const spotX = (Math.sin(i * 47.3) * 43758.5453 % 1) * w
+        const adjSpotX = spotX < 0 ? spotX + w : spotX
+        const spotY = h * 0.85 + (Math.cos(i * 23.7) * 43758.5453 % 1) * h * 0.1
+        const spotR = 15 + Math.sin(time * 0.002 + i) * 5
+
+        const spotGrad = ctx.createRadialGradient(adjSpotX, spotY, 0, adjSpotX, spotY, spotR)
+        spotGrad.addColorStop(0, 'rgba(255, 255, 200, 0.4)')
+        spotGrad.addColorStop(1, 'rgba(255, 255, 200, 0)')
+        ctx.fillStyle = spotGrad
+        ctx.beginPath()
+        ctx.arc(adjSpotX, spotY, spotR, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      ctx.restore()
+    }
+  }),
 }
 
 // 辅助函数：画花朵
@@ -646,5 +1920,10 @@ export function getAvailableThemes(): { type: ThemeType; name: string; descripti
     { type: 'sakura', name: '樱花', description: '日式樱花风格', preview: '#fff0f5' },
     { type: 'ocean', name: '深海', description: '深海探索风格', preview: '#001a33' },
     { type: 'forest', name: '森林', description: '神秘森林风格', preview: '#1a2f1a' },
+    { type: 'midnight_library', name: '午夜图书馆', description: '烛光书香，温暖静谧', preview: '#2c1810' },
+    { type: 'star_voyage', name: '星际航行', description: '星海遨游，星云流转', preview: '#0d0d3a' },
+    { type: 'rainy_city', name: '雨夜城市', description: '霓虹倒影，雨声淅沥', preview: '#111828' },
+    { type: 'desert_dusk', name: '沙漠黄昏', description: '落日余晖，大漠孤烟', preview: '#5a1a3a' },
+    { type: 'bamboo_dawn', name: '竹林清晨', description: '晨雾竹林，清露微光', preview: '#e8f0e0' },
   ]
 }

@@ -171,6 +171,17 @@ const availableThemes = [
   { type: 'sakura' as ThemeType, name: '樱花', description: '日式樱花风格，飘落花瓣', category: '自然' },
   { type: 'ocean' as ThemeType, name: '深海', description: '深海探索风格，气泡上升', category: '自然' },
   { type: 'forest' as ThemeType, name: '森林', description: '神秘森林风格，萤火虫飞舞', category: '自然' },
+  // 新主题
+  { type: 'midnight_library' as ThemeType, name: '午夜图书馆', description: '烛光书香，书架与飘动书页', category: '艺术' },
+  { type: 'star_voyage' as ThemeType, name: '星际航行', description: '星海遨游，星云旋转飞船轨迹', category: '科技' },
+  { type: 'rainy_city' as ThemeType, name: '雨夜城市', description: '霓虹倒影，雨滴滑落天际线', category: '自然' },
+  { type: 'desert_dusk' as ThemeType, name: '沙漠黄昏', description: '落日余晖，多层沙丘与飘沙', category: '自然' },
+  { type: 'bamboo_dawn' as ThemeType, name: '竹林清晨', description: '晨雾竹林，摇曳竹影与露珠', category: '自然' },
+  // 顶级主题
+  { type: 'nordic_polar_night' as ThemeType, name: '北欧极夜', description: '极光流动雪粒飘落，远处小屋灯光闪烁', category: '自然' },
+  { type: 'japanese_garden' as ThemeType, name: '日式庭院', description: '枯山水波纹，樱花瓣飘落，纸灯笼微光', category: '艺术' },
+  { type: 'victorian_study' as ThemeType, name: '维多利亚书房', description: '壁炉火焰，灰尘粒子光束中，书香怀旧', category: '艺术' },
+  { type: 'underwater_temple' as ThemeType, name: '海底神殿', description: '光线穿透深海，气泡上升，水草摇曳鱼群游过', category: '自然' },
 ]
 
 async function saveTheme() {
