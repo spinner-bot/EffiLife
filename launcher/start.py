@@ -12,9 +12,19 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 
+# Custom Node.js location (F drive)
+CUSTOM_NODE_DIR = Path("F:/dev-tools/node")
+
 
 def find_npm():
-    """Find npm executable, handling Windows quirks"""
+    """Find npm executable, checking custom location first"""
+    # Check custom F drive location first
+    if os.name == "nt":
+        custom_npm = CUSTOM_NODE_DIR / "npm.cmd"
+        if custom_npm.exists():
+            return str(custom_npm)
+
+    # Then check system PATH
     if os.name == "nt":
         for name in ["npm.cmd", "npm"]:
             path = shutil.which(name)
@@ -159,10 +169,15 @@ def run_module(choice, modules):
 
     print(f"\n启动 {module['name']}...")
 
+    # Prepare environment with custom Node.js path
+    env = os.environ.copy()
+    if os.name == "nt" and CUSTOM_NODE_DIR.exists():
+        env["PATH"] = str(CUSTOM_NODE_DIR) + os.pathsep + env.get("PATH", "")
+
     # Setup if needed
     if module.get("setup"):
         print(f"首次运行，执行 setup: {' '.join(module['setup'])}")
-        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=True)
+        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=True, env=env)
         if result.returncode != 0:
             print(f"\n❌ Setup 失败，请手动执行:")
             print(f"   cd {module['cwd']}")
@@ -183,7 +198,7 @@ def run_module(choice, modules):
     try:
         # On Windows, use shell=True to inherit full PATH
         use_shell = os.name == "nt"
-        subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell)
+        subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell, env=env)
     except KeyboardInterrupt:
         print("\n已停止")
     except FileNotFoundError as e:
