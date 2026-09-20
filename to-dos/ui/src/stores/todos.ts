@@ -1,10 +1,13 @@
 // to-dos 状态管理
+// v0.5.0: 新增优先排位分计算、设置管理
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { defineStore } from 'pinia'
-import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus, SortOption, RecurrenceType } from '@/types'
+import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus, SortOption, RecurrenceType, AppSettings } from '@/types'
+import { DEFAULT_SETTINGS } from '@/types'
+import { calcPriorityScore, formatScoreDisplay, calcAllScores } from '@/utils/priority'
 
-// 模拟数据
+// 模拟数据 (v0.5.0: 新增字段)
 const mockTodos: Todo[] = [
   {
     id: 'TODO-20260920-0001',
@@ -26,6 +29,12 @@ const mockTodos: Todo[] = [
     time_spent: 60,
     sort_order: 1,
     deadline_warning_days: 3,
+    // v0.5.0 新增
+    priority_rank: 2,
+    urgent: true,
+    important: true,
+    start_time: '2026-09-18T10:00:00',
+    estimated_time: 120,
   },
   {
     id: 'TODO-20260920-0002',
@@ -42,6 +51,12 @@ const mockTodos: Todo[] = [
     time_estimate: 180,
     recurrence: 'daily',
     sort_order: 2,
+    // v0.5.0 新增
+    priority_rank: 1,
+    urgent: false,
+    important: true,
+    start_time: '2026-09-17T14:00:00',
+    estimated_time: 180,
   },
   {
     id: 'TODO-20260920-0003',
@@ -59,6 +74,12 @@ const mockTodos: Todo[] = [
       { id: 'SUB-005', title: '准备晚餐', completed: true, completed_at: '2026-09-20T12:00:00' },
     ],
     sort_order: 3,
+    // v0.5.0 新增
+    priority_rank: 0,
+    urgent: false,
+    important: false,
+    start_time: '2026-09-20T07:00:00',
+    estimated_time: 60,
   },
   {
     id: 'TODO-20260920-0004',
@@ -73,15 +94,21 @@ const mockTodos: Todo[] = [
     subtasks: [],
     sort_order: 4,
     deadline_warning_days: 1,
+    // v0.5.0 新增
+    priority_rank: 3,
+    urgent: true,
+    important: false,
+    start_time: '2026-09-19T16:00:00',
+    estimated_time: 30,
   },
 ]
 
 const mockCategories: Category[] = [
-  { id: 'default', name: '默认', color: '#6366f1', icon: 'circle', created_at: '2026-09-01T00:00:00' },
-  { id: 'work', name: '工作', color: '#3b82f6', icon: 'briefcase', created_at: '2026-09-01T00:00:00' },
-  { id: 'study', name: '学习', color: '#22c55e', icon: 'book-open', created_at: '2026-09-01T00:00:00' },
-  { id: 'life', name: '生活', color: '#f59e0b', icon: 'home', created_at: '2026-09-01T00:00:00' },
-  { id: 'health', name: '健康', color: '#ef4444', icon: 'heart', created_at: '2026-09-01T00:00:00' },
+  { id: 'default', name: '默认', color: '#6366f1', icon: 'circle', created_at: '2026-09-01T00:00:00', difficulty: 5 },
+  { id: 'work', name: '工作', color: '#3b82f6', icon: 'briefcase', created_at: '2026-09-01T00:00:00', difficulty: 7 },
+  { id: 'study', name: '学习', color: '#22c55e', icon: 'book-open', created_at: '2026-09-01T00:00:00', difficulty: 5 },
+  { id: 'life', name: '生活', color: '#f59e0b', icon: 'home', created_at: '2026-09-01T00:00:00', difficulty: 3 },
+  { id: 'health', name: '健康', color: '#ef4444', icon: 'heart', created_at: '2026-09-01T00:00:00', difficulty: 4 },
 ]
 
 const STORAGE_KEY = 'to-dos-data'
@@ -97,10 +124,16 @@ export const useTodosStore = defineStore('todos', () => {
     search: '',
     tags: [],
   })
-  const sortBy = ref<SortOption>('created_desc')
+  const sortBy = ref<SortOption>('score_desc')  // v0.5.0: 默认按分数排序
   const selectedIds = ref<Set<string>>(new Set())
   const isLoading = ref(false)
   const darkMode = ref<'auto' | 'light' | 'dark'>('auto')
+
+  // v0.5.0: 设置
+  const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
+
+  // v0.5.0: 实时更新定时器
+  let scoreUpdateTimer: ReturnType<typeof setInterval> | null = null
 
   // 初始化：从 localStorage 加载
   function loadFromStorage() {
@@ -113,10 +146,15 @@ export const useTodosStore = defineStore('todos', () => {
         if (data.filters) filters.value = { ...filters.value, ...data.filters }
         if (data.sortBy) sortBy.value = data.sortBy
         if (data.darkMode) darkMode.value = data.darkMode
+        if (data.settings) settings.value = { ...DEFAULT_SETTINGS, ...data.settings }
       }
     } catch {
       // 忽略加载错误
     }
+    // 初始计算分数
+    recalculateScores()
+    // 启动实时更新
+    startScoreUpdates()
   }
 
   // 保存到 localStorage
@@ -128,9 +166,50 @@ export const useTodosStore = defineStore('todos', () => {
         filters: filters.value,
         sortBy: sortBy.value,
         darkMode: darkMode.value,
+        settings: settings.value,
       }))
     } catch {
       // 忽略存储错误
+    }
+  }
+
+  // v0.5.0: 重新计算所有待办的优先排位分
+  function recalculateScores() {
+    const now = new Date()
+    const scores = calcAllScores(todos.value, categories.value, now)
+
+    for (const todo of todos.value) {
+      const score = scores.get(todo.id) ?? 0
+      todo._score = score
+      todo._score_display = formatScoreDisplay(score)
+    }
+  }
+
+  // v0.5.0: 启动/重启实时更新
+  function startScoreUpdates() {
+    stopScoreUpdates()
+    const freq = settings.value.updateFrequency
+    if (freq > 0) {
+      scoreUpdateTimer = setInterval(() => {
+        recalculateScores()
+      }, freq)
+    }
+  }
+
+  function stopScoreUpdates() {
+    if (scoreUpdateTimer) {
+      clearInterval(scoreUpdateTimer)
+      scoreUpdateTimer = null
+    }
+  }
+
+  // v0.5.0: 更新设置
+  function updateSettings(newSettings: Partial<AppSettings>) {
+    settings.value = { ...settings.value, ...newSettings }
+    saveToStorage()
+    // 如果更新频率变了，重启定时器
+    if (newSettings.updateFrequency !== undefined) {
+      startScoreUpdates()
     }
   }
 
@@ -244,6 +323,9 @@ export const useTodosStore = defineStore('todos', () => {
     sorted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0))
 
     switch (sort) {
+      case 'score_desc':
+        // v0.5.0: 按优先排位分降序
+        return sorted.sort((a, b) => (b._score ?? 0) - (a._score ?? 0))
       case 'created_desc':
         return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       case 'created_asc':
@@ -300,9 +382,17 @@ export const useTodosStore = defineStore('todos', () => {
       deadline_warning_days: data.deadline_warning_days || 3,
       sort_order: maxOrder + 1,
       pinned: data.pinned || false,
+      // v0.5.0 新增字段
+      priority_rank: data.priority_rank ?? 0,
+      urgent: data.urgent ?? false,
+      important: data.important ?? false,
+      start_time: data.start_time || now,
+      estimated_time: data.estimated_time ?? data.time_estimate,
     }
 
     todos.value.unshift(newTodo)
+    // 重新计算分数
+    recalculateScores()
     return newTodo
   }
 
@@ -315,6 +405,8 @@ export const useTodosStore = defineStore('todos', () => {
       ...data,
       updated_at: new Date().toISOString(),
     }
+    // 重新计算分数
+    recalculateScores()
   }
 
   function completeTodo(id: string) {
@@ -480,6 +572,7 @@ export const useTodosStore = defineStore('todos', () => {
     selectedIds,
     isLoading,
     darkMode,
+    settings,           // v0.5.0
     // 计算属性
     filteredTodos,
     overdueTodos,
@@ -509,5 +602,10 @@ export const useTodosStore = defineStore('todos', () => {
     importData,
     exportCSV,
     loadFromStorage,
+    // v0.5.0 新增方法
+    recalculateScores,
+    updateSettings,
+    startScoreUpdates,
+    stopScoreUpdates,
   }
 })
