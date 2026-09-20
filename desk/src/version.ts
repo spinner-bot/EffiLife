@@ -49,8 +49,8 @@ export const VERSION_HISTORY = [
     version: '1.0.15',
     date: '开发中',
     changes: [
-      '修复 Android APK 启动闪退：前端资源未打包问题',
-      '手动复制 dist/ 到 Android assets 目录'
+      '安卓开发暂时搁置：APK 反复启动闪退，多轮修复无效，相关内容已归档至 archive/android/',
+      '主项目回归桌面端开发'
     ]
   },
   {

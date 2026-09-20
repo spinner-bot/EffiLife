@@ -2,8 +2,12 @@
 
 ## [1.0.15] - 开发中
 
+### 变更
+- **安卓开发暂时搁置**：APK 反复启动闪退，在无开发者模式（无法获取 logcat）的条件下多轮修复无效，安卓相关内容已全部移至 `archive/android/` 隔离归档，详见 `archive/android/README.md`
+- 主项目回归桌面端开发；前端中的移动端适配代码（平台检测、mailto 反馈）保留，不影响桌面版
+
 ### 修复
-- 修复 Android APK 启动闪退：手动将前端资源复制到 Android assets 目录
+- 修复 Android APK 启动闪退：手动将前端资源复制到 Android assets 目录（仍未解决，已随安卓归档搁置）
 
 ---
 
