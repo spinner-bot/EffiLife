@@ -8,6 +8,7 @@ import {
 } from 'lucide-vue-next'
 import type { Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/types'
+import { formatScoreDisplay } from '@/utils/priority'
 
 const props = defineProps<{
   todo: Todo
@@ -66,6 +67,13 @@ const subtaskProgress = computed(() => {
 
 const category = computed(() => store.getCategoryById(props.todo.category))
 
+// v0.5.0: 优先排位分显示
+const scoreDisplay = computed(() => {
+  if (props.todo._score_display) return props.todo._score_display
+  if (props.todo._score !== undefined) return formatScoreDisplay(props.todo._score)
+  return ''
+})
+
 function toggleComplete() {
   if (isCompleted.value) {
     store.updateTodo(props.todo.id, { status: 'pending' })
@@ -122,6 +130,15 @@ function highlightText(text: string, query: string): string {
     <!-- 内容区 -->
     <div class="todo-content">
       <div class="todo-header">
+        <!-- v0.5.0: 优先排位分 -->
+        <span
+          v-if="scoreDisplay && scoreDisplay !== '0'"
+          class="score-badge"
+          :class="{ 'score-high': (todo._score ?? 0) >= 1000, 'score-expired': scoreDisplay === '过期' }"
+          :title="`优先排位分: ${todo._score ?? 0}`"
+        >
+          {{ scoreDisplay }}
+        </span>
         <span class="todo-title" v-html="highlightText(todo.title, searchQuery || '')"></span>
         <div class="todo-meta">
           <!-- 优先级标记 -->
@@ -332,6 +349,36 @@ function highlightText(text: string, query: string): string {
   color: var(--color-text-primary);
   line-height: 1.4;
   word-break: break-word;
+}
+
+/* v0.5.0: 优先排位分 */
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.score-badge.score-high {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.score-badge.score-expired {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .todo-description {
