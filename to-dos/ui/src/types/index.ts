@@ -1,4 +1,5 @@
 // to-dos 类型定义
+// v0.5.0: 新增优先排位分相关字段
 
 export type Priority = 'urgent-important' | 'important' | 'urgent' | 'normal'
 
@@ -35,6 +36,15 @@ export interface Todo {
   deadline_warning_days?: number  // 提前几天警告
   sort_order?: number             // 自定义排序
   pinned?: boolean                // 置顶
+  // v0.5.0 新增字段（优先排位分算法）
+  priority_rank?: number          // 优先级排位，0最高
+  urgent?: boolean                // 是否紧急
+  important?: boolean             // 是否重要
+  start_time?: string             // 开始时间
+  estimated_time?: number         // 用户填写的预估时间（分钟）
+  // 运行时计算字段（不持久化）
+  _score?: number                 // 优先排位分
+  _score_display?: string         // 格式化后的分数显示
 }
 
 export interface Category {
@@ -44,6 +54,10 @@ export interface Category {
   icon: string
   description?: string
   created_at: string
+  // v0.5.0 新增字段
+  difficulty?: number             // 类别难度，默认5
+  ascii_icon?: string             // ASCII图标（A-Z, a-z, 0-9）
+  pinned?: boolean                // 分类置顶
 }
 
 export interface TodoStats {
@@ -85,6 +99,39 @@ export const RECURRENCE_CONFIG: Record<RecurrenceType, { label: string; short: s
   'custom': { label: '自定义', short: '自' },
 }
 
+// v0.5.0: 预设配色方案
+export const PRESET_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308',
+  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
+  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+  '#f43f5e', '#78716c', '#64748b', '#334155',
+]
+
+// v0.5.0: ASCII 图标列表
+export const ASCII_ICONS = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+  'U', 'V', 'W', 'X', 'Y', 'Z',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+  'u', 'v', 'w', 'x', 'y', 'z',
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+]
+
+// v0.5.0: 设置接口
+export interface AppSettings {
+  updateFrequency: number         // 更新频率（毫秒），0=手动
+  expandCount: number             // 前 X 名展开，默认 5
+  dateFormat: string              // 日期格式
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  updateFrequency: 5000,          // 5秒
+  expandCount: 5,
+  dateFormat: 'yyyy/mm/dd',
+}
+
 // API 响应格式
 export interface ApiResponse<T = any> {
   success: boolean
@@ -104,4 +151,4 @@ export interface FilterState {
 }
 
 // 排序选项
-export type SortOption = 'created_desc' | 'created_asc' | 'deadline_asc' | 'deadline_desc' | 'priority_desc' | 'custom'
+export type SortOption = 'score_desc' | 'created_desc' | 'created_asc' | 'deadline_asc' | 'deadline_desc' | 'priority_desc' | 'custom'
