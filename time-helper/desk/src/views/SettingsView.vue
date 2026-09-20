@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
@@ -7,10 +7,15 @@ import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThe
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
 import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
+import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData } from '@/storage'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
 const isDev = isDevVersion
+
+// 加载状态（用于骨架屏）
+const isLoading = ref(true)
 
 // ============ 引导功能 ============
 function startGuide() {
@@ -366,6 +371,14 @@ watch(() => config.value, (newConfig) => {
   if (newConfig.theme.glass) glassConfig.value = { ...newConfig.theme.glass }
   if (newConfig.theme.neon) neonConfig.value = { ...newConfig.theme.neon }
 }, { immediate: true, deep: true })
+
+// 初始化完成后关闭加载状态
+onMounted(() => {
+  // 短暂延迟以展示骨架屏过渡效果
+  setTimeout(() => {
+    isLoading.value = false
+  }, 300)
+})
 </script>
 
 <template>
@@ -379,8 +392,11 @@ watch(() => config.value, (newConfig) => {
     </header>
 
     <main class="main-content">
+      <!-- 加载骨架屏 -->
+      <SkeletonLoader v-if="isLoading" type="list" :count="6" />
+
       <!-- 主视图 -->
-      <template v-if="currentView === 'main'">
+      <template v-else-if="currentView === 'main'">
         <div class="settings-list">
           <button class="settings-item" @click="navigateTo('custom')">
             <span>自定义</span>
@@ -1046,6 +1062,10 @@ watch(() => config.value, (newConfig) => {
   border-color: var(--color-border-hover);
 }
 
+.settings-item:active {
+  transform: scale(0.98);
+}
+
 .credits {
   text-align: center;
   padding: var(--spacing-xl) 0;
@@ -1309,6 +1329,10 @@ h2 {
 
 .btn.primary:hover {
   background: var(--color-primary-hover);
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 .btn.full {
