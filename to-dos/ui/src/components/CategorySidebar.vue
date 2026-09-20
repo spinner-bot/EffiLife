@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+/**
+ * CategorySidebar (v0.5.0)
+ * 新增：按优先排位分动态排序、折叠收纳、置顶支持
+ */
+
+import { computed, ref } from 'vue'
 import { useTodosStore } from '@/stores/todos'
 import {
   ListTodo, Calendar, AlertTriangle, Circle, Briefcase,
-  BookOpen, Home, Heart, BarChart3, TrendingUp,
+  BookOpen, Home, Heart, BarChart3, TrendingUp, ChevronDown,
+  Pin,
 } from 'lucide-vue-next'
 import type { LucideIcon } from 'lucide-vue-next'
+import { calcCategoryScores, formatScoreDisplay } from '@/utils/priority'
 
 const store = useTodosStore()
+
+// 折叠状态
+const collapsedGroups = ref<Set<string>>(new Set())
 
 const iconMap: Record<string, LucideIcon> = {
   circle: Circle,
@@ -15,6 +25,81 @@ const iconMap: Record<string, LucideIcon> = {
   'book-open': BookOpen,
   home: Home,
   heart: Heart,
+}
+
+interface SidebarCategory {
+  id: string
+  label: string
+  count: number
+  score: number
+  scoreDisplay: string
+  icon: LucideIcon
+  asciiIcon?: string
+  color: string
+  pinned: boolean
+  hasActiveTodos: boolean
+}
+
+// v0.5.0: 分类按分数排序
+const sortedCategories = computed((): SidebarCategory[] => {
+  const scores = calcCategoryScores(store.todos, store.categories)
+  const expandCount = store.settings.expandCount
+
+  const cats: SidebarCategory[] = store.categories.map(cat => {
+    const activeTodos = store.todos.filter(
+      t => t.category === cat.id && !['completed', 'cancelled', 'archived'].includes(t.status)
+    )
+    const score = scores.get(cat.id) ?? 0
+
+    return {
+      id: cat.id,
+      label: cat.name,
+      count: activeTodos.length,
+      score,
+      scoreDisplay: formatScoreDisplay(Math.round(score)),
+      icon: iconMap[cat.icon || 'circle'] || Circle,
+      asciiIcon: cat.ascii_icon,
+      color: cat.color,
+      pinned: cat.pinned ?? false,
+      hasActiveTodos: activeTodos.length > 0,
+    }
+  })
+
+  // 排序：置顶优先 → 分数降序
+  cats.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+    return b.score - a.score
+  })
+
+  return cats
+})
+
+// 前 X 名展开，其余折叠
+const expandedCategories = computed(() => {
+  const expandCount = store.settings.expandCount
+  return sortedCategories.value
+    .filter(c => c.pinned || c.hasActiveTodos)
+    .slice(0, expandCount)
+})
+
+const collapsedCategories = computed(() => {
+  const expandCount = store.settings.expandCount
+  const expandedIds = new Set(expandedCategories.value.map(c => c.id))
+  return sortedCategories.value.filter(c => !expandedIds.has(c.id) && c.hasActiveTodos)
+})
+
+const emptyCategories = computed(() => {
+  return sortedCategories.value.filter(c => !c.hasActiveTodos)
+})
+
+const isGroupCollapsed = (groupId: string) => collapsedGroups.value.has(groupId)
+
+function toggleGroup(groupId: string) {
+  if (collapsedGroups.value.has(groupId)) {
+    collapsedGroups.value.delete(groupId)
+  } else {
+    collapsedGroups.value.add(groupId)
+  }
 }
 
 interface SidebarItem {
@@ -27,7 +112,7 @@ interface SidebarItem {
 }
 
 const sidebarItems = computed((): SidebarItem[] => {
-  const items: SidebarItem[] = [
+  return [
     {
       id: null,
       label: '全部',
@@ -53,19 +138,6 @@ const sidebarItems = computed((): SidebarItem[] => {
       isSpecial: true,
     },
   ]
-
-  // 分隔线后添加分类
-  for (const cat of store.categories) {
-    items.push({
-      id: cat.id,
-      label: cat.name,
-      count: store.todos.filter(t => t.category === cat.id).length,
-      icon: iconMap[cat.icon] || Circle,
-      color: cat.color,
-    })
-  }
-
-  return items
 })
 
 const stats = computed(() => store.stats)
@@ -88,10 +160,11 @@ function isActive(id: string | null): boolean {
   <aside class="sidebar">
     <div class="sidebar-header">
       <h1 class="logo">待办事项</h1>
-      <span class="version-tag">v0.3.0</span>
+      <span class="version-tag">v0.5.0</span>
     </div>
 
     <nav class="sidebar-nav">
+      <!-- 固定项 -->
       <div class="nav-section">
         <div
           v-for="item in sidebarItems"
@@ -113,7 +186,96 @@ function isActive(id: string | null): boolean {
 
       <div class="nav-divider"></div>
 
-      <!-- 统计卡片 -->
+      <!-- v0.5.0: 按分数排序的分类列表 -->
+      <div class="nav-section category-section">
+        <div class="section-label">分类</div>
+
+        <!-- 展开的分类（前 X 名） -->
+        <div
+          v-for="cat in expandedCategories"
+          :key="cat.id"
+          class="nav-item category-item"
+          :class="{ active: isActive(cat.id) }"
+          @click="selectCategory(cat.id)"
+        >
+          <div class="nav-icon-wrap" :style="{ background: cat.color + '15' }">
+            <span v-if="cat.asciiIcon" class="ascii-icon" :style="{ color: cat.color }">{{ cat.asciiIcon }}</span>
+            <component v-else :is="cat.icon" :size="16" :color="cat.color" />
+          </div>
+          <span class="nav-label">
+            {{ cat.label }}
+            <Pin v-if="cat.pinned" :size="10" class="pin-icon" />
+          </span>
+          <span class="cat-score" :title="`分类分数: ${cat.score.toFixed(0)}`">{{ cat.scoreDisplay }}</span>
+          <span class="nav-count" :class="{ 'has-value': cat.count > 0 }">{{ cat.count || '' }}</span>
+        </div>
+
+        <!-- 折叠收纳 -->
+        <div v-if="collapsedCategories.length > 0" class="collapse-group">
+          <button
+            class="collapse-trigger"
+            @click="toggleGroup('collapsed')"
+          >
+            <ChevronDown
+              :size="14"
+              class="collapse-icon"
+              :class="{ rotated: !isGroupCollapsed('collapsed') }"
+            />
+            <span>其他 {{ collapsedCategories.length }} 个分类</span>
+          </button>
+          <div v-if="!isGroupCollapsed('collapsed')" class="collapse-content">
+            <div
+              v-for="cat in collapsedCategories"
+              :key="cat.id"
+              class="nav-item category-item nested"
+              :class="{ active: isActive(cat.id) }"
+              @click="selectCategory(cat.id)"
+            >
+              <div class="nav-icon-wrap small" :style="{ background: cat.color + '15' }">
+                <span v-if="cat.asciiIcon" class="ascii-icon small" :style="{ color: cat.color }">{{ cat.asciiIcon }}</span>
+                <component v-else :is="cat.icon" :size="14" :color="cat.color" />
+              </div>
+              <span class="nav-label">{{ cat.label }}</span>
+              <span class="cat-score small">{{ cat.scoreDisplay }}</span>
+              <span class="nav-count" :class="{ 'has-value': cat.count > 0 }">{{ cat.count || '' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 无有效待办的分类 -->
+        <div v-if="emptyCategories.length > 0" class="collapse-group">
+          <button
+            class="collapse-trigger empty"
+            @click="toggleGroup('empty')"
+          >
+            <ChevronDown
+              :size="14"
+              class="collapse-icon"
+              :class="{ rotated: !isGroupCollapsed('empty') }"
+            />
+            <span>空闲 {{ emptyCategories.length }} 个</span>
+          </button>
+          <div v-if="!isGroupCollapsed('empty')" class="collapse-content">
+            <div
+              v-for="cat in emptyCategories"
+              :key="cat.id"
+              class="nav-item category-item nested dimmed"
+              :class="{ active: isActive(cat.id) }"
+              @click="selectCategory(cat.id)"
+            >
+              <div class="nav-icon-wrap small" :style="{ background: cat.color + '10' }">
+                <component :is="cat.icon" :size="14" :color="cat.color" />
+              </div>
+              <span class="nav-label">{{ cat.label }}</span>
+              <span class="nav-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <!-- 统计卡片（固定在下方） -->
       <div class="stats-card">
         <div class="stats-header">
           <BarChart3 :size="14" class="stats-icon" />
@@ -392,5 +554,113 @@ function isActive(id: string | null): boolean {
   font-size: 10px;
   font-family: var(--font-mono, monospace);
   color: var(--color-text-secondary);
+}
+
+/* v0.5.0: 分类区域 */
+.category-section {
+  gap: 2px;
+}
+
+.section-label {
+  padding: 4px 12px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.category-item .nav-icon-wrap {
+  width: 26px;
+  height: 26px;
+}
+
+.category-item.nested .nav-icon-wrap {
+  width: 22px;
+  height: 22px;
+  padding-left: 16px;
+}
+
+.ascii-icon {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  line-height: 1;
+}
+
+.ascii-icon.small {
+  font-size: 12px;
+}
+
+.pin-icon {
+  opacity: 0.5;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+.cat-score {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-text-tertiary);
+  min-width: 24px;
+  text-align: right;
+}
+
+.cat-score.small {
+  font-size: 9px;
+  min-width: 20px;
+}
+
+/* 折叠组 */
+.collapse-group {
+  margin-top: 2px;
+}
+
+.collapse-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.collapse-trigger:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+}
+
+.collapse-trigger.empty {
+  opacity: 0.6;
+}
+
+.collapse-icon {
+  transition: transform 0.2s ease;
+}
+
+.collapse-icon.rotated {
+  transform: rotate(0deg);
+}
+
+.collapse-icon:not(.rotated) {
+  transform: rotate(-90deg);
+}
+
+.collapse-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 4px;
+}
+
+.category-item.dimmed {
+  opacity: 0.5;
 }
 </style>
