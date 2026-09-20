@@ -10,6 +10,10 @@ from .types import (
     Priority, TodoStatus,
 )
 from .utils import TimeHelper
+from .event_emitter import (
+    emit_todo_created, emit_todo_completed,
+    emit_todo_cancelled, emit_todo_updated,
+)
 
 
 class TodoAPI:
@@ -146,6 +150,9 @@ class TodoAPI:
             time_estimate=time_estimate,
         )
 
+        # 发射事件（用于跨模块联动）
+        emit_todo_created(todo.to_dict())
+
         return self._success(todo.to_dict(), '待办创建成功')
 
     def update_todo(self, todo_id: str, **kwargs) -> dict:
@@ -171,6 +178,9 @@ class TodoAPI:
         if not todo:
             return self._error('待办不存在', 404)
 
+        # 发射事件
+        emit_todo_updated(todo.to_dict(), kwargs)
+
         return self._success(todo.to_dict(), '待办更新成功')
 
     def delete_todo(self, todo_id: str) -> dict:
@@ -193,6 +203,8 @@ class TodoAPI:
         todo = self._storage.complete_todo(todo_id, time_spent)
         if not todo:
             return self._error('待办不存在', 404)
+        # 发射事件（触发自动时间记录）
+        emit_todo_completed(todo.to_dict(), time_spent)
         return self._success(todo.to_dict(), '待办已完成')
 
     def cancel_todo(self, todo_id: str) -> dict:
@@ -204,6 +216,8 @@ class TodoAPI:
         todo = self._storage.cancel_todo(todo_id)
         if not todo:
             return self._error('待办不存在', 404)
+        # 发射事件
+        emit_todo_cancelled(todo.to_dict())
         return self._success(todo.to_dict(), '待办已取消')
 
     # ========== 子任务操作 ==========
