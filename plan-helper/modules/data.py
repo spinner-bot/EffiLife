@@ -541,16 +541,17 @@ def run_boundary_tests():
         record("Large time value handling", False, str(e))
         plan_module.Plan.registry.pop(99906, None)
 
-    # Test 10: Negative day in log
+    # Test 10: Negative day in log should raise
     try:
         p = plan_module.Plan(99907, name="Negative Day")
-        idx = p.add_log(-1, "base", [10, 0], "before plan start")
-        log_entry = p.plan["log"][idx]
-        assert log_entry["day"] == -1
-        record("Negative day in log", True)
+        try:
+            idx = p.add_log(-1, "base", [10, 0], "before plan start")
+            record("Negative day should raise ValueError", False, "No exception raised")
+        except ValueError:
+            record("Negative day should raise ValueError", True)
         p.delete()
     except Exception as e:
-        record("Negative day in log", False, str(e))
+        record("Negative day should raise ValueError", False, str(e))
         plan_module.Plan.registry.pop(99907, None)
 
     # Summary

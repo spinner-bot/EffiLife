@@ -9,6 +9,11 @@ import sys
 import os
 import json
 
+# Fix Windows GBK encoding for emoji output
+if sys.stdout.encoding != 'utf-8':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 # Ensure we can import modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
