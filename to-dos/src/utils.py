@@ -55,25 +55,76 @@ class IdGenerator:
 
 
 class TimeHelper:
-    """时间处理工具"""
+    """时间处理工具
+
+    v0.5.0: 统一使用 yyyy/mm/dd 格式
+    """
+
+    # 日期格式常量
+    DATE_FORMAT = '%Y/%m/%d'
+    DATETIME_FORMAT = '%Y/%m/%d %H:%M'
 
     @staticmethod
     def now_iso() -> str:
-        """返回当前 ISO 格式时间"""
+        """返回当前 ISO 格式时间（内部存储仍用 ISO）"""
         return datetime.now().isoformat()
 
     @staticmethod
+    def now_display() -> str:
+        """返回当前显示格式时间 (yyyy/mm/dd HH:MM)"""
+        return datetime.now().strftime(TimeHelper.DATETIME_FORMAT)
+
+    @staticmethod
     def today_str() -> str:
-        """返回今天日期字符串 YYYY-MM-DD"""
-        return datetime.now().strftime('%Y-%m-%d')
+        """返回今天日期字符串 (yyyy/mm/dd)"""
+        return datetime.now().strftime(TimeHelper.DATE_FORMAT)
+
+    @staticmethod
+    def format_date(dt: datetime) -> str:
+        """格式化日期为 yyyy/mm/dd"""
+        return dt.strftime(TimeHelper.DATE_FORMAT)
+
+    @staticmethod
+    def format_datetime(dt: datetime) -> str:
+        """格式化日期时间为 yyyy/mm/dd HH:MM"""
+        return dt.strftime(TimeHelper.DATETIME_FORMAT)
 
     @staticmethod
     def parse_iso(iso_str: str) -> Optional[datetime]:
-        """解析 ISO 格式时间"""
+        """解析 ISO 格式时间（兼容旧数据）"""
         try:
             return datetime.fromisoformat(iso_str)
         except (ValueError, TypeError):
             return None
+
+    @staticmethod
+    def parse_display(display_str: str) -> Optional[datetime]:
+        """解析显示格式时间 (yyyy/mm/dd 或 yyyy/mm/dd HH:MM)"""
+        try:
+            # 尝试完整格式
+            return datetime.strptime(display_str, TimeHelper.DATETIME_FORMAT)
+        except (ValueError, TypeError):
+            try:
+                # 尝试仅日期格式
+                return datetime.strptime(display_str, TimeHelper.DATE_FORMAT)
+            except (ValueError, TypeError):
+                return None
+
+    @staticmethod
+    def iso_to_display(iso_str: str) -> str:
+        """将 ISO 格式转换为显示格式"""
+        dt = TimeHelper.parse_iso(iso_str)
+        if dt:
+            return TimeHelper.format_datetime(dt)
+        return iso_str
+
+    @staticmethod
+    def display_to_iso(display_str: str) -> Optional[str]:
+        """将显示格式转换为 ISO 格式"""
+        dt = TimeHelper.parse_display(display_str)
+        if dt:
+            return dt.isoformat()
+        return None
 
     @staticmethod
     def format_relative(iso_str: str) -> str:
@@ -111,7 +162,8 @@ class TimeHelper:
         elif diff < 604800:
             return f'{int(diff // 86400)}天前'
         else:
-            return dt.strftime('%Y-%m-%d')
+            # 使用 yyyy/mm/dd 格式
+            return dt.strftime(TimeHelper.DATE_FORMAT)
 
     @staticmethod
     def days_until_deadline(deadline: str) -> Optional[int]:
