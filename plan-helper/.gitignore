@@ -23,3 +23,12 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Plan data (runtime generated)
+plan/*.json
+plan/*.txt
+output/
+temp/test/
+
+# Backup files (keep .gitkeep)
+data/backups/backup_*.json
