@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Flame, Calendar, Trophy, TrendingUp, Check } from 'lucide-vue-next'
+import { ArrowLeft, Flame, Calendar, Trophy, TrendingUp, Check, BarChart3 } from 'lucide-vue-next'
 import { CheckinSystem, checkinState } from '@/data'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
+import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -96,6 +97,21 @@ function formatWeekday(dateStr: string): string {
   const weekdays = ['日', '一', '二', '三', '四', '五', '六']
   const d = new Date(dateStr)
   return `周${weekdays[d.getDay()]}`
+}
+
+// 打卡热力图数据（最近 26 周）
+const checkinHeatmapData = computed(() => {
+  const data: Record<string, number> = {}
+  const records = checkinData.value.records
+  for (const record of records) {
+    data[record.date] = 100 // 打卡 = 100%
+  }
+  return data
+})
+
+// 热力图点击
+function onHeatmapClick(dateStr: string) {
+  router.push(`/day/${dateStr}`)
 }
 
 // 连续天数可视化（最近7天）
@@ -246,6 +262,23 @@ const last7Days = computed(() => {
             <span class="week-label">{{ day.weekday }}</span>
           </div>
         </div>
+      </section>
+
+      <!-- 打卡热力图 -->
+      <section class="heatmap-section">
+        <div class="section-header-row">
+          <div class="section-title-row">
+            <BarChart3 :size="16" class="section-icon" />
+            <h3 class="section-title">打卡日历</h3>
+          </div>
+        </div>
+        <ContributionHeatmap
+          :data="checkinHeatmapData"
+          :weeks="26"
+          color-mode="checkin"
+          title=""
+          @cell-click="onHeatmapClick"
+        />
       </section>
 
       <!-- 最近打卡记录 -->
@@ -732,5 +765,37 @@ const last7Days = computed(() => {
 .empty-state .hint {
   font-size: 0.8125rem;
   margin-top: var(--spacing-xs);
+}
+
+/* 热力图区域 */
+.heatmap-section {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.section-icon {
+  color: #ff8c00;
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 </style>
