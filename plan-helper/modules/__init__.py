@@ -20,6 +20,7 @@ MODULE_ALIASES = \
     "api": "api",
     "template": "tmpl",
     "manager": "mgr",
+    "data": "dt",
 }
 # ==========================================
 
