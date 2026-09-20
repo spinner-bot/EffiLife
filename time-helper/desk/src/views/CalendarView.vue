@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3 } from 'lucide-vue-next'
-import { DataService } from '@/services/dataService'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3, Clock, X } from 'lucide-vue-next'
+import { DataService, hoursToHm } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
+import type { RealTimeStat, TimeRecord } from '@/types'
 
 const router = useRouter()
 
@@ -175,10 +176,10 @@ function getProgressBorderColor(progress: number, hasRecords: boolean): string {
   return 'var(--color-border)'
 }
 
-// 点击日期
+// 点击日期 - 展开弹窗
 function onDayClick(day: DayMeta) {
   if (isFuture(day.dateStr)) return
-  router.push(`/day/${day.dateStr}`)
+  openDayDetail(day.dateStr)
 }
 
 // 星期标题
@@ -218,7 +219,49 @@ async function loadHeatmapData() {
 
 // 热力图点击事件
 function onHeatmapClick(dateStr: string) {
-  router.push(`/day/${dateStr}`)
+  openDayDetail(dateStr)
+}
+
+// 日详情弹窗
+const showDayPopup = ref(false)
+const popupDateStr = ref('')
+const popupStat = ref<RealTimeStat | null>(null)
+const popupRecords = ref<TimeRecord[]>([])
+const popupHasCheckin = ref(false)
+const isPopupLoading = ref(false)
+
+async function openDayDetail(dateStr: string) {
+  if (isFuture(dateStr)) return
+  popupDateStr.value = dateStr
+  showDayPopup.value = true
+  isPopupLoading.value = true
+
+  const [stat, records] = await Promise.all([
+    DataService.calcRealTimeStat(dateStr),
+    DataService.loadRecords(dateStr)
+  ])
+  const checkinData = CheckinSystem.getData()
+  popupHasCheckin.value = checkinData.records.some(r => r.date === dateStr)
+  popupStat.value = stat
+  popupRecords.value = records
+  isPopupLoading.value = false
+}
+
+function closeDayPopup() {
+  showDayPopup.value = false
+}
+
+function goToDayDetail() {
+  router.push(`/day/${popupDateStr.value}`)
+  closeDayPopup()
+}
+
+function getProgressColor(progress: number): string {
+  if (progress >= 100) return 'var(--color-success)'
+  if (progress >= 70) return '#eab308'
+  if (progress >= 40) return '#f59e0b'
+  if (progress > 0) return 'var(--color-error)'
+  return 'var(--color-text-tertiary)'
 }
 
 // 监听月份变化，重新加载数据
@@ -395,6 +438,100 @@ onMounted(() => {
         </label>
       </div>
     </main>
+
+    <!-- 日期详情弹窗 -->
+    <Teleport to="body">
+      <Transition name="popup-fade">
+        <div v-if="showDayPopup" class="popup-overlay" @click.self="closeDayPopup">
+          <div class="day-popup">
+            <div class="popup-header">
+              <div class="popup-date-info">
+                <h3 class="popup-date">{{ popupDateStr }}</h3>
+                <span class="popup-checkin-badge" v-if="popupHasCheckin">
+                  <Flame :size="12" /> 已打卡
+                </span>
+              </div>
+              <div class="popup-header-actions">
+                <button class="popup-detail-btn" @click="goToDayDetail" title="查看完整详情">
+                  详情
+                </button>
+                <button class="popup-close-btn" @click="closeDayPopup">
+                  <X :size="18" />
+                </button>
+              </div>
+            </div>
+
+            <div v-if="isPopupLoading" class="popup-loading">
+              <div class="loading-bar"><div class="loading-fill"></div></div>
+            </div>
+
+            <div v-else-if="popupStat" class="popup-body">
+              <!-- 完成度环形图 -->
+              <div class="popup-progress-ring">
+                <svg viewBox="0 0 80 80" class="popup-ring-svg">
+                  <circle cx="40" cy="40" r="32" fill="none" stroke-width="6" class="popup-ring-bg" />
+                  <circle
+                    cx="40" cy="40" r="32" fill="none" stroke-width="6"
+                    :stroke="getProgressColor(popupStat.progress)"
+                    stroke-dasharray="201"
+                    :stroke-dashoffset="201 * (1 - popupStat.progress / 100)"
+                    stroke-linecap="round"
+                    class="popup-ring-fg"
+                  />
+                </svg>
+                <div class="popup-ring-center">
+                  <span class="popup-ring-value" :style="{ color: getProgressColor(popupStat.progress) }">
+                    {{ popupStat.progress }}%
+                  </span>
+                </div>
+              </div>
+
+              <!-- 分类统计 -->
+              <div class="popup-tag-stats" v-if="popupStat.plan_exists">
+                <div
+                  v-for="(target, tag) in popupStat.target"
+                  :key="tag"
+                  class="popup-tag-stat"
+                >
+                  <span class="popup-tag-name">
+                    <span class="popup-tag-dot" :class="{ 'bg-dot': tag === popupStat.bg_tag }"></span>
+                    {{ tag }}
+                  </span>
+                  <span class="popup-tag-value">{{ hoursToHm(popupStat.raw_stat[tag] || 0) }} / {{ hoursToHm(target) }}</span>
+                </div>
+              </div>
+
+              <div v-else class="popup-no-plan">
+                <p>无有效计划</p>
+                <p class="hint">总记录时长：{{ hoursToHm(popupStat.total_used_hours) }}</p>
+              </div>
+
+              <!-- 记录摘要 -->
+              <div class="popup-records-summary" v-if="popupRecords.length > 0">
+                <div class="popup-records-header">
+                  <Clock :size="14" />
+                  <span>{{ popupRecords.length }} 条记录</span>
+                </div>
+                <div class="popup-record-list">
+                  <div
+                    v-for="(record, idx) in popupRecords.slice(0, 5)"
+                    :key="idx"
+                    class="popup-record"
+                  >
+                    <span class="popup-record-tag">[{{ record.tag }}]</span>
+                    <span class="popup-record-time">{{ record.start }}-{{ record.end }}</span>
+                    <span class="popup-record-dur">{{ hoursToHm(record.duration) }}</span>
+                  </div>
+                  <div v-if="popupRecords.length > 5" class="popup-more">
+                    还有 {{ popupRecords.length - 5 }} 条记录...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -797,5 +934,267 @@ onMounted(() => {
 .slide-left-leave-to {
   opacity: 0;
   transform: translateX(30px);
+}
+
+/* 日期弹窗 */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.day-popup {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  width: 100%;
+  max-width: 380px;
+  animation: popupSlideUp 0.25s ease;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.popup-date-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.popup-date {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.popup-checkin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.15), rgba(255, 215, 0, 0.15));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  color: #ff8c00;
+}
+
+.popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.popup-detail-btn {
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.popup-detail-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.popup-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.popup-close-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.popup-loading {
+  padding: var(--spacing-lg);
+}
+
+.popup-body {
+  padding: var(--spacing-lg);
+}
+
+/* 弹窗完成度环 */
+.popup-progress-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-md);
+}
+
+.popup-ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.popup-ring-bg {
+  stroke: var(--color-bg-tertiary);
+}
+
+.popup-ring-fg {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.popup-ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.popup-ring-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+/* 弹窗分类统计 */
+.popup-tag-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.popup-tag-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.popup-tag-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-primary);
+}
+
+.popup-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--color-primary);
+}
+
+.popup-tag-dot.bg-dot {
+  background: var(--color-success);
+  border-radius: 50%;
+}
+
+.popup-tag-value {
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.popup-no-plan {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) 0;
+}
+
+.popup-no-plan .hint {
+  font-size: 0.75rem;
+  margin-top: var(--spacing-xs);
+}
+
+/* 弹窗记录摘要 */
+.popup-records-summary {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-md);
+}
+
+.popup-records-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.popup-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.popup-record {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 4px var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.popup-record-tag {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.popup-record-time {
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+.popup-record-dur {
+  color: var(--color-text-tertiary);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.popup-more {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: var(--spacing-xs);
+}
+
+/* 弹窗动画 */
+.popup-fade-enter-active,
+.popup-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.popup-fade-enter-from,
+.popup-fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes popupSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>
