@@ -35,6 +35,9 @@ export {
   checkDataIntegrity,
   getRecoverySuggestions,
   restoreFromLatestBackup,
+  restoreFromSpecificBackup,
+  exportEmergencyBackup,
+  restoreFromEmergencyBackup,
   type DataStatus,
   type RecoverySuggestion,
 } from './recovery'
