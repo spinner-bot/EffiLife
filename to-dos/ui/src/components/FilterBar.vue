@@ -22,6 +22,7 @@ const statusOptions: { value: TodoStatus; label: string }[] = [
 ]
 
 const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'score_desc', label: '⚡ 优先排位分' },
   { value: 'created_desc', label: '最新创建' },
   { value: 'created_asc', label: '最早创建' },
   { value: 'deadline_asc', label: '截止日期 ↑' },
