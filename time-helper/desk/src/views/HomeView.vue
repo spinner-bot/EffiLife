@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X } from 'lucide-vue-next'
+import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -218,7 +218,7 @@ onUnmounted(() => {
 
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
-        <div class="stats-card" @click="router.push('/records')">
+        <div class="stats-card" @click="router.push('/plan')">
           <div class="stats-header-row">
             <h2 class="stats-title">今日进度</h2>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
@@ -282,9 +282,9 @@ onUnmounted(() => {
       </section>
 
       <nav class="nav-buttons">
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/records')">
-          <FileText :size="22" />
-          <span>记录</span>
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/plan')">
+          <ClipboardList :size="22" />
+          <span>计划</span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
           <Calendar :size="22" />
@@ -295,10 +295,10 @@ onUnmounted(() => {
           <span>打卡</span>
           <span v-if="canCheckinToday && !hasCheckedInToday" class="nav-red-dot"></span>
         </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/management')">
-          <FolderKanban :size="22" />
-          <span>管理</span>
-        </button>
+        <div class="nav-btn placeholder" aria-disabled="true">
+          <span class="nav-placeholder-icon">···</span>
+          <span class="nav-placeholder-text">敬请期待</span>
+        </div>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
           <Settings :size="22" />
           <span>设置</span>
@@ -918,6 +918,30 @@ onUnmounted(() => {
 
 .checkin-nav {
   position: relative;
+}
+
+.nav-btn.placeholder {
+  cursor: default;
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.nav-btn.placeholder:hover {
+  transform: none;
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+.nav-placeholder-icon {
+  font-size: 1.25rem;
+  letter-spacing: 2px;
+  color: var(--color-text-tertiary);
+  line-height: 1;
+}
+
+.nav-placeholder-text {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
 }
 
 .nav-red-dot {
