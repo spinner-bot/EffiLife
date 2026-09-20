@@ -137,8 +137,17 @@ class TodoStorage:
         tags: Optional[list] = None,
         related_plan_id: Optional[str] = None,
         time_estimate: Optional[int] = None,
+        # v0.5.0 新增参数
+        priority_rank: int = 0,
+        urgent: bool = False,
+        important: bool = False,
+        start_time: Optional[str] = None,
+        estimated_time: Optional[int] = None,
     ) -> Todo:
-        """创建新的待办事项"""
+        """创建新的待办事项
+
+        v0.5.0: 新增 priority_rank, urgent, important, start_time, estimated_time 参数
+        """
         if not self._loaded:
             self.load()
 
@@ -157,6 +166,11 @@ class TodoStorage:
             tags=tags or [],
             related_plan_id=related_plan_id,
             time_estimate=time_estimate,
+            priority_rank=priority_rank,
+            urgent=urgent,
+            important=important,
+            start_time=start_time or now,
+            estimated_time=estimated_time or time_estimate,
         )
 
         self._todos.append(todo)

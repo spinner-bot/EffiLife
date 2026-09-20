@@ -104,6 +104,12 @@ class TodoAPI:
         tags: Optional[list] = None,
         related_plan_id: Optional[str] = None,
         time_estimate: Optional[int] = None,
+        # v0.5.0 新增参数
+        priority_rank: int = 0,
+        urgent: bool = False,
+        important: bool = False,
+        start_time: Optional[str] = None,
+        estimated_time: Optional[int] = None,
     ) -> dict:
         """
         创建新的待办事项
@@ -118,6 +124,11 @@ class TodoAPI:
             tags: 标签列表
             related_plan_id: 关联 plan-helper 计划 ID
             time_estimate: 预估时间（分钟）
+            priority_rank: 优先级排位（0 最高）
+            urgent: 是否紧急
+            important: 是否重要
+            start_time: 开始时间
+            estimated_time: 用户预估时间（分钟）
         """
         if not title or not title.strip():
             return self._error('标题不能为空')
@@ -149,6 +160,18 @@ class TodoAPI:
             related_plan_id=related_plan_id,
             time_estimate=time_estimate,
         )
+
+        # v0.5.0: 设置新字段
+        if priority_rank or urgent or important or start_time or estimated_time:
+            self._storage.update_todo(
+                todo.id,
+                priority_rank=priority_rank,
+                urgent=urgent,
+                important=important,
+                start_time=start_time,
+                estimated_time=estimated_time,
+            )
+            todo = self._storage.get_todo_by_id(todo.id)
 
         # 发射事件（用于跨模块联动）
         emit_todo_created(todo.to_dict())
@@ -278,11 +301,15 @@ class TodoAPI:
         color: str = '#6366f1',
         icon: str = 'circle',
         description: Optional[str] = None,
+        difficulty: int = 5,
+        ascii_icon: Optional[str] = None,
+        pinned: bool = False,
     ) -> dict:
         """
         创建新分类
 
         POST /api/categories
+        v0.5.0: 新增 difficulty, ascii_icon, pinned 参数
         """
         if not name or not name.strip():
             return self._error('分类名称不能为空')
@@ -292,6 +319,9 @@ class TodoAPI:
             color=color,
             icon=icon,
             description=description,
+            difficulty=difficulty,
+            ascii_icon=ascii_icon,
+            pinned=pinned,
         )
         return self._success(category.to_dict(), '分类创建成功')
 
@@ -555,3 +585,90 @@ class TodoAPI:
         if result['success']:
             return self._success(result, result['message'])
         return self._error(result['message'])
+
+    # ========== v0.5.0 优先排位分接口 ==========
+
+    def get_scores(self) -> dict:
+        """
+        获取所有待办的优先排位分
+
+        GET /api/todos/scores
+        返回：
+            {todo_id: score} 映射
+        """
+        from .priority import calc_all_scores, format_score_display
+
+        if not self._storage._loaded:
+            self._storage.load()
+
+        todos = self._storage._todos
+        categories = self._storage._categories
+
+        scores = calc_all_scores(todos, categories)
+        formatted = {
+            todo_id: {
+                'score': score,
+                'display': format_score_display(score),
+            }
+            for todo_id, score in scores.items()
+        }
+
+        return self._success({
+            'scores': formatted,
+            'calculated_at': TimeHelper.now_iso(),
+        })
+
+    def get_category_scores(self) -> dict:
+        """
+        获取分类的优先排位分
+
+        GET /api/categories/scores
+        返回：
+            {category_id: score} 映射
+        """
+        from .priority import calc_category_score, format_score_display
+
+        if not self._storage._loaded:
+            self._storage.load()
+
+        todos = self._storage._todos
+        categories = self._storage._categories
+
+        scores = calc_category_score(todos, categories)
+        formatted = {
+            cat_id: {
+                'score': score,
+                'display': format_score_display(int(score)),
+            }
+            for cat_id, score in scores.items()
+        }
+
+        return self._success({
+            'scores': formatted,
+            'calculated_at': TimeHelper.now_iso(),
+        })
+
+    def get_todo_score(self, todo_id: str) -> dict:
+        """
+        获取单个待办的优先排位分
+
+        GET /api/todos/:id/score
+        """
+        from .priority import calc_priority_score, format_score_display
+
+        todo = self._storage.get_todo_by_id(todo_id)
+        if not todo:
+            return self._error('待办不存在', 404)
+
+        category = self._storage.get_category_by_id(todo.category)
+        if not category:
+            return self._error('分类不存在', 404)
+
+        score = calc_priority_score(todo, category)
+
+        return self._success({
+            'todo_id': todo_id,
+            'score': score,
+            'display': format_score_display(score),
+            'calculated_at': TimeHelper.now_iso(),
+        })
