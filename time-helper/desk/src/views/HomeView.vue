@@ -3,10 +3,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X } from 'lucide-vue-next'
+import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X, Inbox as InboxIcon } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
+import EmptyState from '@/components/EmptyState.vue'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -161,8 +162,7 @@ onUnmounted(() => {
         </div>
         <div class="inbox-panel-body">
           <div v-if="inboxEntries.length === 0" class="inbox-empty">
-            <Inbox :size="32" class="inbox-empty-icon" />
-            <p>暂无消息</p>
+            <EmptyState :icon="InboxIcon" title="暂无消息" description="所有通知将显示在这里" />
           </div>
           <div v-else class="inbox-panel-list">
             <div
@@ -276,7 +276,13 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="stats-content" v-else>
-            <p class="empty-hint">暂无计划数据，点击前往管理</p>
+            <EmptyState
+              :icon="ClipboardList"
+              title="暂无计划数据"
+              description="创建计划后即可查看今日进度"
+              action-text="前往管理"
+              action-route="/plan"
+            />
           </div>
         </div>
       </section>
@@ -472,19 +478,7 @@ onUnmounted(() => {
 }
 
 .inbox-empty {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--color-text-tertiary);
-}
-
-.inbox-empty-icon {
-  opacity: 0.3;
-  margin-bottom: var(--spacing-sm);
-}
-
-.inbox-empty p {
-  margin: var(--spacing-xs) 0;
-  font-size: 0.875rem;
+  padding: var(--spacing-lg);
 }
 
 .inbox-panel-list {
@@ -881,7 +875,7 @@ onUnmounted(() => {
   text-align: center;
   color: var(--color-text-tertiary);
   font-size: 0.875rem;
-  padding: var(--spacing-lg) 0;
+  padding: var(--spacing-md) 0;
 }
 
 .nav-buttons {
@@ -913,7 +907,7 @@ onUnmounted(() => {
 }
 
 .nav-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.96);
 }
 
 .checkin-nav {
