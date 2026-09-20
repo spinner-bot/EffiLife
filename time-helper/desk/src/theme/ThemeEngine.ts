@@ -2260,6 +2260,194 @@ const themePresets: Record<string, () => ThemeStyle> = {
     }
   },
 
+
+  // ============ 海底神殿 — 光线 + 气泡 + 水草 + 鱼群 ============
+  underwater_temple: () => {
+    const bubbles = Array.from({ length: 40 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 4 + 1.5, vy: -(Math.random() * 0.0003 + 0.0001),
+      wp: Math.random() * Math.PI * 2, wa: Math.random() * 0.00015 + 0.00005,
+      o: Math.random() * 0.4 + 0.15
+    }))
+    const seaweed = Array.from({ length: 8 }, () => ({
+      x: Math.random() * 0.9 + 0.05, h: Math.random() * 0.15 + 0.08,
+      seg: Math.floor(Math.random() * 4) + 5,
+      phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.001 + 0.0005,
+      amp: Math.random() * 8 + 5, hue: 130 + Math.random() * 30
+    }))
+    const fish = Array.from({ length: 15 }, (_, i) => ({
+      ox: (Math.random() - 0.5) * 0.08, oy: (Math.random() - 0.5) * 0.04,
+      s: Math.random() * 5 + 4, phase: i * 0.5,
+      hue: Math.random() > 0.7 ? 35 : (Math.random() * 20 + 190)
+    }))
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.00003, vy: (Math.random() - 0.5) * 0.00003,
+      s: Math.random() * 1.2 + 0.3, o: Math.random() * 0.25 + 0.05
+    }))
+    return {
+      bgColor: '#0a2a2a',
+      bgGradient: 'linear-gradient(to bottom, #083838 0%, #0a2a2a 40%, #0a1a20 70%, #061218 100%)',
+      textColor: '#a0d8d0',
+      textSecondary: '#70a8a0',
+      textTertiary: '#508078',
+      borderColor: 'rgba(80, 200, 180, 0.15)',
+      buttonBg: 'rgba(80, 200, 180, 0.08)',
+      buttonText: '#a0d8d0',
+      accentColor: '#e8a090',
+      cardBg: 'rgba(10, 30, 35, 0.8)',
+      backdropFilter: 'blur(8px)',
+      boxShadow: '0 4px 20px rgba(0, 30, 40, 0.5)',
+      renderCanvas: (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+        // L1: Deep ocean gradient
+        const bg = ctx.createLinearGradient(0, 0, 0, h)
+        bg.addColorStop(0, '#0c3a3a'); bg.addColorStop(0.3, '#0a2a2a')
+        bg.addColorStop(0.7, '#0a1a20'); bg.addColorStop(1, '#061218')
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h)
+
+        // L2: Caustics (animated light patterns on the floor)
+        ctx.save(); ctx.globalAlpha = 0.04; ctx.globalCompositeOperation = 'screen'
+        for (let i = 0; i < 12; i++) {
+          const cx = (i * w / 12 + Math.sin(t * 0.0003 + i) * 40) % w
+          const cy = h * 0.8 + Math.cos(t * 0.0004 + i * 2) * 20
+          const cr = 40 + Math.sin(t * 0.0005 + i * 1.5) * 15
+          const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr)
+          cg.addColorStop(0, 'rgba(150,220,200,0.5)'); cg.addColorStop(1, 'rgba(150,220,200,0)')
+          ctx.fillStyle = cg; ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2)
+        }
+        ctx.restore()
+
+        // L3: God rays from surface
+        ctx.save(); ctx.globalCompositeOperation = 'screen'
+        const rays = [
+          { x: 0.2, w: 0.08, a: 0.04, sp: 0.0002, ph: 0 },
+          { x: 0.5, w: 0.1, a: 0.05, sp: 0.00015, ph: 1.5 },
+          { x: 0.75, w: 0.07, a: 0.035, sp: 0.00025, ph: 3 },
+        ]
+        for (const r of rays) {
+          const sway = Math.sin(t * r.sp + r.ph) * 0.03
+          const alpha = r.a * (0.7 + Math.sin(t * r.sp * 2 + r.ph) * 0.3)
+          const rx = (r.x + sway) * w, rw = r.w * w
+          const rg = ctx.createLinearGradient(rx, 0, rx + rw * 0.5, h * 0.8)
+          rg.addColorStop(0, `rgba(150,220,200,${alpha})`)
+          rg.addColorStop(0.5, `rgba(120,200,180,${alpha * 0.5})`)
+          rg.addColorStop(1, 'rgba(100,180,160,0)')
+          ctx.fillStyle = rg
+          ctx.beginPath()
+          ctx.moveTo(rx - rw / 2, 0); ctx.lineTo(rx + rw / 2, 0)
+          ctx.lineTo(rx + rw, h * 0.8); ctx.lineTo(rx - rw * 0.3, h * 0.8)
+          ctx.closePath(); ctx.fill()
+        }
+        ctx.restore()
+
+        // L4: Temple columns at bottom
+        const colY = h * 0.85
+        const cols = [0.15, 0.35, 0.55, 0.75, 0.9]
+        for (const cx of cols) {
+          const px = cx * w
+          const colGrad = ctx.createLinearGradient(px - 12, colY, px + 12, colY)
+          colGrad.addColorStop(0, 'rgba(60,80,75,0.5)')
+          colGrad.addColorStop(0.5, 'rgba(80,100,90,0.6)')
+          colGrad.addColorStop(1, 'rgba(50,70,65,0.4)')
+          ctx.fillStyle = colGrad
+          ctx.fillRect(px - 12, colY, 24, h - colY)
+          // Column capital
+          ctx.fillStyle = 'rgba(70,90,80,0.5)'
+          ctx.fillRect(px - 16, colY - 4, 32, 8)
+          // Cracks/aging
+          ctx.strokeStyle = 'rgba(40,60,55,0.3)'; ctx.lineWidth = 0.5
+          ctx.beginPath(); ctx.moveTo(px - 3, colY + 10); ctx.lineTo(px + 2, colY + 30); ctx.stroke()
+        }
+        // Floor
+        const floorGrad = ctx.createLinearGradient(0, h * 0.95, 0, h)
+        floorGrad.addColorStop(0, 'rgba(40,60,55,0.3)')
+        floorGrad.addColorStop(1, 'rgba(180,160,100,0.15)')
+        ctx.fillStyle = floorGrad; ctx.fillRect(0, h * 0.95, w, h * 0.05)
+
+        // L5: Seaweed (multi-segment swaying)
+        for (const sw of seaweed) {
+          const baseX = sw.x * w, baseY = h * 0.95
+          const segH = (sw.h * h) / sw.seg
+          let px = baseX, py = baseY
+          ctx.beginPath(); ctx.moveTo(px, py)
+          for (let si = 0; si < sw.seg; si++) {
+            const sway = Math.sin(t * sw.speed + sw.phase + si * 0.4) * sw.amp * (si / sw.seg)
+            px = baseX + sway; py = baseY - (si + 1) * segH
+            ctx.lineTo(px, py)
+          }
+          ctx.strokeStyle = `hsla(${sw.hue},50%,35%,0.6)`; ctx.lineWidth = 3; ctx.stroke()
+          // Leaf blobs
+          for (let si = 1; si < sw.seg; si += 2) {
+            const sway = Math.sin(t * sw.speed + sw.phase + si * 0.4) * sw.amp * (si / sw.seg)
+            const lx = baseX + sway, ly = baseY - si * segH
+            ctx.beginPath(); ctx.ellipse(lx + 5, ly, 4, 2, 0.3, 0, Math.PI * 2)
+            ctx.fillStyle = `hsla(${sw.hue},45%,40%,0.4)`; ctx.fill()
+          }
+        }
+
+        // L6: Bubbles (rising with wobble)
+        for (const b of bubbles) {
+          b.wp += 0.015; b.y += b.vy
+          b.x += Math.sin(b.wp) * b.wa
+          if (b.y < -0.03) { b.y = 1.03; b.x = Math.random() }
+          const bx = b.x * w, by = b.y * h
+          // Highlight
+          ctx.beginPath(); ctx.arc(bx, by, b.r, 0, Math.PI * 2)
+          ctx.strokeStyle = `rgba(180,230,220,${b.o})`; ctx.lineWidth = 0.8; ctx.stroke()
+          ctx.beginPath(); ctx.arc(bx - b.r * 0.25, by - b.r * 0.25, b.r * 0.3, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(220,250,240,${b.o * 0.5})`; ctx.fill()
+        }
+
+        // L7: Fish school (boid-like, following a leader path)
+        const schoolX = (Math.sin(t * 0.0002) * 0.3 + 0.5) * w
+        const schoolY = h * 0.35 + Math.sin(t * 0.00015) * h * 0.1
+        const dirX = Math.cos(t * 0.0002) * 0.3
+        const dirY = Math.sin(t * 0.00015) * 0.1
+        for (const f of fish) {
+          const fx = schoolX + f.ox * w + Math.sin(t * 0.001 + f.phase) * 10
+          const fy = schoolY + f.oy * h + Math.cos(t * 0.0012 + f.phase) * 6
+          const angle = Math.atan2(dirY, dirX)
+          ctx.save(); ctx.translate(fx, fy)
+          if (dirX < 0) ctx.scale(-1, 1) // flip direction
+          ctx.rotate(angle * 0.3)
+          // Fish body
+          ctx.fillStyle = `hsla(${f.hue},60%,55%,0.6)`
+          ctx.beginPath(); ctx.ellipse(0, 0, f.s, f.s * 0.4, 0, 0, Math.PI * 2); ctx.fill()
+          // Tail
+          ctx.beginPath(); ctx.moveTo(-f.s, 0)
+          ctx.lineTo(-f.s * 1.5, -f.s * 0.35)
+          ctx.lineTo(-f.s * 1.5, f.s * 0.35); ctx.closePath(); ctx.fill()
+          // Eye
+          ctx.fillStyle = 'rgba(255,255,255,0.7)'
+          ctx.beginPath(); ctx.arc(f.s * 0.4, -f.s * 0.1, f.s * 0.12, 0, Math.PI * 2); ctx.fill()
+          ctx.restore()
+        }
+
+        // L8: Floating plankton particles
+        for (const p of particles) {
+          p.x += p.vx; p.y += p.vy
+          if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0
+          if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0
+          const px = p.x * w, py = p.y * h
+          ctx.beginPath(); ctx.arc(px, py, p.s, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(160,220,200,${p.o})`; ctx.fill()
+        }
+
+        // L9: Title
+        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.font = `bold ${Math.min(36, w * 0.03)}px "PingFang SC","Microsoft YaHei",sans-serif`
+        ctx.shadowColor = 'rgba(100,200,180,0.3)'; ctx.shadowBlur = 15
+        ctx.fillStyle = 'rgba(160,216,208,0.1)'; ctx.fillText('海底神殿', w / 2, h / 2)
+        ctx.shadowBlur = 0; ctx.restore()
+
+        // L10: Underwater fog vignette
+        const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.65)
+        vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(6,18,24,0.55)')
+        ctx.fillStyle = vig; ctx.fillRect(0, 0, w, h)
+      }
+    }
+  },
+
 }
 
 // 辅助函数：画花朵
