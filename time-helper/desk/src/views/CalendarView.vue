@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3, Clock, X } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3, Clock, X, CalendarDays } from 'lucide-vue-next'
 import { DataService, hoursToHm } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import type { RealTimeStat, TimeRecord } from '@/types'
 
 const router = useRouter()
@@ -308,6 +309,18 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- 本月无数据时显示 EmptyState -->
+      <template v-if="!isLoading && monthStats.daysWithRecords === 0">
+        <EmptyState
+          :icon="CalendarDays"
+          title="本月暂无记录"
+          description="切换月份查看历史数据，或开始记录今天的时间"
+          action-text="去记录"
+          action-route="/plan"
+        />
+      </template>
+      <template v-else>
+
       <!-- 年度热力图 -->
       <div class="heatmap-section" v-if="showHeatmap">
         <div class="section-header-row">
@@ -437,6 +450,7 @@ onMounted(() => {
           <span>快速翻页</span>
         </label>
       </div>
+      </template>
     </main>
 
     <!-- 日期详情弹窗 -->
