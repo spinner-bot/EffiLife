@@ -426,3 +426,118 @@ class TodoAPI:
 
         todo = self._storage.get_todo_by_id(todo_id)
         return self._success(todo.to_dict(), '时间已记录')
+
+    # ========== v0.3.0 新增接口 ==========
+
+    def toggle_pin(self, todo_id: str) -> dict:
+        """
+        切换待办置顶状态
+
+        POST /api/todos/:id/pin
+        """
+        todo = self._storage.get_todo_by_id(todo_id)
+        if not todo:
+            return self._error('待办不存在', 404)
+
+        todo.toggle_pin()
+        self._storage._save_todos()
+        return self._success(todo.to_dict(), '已置顶' if todo.pinned else '已取消置顶')
+
+    def reorder(self, ids: list) -> dict:
+        """
+        重新排序待办
+
+        PUT /api/todos/reorder
+        参数：
+            ids: 按新顺序排列的待办 ID 列表
+        """
+        for i, todo_id in enumerate(ids):
+            todo = self._storage.get_todo_by_id(todo_id)
+            if todo:
+                self._storage.update_todo(todo_id, sort_order=i)
+        return self._success(message='排序已更新')
+
+    def get_warning_todos(self) -> dict:
+        """
+        获取即将到期的待办（在 deadline_warning_days 天内）
+
+        GET /api/todos/warning
+        """
+        if not self._storage._loaded:
+            self._storage.load()
+
+        todos = [t for t in self._storage._todos if t.needs_warning()]
+        return self._success([t.to_dict() for t in todos])
+
+    def export_data(self, format: str = 'json') -> dict:
+        """
+        导出数据
+
+        GET /api/export?format=json|csv
+        """
+        from .export import TodoExporter
+        exporter = TodoExporter(self._storage)
+
+        if format == 'csv':
+            data = exporter.export_csv()
+        else:
+            data = exporter.export_json()
+
+        return self._success({'format': format, 'data': data})
+
+    def import_data(self, data: str, format: str = 'json', merge: bool = True) -> dict:
+        """
+        导入数据
+
+        POST /api/import
+        参数：
+            data: JSON 或 CSV 数据
+            format: json|csv
+            merge: True=合并, False=替换
+        """
+        from .export import TodoImporter
+        importer = TodoImporter(self._storage)
+
+        if format == 'csv':
+            # CSV 需要从文件导入，这里只支持 JSON 字符串导入
+            return self._error('CSV 导入需要文件路径')
+
+        result = importer.import_json(data, merge=merge)
+        if result['success']:
+            return self._success(result, result['message'])
+        return self._error(result['message'])
+
+    def create_backup(self) -> dict:
+        """
+        创建数据备份
+
+        POST /api/backup
+        """
+        from .export import AutoBackup
+        backup = AutoBackup(self._storage)
+        filepath = backup.run_backup()
+        return self._success({'path': filepath}, '备份创建成功')
+
+    def list_backups(self) -> dict:
+        """
+        获取备份列表
+
+        GET /api/backups
+        """
+        from .export import AutoBackup
+        backup = AutoBackup(self._storage)
+        backups = backup.get_backup_list()
+        return self._success(backups)
+
+    def restore_backup(self, filepath: str) -> dict:
+        """
+        从备份恢复数据
+
+        POST /api/backup/restore
+        """
+        from .export import AutoBackup
+        backup = AutoBackup(self._storage)
+        result = backup.restore_backup(filepath)
+        if result['success']:
+            return self._success(result, result['message'])
+        return self._error(result['message'])
