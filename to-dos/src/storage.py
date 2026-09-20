@@ -176,7 +176,8 @@ class TodoStorage:
         updatable_fields = {
             'title', 'description', 'deadline', 'priority', 'category',
             'tags', 'related_plan_id', 'time_estimate', 'time_spent',
-            'notes', 'status',
+            'notes', 'status', 'recurrence', 'deadline_warning_days',
+            'sort_order', 'pinned',
         }
 
         for key, value in kwargs.items():

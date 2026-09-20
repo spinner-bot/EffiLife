@@ -74,6 +74,14 @@ class Category:
 
 
 @dataclass
+class RecurrenceType(str, Enum):
+    """重复类型"""
+    NONE = 'none'
+    DAILY = 'daily'
+    WEEKLY = 'weekly'
+    MONTHLY = 'monthly'
+
+
 class Todo:
     """待办事项核心数据结构"""
     id: str                           # 唯一编号：TODO-YYYYMMDD-XXXX
@@ -92,6 +100,11 @@ class Todo:
     time_estimate: Optional[int] = None    # 预估时间（分钟）
     time_spent: Optional[int] = None       # 实际花费（分钟）
     notes: Optional[str] = None
+    # v0.3.0 新增字段
+    recurrence: RecurrenceType = RecurrenceType.NONE
+    deadline_warning_days: int = 3         # 提前几天警告
+    sort_order: int = 0                    # 自定义排序
+    pinned: bool = False                   # 是否置顶
 
     def to_dict(self) -> dict:
         """转换为字典"""
@@ -115,6 +128,10 @@ class Todo:
             'time_estimate': self.time_estimate,
             'time_spent': self.time_spent,
             'notes': self.notes,
+            'recurrence': self.recurrence.value if isinstance(self.recurrence, RecurrenceType) else self.recurrence,
+            'deadline_warning_days': self.deadline_warning_days,
+            'sort_order': self.sort_order,
+            'pinned': self.pinned,
         }
 
     @classmethod
@@ -136,6 +153,13 @@ class Todo:
         if isinstance(status, str):
             status = TodoStatus(status)
 
+        recurrence = data.get('recurrence', 'none')
+        if isinstance(recurrence, str):
+            try:
+                recurrence = RecurrenceType(recurrence)
+            except ValueError:
+                recurrence = RecurrenceType.NONE
+
         return cls(
             id=data.get('id', ''),
             title=data.get('title', ''),
@@ -153,6 +177,10 @@ class Todo:
             time_estimate=data.get('time_estimate'),
             time_spent=data.get('time_spent'),
             notes=data.get('notes'),
+            recurrence=recurrence,
+            deadline_warning_days=data.get('deadline_warning_days', 3),
+            sort_order=data.get('sort_order', 0),
+            pinned=data.get('pinned', False),
         )
 
     def is_overdue(self) -> bool:
@@ -164,6 +192,23 @@ class Todo:
             return datetime.now() > deadline_dt
         except ValueError:
             return False
+
+    def needs_warning(self) -> bool:
+        """检查是否需要截止提醒（在 deadline_warning_days 天内到期）"""
+        if not self.deadline or self.status in (TodoStatus.COMPLETED, TodoStatus.CANCELLED):
+            return False
+        try:
+            deadline_dt = datetime.fromisoformat(self.deadline)
+            now = datetime.now()
+            diff = (deadline_dt - now).days
+            return 0 <= diff <= self.deadline_warning_days
+        except ValueError:
+            return False
+
+    def toggle_pin(self):
+        """切换置顶状态"""
+        self.pinned = not self.pinned
+        self.updated_at = datetime.now().isoformat()
 
     def complete(self, time_spent: Optional[int] = None):
         """标记完成"""
