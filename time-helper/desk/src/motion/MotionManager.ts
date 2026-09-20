@@ -6,7 +6,7 @@ export interface MotionSettings {
   enabled: boolean
 
   // 帧率设置
-  targetFps: number  // 目标帧率：30, 60, 90, 120
+  targetFps: number  // 目标帧率：5, 10, 15, 30
 
   // 动画效果开关
   themeCanvasEnabled: boolean    // 主题画布动画
@@ -26,7 +26,7 @@ export interface MotionSettings {
 
 export const DEFAULT_MOTION_SETTINGS: MotionSettings = {
   enabled: true,
-  targetFps: 120,
+  targetFps: 30,
   themeCanvasEnabled: true,
   particleEnabled: true,
   transitionEnabled: true,
@@ -211,52 +211,24 @@ class MotionManagerClass {
   }
 
   private generateRecommendation(result: { fps: number; score: number }): MotionSettings {
-    const base = { ...DEFAULT_MOTION_SETTINGS }
+    // 只推荐 FPS，保持其他设置不变
+    const currentSettings = { ...motionState.settings }
 
-    if (result.score >= 90) {
-      // 顶级设备 - 120fps
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 120,
-        themeCanvasEnabled: true,
-        particleEnabled: true,
-        transitionEnabled: true,
-        particleCountMultiplier: 2.0
-      }
-    } else if (result.score >= 75) {
-      // 高性能设备 - 90fps
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 90,
-        themeCanvasEnabled: true,
-        particleEnabled: true,
-        transitionEnabled: true,
-        particleCountMultiplier: 1.5
-      }
+    let recommendedFps: number
+    if (result.score >= 80) {
+      recommendedFps = 30  // 高性能 -> 30 FPS
     } else if (result.score >= 50) {
-      // 中等性能设备 - 60fps
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 60,
-        themeCanvasEnabled: true,
-        particleEnabled: true,
-        transitionEnabled: true,
-        particleCountMultiplier: 1.0
-      }
+      recommendedFps = 15  // 中等性能 -> 15 FPS
+    } else if (result.score >= 25) {
+      recommendedFps = 10  // 较低性能 -> 10 FPS
     } else {
-      // 低性能设备 - 30fps
-      return {
-        ...base,
-        enabled: true,
-        targetFps: 30,
-        themeCanvasEnabled: true,
-        particleEnabled: false,
-        transitionEnabled: true,
-        particleCountMultiplier: 0.5
-      }
+      recommendedFps = 5   // 低性能 -> 5 FPS
+    }
+
+    // 只改变 FPS，其他设置保持用户当前的选择
+    return {
+      ...currentSettings,
+      targetFps: recommendedFps
     }
   }
 

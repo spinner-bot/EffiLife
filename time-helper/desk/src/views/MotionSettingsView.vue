@@ -15,10 +15,10 @@ const recommendation = ref<MotionSettings | null>(null)
 
 // 帧率选项
 const fpsOptions = [
-  { value: 30, label: '30 FPS', description: '省电模式' },
-  { value: 60, label: '60 FPS', description: '标准模式' },
-  { value: 90, label: '90 FPS', description: '流畅模式' },
-  { value: 120, label: '120 FPS', description: '极致模式' }
+  { value: 5, label: '5 FPS', description: '极低功耗' },
+  { value: 10, label: '10 FPS', description: '省电模式' },
+  { value: 15, label: '15 FPS', description: '平衡模式' },
+  { value: 30, label: '30 FPS', description: '流畅模式' }
 ]
 
 // 粒子数量倍率选项
@@ -80,11 +80,12 @@ function resetToDefault() {
   if (!confirm('确定恢复默认动效设置？')) return
   MotionManager.updateSettings({
     enabled: true,
-    targetFps: 60,
+    targetFps: 30,
     themeCanvasEnabled: true,
     particleEnabled: true,
     transitionEnabled: true,
     particleCountMultiplier: 1.0,
+    animationSpeed: 1.0,
     autoOptimize: false
   })
   settings.value = MotionManager.getSettings()
@@ -280,12 +281,10 @@ const performanceRating = computed(() => getPerformanceRating())
 
           <!-- 推荐设置 -->
           <div v-if="showRecommendation && recommendation" class="recommendation">
-            <h4>推荐设置</h4>
+            <h4>推荐帧率</h4>
             <div class="rec-details">
-              <span>帧率：{{ recommendation.targetFps }} FPS</span>
-              <span>主题画布：{{ recommendation.themeCanvasEnabled ? '开' : '关' }}</span>
-              <span>粒子效果：{{ recommendation.particleEnabled ? '开' : '关' }}</span>
-              <span>过渡动画：{{ recommendation.transitionEnabled ? '开' : '关' }}</span>
+              <span>建议设置为：<strong>{{ recommendation.targetFps }} FPS</strong></span>
+              <span>（仅调整帧率，不影响粒子密度等其他设置）</span>
             </div>
             <button class="btn primary" @click="applyRecommendation">
               <Check :size="16" />
