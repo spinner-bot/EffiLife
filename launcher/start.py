@@ -38,8 +38,13 @@ def find_npm():
 
 
 def get_time_helper_cmd():
-    """Get command for time-helper, preferring compiled exe"""
-    # Check for compiled exe first
+    """Get command for time-helper, prefer dev mode for latest features"""
+    npm = find_npm()
+    if npm:
+        # Dev mode - shows latest code changes
+        return [npm, "run", "dev"], "http://localhost:1420", [npm, "install"]
+
+    # Fall back to compiled exe
     exe_paths = [
         BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe",
         BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "debug" / "efflife-desk.exe",
@@ -47,11 +52,6 @@ def get_time_helper_cmd():
     for exe_path in exe_paths:
         if exe_path.exists():
             return [str(exe_path)], None, None  # cmd, url, setup
-
-    # Fall back to npm dev server
-    npm = find_npm()
-    if npm:
-        return [npm, "run", "dev"], "http://localhost:1420", [npm, "install"]
     return None, None, None
 
 
