@@ -99,7 +99,7 @@ pub struct AppState {
 // 获取数据目录
 fn get_data_dir() -> PathBuf {
     let mut path = std::env::current_dir().unwrap_or_default();
-    path.push("浪兮效率时钟");
+    path.push("data");
     if !path.exists() {
         fs::create_dir_all(&path).ok();
     }

@@ -10,7 +10,7 @@ from datetime import datetime, date, timedelta
 
 # ===================== 核心配置 =====================
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.join(_SCRIPT_DIR, "..", "浪兮效率时钟")
+ROOT_DIR = os.path.join(_SCRIPT_DIR, "..", "data")
 DATA_DIR = os.path.join(ROOT_DIR, "数据")
 CONFIG_PATH = os.path.join(ROOT_DIR, "config.json")
 PLAN_PATH = os.path.join(ROOT_DIR, "plans.json")
