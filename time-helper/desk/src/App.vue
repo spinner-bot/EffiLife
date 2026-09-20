@@ -147,7 +147,11 @@ watch(() => appStore.todayStat, () => {
 
     <!-- 主内容 -->
     <div class="app-content">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </div>
 
     <!-- 事件弹窗 -->
@@ -192,5 +196,21 @@ watch(() => appStore.todayStat, () => {
 
 .theme-text-glow {
   text-shadow: var(--theme-text-shadow, none);
+}
+
+/* 页面切换动画 */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>
