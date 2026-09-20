@@ -582,6 +582,10 @@ onMounted(() => {
   background: var(--color-bg-tertiary);
 }
 
+.back-btn:active {
+  transform: scale(0.96);
+}
+
 .header h1 {
   font-size: 1.5rem;
   font-weight: 600;
@@ -654,6 +658,10 @@ onMounted(() => {
 .nav-btn:hover {
   background: var(--color-bg-tertiary);
   color: var(--color-text-primary);
+}
+
+.nav-btn:active {
+  transform: scale(0.94);
 }
 
 .current-month {
