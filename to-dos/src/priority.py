@@ -103,7 +103,9 @@ def calc_priority_score(
     base_priority = (importance_score + urgency_score) / max(time_sufficiency, 0.001)
 
     # 优先排位分（对数域）
-    multiplier = 1.06 ** priority + 1.35 * (priority ** 1.5) - 1
+    # priority_rank=0 表示最高优先级，需要特殊处理避免 multiplier=0
+    effective_priority = max(priority, 1)
+    multiplier = 1.06 ** effective_priority + 1.35 * (effective_priority ** 1.5) - 1
     if multiplier <= 0:
         multiplier = 0.001
 

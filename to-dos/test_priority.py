@@ -39,14 +39,14 @@ def run_tests():
 
     # ========== 辅助函数 ==========
 
-    def make_todo(**kwargs):
+    def make_todo(cat_id=None, **kwargs):
         defaults = {
             'id': 'TODO-20260920-0001',
             'title': '测试任务',
             'created_at': datetime.now().isoformat(),
             'updated_at': datetime.now().isoformat(),
             'priority': Priority.NORMAL,
-            'category': 'default',
+            'category': cat_id or 'default',
             'status': TodoStatus.PENDING,
             'priority_rank': 0,
             'urgent': False,
