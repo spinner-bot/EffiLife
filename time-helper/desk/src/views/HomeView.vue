@@ -3,8 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { FileText, Calendar, FolderKanban, Settings, Flame } from 'lucide-vue-next'
+import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
+import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 
 const router = useRouter()
@@ -53,6 +54,34 @@ const stat = computed(() => appStore.todayStat)
 
 // 打卡数据（响应式，来自 CheckinSystem）
 const checkinStreak = computed(() => checkinState.currentStreak)
+const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
+
+// 收件箱未读数量
+const unreadCount = computed(() => EventSystem.getUnreadCount())
+
+// 每个类别的进度百分比
+function getTagProgress(tag: string): number {
+  if (!stat.value || !stat.value.plan_exists) return 0
+  const target = stat.value.target[tag] || 0
+  const actual = stat.value.raw_stat[tag] || 0
+  if (target <= 0) return 0
+  return Math.min(100, Math.round((actual / target) * 100))
+}
+
+// 类别是否超出目标
+function isTagExceeded(tag: string): boolean {
+  if (!stat.value) return false
+  return (stat.value.raw_stat[tag] || 0) > (stat.value.target[tag] || 0)
+}
+
+// 圆形进度条属性
+const overallProgress = computed(() => stat.value?.progress || 0)
+const circleRadius = 56
+const circleCircumference = 2 * Math.PI * circleRadius
+const overallDashOffset = computed(() => {
+  const p = overallProgress.value
+  return circleCircumference * (1 - p / 100)
+})
 
 onMounted(async () => {
   await appStore.init()
@@ -74,44 +103,87 @@ onUnmounted(() => {
   <div class="home-view">
     <header class="header">
       <h1 class="logo">浪兮效率时钟</h1>
+      <!-- 收件箱入口 -->
+      <button class="inbox-btn" @click="AudioManager.playSound('click'); router.push('/event-manager')">
+        <Inbox :size="20" />
+        <span v-if="unreadCount > 0" class="inbox-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </button>
     </header>
 
     <main class="main-content">
       <section class="clock-section">
         <div class="time-display">{{ currentTime }}</div>
         <div class="date-display">{{ currentDate }}</div>
-        <div class="checkin-badge" v-if="checkinStreak > 0">
-          <Flame :size="18" class="flame-icon" />
-          <span>连续打卡 <strong>{{ checkinStreak }}</strong> 天</span>
+        <div class="checkin-badges">
+          <div class="checkin-badge" v-if="checkinStreak > 0">
+            <Flame :size="18" class="flame-icon" />
+            <span>连续 <strong>{{ checkinStreak }}</strong> 天</span>
+          </div>
+          <div class="checkin-reminder" v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100">
+            <Bell :size="14" />
+            <span>可打卡</span>
+            <span class="red-dot"></span>
+          </div>
         </div>
       </section>
 
+      <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
         <div class="stats-card" @click="router.push('/records')">
-          <h2 class="stats-title">今日时间统计</h2>
+          <div class="stats-header-row">
+            <h2 class="stats-title">今日进度</h2>
+            <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
+          </div>
           <div class="stats-content" v-if="stat && stat.plan_exists">
-            <div
-              v-for="(target, tag) in stat.target"
-              :key="tag"
-              class="stat-item"
-              :class="{ 'is-bg-tag': tag === stat.bg_tag, 'is-exceeded': (stat.raw_stat[tag] || 0) > target }"
-            >
-              <span class="stat-prefix">{{ tag === stat.bg_tag ? '🟢 背景类别' : '🔹' }}</span>
-              <span class="stat-name">{{ tag }}</span>
-              <span class="stat-value">
-                {{ hoursToHm(stat.stat[tag] || 0) }} / {{ hoursToHm(target) }}
-              </span>
-              <span class="stat-percent">({{ Math.round((stat.raw_stat[tag] || 0) / target * 100) }}%)</span>
-              <span v-if="(stat.raw_stat[tag] || 0) > target" class="stat-exceed">
-                超出{{ hoursToHm((stat.raw_stat[tag] || 0) - target) }}
-              </span>
+            <!-- 环形总完成度 -->
+            <div class="overall-progress-ring">
+              <svg class="ring-svg" viewBox="0 0 128 128">
+                <circle
+                  class="ring-bg"
+                  cx="64" cy="64" :r="circleRadius"
+                  fill="none" stroke-width="8"
+                />
+                <circle
+                  class="ring-fg"
+                  cx="64" cy="64" :r="circleRadius"
+                  fill="none" stroke-width="8"
+                  :stroke="getProgressColor(overallProgress)"
+                  :stroke-dasharray="circleCircumference"
+                  :stroke-dashoffset="overallDashOffset"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <div class="ring-center">
+                <span class="ring-value" :style="{ color: getProgressColor(overallProgress) }">{{ overallProgress }}%</span>
+                <span class="ring-label">总完成度</span>
+              </div>
             </div>
-            <div class="progress-row">
-              <span class="progress-label">📊 有效总完成度：</span>
-              <span class="progress-value" :style="{ color: getProgressColor(stat.progress) }">
-                {{ stat.progress }}%
-              </span>
-              <span class="progress-total">（总计目标：{{ hoursToHm(Object.values(stat.target).reduce((a, b) => a + b, 0)) }}）</span>
+
+            <!-- 各分类进度条 -->
+            <div class="tag-bars">
+              <div
+                v-for="(target, tag) in stat.target"
+                :key="tag"
+                class="tag-bar-item"
+                :class="{ 'is-bg-tag': tag === stat.bg_tag, 'is-exceeded': isTagExceeded(tag) }"
+              >
+                <div class="tag-bar-header">
+                  <span class="tag-name">
+                    <span class="tag-dot" :class="{ 'bg-dot': tag === stat.bg_tag }"></span>
+                    {{ tag }}
+                  </span>
+                  <span class="tag-times">{{ hoursToHm(stat.raw_stat[tag] || 0) }} <span class="tag-target">/ {{ hoursToHm(target) }}</span></span>
+                </div>
+                <div class="tag-bar-track">
+                  <div
+                    class="tag-bar-fill"
+                    :style="{
+                      width: Math.min(100, getTagProgress(tag)) + '%',
+                      backgroundColor: isTagExceeded(tag) ? 'var(--color-error)' : getProgressColor(getTagProgress(tag))
+                    }"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="stats-content" v-else>
@@ -122,19 +194,19 @@ onUnmounted(() => {
 
       <nav class="nav-buttons">
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/records')">
-          <FileText :size="24" />
+          <FileText :size="22" />
           <span>记录</span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
-          <Calendar :size="24" />
+          <Calendar :size="22" />
           <span>日历</span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/management')">
-          <FolderKanban :size="24" />
+          <FolderKanban :size="22" />
           <span>管理</span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
-          <Settings :size="24" />
+          <Settings :size="22" />
           <span>设置</span>
         </button>
       </nav>
@@ -155,8 +227,11 @@ onUnmounted(() => {
 }
 
 .header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--spacing-md) 0;
+  position: relative;
 }
 
 .logo {
@@ -164,6 +239,49 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
+}
+
+/* 收件箱按钮 */
+.inbox-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.inbox-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.inbox-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-error);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border-radius: 9px;
+  line-height: 1;
 }
 
 .main-content {
@@ -197,11 +315,18 @@ onUnmounted(() => {
   margin-top: var(--spacing-sm);
 }
 
+.checkin-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
 .checkin-badge {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   background: linear-gradient(135deg, rgba(255, 140, 0, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%);
   border: 1px solid rgba(255, 215, 0, 0.3);
@@ -221,6 +346,39 @@ onUnmounted(() => {
 .flame-icon {
   color: #ff8c00;
   animation: flameFlicker 1.5s ease-in-out infinite;
+}
+
+/* 打卡提醒红点 */
+.checkin-reminder {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  color: var(--color-error);
+  cursor: pointer;
+  animation: reminderPulse 2s ease-in-out infinite;
+}
+
+.red-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-error);
+  border-radius: 50%;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes reminderPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.2); }
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
 }
 
 @keyframes badgePulse {
@@ -251,74 +409,144 @@ onUnmounted(() => {
   background: var(--color-bg-tertiary);
 }
 
+.stats-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
 .stats-title {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-md);
+  margin: 0;
+}
+
+.stats-date-label {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  padding: 2px 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
 }
 
 .stats-content {
   padding: var(--spacing-sm) 0;
 }
 
-.stat-item {
+/* 环形总完成度 */
+.overall-progress-ring {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin: 0 auto var(--spacing-lg);
+}
+
+.ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  stroke: var(--color-bg-tertiary);
+}
+
+.ring-fg {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+.ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) 0;
-  font-size: 0.875rem;
+  gap: 2px;
+}
+
+.ring-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.ring-label {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+/* 分类进度条 */
+.tag-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.tag-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tag-bar-item.is-exceeded .tag-bar-header .tag-name {
+  color: var(--color-error);
+}
+
+.tag-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tag-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--color-text-primary);
 }
 
-.stat-item.is-exceeded {
-  color: var(--color-error);
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  flex-shrink: 0;
 }
 
-.stat-prefix {
-  font-size: 0.75rem;
+.tag-dot.bg-dot {
+  background: var(--color-success);
+  border-radius: 50%;
 }
 
-.stat-name {
-  font-weight: 500;
-}
-
-.stat-value {
+.tag-times {
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
+  font-family: var(--font-mono);
 }
 
-.stat-percent {
+.tag-target {
   color: var(--color-text-tertiary);
 }
 
-.stat-exceed {
-  margin-left: auto;
-  font-size: 0.75rem;
-  color: var(--color-error);
+.tag-bar-track {
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-.progress-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-  font-size: 0.875rem;
-}
-
-.progress-label {
-  font-weight: 600;
-}
-
-.progress-value {
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.progress-total {
-  color: var(--color-text-tertiary);
+.tag-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  min-width: 0;
 }
 
 .empty-hint {
