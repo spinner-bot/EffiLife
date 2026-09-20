@@ -12,7 +12,7 @@ from .utils import IdGenerator, TimeHelper, format_duration
 from .storage import TodoStorage
 from .api import TodoAPI
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __all__ = [
     'Todo', 'Subtask', 'Category',
     'Priority', 'TodoStatus',
