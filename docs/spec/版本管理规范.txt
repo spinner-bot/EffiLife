@@ -5,7 +5,7 @@
 每个模块独立管理版本号，互不影响：
 
 - `time-helper/VERSION` — 当前 1.0.15
-- `plan-helper/VERSION` — 当前 0.1.0
+- `plan-helper/VERSION` — 当前 0.2.0
 - `to-dos/VERSION` — 当前 0.1.0
 
 版本号格式：`主版本.次版本.修订号`
