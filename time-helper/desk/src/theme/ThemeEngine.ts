@@ -1913,6 +1913,169 @@ const themePresets: Record<string, () => ThemeStyle> = {
     }
   },
 
+
+  // ============ 日式庭院 — 枯山水 + 樱花 + 灯笼 ============
+  japanese_garden: () => {
+    const petals = Array.from({ length: 50 }, () => ({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.3) * 0.0002, vy: Math.random() * 0.0002 + 0.00008,
+      rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.02,
+      s: Math.random() * 4 + 2, o: Math.random() * 0.5 + 0.3,
+      hue: Math.random() * 20 + 340, wp: Math.random() * Math.PI * 2
+    }))
+    const stones = [
+      { x: 0.3, y: 0.55, r: 25 }, { x: 0.55, y: 0.48, r: 18 },
+      { x: 0.7, y: 0.58, r: 30 }, { x: 0.45, y: 0.62, r: 15 },
+    ]
+    const lanterns = [
+      { x: 0.2, y: 0.4, fo: 0 }, { x: 0.8, y: 0.35, fo: 2.5 },
+    ]
+    return {
+      bgColor: '#f5f0e6',
+      bgGradient: 'linear-gradient(to bottom, #f5f0e6 0%, #ebe5d5 50%, #e0d8c8 100%)',
+      textColor: '#3a3530',
+      textSecondary: '#6b6055',
+      textTertiary: '#9a8e80',
+      borderColor: 'rgba(90, 75, 60, 0.15)',
+      buttonBg: 'rgba(90, 75, 60, 0.08)',
+      buttonText: '#3a3530',
+      accentColor: '#c47070',
+      cardBg: 'rgba(245, 240, 230, 0.8)',
+      backdropFilter: 'blur(5px)',
+      boxShadow: '0 2px 12px rgba(90, 75, 60, 0.12)',
+      renderCanvas: (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+        // L1: Paper background with warm gradient
+        const bg = ctx.createLinearGradient(0, 0, 0, h)
+        bg.addColorStop(0, '#f5f0e6'); bg.addColorStop(0.5, '#ebe5d5')
+        bg.addColorStop(1, '#ddd5c5')
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h)
+
+        // L2: Paper texture (subtle noise dots)
+        ctx.fillStyle = 'rgba(160,140,120,0.03)'
+        for (let i = 0; i < 200; i++) {
+          const tx = (i * 197.3 + 30) % w, ty = (i * 113.7 + 50) % h
+          ctx.fillRect(tx, ty, 1, 1)
+        }
+
+        // L3: Zen garden sand area
+        const sandY = h * 0.45, sandH = h * 0.45
+        ctx.fillStyle = '#e8e0d0'
+        ctx.fillRect(0, sandY, w, sandH)
+        // Raked lines (horizontal)
+        ctx.strokeStyle = 'rgba(180,170,155,0.25)'; ctx.lineWidth = 0.8
+        for (let dy = 0; dy < sandH; dy += 6) {
+          ctx.beginPath(); ctx.moveTo(0, sandY + dy)
+          for (let x = 0; x < w; x += 4) {
+            const ripple = Math.sin(x * 0.02 + dy * 0.1) * 0.5
+            ctx.lineTo(x, sandY + dy + ripple)
+          }
+          ctx.stroke()
+        }
+        // Concentric circles around stones
+        ctx.strokeStyle = 'rgba(170,160,140,0.2)'; ctx.lineWidth = 0.6
+        for (const st of stones) {
+          const sx = st.x * w, sy = sandY + st.y * sandH * 0.4 + sandH * 0.2
+          for (let r = st.r + 5; r < st.r + 40; r += 5) {
+            ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke()
+          }
+          // Stone itself
+          const sg = ctx.createRadialGradient(sx - 3, sy - 3, 0, sx, sy, st.r)
+          sg.addColorStop(0, '#8a8070'); sg.addColorStop(0.7, '#6a6050')
+          sg.addColorStop(1, '#5a5040')
+          ctx.fillStyle = sg; ctx.beginPath()
+          ctx.ellipse(sx, sy, st.r, st.r * 0.7, 0, 0, Math.PI * 2); ctx.fill()
+        }
+
+        // L4: Moss patches
+        const mosses = [
+          { x: 0.1, y: 0.42, r: 30 }, { x: 0.9, y: 0.45, r: 25 },
+          { x: 0.15, y: 0.88, r: 35 }, { x: 0.85, y: 0.9, r: 28 },
+          { x: 0.5, y: 0.92, r: 20 },
+        ]
+        for (const m of mosses) {
+          const mx = m.x * w, my = m.y * h
+          const mg = ctx.createRadialGradient(mx, my, 0, mx, my, m.r)
+          mg.addColorStop(0, 'rgba(100,130,80,0.5)')
+          mg.addColorStop(0.6, 'rgba(110,140,85,0.3)')
+          mg.addColorStop(1, 'rgba(120,150,90,0)')
+          ctx.fillStyle = mg; ctx.beginPath()
+          ctx.ellipse(mx, my, m.r * 1.3, m.r * 0.8, 0, 0, Math.PI * 2); ctx.fill()
+        }
+
+        // L5: Paper lanterns (warm glow with flicker)
+        for (const ln of lanterns) {
+          const lx = ln.x * w, ly = ln.y * h
+          const fl = (Math.sin(t * 0.002 + ln.fo) + 1) * 0.5
+            * (Math.sin(t * 0.005 + ln.fo * 1.3) + 1) * 0.5
+          const glow = 0.5 + fl * 0.5
+          // Outer glow
+          const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, 80)
+          lg.addColorStop(0, `rgba(255,200,120,${0.2 * glow})`)
+          lg.addColorStop(0.4, `rgba(255,180,100,${0.08 * glow})`)
+          lg.addColorStop(1, 'rgba(255,180,100,0)')
+          ctx.fillStyle = lg; ctx.fillRect(lx - 80, ly - 80, 160, 160)
+          // Lantern body
+          ctx.fillStyle = `rgba(240,220,180,${0.7 + glow * 0.3})`
+          ctx.beginPath()
+          ctx.ellipse(lx, ly, 12, 18, 0, 0, Math.PI * 2); ctx.fill()
+          ctx.strokeStyle = 'rgba(120,80,40,0.5)'; ctx.lineWidth = 1
+          ctx.stroke()
+          // Lantern top/bottom caps
+          ctx.fillStyle = 'rgba(100,70,40,0.6)'
+          ctx.fillRect(lx - 8, ly - 20, 16, 4)
+          ctx.fillRect(lx - 6, ly + 16, 12, 3)
+          // Post
+          ctx.fillStyle = 'rgba(100,70,40,0.4)'
+          ctx.fillRect(lx - 2, ly + 18, 4, 40)
+        }
+
+        // L6: Cherry blossom petals (falling with drift + rotation)
+        for (const p of petals) {
+          p.wp += 0.012
+          p.vx += Math.sin(p.wp) * 0.000005
+          p.x += p.vx + Math.sin(t * 0.0002) * 0.00003
+          p.y += p.vy; p.rot += p.rv
+          if (p.y > 1.05) { p.y = -0.05; p.x = Math.random() }
+          if (p.x > 1.1) p.x = -0.1; if (p.x < -0.1) p.x = 1.1
+          const px = p.x * w, py = p.y * h
+          ctx.save(); ctx.translate(px, py); ctx.rotate(p.rot)
+          ctx.globalAlpha = p.o
+          // Petal shape
+          ctx.fillStyle = `hsl(${p.hue},60%,82%)`
+          ctx.beginPath()
+          ctx.ellipse(0, 0, p.s * 0.5, p.s, 0, 0, Math.PI * 2)
+          ctx.fill()
+          // Highlight
+          ctx.fillStyle = `hsl(${p.hue},50%,90%)`
+          ctx.beginPath()
+          ctx.ellipse(-p.s * 0.15, -p.s * 0.2, p.s * 0.2, p.s * 0.4, 0, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
+        }
+
+        // L7: Branch silhouettes
+        ctx.strokeStyle = 'rgba(80,60,40,0.15)'; ctx.lineWidth = 2
+        ctx.beginPath(); ctx.moveTo(0, h * 0.15)
+        ctx.bezierCurveTo(w * 0.2, h * 0.12, w * 0.3, h * 0.18, w * 0.4, h * 0.08)
+        ctx.stroke()
+        ctx.beginPath(); ctx.moveTo(w, h * 0.1)
+        ctx.bezierCurveTo(w * 0.8, h * 0.14, w * 0.7, h * 0.06, w * 0.6, h * 0.12)
+        ctx.stroke()
+
+        // L8: Title
+        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.font = `${Math.min(32, w * 0.028)}px "PingFang SC","Microsoft YaHei",serif`
+        ctx.fillStyle = 'rgba(60,50,40,0.08)'; ctx.fillText('日式庭院', w / 2, h / 2)
+        ctx.restore()
+
+        // L9: Soft vignette
+        const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.65)
+        vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(60,50,30,0.15)')
+        ctx.fillStyle = vig; ctx.fillRect(0, 0, w, h)
+      }
+    }
+  },
+
 }
 
 // 辅助函数：画花朵
