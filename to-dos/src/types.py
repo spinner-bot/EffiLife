@@ -73,7 +73,6 @@ class Category:
         )
 
 
-@dataclass
 class RecurrenceType(str, Enum):
     """重复类型"""
     NONE = 'none'
@@ -82,6 +81,7 @@ class RecurrenceType(str, Enum):
     MONTHLY = 'monthly'
 
 
+@dataclass
 class Todo:
     """待办事项核心数据结构"""
     id: str                           # 唯一编号：TODO-YYYYMMDD-XXXX
