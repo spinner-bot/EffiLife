@@ -24,23 +24,20 @@ export const useAppStore = defineStore('app', () => {
   async function init() {
     isLoading.value = true
     try {
+      // 执行数据迁移（首次启动时）
+      await DataService.init()
+
       config.value = await DataService.loadConfig()
       plans.value = await DataService.loadPlans()
       scheduleRules.value = await DataService.loadScheduleRules()
 
-      // 如果没有记录数据，生成示例数据
-      const todayRecords = await DataService.loadRecords()
-      if (todayRecords.length === 0) {
-        // 检查是否有任何历史记录
-        let hasAnyRecords = false
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && key.startsWith('efflife_records_')) {
-            hasAnyRecords = true
-            break
-          }
-        }
-        if (!hasAnyRecords) {
+      // 如果没有记录数据，检查是否有历史记录
+      const todayRecs = await DataService.loadRecords()
+      if (todayRecs.length === 0) {
+        // 检查 IndexedDB 中是否有任何记录
+        const { isEmpty, STORE_NAMES: SN } = await import('@/storage')
+        const recordsEmpty = await isEmpty(SN.RECORDS)
+        if (recordsEmpty) {
           await DataService.generateSampleData()
           // 重新加载数据
           config.value = await DataService.loadConfig()
