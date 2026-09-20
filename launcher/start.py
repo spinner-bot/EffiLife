@@ -181,7 +181,9 @@ def run_module(choice, modules):
     print("按 Ctrl+C 停止\n")
 
     try:
-        subprocess.run(module["cmd"], cwd=module["cwd"])
+        # On Windows, use shell=True to inherit full PATH
+        use_shell = os.name == "nt"
+        subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell)
     except KeyboardInterrupt:
         print("\n已停止")
     except FileNotFoundError as e:
