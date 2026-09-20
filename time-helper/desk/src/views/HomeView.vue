@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell, CheckCircle } from 'lucide-vue-next'
+import { FileText, Calendar, FolderKanban, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -59,6 +59,37 @@ const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
 // 收件箱未读数量
 const unreadCount = computed(() => EventSystem.getUnreadCount())
 
+// 收件箱面板
+const showInboxPanel = ref(false)
+const inboxEntries = computed(() => EventSystem.getEventInbox().slice(0, 10))
+
+function toggleInboxPanel() {
+  showInboxPanel.value = !showInboxPanel.value
+}
+
+function closeInboxPanel() {
+  showInboxPanel.value = false
+}
+
+function markInboxRead(entryId: string) {
+  EventSystem.markAsRead(entryId)
+}
+
+function formatInboxTime(isoStr: string): string {
+  const d = new Date(isoStr)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffH = Math.floor(diffMs / 3600000)
+  const diffD = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return '刚刚'
+  if (diffMin < 60) return `${diffMin}分钟前`
+  if (diffH < 24) return `${diffH}小时前`
+  if (diffD < 7) return `${diffD}天前`
+  return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+}
+
 // 今天是否可打卡（计划100%完成但还没打卡）
 const canCheckinToday = computed(() => {
   if (hasCheckedInToday.value) return false
@@ -110,10 +141,62 @@ onUnmounted(() => {
     <header class="header">
       <h1 class="logo">浪兮效率时钟</h1>
       <!-- 收件箱入口 -->
-      <button class="inbox-btn" @click="AudioManager.playSound('click'); router.push('/event-manager')">
-        <Inbox :size="20" />
-        <span v-if="unreadCount > 0" class="inbox-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-      </button>
+      <div class="inbox-wrapper">
+        <button class="inbox-btn" :class="{ 'has-unread': unreadCount > 0 }" @click="AudioManager.playSound('click'); toggleInboxPanel()">
+          <Inbox :size="20" />
+          <span v-if="unreadCount > 0" class="inbox-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        </button>
+
+      <!-- 收件箱下拉面板 -->
+      <Transition name="inbox-dropdown">
+        <div v-if="showInboxPanel" class="inbox-panel">
+        <div class="inbox-panel-header">
+          <h3 class="inbox-panel-title">收件箱</h3>
+          <div class="inbox-panel-actions">
+            <button v-if="unreadCount > 0" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">全部已读</button>
+            <button class="inbox-close-btn" @click="closeInboxPanel()">
+              <X :size="16" />
+            </button>
+          </div>
+        </div>
+        <div class="inbox-panel-body">
+          <div v-if="inboxEntries.length === 0" class="inbox-empty">
+            <Inbox :size="32" class="inbox-empty-icon" />
+            <p>暂无消息</p>
+          </div>
+          <div v-else class="inbox-panel-list">
+            <div
+              v-for="entry in inboxEntries"
+              :key="entry.id"
+              class="inbox-panel-item"
+              :class="{ unread: !entry.read }"
+              @click="markInboxRead(entry.id)"
+            >
+              <span class="inbox-panel-icon">{{ entry.icon || '🔔' }}</span>
+              <div class="inbox-panel-content">
+                <div class="inbox-panel-title-row">
+                  <span class="inbox-panel-item-title">{{ entry.title }}</span>
+                  <span v-if="!entry.read" class="inbox-unread-dot"></span>
+                </div>
+                <p class="inbox-panel-msg">{{ entry.message }}</p>
+                <span class="inbox-panel-time">{{ formatInboxTime(entry.triggeredAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inbox-panel-footer">
+          <button class="inbox-panel-more" @click="closeInboxPanel(); router.push('/event-manager')">
+            查看全部
+            <ChevronRight :size="14" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+      <!-- 遮罩层 -->
+      <Transition name="fade">
+        <div v-if="showInboxPanel" class="inbox-overlay" @click="closeInboxPanel()"></div>
+      </Transition>
+      </div><!-- inbox-wrapper -->
     </header>
 
     <main class="main-content">
@@ -252,12 +335,16 @@ onUnmounted(() => {
   letter-spacing: -0.02em;
 }
 
-/* 收件箱按钮 */
-.inbox-btn {
+/* 收件箱容器 */
+.inbox-wrapper {
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
+}
+
+/* 收件箱按钮 */
+.inbox-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -293,6 +380,236 @@ onUnmounted(() => {
   font-weight: 700;
   border-radius: 9px;
   line-height: 1;
+}
+
+.inbox-btn.has-unread {
+  animation: inboxShake 4s ease-in-out infinite;
+}
+
+@keyframes inboxShake {
+  0%, 90%, 100% { transform: translateY(-50%) rotate(0deg); }
+  92% { transform: translateY(-50%) rotate(-5deg); }
+  94% { transform: translateY(-50%) rotate(5deg); }
+  96% { transform: translateY(-50%) rotate(-3deg); }
+  98% { transform: translateY(-50%) rotate(3deg); }
+}
+
+/* 收件箱下拉面板 */
+.inbox-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-height: 480px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inbox-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inbox-panel-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.inbox-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.inbox-action-btn {
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.inbox-action-btn:hover {
+  background: var(--color-bg-secondary);
+}
+
+.inbox-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.inbox-close-btn:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.inbox-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 340px;
+}
+
+.inbox-empty {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--color-text-tertiary);
+}
+
+.inbox-empty-icon {
+  opacity: 0.3;
+  margin-bottom: var(--spacing-sm);
+}
+
+.inbox-empty p {
+  margin: var(--spacing-xs) 0;
+  font-size: 0.875rem;
+}
+
+.inbox-panel-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-panel-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inbox-panel-item:last-child {
+  border-bottom: none;
+}
+
+.inbox-panel-item:hover {
+  background: var(--color-bg-secondary);
+}
+
+.inbox-panel-item.unread {
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.04);
+}
+
+.inbox-panel-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.inbox-panel-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.inbox-panel-item-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.inbox-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.inbox-panel-msg {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin: 2px 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox-panel-time {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+.inbox-panel-footer {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.inbox-panel-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.inbox-panel-more:hover {
+  background: var(--color-bg-secondary);
+}
+
+/* 收件箱动画 */
+.inbox-dropdown-enter-active,
+.inbox-dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+.inbox-dropdown-enter-from,
+.inbox-dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.inbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
 }
 
 .main-content {
