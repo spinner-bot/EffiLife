@@ -175,7 +175,8 @@ class TodoStorage:
         # 允许更新的字段
         updatable_fields = {
             'title', 'description', 'deadline', 'priority', 'category',
-            'tags', 'related_plan_id', 'time_estimate', 'notes', 'status',
+            'tags', 'related_plan_id', 'time_estimate', 'time_spent',
+            'notes', 'status',
         }
 
         for key, value in kwargs.items():
