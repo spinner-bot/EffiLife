@@ -4,6 +4,8 @@ export type Priority = 'urgent-important' | 'important' | 'urgent' | 'normal'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom'
+
 export interface Subtask {
   id: string
   title: string
@@ -28,6 +30,11 @@ export interface Todo {
   time_estimate?: number
   time_spent?: number
   notes?: string
+  // v0.3.0 新增字段
+  recurrence?: RecurrenceType
+  deadline_warning_days?: number  // 提前几天警告
+  sort_order?: number             // 自定义排序
+  pinned?: boolean                // 置顶
 }
 
 export interface Category {
@@ -69,6 +76,15 @@ export const STATUS_CONFIG: Record<TodoStatus, { label: string; color: string }>
   'cancelled': { label: '已取消', color: '#71717a' },
 }
 
+// 重复类型配置
+export const RECURRENCE_CONFIG: Record<RecurrenceType, { label: string; short: string }> = {
+  'none': { label: '不重复', short: '无' },
+  'daily': { label: '每日', short: '日' },
+  'weekly': { label: '每周', short: '周' },
+  'monthly': { label: '每月', short: '月' },
+  'custom': { label: '自定义', short: '自' },
+}
+
 // API 响应格式
 export interface ApiResponse<T = any> {
   success: boolean
@@ -84,4 +100,8 @@ export interface FilterState {
   priority: Priority | null
   category: string | null
   search: string
+  tags: string[]
 }
+
+// 排序选项
+export type SortOption = 'created_desc' | 'created_asc' | 'deadline_asc' | 'deadline_desc' | 'priority_desc' | 'custom'
