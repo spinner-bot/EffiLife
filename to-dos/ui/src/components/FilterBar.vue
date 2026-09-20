@@ -74,10 +74,10 @@ const currentSortLabel = computed(() => {
 </script>
 
 <template>
-  <div class="filter-bar" v-if="hasFilters() || store.allTags.length > 0">
+  <div class="filter-bar" v-if="hasFilters || store.allTags.length > 0">
     <!-- 筛选区域 -->
     <div class="filter-section">
-      <div class="filter-group" v-if="hasFilters()">
+      <div class="filter-group" v-if="hasFilters">
         <span class="filter-label">
           <Filter :size="12" />
           筛选
@@ -149,7 +149,7 @@ const currentSortLabel = computed(() => {
       </div>
 
       <!-- 清除筛选 -->
-      <button v-if="hasFilters()" class="clear-btn" @click="clearAll">
+      <button v-if="hasFilters" class="clear-btn" @click="clearAll">
         <X :size="14" />
         清除{{ activeFilterCount }}
       </button>
