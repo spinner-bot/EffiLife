@@ -1,4 +1,5 @@
 // 数据服务层 - 移植自 Python DataCore
+// 使用 IndexedDB 持久化存储，localStorage 作为降级方案
 
 import type {
   TimeRecord,
@@ -10,6 +11,15 @@ import type {
   RealTimeStat,
   PlanItem,
 } from '@/types'
+
+// 存储层
+import {
+  get as idbGet,
+  set as idbSet,
+  STORE_NAMES,
+  runMigration,
+  scheduleBackup,
+} from '@/storage'
 
 // 默认配置
 export const DEFAULT_CONFIG: Config = {
@@ -227,95 +237,178 @@ export function addDays(dateStr: string, days: number): string {
 }
 
 // ============ 数据存储 ============
-// 注意：实际存储通过 Tauri IPC 调用 Rust 后端实现
-// 这里提供接口定义和本地存储的 fallback
+// 使用 IndexedDB 持久化存储，localStorage 作为降级方案
+// 支持自动迁移和备份
 
 const STORAGE_PREFIX = 'efflife_'
+let migrationPromise: Promise<void> | null = null
+
+// 确保迁移已执行
+async function ensureMigration(): Promise<void> {
+  if (!migrationPromise) {
+    migrationPromise = runMigration().then((result) => {
+      if (result.migrated.length > 0) {
+        console.log(`Data migrated: ${result.migrated.join(', ')}`)
+      }
+      if (result.errors.length > 0) {
+        console.error(`Migration errors: ${result.errors.join(', ')}`)
+      }
+    })
+  }
+  return migrationPromise
+}
+
+// 触发备份（防抖）
+function triggerBackup(moduleName: string, data: unknown): void {
+  scheduleBackup(moduleName, data)
+}
 
 export const DataService = {
+  // 初始化（执行迁移）
+  async init(): Promise<void> {
+    await ensureMigration()
+  },
+
   // 配置
   async loadConfig(): Promise<Config> {
+    await ensureMigration()
     try {
-      const stored = localStorage.getItem(STORAGE_PREFIX + 'config')
+      const stored = await idbGet<Config>(STORE_NAMES.CONFIG, 'config')
       if (stored) {
-        const parsed = JSON.parse(stored)
         // 确保 theme 属性存在
-        if (!parsed.theme) {
-          parsed.theme = DEFAULT_CONFIG.theme
+        if (!stored.theme) {
+          stored.theme = DEFAULT_CONFIG.theme
         }
-        return { ...DEFAULT_CONFIG, ...parsed }
+        return { ...DEFAULT_CONFIG, ...stored }
       }
     } catch {
-      // ignore
+      // fallback to localStorage
+      try {
+        const stored = localStorage.getItem(STORAGE_PREFIX + 'config')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (!parsed.theme) {
+            parsed.theme = DEFAULT_CONFIG.theme
+          }
+          return { ...DEFAULT_CONFIG, ...parsed }
+        }
+      } catch {
+        // ignore
+      }
     }
     return DEFAULT_CONFIG
   },
 
   async saveConfig(config: Config): Promise<void> {
+    await idbSet(STORE_NAMES.CONFIG, 'config', config)
+    // 同时写入 localStorage 保持兼容
     localStorage.setItem(STORAGE_PREFIX + 'config', JSON.stringify(config))
+    triggerBackup('config', config)
   },
 
   // 计划
   async loadPlans(): Promise<Plans> {
+    await ensureMigration()
     try {
-      const stored = localStorage.getItem(STORAGE_PREFIX + 'plans')
+      const stored = await idbGet<Plans>(STORE_NAMES.PLANS, 'plans')
       if (stored) {
-        return JSON.parse(stored)
+        return stored
       }
     } catch {
-      // ignore
+      // fallback
+      try {
+        const stored = localStorage.getItem(STORAGE_PREFIX + 'plans')
+        if (stored) {
+          return JSON.parse(stored)
+        }
+      } catch {
+        // ignore
+      }
     }
     return DEFAULT_PLANS
   },
 
   async savePlans(plans: Plans): Promise<void> {
+    await idbSet(STORE_NAMES.PLANS, 'plans', plans)
     localStorage.setItem(STORAGE_PREFIX + 'plans', JSON.stringify(plans))
+    triggerBackup('plans', plans)
   },
 
   // 日程规则
   async loadScheduleRules(): Promise<ScheduleRule[]> {
+    await ensureMigration()
     try {
-      const stored = localStorage.getItem(STORAGE_PREFIX + 'rules')
+      const stored = await idbGet<ScheduleRule[]>(STORE_NAMES.SCHEDULE_RULES, 'rules')
       if (stored) {
-        return JSON.parse(stored)
+        return stored
       }
     } catch {
-      // ignore
+      // fallback
+      try {
+        const stored = localStorage.getItem(STORAGE_PREFIX + 'schedule_rules')
+        if (stored) {
+          return JSON.parse(stored)
+        }
+      } catch {
+        // ignore
+      }
     }
     return DEFAULT_SCHEDULE_RULES
   },
 
   async saveScheduleRules(rules: ScheduleRule[]): Promise<void> {
-    localStorage.setItem(STORAGE_PREFIX + 'rules', JSON.stringify(rules))
+    await idbSet(STORE_NAMES.SCHEDULE_RULES, 'rules', rules)
+    localStorage.setItem(STORAGE_PREFIX + 'schedule_rules', JSON.stringify(rules))
+    triggerBackup('schedule_rules', rules)
   },
 
   // 手动计划
   async loadManualPlans(): Promise<ManualPlans> {
+    await ensureMigration()
     try {
-      const stored = localStorage.getItem(STORAGE_PREFIX + 'manual')
+      const stored = await idbGet<ManualPlans>(STORE_NAMES.MANUAL_PLANS, 'all')
       if (stored) {
-        return JSON.parse(stored)
+        return stored
       }
     } catch {
-      // ignore
+      // fallback
+      try {
+        const stored = localStorage.getItem(STORAGE_PREFIX + 'manual_plans')
+        if (stored) {
+          return JSON.parse(stored)
+        }
+      } catch {
+        // ignore
+      }
     }
     return {}
   },
 
   async saveManualPlans(plans: ManualPlans): Promise<void> {
-    localStorage.setItem(STORAGE_PREFIX + 'manual', JSON.stringify(plans))
+    await idbSet(STORE_NAMES.MANUAL_PLANS, 'all', plans)
+    localStorage.setItem(STORAGE_PREFIX + 'manual_plans', JSON.stringify(plans))
+    triggerBackup('manual_plans', plans)
   },
 
   // 记录
   async loadRecords(day?: string): Promise<TimeRecord[]> {
+    await ensureMigration()
     const targetDay = day || getTodayDate()
     try {
-      const stored = localStorage.getItem(STORAGE_PREFIX + 'records_' + targetDay)
+      const stored = await idbGet<TimeRecord[]>(STORE_NAMES.RECORDS, targetDay)
       if (stored) {
-        return JSON.parse(stored)
+        return stored
       }
     } catch {
-      // ignore
+      // fallback
+      try {
+        const stored = localStorage.getItem(STORAGE_PREFIX + 'records_' + targetDay)
+        if (stored) {
+          return JSON.parse(stored)
+        }
+      } catch {
+        // ignore
+      }
     }
     return []
   },
@@ -324,7 +417,9 @@ export const DataService = {
     const targetDay = day || getTodayDate()
     const records = await this.loadRecords(targetDay)
     records.push(record)
+    await idbSet(STORE_NAMES.RECORDS, targetDay, records)
     localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+    triggerBackup('records', { date: targetDay, records })
   },
 
   async deleteRecord(index: number, day?: string): Promise<void> {
@@ -332,7 +427,9 @@ export const DataService = {
     const records = await this.loadRecords(targetDay)
     if (index >= 0 && index < records.length) {
       records.splice(index, 1)
+      await idbSet(STORE_NAMES.RECORDS, targetDay, records)
       localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+      triggerBackup('records', { date: targetDay, records })
     }
   },
 
@@ -341,7 +438,9 @@ export const DataService = {
     const records = await this.loadRecords(targetDay)
     if (index >= 0 && index < records.length) {
       records[index] = record
+      await idbSet(STORE_NAMES.RECORDS, targetDay, records)
       localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+      triggerBackup('records', { date: targetDay, records })
     }
   },
 
@@ -579,6 +678,7 @@ export const DataService = {
       }
 
       if (records.length > 0) {
+        await idbSet(STORE_NAMES.RECORDS, dateStr, records)
         localStorage.setItem(`efflife_records_${dateStr}`, JSON.stringify(records))
       }
     }
@@ -602,6 +702,7 @@ export const DataService = {
         tag: '工作'
       }
     ]
+    await idbSet(STORE_NAMES.RECORDS, todayStr, todayRecords)
     localStorage.setItem(`efflife_records_${todayStr}`, JSON.stringify(todayRecords))
   },
 }
