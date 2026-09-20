@@ -1,0 +1,33 @@
+# ===================== time-helper 模块级 gitignore =====================
+
+# ---------- Vue 桌面版 (desk/) ----------
+desk/node_modules/
+desk/dist/
+desk/.vite/
+desk/src-tauri/target/
+desk/src-tauri/gen/jsonSchema/
+desk/src-tauri/Cargo.lock
+*.msi
+
+# ---------- Android (android/) ----------
+android/gen-android/.gradle/
+android/gen-android/app/build/
+android/gen-android/buildSrc/build/
+android/gen-android/local.properties
+
+# ---------- Python (python/) ----------
+__pycache__/
+*.pyc
+*.pyo
+
+# ---------- 共享数据 ----------
+# 数据目录内的运行时缓存（如有）
+data/数据/*/
+
+# ---------- 通用 ----------
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
