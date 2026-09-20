@@ -9,8 +9,8 @@ EffLife/
 ├── time-helper/         # 时间记录与统计
 ├── plan-helper/         # 计划制定与日程管理
 ├── to-dos/              # 任务清单与待办追踪
-├── docs/                # 设计规范与版本管理文档
-└── data/                # 共享数据目录
+├── data/                # 共享数据目录
+└── docs/                # 设计规范与版本管理文档
 ```
 
 三个模块通过统一的共享数据目录协同工作，数据格式一致，可互相引用和联动。
@@ -27,7 +27,7 @@ EffLife/
 |------|--------|------|
 | `time-helper/python/` | Python 3 + Tkinter | 原生桌面版，单文件实现 |
 | `time-helper/desk/` | Vue 3 + Tauri (Rust) | 桌面版，支持主题、音频、动效系统 |
-| `time-helper/android/` | Tauri Mobile (Kotlin) | 移动端适配（搁置） |
+| `time-helper/android/` | Tauri Mobile (Kotlin) | 移动端适配（已搁置） |
 
 **功能概览**
 
@@ -55,9 +55,14 @@ npm run tauri dev
 
 计划制定与日程编排模块，支持周期性计划模板、日程规则配置与手动覆盖。
 
+**技术栈**: Python 3
+
+**功能概览**
+
 - 工作日 / 休息日 / 自定义计划模板
 - 周、月、年、月周等多维度日程规则
 - 手动指定日期计划覆盖
+- LLM 辅助计划生成
 - 与 time-helper 联动，自动匹配当日计划
 
 ---
@@ -65,6 +70,10 @@ npm run tauri dev
 ## to-dos / 待办事项
 
 轻量任务清单模块，专注于待办追踪与完成度管理。
+
+**技术栈**: 待定
+
+**功能概览**
 
 - 任务创建、编辑、删除
 - 优先级与截止日期设置
@@ -100,7 +109,7 @@ data/
 | 状态管理 | Pinia |
 | 样式 | Tailwind CSS |
 | 图表 | Chart.js |
-| 原生版 | Python 3 + Tkinter |
+| Python 原生版 | Python 3 + Tkinter |
 
 ---
 
