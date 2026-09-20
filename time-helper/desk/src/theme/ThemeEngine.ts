@@ -2076,6 +2076,190 @@ const themePresets: Record<string, () => ThemeStyle> = {
     }
   },
 
+
+  // ============ 维多利亚书房 — 壁炉 + 光束尘埃 + 书页 ============
+  victorian_study: () => {
+    const embers = Array.from({ length: 80 }, () => ({
+      x: 0.25 + (Math.random() - 0.5) * 0.12, y: 0.85 + Math.random() * 0.1,
+      vx: (Math.random() - 0.5) * 0.0002, vy: -(Math.random() * 0.0004 + 0.0001),
+      s: Math.random() * 2.5 + 0.5, life: Math.random(),
+      decay: Math.random() * 0.003 + 0.001, hue: Math.random() * 30 + 15
+    }))
+    const dust = Array.from({ length: 50 }, () => ({
+      x: 0.45 + Math.random() * 0.35, y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.00005, vy: (Math.random() - 0.5) * 0.00004,
+      s: Math.random() * 1.5 + 0.3, o: Math.random() * 0.4 + 0.1,
+      phase: Math.random() * Math.PI * 2
+    }))
+    const pages = Array.from({ length: 5 }, () => ({
+      x: 0.2 + Math.random() * 0.15, y: 0.7 + Math.random() * 0.15,
+      vx: Math.random() * 0.0002 + 0.0001, vy: -(Math.random() * 0.0003 + 0.0001),
+      rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.008,
+      s: Math.random() * 8 + 6, o: Math.random() * 0.3 + 0.15
+    }))
+    const bookColors = ['#5c1a1a', '#2a3a2a', '#1a2a3a', '#3a2a1a', '#3a1a2a', '#1a3a2a', '#4a3a1a', '#2a1a3a']
+    return {
+      bgColor: '#2a1510',
+      bgGradient: 'linear-gradient(to bottom, #1a0e08 0%, #2a1510 40%, #3a2218 70%, #1a0e08 100%)',
+      textColor: '#d4c4a8',
+      textSecondary: '#a89878',
+      textTertiary: '#7a6a50',
+      borderColor: 'rgba(180, 140, 80, 0.15)',
+      buttonBg: 'rgba(180, 140, 80, 0.1)',
+      buttonText: '#d4c4a8',
+      accentColor: '#c8a050',
+      cardBg: 'rgba(40, 20, 12, 0.8)',
+      backdropFilter: 'blur(8px)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+      renderCanvas: (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+        // L1: Background
+        const bg = ctx.createLinearGradient(0, 0, 0, h)
+        bg.addColorStop(0, '#1a0e08'); bg.addColorStop(0.4, '#2a1510')
+        bg.addColorStop(0.7, '#3a2218'); bg.addColorStop(1, '#1a0e08')
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h)
+
+        // L2: Wall paneling (subtle vertical lines)
+        ctx.strokeStyle = 'rgba(60,40,25,0.3)'; ctx.lineWidth = 1
+        for (let x = w * 0.05; x < w; x += w * 0.12) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h * 0.85); ctx.stroke()
+        }
+
+        // L3: Window light beam
+        const beamAlpha = 0.06 + Math.sin(t * 0.0005) * 0.015
+        ctx.save()
+        const beamGrad = ctx.createLinearGradient(w * 0.75, 0, w * 0.35, h)
+        beamGrad.addColorStop(0, `rgba(255,220,150,${beamAlpha * 1.5})`)
+        beamGrad.addColorStop(0.5, `rgba(255,200,120,${beamAlpha})`)
+        beamGrad.addColorStop(1, `rgba(255,180,100,${beamAlpha * 0.3})`)
+        ctx.fillStyle = beamGrad
+        ctx.beginPath()
+        ctx.moveTo(w * 0.7, 0); ctx.lineTo(w * 0.85, 0)
+        ctx.lineTo(w * 0.55, h); ctx.lineTo(w * 0.3, h)
+        ctx.closePath(); ctx.fill()
+        ctx.restore()
+
+        // L4: Dust in light beam
+        for (const d of dust) {
+          d.phase += 0.008
+          d.x += d.vx + Math.sin(d.phase) * 0.00002
+          d.y += d.vy + Math.cos(d.phase * 0.7) * 0.000015
+          // Wrap in beam area
+          if (d.x < 0.3) d.x = 0.8; if (d.x > 0.85) d.x = 0.35
+          if (d.y < -0.02) d.y = 1.02; if (d.y > 1.02) d.y = -0.02
+          const dx = d.x * w, dy = d.y * h
+          // Check if in beam (approximate)
+          const beamX = 0.7 - (d.y * 0.3)
+          const inBeam = d.x > beamX - 0.1 && d.x < beamX + 0.15
+          const bright = inBeam ? 1 : 0.15
+          ctx.beginPath(); ctx.arc(dx, dy, d.s, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(255,220,160,${d.o * bright})`; ctx.fill()
+        }
+
+        // L5: Bookshelf (left side)
+        const shelfX = w * 0.02, shelfW = w * 0.1
+        ctx.fillStyle = 'rgba(50,30,18,0.8)'
+        ctx.fillRect(shelfX, h * 0.05, shelfW, h * 0.75)
+        // Shelves
+        for (let sy = 0.05; sy < 0.8; sy += 0.12) {
+          ctx.fillStyle = 'rgba(70,40,25,0.9)'
+          ctx.fillRect(shelfX - 2, h * sy, shelfW + 4, 3)
+          // Books on shelf
+          let bx = shelfX + 3
+          for (let bi = 0; bi < 6 && bx < shelfX + shelfW - 3; bi++) {
+            const seed = bi * 7 + Math.floor(sy * 10) * 13
+            const bw = 4 + ((seed * 31) % 7)
+            const bh = h * 0.09 + ((seed * 17) % 10) * h * 0.002
+            ctx.fillStyle = bookColors[(bi + Math.floor(sy * 10)) % bookColors.length]
+            ctx.fillRect(bx, h * sy - bh + 3, bw, bh)
+            bx += bw + 1
+          }
+        }
+
+        // L6: Fireplace
+        const fpX = w * 0.22, fpY = h * 0.82, fpW = w * 0.18, fpH = h * 0.18
+        // Mantel
+        ctx.fillStyle = 'rgba(60,35,20,0.9)'
+        ctx.fillRect(fpX - 10, fpY - 5, fpW + 20, 8)
+        // Fireplace opening
+        ctx.fillStyle = '#0a0503'
+        ctx.beginPath()
+        ctx.moveTo(fpX, fpY + fpH); ctx.lineTo(fpX, fpY + 10)
+        ctx.quadraticCurveTo(fpX + fpW / 2, fpY - 5, fpX + fpW, fpY + 10)
+        ctx.lineTo(fpX + fpW, fpY + fpH); ctx.closePath(); ctx.fill()
+        // Fire glow
+        const flicker = 0.7 + Math.sin(t * 0.008) * 0.15 + Math.sin(t * 0.013) * 0.1
+        const fg = ctx.createRadialGradient(fpX + fpW / 2, fpY + fpH * 0.6, 0, fpX + fpW / 2, fpY + fpH * 0.6, fpW * 0.8)
+        fg.addColorStop(0, `rgba(255,150,50,${0.3 * flicker})`)
+        fg.addColorStop(0.4, `rgba(255,100,30,${0.15 * flicker})`)
+        fg.addColorStop(1, 'rgba(255,80,20,0)')
+        ctx.fillStyle = fg; ctx.fillRect(fpX - fpW * 0.3, fpY, fpW * 1.6, fpH)
+        // Flame tongues
+        for (let fi = 0; fi < 5; fi++) {
+          const fx = fpX + fpW * (0.15 + fi * 0.17)
+          const fBase = fpY + fpH * 0.8
+          const fH = fpH * (0.3 + Math.sin(t * 0.01 + fi * 1.5) * 0.15)
+          const fGrad = ctx.createLinearGradient(fx, fBase, fx, fBase - fH)
+          fGrad.addColorStop(0, `rgba(255,200,80,${0.6 * flicker})`)
+          fGrad.addColorStop(0.4, `rgba(255,120,30,${0.4 * flicker})`)
+          fGrad.addColorStop(1, 'rgba(255,60,10,0)')
+          ctx.fillStyle = fGrad
+          ctx.beginPath()
+          ctx.moveTo(fx - 6, fBase)
+          ctx.quadraticCurveTo(fx + Math.sin(t * 0.012 + fi) * 4, fBase - fH * 0.6, fx, fBase - fH)
+          ctx.quadraticCurveTo(fx + 4 + Math.sin(t * 0.009 + fi) * 3, fBase - fH * 0.4, fx + 6, fBase)
+          ctx.closePath(); ctx.fill()
+        }
+
+        // L7: Embers rising from fire
+        for (const e of embers) {
+          e.life -= e.decay
+          if (e.life <= 0) {
+            e.x = 0.25 + (Math.random() - 0.5) * 0.12; e.y = 0.85 + Math.random() * 0.05
+            e.life = 1; e.vy = -(Math.random() * 0.0004 + 0.0001)
+          }
+          e.x += e.vx + Math.sin(t * 0.003 + e.hue) * 0.00003
+          e.y += e.vy
+          const ex = e.x * w, ey = e.y * h
+          ctx.beginPath(); ctx.arc(ex, ey, e.s * e.life, 0, Math.PI * 2)
+          ctx.fillStyle = `hsla(${e.hue},100%,${50 + e.life * 30}%,${e.life * 0.6})`
+          ctx.fill()
+        }
+
+        // L8: Floating pages
+        for (const p of pages) {
+          p.x += p.vx; p.y += p.vy; p.rot += p.rv
+          p.vy -= 0.0000003 // slight upward acceleration (heat)
+          if (p.y < -0.1 || p.x > 1.1) {
+            p.x = 0.22 + Math.random() * 0.1; p.y = 0.78 + Math.random() * 0.05
+            p.vy = -(Math.random() * 0.0003 + 0.0001); p.vx = Math.random() * 0.0002 + 0.0001
+          }
+          const px = p.x * w, py = p.y * h
+          ctx.save(); ctx.translate(px, py); ctx.rotate(p.rot)
+          ctx.globalAlpha = p.o
+          ctx.fillStyle = '#f0e8d8'
+          ctx.fillRect(-p.s / 2, -p.s * 0.7, p.s, p.s * 1.4)
+          // Text lines on page
+          ctx.fillStyle = 'rgba(60,50,40,0.2)'
+          for (let li = 0; li < 4; li++) {
+            ctx.fillRect(-p.s / 2 + 2, -p.s * 0.5 + li * p.s * 0.3, p.s - 4, 1)
+          }
+          ctx.restore()
+        }
+
+        // L9: Title
+        ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.font = `bold ${Math.min(32, w * 0.028)}px "Georgia","Times New Roman",serif`
+        ctx.fillStyle = 'rgba(200,170,120,0.1)'; ctx.fillText('维多利亚书房', w / 2, h / 2)
+        ctx.restore()
+
+        // L10: Heavy vignette
+        const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.65)
+        vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(10,5,2,0.6)')
+        ctx.fillStyle = vig; ctx.fillRect(0, 0, w, h)
+      }
+    }
+  },
+
 }
 
 // 辅助函数：画花朵
