@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useTodosStore } from '@/stores/todos'
-import { X, Calendar, Tag, Clock, AlignLeft } from 'lucide-vue-next'
-import type { Priority } from '@/types'
-import { PRIORITY_CONFIG } from '@/types'
+import {
+  X, Calendar, Tag, Clock, AlignLeft, Repeat, Bell,
+  FileText, Info,
+} from 'lucide-vue-next'
+import type { Priority, RecurrenceType } from '@/types'
+import { PRIORITY_CONFIG, RECURRENCE_CONFIG } from '@/types'
 
 const props = defineProps<{
   todoId?: string | null
@@ -24,6 +27,9 @@ const category = ref('default')
 const tags = ref<string[]>([])
 const tagInput = ref('')
 const timeEstimate = ref<number | null>(null)
+const notes = ref('')
+const recurrence = ref<RecurrenceType>('none')
+const deadlineWarningDays = ref(3)
 
 // 编辑模式
 const isEditing = computed(() => !!props.todoId)
@@ -44,6 +50,9 @@ onMounted(() => {
     category.value = existingTodo.value.category
     tags.value = [...existingTodo.value.tags]
     timeEstimate.value = existingTodo.value.time_estimate || null
+    notes.value = existingTodo.value.notes || ''
+    recurrence.value = existingTodo.value.recurrence || 'none'
+    deadlineWarningDays.value = existingTodo.value.deadline_warning_days ?? 3
   }
   // 自动聚焦标题输入框
   setTimeout(() => {
@@ -76,7 +85,7 @@ function handleTagKeydown(e: KeyboardEvent) {
 function handleSubmit() {
   if (!title.value.trim()) return
 
-  const data = {
+  const data: Record<string, any> = {
     title: title.value.trim(),
     description: description.value.trim() || undefined,
     deadline: deadline.value ? new Date(deadline.value).toISOString() : undefined,
@@ -84,6 +93,9 @@ function handleSubmit() {
     category: category.value,
     tags: tags.value,
     time_estimate: timeEstimate.value || undefined,
+    notes: notes.value.trim() || undefined,
+    recurrence: recurrence.value,
+    deadline_warning_days: deadlineWarningDays.value,
   }
 
   if (isEditing.value && props.todoId) {
@@ -101,6 +113,20 @@ function handleBackdropClick(e: MouseEvent) {
     emit('close')
   }
 }
+
+const recurrenceOptions: { value: RecurrenceType; label: string }[] = [
+  { value: 'none', label: '不重复' },
+  { value: 'daily', label: '每日' },
+  { value: 'weekly', label: '每周' },
+  { value: 'monthly', label: '每月' },
+]
+
+const warningDayOptions = [
+  { value: 0, label: '当天' },
+  { value: 1, label: '1 天前' },
+  { value: 3, label: '3 天前' },
+  { value: 7, label: '1 周前' },
+]
 </script>
 
 <template>
@@ -176,6 +202,33 @@ function handleBackdropClick(e: MouseEvent) {
           />
         </div>
 
+        <!-- 行：截止日期提醒 + 重复 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">
+              <Bell :size="14" />
+              截止提醒
+            </label>
+            <select v-model.number="deadlineWarningDays" class="form-input select">
+              <option v-for="opt in warningDayOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <Repeat :size="14" />
+              重复
+            </label>
+            <select v-model="recurrence" class="form-input select">
+              <option v-for="opt in recurrenceOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
         <!-- 预估时间 -->
         <div class="form-group">
           <label class="form-label">
@@ -214,6 +267,21 @@ function handleBackdropClick(e: MouseEvent) {
           </div>
         </div>
 
+        <!-- 备注 (Markdown 支持) -->
+        <div class="form-group">
+          <label class="form-label">
+            <FileText :size="14" />
+            备注
+            <span class="label-hint">支持 Markdown</span>
+          </label>
+          <textarea
+            v-model="notes"
+            class="form-input textarea mono"
+            placeholder="添加备注或笔记（支持 Markdown 语法）...&#10;&#10;支持 **加粗**、- 列表、[链接](url) 等"
+            rows="4"
+          ></textarea>
+        </div>
+
         <!-- 提交按钮 -->
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" @click="emit('close')">
@@ -248,11 +316,11 @@ function handleBackdropClick(e: MouseEvent) {
 
 .form-modal {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   max-height: 90vh;
-  background: var(--color-bg);
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  background: var(--color-bg-elevated, var(--color-bg));
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -328,6 +396,13 @@ function handleBackdropClick(e: MouseEvent) {
   margin-bottom: 6px;
 }
 
+.label-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
 .form-input {
   width: 100%;
   padding: 10px 12px;
@@ -343,7 +418,7 @@ function handleBackdropClick(e: MouseEvent) {
   outline: none;
   border-color: var(--color-primary);
   background: var(--color-bg);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primary-muted);
 }
 
 .form-input::placeholder {
@@ -359,6 +434,12 @@ function handleBackdropClick(e: MouseEvent) {
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
+  line-height: 1.5;
+}
+
+.form-input.textarea.mono {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
 }
 
 .form-input.select {
@@ -383,7 +464,7 @@ function handleBackdropClick(e: MouseEvent) {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--color-primary-muted);
   color: var(--color-primary);
   border-radius: 14px;
   font-size: 12px;
