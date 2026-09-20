@@ -1,5 +1,26 @@
 # to-dos - 更新日志
 
+## [0.2.0] - 2026-09-20
+
+### 新增
+- Vue 3 前端界面：
+  - 主视图（看板布局）
+  - 分类侧栏组件（CategorySidebar）
+  - 待办列表组件（TodoList）
+  - 待办卡片组件（TodoItem）
+  - 新建/编辑表单弹窗（TodoForm）
+  - 筛选栏组件（FilterBar）
+- TypeScript 类型定义
+- Pinia 状态管理
+- Tailwind CSS 样式系统
+- Vite 构建配置
+- 键盘快捷键支持（N 新建、Esc 关闭）
+
+### 技术栈
+- 前端：Vue 3 + TypeScript + Tailwind CSS + Pinia
+- 图标：Lucide Vue Next
+- 构建：Vite 6
+
 ## [0.1.0] - 2026-09-20
 
 ### 新增
