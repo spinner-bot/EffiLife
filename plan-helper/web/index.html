@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>plan-helper - 计划助手</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Vue 3 from CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">📋</span>
+                    <span v-show="!sidebarCollapsed" class="logo-text">计划助手</span>
+                </div>
+                <button class="btn-icon sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
+                    {{ sidebarCollapsed ? '→' : '←' }}
+                </button>
+            </div>
+
+            <ul class="nav-list">
+                <li class="nav-item" :class="{ active: currentView === 'dashboard' }" @click="navigate('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span v-show="!sidebarCollapsed">计划总览</span>
+                </li>
+                <li class="nav-item" :class="{ active: currentView === 'calendar' }" @click="navigate('calendar')">
+                    <span class="nav-icon">📅</span>
+                    <span v-show="!sidebarCollapsed">日历视图</span>
+                </li>
+                <li class="nav-item" :class="{ active: currentView === 'templates' }" @click="navigate('templates')">
+                    <span class="nav-icon">📑</span>
+                    <span v-show="!sidebarCollapsed">计划模板</span>
+                </li>
+                <li class="nav-item" :class="{ active: currentView === 'suggestions' }" @click="navigate('suggestions')">
+                    <span class="nav-icon">💡</span>
+                    <span v-show="!sidebarCollapsed">智能建议</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button class="btn-icon" @click="showSettings = true" title="设置">
+                    ⚙️
+                </button>
+                <button class="btn-icon" @click="createBackup" title="备份数据">
+                    💾
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="breadcrumb">
+                    <span v-if="currentView === 'dashboard'">计划总览</span>
+                    <span v-else-if="currentView === 'detail'">
+                        <a @click="navigate('dashboard')">计划总览</a> / {{ selectedPlan?.name || '计划详情' }}
+                    </span>
+                    <span v-else-if="currentView === 'calendar'">日历视图</span>
+                    <span v-else-if="currentView === 'templates'">计划模板</span>
+                    <span v-else-if="currentView === 'suggestions'">智能建议</span>
+                </div>
+                <div class="top-actions">
+                    <button class="btn btn-primary" @click="showCreatePlan = true">
+                        + 新建计划
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section v-if="currentView === 'dashboard'" class="view dashboard">
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="btn btn-outline" @click="copyYesterday">📋 复制昨日计划</button>
+                    <button class="btn btn-outline" @click="navigate('templates')">📑 从模板创建</button>
+                    <button class="btn btn-outline" @click="showImport = true">📥 导入计划</button>
+                </div>
+
+                <!-- Plan Cards Grid -->
+                <div v-if="plans.length > 0" class="plan-grid">
+                    <div v-for="plan in plans" :key="plan.id" class="plan-card"
+                         @click="openPlan(plan.id)"
+                         :draggable="true"
+                         @dragstart="onDragStart($event, plan)"
+                         @dragover.prevent
+                         @drop="onDrop($event, plan)">
+                        <div class="card-header">
+                            <h3 class="card-title">{{ plan.name || '未命名计划' }}</h3>
+                            <span class="priority-dot" :class="getPriorityClass(plan)"></span>
+                        </div>
+                        <div class="card-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" :style="{ width: plan.progress_percentage + '%' }"
+                                     :class="getProgressColor(plan.progress_percentage)"></div>
+                            </div>
+                            <span class="progress-text">{{ plan.progress_percentage }}%</span>
+                        </div>
+                        <div class="card-meta">
+                            <span class="meta-item">📅 {{ formatDate(plan.date) }}</span>
+                            <span class="meta-item">✅ {{ plan.completed_tasks }}/{{ plan.total_tasks }} 任务</span>
+                            <span class="meta-item">⏱️ {{ Math.round(plan.estimated_minutes) }}分钟</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-sm" @click.stop="openPlan(plan.id)">查看详情</button>
+                            <button class="btn-sm" @click.stop="quickLog(plan.id)">记录进展</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <h2>还没有任何计划</h2>
+                    <p>点击下方按钮创建你的第一个计划，或从模板快速开始</p>
+                    <div class="empty-actions">
+                        <button class="btn btn-primary" @click="showCreatePlan = true">+ 创建计划</button>
+                        <button class="btn btn-outline" @click="navigate('templates')">浏览模板</button>
+                    </div>
+                </div>
+
+                <!-- Stats Bar -->
+                <div v-if="plans.length > 0" class="stats-bar">
+                    <div class="stat">
+                        <span class="stat-value">{{ plans.length }}</span>
+                        <span class="stat-label">活跃计划</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ totalTasks }}</span>
+                        <span class="stat-label">总任务数</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ completedTasks }}</span>
+                        <span class="stat-label">已完成</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ overallProgress }}%</span>
+                        <span class="stat-label">总进度</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Plan Detail View -->
+            <section v-if="currentView === 'detail' && planDetail" class="view detail">
+                <div class="detail-header">
+                    <div class="detail-info">
+                        <h1>{{ planDetail.name || '未命名计划' }}</h1>
+                        <div class="detail-meta">
+                            <span>📅 {{ formatDate(planDetail.date) }}</span>
+                            <span class="detail-progress">
+                                进度: {{ getDetailProgress() }}%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="btn btn-primary" @click="showAddLog = true">📝 记录进展</button>
+                        <button class="btn btn-outline" @click="exportPlan(planDetail.id)">📤 导出</button>
+                        <button class="btn btn-danger" @click="deletePlan(planDetail.id)">🗑️ 删除</button>
+                    </div>
+                </div>
+
+                <!-- Progress Overview -->
+                <div v-if="planProgress" class="progress-overview">
+                    <div class="progress-bar-large">
+                        <div class="progress-fill" :style="{ width: planProgress.progress_percentage + '%' }"
+                             :class="getProgressColor(planProgress.progress_percentage)"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>{{ planProgress.completed_tasks }}/{{ planProgress.total_tasks }} 任务完成</span>
+                        <span>⏱️ {{ planProgress.estimated_hours }} 小时</span>
+                    </div>
+                </div>
+
+                <!-- Conflict Warnings -->
+                <div v-if="planConflicts && planConflicts.has_issues" class="conflicts-panel">
+                    <div v-for="conflict in planConflicts.conflicts" :key="conflict.message" class="conflict-item error">
+                        ⚠️ {{ conflict.message }}
+                    </div>
+                    <div v-for="warning in planConflicts.warnings" :key="warning.message" class="conflict-item warning">
+                        💡 {{ warning.message }}
+                    </div>
+                </div>
+
+                <!-- Timeline / Gantt View -->
+                <div class="sections-container">
+                    <div v-for="section in planDetail.sections" :key="section.index" class="section-block">
+                        <div class="section-header">
+                            <h2>
+                                <span class="section-letter">{{ section.letter }}</span>
+                                {{ section.name }}
+                            </h2>
+                            <span v-if="section.info" class="section-info">{{ section.info }}</span>
+                        </div>
+
+                        <!-- Task List -->
+                        <div class="task-list">
+                            <div v-for="task in section.tasks" :key="task.index"
+                                 class="task-item"
+                                 :class="{ completed: task.finish, inactive: !task.is_active }"
+                                 @click="toggleTaskComplete(task, section)">
+                                <div class="task-checkbox">
+                                    <span v-if="task.finish">✅</span>
+                                    <span v-else>○</span>
+                                </div>
+                                <div class="task-content">
+                                    <span class="task-text">{{ task.content }}</span>
+                                    <span class="task-time">{{ task.time_minutes }}分钟</span>
+                                </div>
+                                <div class="task-actions">
+                                    <button v-if="!task.finish" class="btn-sm"
+                                            @click.stop="completeTask(task, section)">完成</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Groups -->
+                        <div v-if="Object.keys(section.groups).length > 0" class="groups-info">
+                            <div v-for="(group, key) in section.groups" :key="key" class="group-badge">
+                                📁 {{ group.title }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log Timeline -->
+                <div class="log-timeline" v-if="planDetail.logs && planDetail.logs.length > 0">
+                    <h3>📝 进展日志</h3>
+                    <div class="timeline">
+                        <div v-for="log in planDetail.logs" :key="log.index" class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <span class="timeline-time">{{ formatLogTime(log.time) }}</span>
+                                <span class="timeline-plan">{{ log.plan }}</span>
+                                <span class="timeline-text">{{ log.content }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="log-empty">
+                    <p>暂无进展记录，点击上方按钮添加</p>
+                </div>
+            </section>
+
+            <!-- Calendar View -->
+            <section v-if="currentView === 'calendar'" class="view calendar-view">
+                <div class="calendar-header">
+                    <button class="btn-icon" @click="calendarPrev">←</button>
+                    <h2>{{ calendarTitle }}</h2>
+                    <button class="btn-icon" @click="calendarNext">→</button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-weekdays">
+                        <span v-for="day in ['一', '二', '三', '四', '五', '六', '日']">周{{ day }}</span>
+                    </div>
+                    <div class="calendar-days">
+                        <div v-for="day in calendarDays" :key="day.dateStr"
+                             class="calendar-day"
+                             :class="{
+                                 'other-month': !day.currentMonth,
+                                 'today': day.isToday,
+                                 'has-plan': day.hasPlan
+                             }"
+                             @click="onCalendarDayClick(day)">
+                            <span class="day-number">{{ day.day }}</span>
+                            <div v-if="day.hasPlan" class="day-indicator" :class="day.planClass"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Templates View -->
+            <section v-if="currentView === 'templates'" class="view templates-view">
+                <h2>计划模板</h2>
+                <div class="template-grid">
+                    <div v-for="tmpl in templates" :key="tmpl.id" class="template-card"
+                         :class="{ 'built-in': tmpl.built_in }">
+                        <div class="template-header">
+                            <h3>{{ tmpl.name }}</h3>
+                            <span v-if="tmpl.built_in" class="badge">内置</span>
+                            <span v-else class="badge custom">自定义</span>
+                        </div>
+                        <p class="template-desc">{{ tmpl.description }}</p>
+                        <button class="btn btn-primary" @click="applyTemplate(tmpl.id)">
+                            使用此模板
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suggestions View -->
+            <section v-if="currentView === 'suggestions'" class="view suggestions-view">
+                <h2>💡 智能建议</h2>
+                <div v-if="suggestions" class="suggestions-content">
+                    <div class="suggestion-card">
+                        <h3>推荐模板</h3>
+                        <p>基于你的 {{ suggestions.total_plans }} 个历史计划，推荐使用
+                            <strong>{{ suggestions.recommended_template === 'workday' ? '工作日' : '休息日' }}</strong>模板</p>
+                    </div>
+                    <div class="suggestion-card" v-if="suggestions.top_recurring_tasks.length > 0">
+                        <h3>高频任务</h3>
+                        <ul>
+                            <li v-for="task in suggestions.top_recurring_tasks">
+                                {{ task.content }} <span class="count">×{{ task.count }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="suggestion-card">
+                        <h3>时间分布</h3>
+                        <div class="time-distribution">
+                            <div class="dist-bar">
+                                <div class="dist-fill weekday" :style="{ width: weekdayRatio + '%' }"></div>
+                            </div>
+                            <span>工作日 {{ suggestions.weekday_plans }} 个</span>
+                            <span>休息日 {{ suggestions.weekend_plans }} 个</span>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="loading">加载中...</div>
+                <button class="btn btn-outline" @click="loadSuggestions">🔄 刷新建议</button>
+            </section>
+        </main>
+
+        <!-- Create Plan Modal -->
+        <div v-if="showCreatePlan" class="modal-overlay" @click.self="showCreatePlan = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>新建计划</h2>
+                    <button class="btn-icon" @click="showCreatePlan = false">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>计划名称</label>
+                        <input v-model="newPlan.name" placeholder="例如：学习计划" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label>计划日期</label>
+                        <input v-model="newPlan.date" type="date" class="input">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" @click="showCreatePlan = false">取消</button>
+                    <button class="btn btn-primary" @click="createPlan">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Log Modal -->
+        <div v-if="showAddLog" class="modal-overlay" @click.self="showAddLog = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>记录进展</h2>
+                    <button class="btn-icon" @click="showAddLog = false">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>关联任务</label>
+                        <select v-model="newLog.taskId" class="input">
+                            <option value="base">通用 (base)</option>
+                            <option v-for="task in allTasks" :key="task.id" :value="task.id">
+                                {{ task.id }} - {{ task.content }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>进展内容</label>
+                        <input v-model="newLog.content" placeholder="完成了什么..." class="input">
+                    </div>
+                    <div class="form-group">
+                        <label>时间</label>
+                        <input v-model="newLog.time" placeholder="留空使用当前时间" class="input">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" @click="showAddLog = false">取消</button>
+                    <button class="btn btn-primary" @click="submitLog">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div v-if="showImport" class="modal-overlay" @click.self="showImport = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>导入计划</h2>
+                    <button class="btn-icon" @click="showImport = false">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>粘贴 JSON 数据</label>
+                        <textarea v-model="importJson" class="input textarea" rows="10"
+                                  placeholder='{"head": {...}, "main": [...], "log": [...]}'></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" @click="showImport = false">取消</button>
+                    <button class="btn btn-primary" @click="importPlan">导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <transition name="toast">
+            <div v-if="toast.show" class="toast" :class="toast.type">
+                {{ toast.message }}
+            </div>
+        </transition>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
