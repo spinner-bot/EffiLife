@@ -19,12 +19,12 @@ class TodoStorage:
     def __init__(self, data_dir: Optional[str] = None):
         """
         初始化存储服务
-        data_dir: 数据存储目录，默认为项目根目录下的 data/todos/
+        data_dir: 数据存储目录，默认为模块内的 data/ 目录
         """
         if data_dir is None:
-            # 默认使用 EffLife 共享数据目录
-            project_root = Path(__file__).parent.parent.parent.parent
-            data_dir = project_root / 'data' / 'todos'
+            # 默认使用 to-dos 模块本地数据目录
+            module_root = Path(__file__).parent.parent  # to-dos/
+            data_dir = module_root / 'data'
         else:
             data_dir = Path(data_dir)
 
