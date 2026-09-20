@@ -69,6 +69,11 @@ function checkProgressEvents() {
     EventSystem.checkProgressEvent(progress, planName)
   }
 
+  // 半程完成检查（50%-89%）
+  if (progress >= 50 && progress < 90) {
+    EventSystem.checkHalfProgress(progress, planName)
+  }
+
   // 检查多规则预警（支持延迟发布）
   EventSystem.checkWarnings(progress, planName)
 }

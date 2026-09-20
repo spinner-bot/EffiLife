@@ -14,9 +14,15 @@ const eventSettings = ref(EventSystem.getSettings())
 const baseEventTypes: Array<{ type: EventType; name: string; description: string }> = [
   { type: 'plan_complete_100', name: '计划完美完成', description: '当天计划完成度达到100%' },
   { type: 'plan_complete_90', name: '计划即将完成', description: '当天计划完成度达到90%' },
+  { type: 'plan_complete_50', name: '半程完成', description: '当天计划完成度达到50%' },
   { type: 'record_added', name: '记录添加', description: '添加时间记录时' },
   { type: 'plan_changed', name: '计划切换', description: '切换日计划时' },
-  { type: 'achievement_unlocked', name: '成就解锁', description: '解锁新成就时' }
+  { type: 'achievement_unlocked', name: '成就解锁', description: '解锁新成就时' },
+  { type: 'checkin_complete', name: '打卡完成', description: '成功打卡时' },
+  { type: 'streak_milestone', name: '连续打卡里程碑', description: '达到7/14/30/60/90/180/365天' },
+  { type: 'idle_reminder', name: '空闲提醒', description: '长时间未操作时' },
+  { type: 'weekly_summary', name: '周报摘要', description: '每周汇总数据' },
+  { type: 'daily_first_record', name: '每日首条记录', description: '当天第一条记录添加时' }
 ]
 
 // 收件箱
@@ -97,17 +103,38 @@ function testEvent(type: EventType) {
     case 'plan_complete_90':
       EventSystem.triggerEvent('plan_complete_90', '即将达成！', '计划已完成90%，加油！')
       break
+    case 'plan_complete_50':
+      EventSystem.triggerEvent('plan_complete_50', '半程完成！', '计划已完成50%，继续加油！')
+      break
     case 'progress_warning':
       EventSystem.triggerEvent('progress_warning', '进度预警', '已是18:00，完成度仅30%（目标50%）')
       break
     case 'record_added':
       EventSystem.triggerEvent('record_added', '记录已添加', '新的时间记录已保存')
       break
+    case 'record_deleted':
+      EventSystem.triggerEvent('record_deleted', '记录已删除', '一条时间记录已被删除')
+      break
     case 'plan_changed':
       EventSystem.triggerEvent('plan_changed', '计划已切换', '已切换到新的日计划')
       break
     case 'achievement_unlocked':
       EventSystem.triggerEvent('achievement_unlocked', '成就解锁！', '恭喜你达成新成就！')
+      break
+    case 'checkin_complete':
+      EventSystem.triggerEvent('checkin_complete', '打卡成功！', '连续打卡 7 天 🔥')
+      break
+    case 'streak_milestone':
+      EventSystem.triggerEvent('streak_milestone', '一周坚持！', '连续打卡7天，这是一个了不起的里程碑！🔥')
+      break
+    case 'idle_reminder':
+      EventSystem.triggerEvent('idle_reminder', '休息一下？', '你已经30分钟没有操作了，记得记录时间哦')
+      break
+    case 'weekly_summary':
+      EventSystem.triggerEvent('weekly_summary', '本周摘要', '记录25条，共38.5小时，平均完成85%，打卡6天')
+      break
+    case 'daily_first_record':
+      EventSystem.triggerEvent('daily_first_record', '新的一天', '今天的第一条记录已开始，「工作日」加油！')
       break
   }
 }

@@ -2,6 +2,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { CheckinSystem } from './CheckinSystem'
 import { AudioManager } from '@/audio'
+import { EventSystem } from '@/audio'
 import { X, Flame } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -40,6 +41,9 @@ function doCheckin() {
   const newStreak = result
   targetStreak.value = newStreak
   phase.value = 'animating'
+
+  // 检查里程碑
+  EventSystem.checkStreakMilestone(newStreak)
 
   // 数字递增动画
   const startStreak = newStreak - 1
