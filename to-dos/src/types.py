@@ -1,6 +1,11 @@
 """
 to-dos 数据模型定义
 定义待办事项的核心数据结构
+
+v0.5.0: 新增优先排位分算法相关字段
+- Todo: 新增 priority_rank(int), urgent(bool), important(bool),
+        start_time, estimated_time 字段
+- Category: 新增 difficulty(int), ascii_icon(str), pinned(bool)
 """
 
 from dataclasses import dataclass, field, asdict
@@ -50,16 +55,33 @@ class Subtask:
 
 @dataclass
 class Category:
-    """分类"""
+    """分类
+
+    v0.5.0: 新增 difficulty, ascii_icon, pinned 字段
+    """
     id: str
     name: str
     color: str = '#6366f1'
     icon: str = 'circle'
     description: Optional[str] = None
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    # v0.5.0 新增字段
+    difficulty: int = 5                    # 类别难度，默认5
+    ascii_icon: Optional[str] = None       # ASCII图标（A-Z, a-z, 0-9）
+    pinned: bool = False                   # 分类置顶
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return {
+            'id': self.id,
+            'name': self.name,
+            'color': self.color,
+            'icon': self.icon,
+            'description': self.description,
+            'created_at': self.created_at,
+            'difficulty': self.difficulty,
+            'ascii_icon': self.ascii_icon,
+            'pinned': self.pinned,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Category':
@@ -69,7 +91,10 @@ class Category:
             color=data.get('color', '#6366f1'),
             icon=data.get('icon', 'circle'),
             description=data.get('description'),
-            created_at=data.get('created_at', datetime.now().isoformat())
+            created_at=data.get('created_at', datetime.now().isoformat()),
+            difficulty=data.get('difficulty', 5),
+            ascii_icon=data.get('ascii_icon'),
+            pinned=data.get('pinned', False),
         )
 
 
@@ -83,7 +108,10 @@ class RecurrenceType(str, Enum):
 
 @dataclass
 class Todo:
-    """待办事项核心数据结构"""
+    """待办事项核心数据结构
+
+    v0.5.0: 新增 priority_rank, urgent, important, start_time, estimated_time 字段
+    """
     id: str                           # 唯一编号：TODO-YYYYMMDD-XXXX
     title: str                        # 任务标题
     created_at: str                   # 创建时间
@@ -105,6 +133,12 @@ class Todo:
     deadline_warning_days: int = 3         # 提前几天警告
     sort_order: int = 0                    # 自定义排序
     pinned: bool = False                   # 是否置顶
+    # v0.5.0 新增字段（优先排位分算法）
+    priority_rank: int = 0                 # 优先级排位，0最高
+    urgent: bool = False                   # 是否紧急
+    important: bool = False                # 是否重要
+    start_time: Optional[str] = None       # 开始时间，默认=创建时间
+    estimated_time: Optional[int] = None   # 用户填写的预估时间（分钟）
 
     def to_dict(self) -> dict:
         """转换为字典"""
@@ -132,6 +166,11 @@ class Todo:
             'deadline_warning_days': self.deadline_warning_days,
             'sort_order': self.sort_order,
             'pinned': self.pinned,
+            'priority_rank': self.priority_rank,
+            'urgent': self.urgent,
+            'important': self.important,
+            'start_time': self.start_time,
+            'estimated_time': self.estimated_time,
         }
 
     @classmethod
@@ -181,6 +220,11 @@ class Todo:
             deadline_warning_days=data.get('deadline_warning_days', 3),
             sort_order=data.get('sort_order', 0),
             pinned=data.get('pinned', False),
+            priority_rank=data.get('priority_rank', 0),
+            urgent=data.get('urgent', False),
+            important=data.get('important', False),
+            start_time=data.get('start_time'),
+            estimated_time=data.get('estimated_time'),
         )
 
     def is_overdue(self) -> bool:

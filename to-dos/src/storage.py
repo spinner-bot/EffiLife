@@ -178,6 +178,8 @@ class TodoStorage:
             'tags', 'related_plan_id', 'time_estimate', 'time_spent',
             'notes', 'status', 'recurrence', 'deadline_warning_days',
             'sort_order', 'pinned',
+            # v0.5.0 新增字段
+            'priority_rank', 'urgent', 'important', 'start_time', 'estimated_time',
         }
 
         for key, value in kwargs.items():
@@ -330,8 +332,14 @@ class TodoStorage:
         color: str = '#6366f1',
         icon: str = 'circle',
         description: Optional[str] = None,
+        difficulty: int = 5,
+        ascii_icon: Optional[str] = None,
+        pinned: bool = False,
     ) -> Category:
-        """创建新分类"""
+        """创建新分类
+
+        v0.5.0: 新增 difficulty, ascii_icon, pinned 参数
+        """
         if not self._loaded:
             self.load()
 
@@ -341,13 +349,19 @@ class TodoStorage:
             color=color,
             icon=icon,
             description=description,
+            difficulty=difficulty,
+            ascii_icon=ascii_icon,
+            pinned=pinned,
         )
         self._categories.append(category)
         self._save_categories()
         return category
 
     def update_category(self, category_id: str, **kwargs) -> Optional[Category]:
-        """更新分类"""
+        """更新分类
+
+        v0.5.0: 支持更新 difficulty, ascii_icon, pinned 字段
+        """
         if not self._loaded:
             self.load()
 
@@ -355,7 +369,11 @@ class TodoStorage:
         if not category:
             return None
 
-        updatable_fields = {'name', 'color', 'icon', 'description'}
+        updatable_fields = {
+            'name', 'color', 'icon', 'description',
+            # v0.5.0 新增字段
+            'difficulty', 'ascii_icon', 'pinned',
+        }
         for key, value in kwargs.items():
             if key in updatable_fields:
                 setattr(category, key, value)
