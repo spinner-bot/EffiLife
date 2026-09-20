@@ -5,9 +5,10 @@ import CategorySidebar from '@/components/CategorySidebar.vue'
 import TodoList from '@/components/TodoList.vue'
 import TodoForm from '@/components/TodoForm.vue'
 import FilterBar from '@/components/FilterBar.vue'
+import SettingsPanel from '@/components/SettingsPanel.vue'
 import {
   Plus, Search, Moon, Sun, Monitor, Download, Upload,
-  CheckSquare, X, Trash2, CheckCircle,
+  CheckSquare, X, Trash2, CheckCircle, Settings,
 } from 'lucide-vue-next'
 
 const store = useTodosStore()
@@ -19,6 +20,7 @@ const focusedIndex = ref(-1)
 const showImportModal = ref(false)
 const importText = ref('')
 const importMessage = ref('')
+const showSettings = ref(false)  // v0.5.0
 
 // 键盘快捷键 + 导航
 function handleKeydown(e: KeyboardEvent) {
@@ -53,6 +55,11 @@ function handleKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'd' && !isInputFocused()) {
     e.preventDefault()
     cycleDarkMode()
+  }
+  // v0.5.0: 按 Ctrl+, 打开设置
+  if ((e.ctrlKey || e.metaKey) && e.key === ',' && !isInputFocused()) {
+    e.preventDefault()
+    showSettings.value = !showSettings.value
   }
   // 上下箭头导航
   if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !isInputFocused()) {
@@ -214,6 +221,15 @@ onUnmounted(() => {
             <component :is="darkModeIcon" :size="18" />
           </button>
 
+          <!-- v0.5.0: 设置 -->
+          <button
+            class="icon-btn"
+            @click="showSettings = !showSettings"
+            title="设置 (Ctrl+,)"
+          >
+            <Settings :size="18" />
+          </button>
+
           <!-- 导出 -->
           <button
             class="icon-btn"
@@ -317,6 +333,9 @@ onUnmounted(() => {
         </div>
       </div>
     </Transition>
+
+    <!-- v0.5.0: 设置面板 -->
+    <SettingsPanel :show="showSettings" @close="showSettings = false" />
   </div>
 </template>
 
