@@ -1,10 +1,10 @@
 // to-dos 状态管理
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
-import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus } from '@/types'
+import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus, SortOption, RecurrenceType } from '@/types'
 
-// 模拟数据（实际应从 API 获取）
+// 模拟数据
 const mockTodos: Todo[] = [
   {
     id: 'TODO-20260920-0001',
@@ -24,6 +24,8 @@ const mockTodos: Todo[] = [
     ],
     time_estimate: 120,
     time_spent: 60,
+    sort_order: 1,
+    deadline_warning_days: 3,
   },
   {
     id: 'TODO-20260920-0002',
@@ -38,6 +40,8 @@ const mockTodos: Todo[] = [
     tags: ['Vue', '学习'],
     subtasks: [],
     time_estimate: 180,
+    recurrence: 'daily',
+    sort_order: 2,
   },
   {
     id: 'TODO-20260920-0003',
@@ -54,6 +58,7 @@ const mockTodos: Todo[] = [
       { id: 'SUB-004', title: '去超市', completed: true, completed_at: '2026-09-20T10:00:00' },
       { id: 'SUB-005', title: '准备晚餐', completed: true, completed_at: '2026-09-20T12:00:00' },
     ],
+    sort_order: 3,
   },
   {
     id: 'TODO-20260920-0004',
@@ -66,6 +71,8 @@ const mockTodos: Todo[] = [
     status: 'pending',
     tags: ['邮件', '客户'],
     subtasks: [],
+    sort_order: 4,
+    deadline_warning_days: 1,
   },
 ]
 
@@ -77,18 +84,72 @@ const mockCategories: Category[] = [
   { id: 'health', name: '健康', color: '#ef4444', icon: 'heart', created_at: '2026-09-01T00:00:00' },
 ]
 
+const STORAGE_KEY = 'to-dos-data'
+
 export const useTodosStore = defineStore('todos', () => {
   // 状态
-  const todos = ref<Todo[]>(mockTodos)
-  const categories = ref<Category[]>(mockCategories)
+  const todos = ref<Todo[]>([...mockTodos])
+  const categories = ref<Category[]>([...mockCategories])
   const filters = ref<FilterState>({
     status: null,
     priority: null,
     category: null,
     search: '',
+    tags: [],
   })
+  const sortBy = ref<SortOption>('created_desc')
   const selectedIds = ref<Set<string>>(new Set())
   const isLoading = ref(false)
+  const darkMode = ref<'auto' | 'light' | 'dark'>('auto')
+
+  // 初始化：从 localStorage 加载
+  function loadFromStorage() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.todos) todos.value = data.todos
+        if (data.categories) categories.value = data.categories
+        if (data.filters) filters.value = { ...filters.value, ...data.filters }
+        if (data.sortBy) sortBy.value = data.sortBy
+        if (data.darkMode) darkMode.value = data.darkMode
+      }
+    } catch {
+      // 忽略加载错误
+    }
+  }
+
+  // 保存到 localStorage
+  function saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        todos: todos.value,
+        categories: categories.value,
+        filters: filters.value,
+        sortBy: sortBy.value,
+        darkMode: darkMode.value,
+      }))
+    } catch {
+      // 忽略存储错误
+    }
+  }
+
+  // 监听变化自动保存
+  watch([todos, categories], () => {
+    saveToStorage()
+  }, { deep: true })
+
+  // 深色模式应用
+  function applyDarkMode() {
+    const root = document.documentElement
+    if (darkMode.value === 'dark') {
+      root.setAttribute('data-theme', 'dark')
+    } else if (darkMode.value === 'light') {
+      root.setAttribute('data-theme', 'light')
+    } else {
+      root.removeAttribute('data-theme')
+    }
+  }
 
   // 计算属性
   const filteredTodos = computed(() => {
@@ -103,14 +164,23 @@ export const useTodosStore = defineStore('todos', () => {
     if (filters.value.category) {
       result = result.filter(t => t.category === filters.value.category)
     }
+    if (filters.value.tags && filters.value.tags.length > 0) {
+      result = result.filter(t =>
+        filters.value.tags.every(tag => t.tags.includes(tag))
+      )
+    }
     if (filters.value.search) {
       const keyword = filters.value.search.toLowerCase()
       result = result.filter(t =>
         t.title.toLowerCase().includes(keyword) ||
         t.description?.toLowerCase().includes(keyword) ||
-        t.tags.some(tag => tag.toLowerCase().includes(keyword))
+        t.tags.some(tag => tag.toLowerCase().includes(keyword)) ||
+        t.notes?.toLowerCase().includes(keyword)
       )
     }
+
+    // 排序
+    result = sortTodos(result, sortBy.value)
 
     return result
   })
@@ -130,6 +200,13 @@ export const useTodosStore = defineStore('todos', () => {
       if (t.status === 'in-progress') return true
       return false
     })
+  })
+
+  // 所有使用中的标签
+  const allTags = computed(() => {
+    const tagSet = new Set<string>()
+    todos.value.forEach(t => t.tags.forEach(tag => tagSet.add(tag)))
+    return Array.from(tagSet).sort()
   })
 
   const stats = computed((): TodoStats => {
@@ -160,9 +237,48 @@ export const useTodosStore = defineStore('todos', () => {
     }
   })
 
+  // 排序逻辑
+  function sortTodos(list: Todo[], sort: SortOption): Todo[] {
+    const sorted = [...list]
+    // 置顶优先
+    sorted.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0))
+
+    switch (sort) {
+      case 'created_desc':
+        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      case 'created_asc':
+        return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      case 'deadline_asc':
+        return sorted.sort((a, b) => {
+          if (!a.deadline) return 1
+          if (!b.deadline) return -1
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+        })
+      case 'deadline_desc':
+        return sorted.sort((a, b) => {
+          if (!a.deadline) return 1
+          if (!b.deadline) return -1
+          return new Date(b.deadline).getTime() - new Date(a.deadline).getTime()
+        })
+      case 'priority_desc': {
+        const priorityOrder: Record<string, number> = {
+          'urgent-important': 4, 'important': 3, 'urgent': 2, 'normal': 1,
+        }
+        return sorted.sort((a, b) =>
+          (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
+        )
+      }
+      case 'custom':
+        return sorted.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      default:
+        return sorted
+    }
+  }
+
   // 操作方法
   function addTodo(data: Partial<Todo>): Todo {
     const now = new Date().toISOString()
+    const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order || 0), 0)
     const id = `TODO-${now.replace(/[-:T]/g, '').slice(0, 8)}-${String(todos.value.length + 1).padStart(4, '0')}`
 
     const newTodo: Todo = {
@@ -179,6 +295,11 @@ export const useTodosStore = defineStore('todos', () => {
       subtasks: data.subtasks || [],
       related_plan_id: data.related_plan_id,
       time_estimate: data.time_estimate,
+      notes: data.notes,
+      recurrence: data.recurrence || 'none',
+      deadline_warning_days: data.deadline_warning_days || 3,
+      sort_order: maxOrder + 1,
+      pinned: data.pinned || false,
     }
 
     todos.value.unshift(newTodo)
@@ -229,7 +350,7 @@ export const useTodosStore = defineStore('todos', () => {
   }
 
   function clearFilters() {
-    filters.value = { status: null, priority: null, category: null, search: '' }
+    filters.value = { status: null, priority: null, category: null, search: '', tags: [] }
   }
 
   function toggleSelect(id: string) {
@@ -240,6 +361,10 @@ export const useTodosStore = defineStore('todos', () => {
     }
   }
 
+  function selectAll() {
+    filteredTodos.value.forEach(t => selectedIds.value.add(t.id))
+  }
+
   function clearSelection() {
     selectedIds.value.clear()
   }
@@ -248,17 +373,118 @@ export const useTodosStore = defineStore('todos', () => {
     return categories.value.find(c => c.id === id)
   }
 
+  // 批量操作
+  function batchComplete() {
+    selectedIds.value.forEach(id => completeTodo(id))
+    clearSelection()
+  }
+
+  function batchDelete() {
+    selectedIds.value.forEach(id => deleteTodo(id))
+    clearSelection()
+  }
+
+  // 排序
+  function setSortBy(option: SortOption) {
+    sortBy.value = option
+    saveToStorage()
+  }
+
+  // 自定义排序（拖拽后）
+  function reorderTodos(fromIndex: number, toIndex: number) {
+    const filtered = filteredTodos.value
+    const item = filtered[fromIndex]
+    const actualFrom = todos.value.findIndex(t => t.id === item.id)
+
+    // 更新 sort_order
+    const newOrder = [...todos.value]
+    const [moved] = newOrder.splice(actualFrom, 1)
+    const targetItem = filtered[toIndex]
+    const actualTo = todos.value.findIndex(t => t.id === targetItem.id)
+    newOrder.splice(actualTo, 0, moved)
+
+    // 重新编号
+    newOrder.forEach((t, i) => {
+      t.sort_order = i + 1
+    })
+
+    todos.value = newOrder
+  }
+
+  // 标签筛选
+  function toggleTagFilter(tag: string) {
+    const tags = filters.value.tags
+    if (tags.includes(tag)) {
+      filters.value.tags = tags.filter(t => t !== tag)
+    } else {
+      filters.value.tags = [...tags, tag]
+    }
+  }
+
+  // 深色模式切换
+  function setDarkMode(mode: 'auto' | 'light' | 'dark') {
+    darkMode.value = mode
+    applyDarkMode()
+    saveToStorage()
+  }
+
+  // 数据导出
+  function exportData(): string {
+    return JSON.stringify({
+      version: '0.3.0',
+      exported_at: new Date().toISOString(),
+      todos: todos.value,
+      categories: categories.value,
+    }, null, 2)
+  }
+
+  // 数据导入
+  function importData(jsonStr: string): { success: boolean; message: string; count: number } {
+    try {
+      const data = JSON.parse(jsonStr)
+      if (!data.todos || !Array.isArray(data.todos)) {
+        return { success: false, message: '无效的数据格式', count: 0 }
+      }
+      todos.value = data.todos
+      if (data.categories) {
+        categories.value = data.categories
+      }
+      return { success: true, message: `导入成功: ${data.todos.length} 个待办`, count: data.todos.length }
+    } catch {
+      return { success: false, message: '解析 JSON 失败', count: 0 }
+    }
+  }
+
+  // 导出 CSV
+  function exportCSV(): string {
+    const headers = ['ID', '标题', '状态', '优先级', '分类', '截止日期', '标签', '创建时间']
+    const rows = todos.value.map(t => [
+      t.id,
+      `"${t.title.replace(/"/g, '""')}"`,
+      t.status,
+      t.priority,
+      t.category,
+      t.deadline || '',
+      `"${t.tags.join(', ')}"`,
+      t.created_at.slice(0, 19),
+    ])
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+  }
+
   return {
     // 状态
     todos,
     categories,
     filters,
+    sortBy,
     selectedIds,
     isLoading,
+    darkMode,
     // 计算属性
     filteredTodos,
     overdueTodos,
     todayTodos,
+    allTags,
     stats,
     // 方法
     addTodo,
@@ -269,7 +495,19 @@ export const useTodosStore = defineStore('todos', () => {
     setFilter,
     clearFilters,
     toggleSelect,
+    selectAll,
     clearSelection,
     getCategoryById,
+    batchComplete,
+    batchDelete,
+    setSortBy,
+    reorderTodos,
+    toggleTagFilter,
+    setDarkMode,
+    applyDarkMode,
+    exportData,
+    importData,
+    exportCSV,
+    loadFromStorage,
   }
 })
