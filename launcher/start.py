@@ -7,9 +7,50 @@ import os
 import sys
 import subprocess
 import webbrowser
+import shutil
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
+
+
+def find_npm():
+    """Find npm executable, handling Windows quirks"""
+    if os.name == "nt":
+        # Windows: try npm.cmd first
+        for name in ["npm.cmd", "npm"]:
+            path = shutil.which(name)
+            if path:
+                return path
+    else:
+        path = shutil.which("npm")
+        if path:
+            return path
+    return None
+
+
+def check_dependencies(module):
+    """Check if required dependencies are available"""
+    cmd = module["cmd"]
+    if not cmd:
+        return True, None
+
+    exe = cmd[0]
+
+    if exe == "npm":
+        npm_path = find_npm()
+        if not npm_path:
+            return False, "Node.js/npm 未安装或不在 PATH 中\n请从 https://nodejs.org 下载安装"
+        # Replace "npm" with full path
+        module["cmd"][0] = npm_path
+        if module.get("setup"):
+            module["setup"][0] = npm_path
+
+    elif exe == sys.executable:
+        # Python should always be available
+        pass
+
+    return True, None
+
 
 MODULES = {
     "1": {
@@ -95,10 +136,21 @@ def run_module(choice):
     module = MODULES[choice]
     print(f"\n启动 {module['name']}...")
 
+    # Check dependencies
+    ok, err = check_dependencies(module)
+    if not ok:
+        print(f"\n❌ 依赖检查失败:\n{err}")
+        return
+
     # Setup if needed
     if module.get("setup"):
         print(f"首次运行，执行 setup: {' '.join(module['setup'])}")
-        subprocess.run(module["setup"], cwd=module["cwd"], shell=True)
+        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=True)
+        if result.returncode != 0:
+            print(f"\n❌ Setup 失败，请手动执行:")
+            print(f"   cd {module['cwd']}")
+            print(f"   {' '.join(module['setup'])}")
+            return
 
     # Open browser if has URL
     if module.get("url"):
@@ -115,6 +167,9 @@ def run_module(choice):
         subprocess.run(module["cmd"], cwd=module["cwd"])
     except KeyboardInterrupt:
         print("\n已停止")
+    except FileNotFoundError as e:
+        print(f"\n❌ 找不到命令: {e}")
+        print(f"请确保已安装所需依赖")
 
 
 def main():
