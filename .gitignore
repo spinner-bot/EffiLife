@@ -23,3 +23,14 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+# Python
+__pycache__/
+*.pyc
+
+# Integration runtime data
+common/data/user/
+common/data/cross_refs/
+common/data/events/
+common/data/backups/
+common/data/modules/
