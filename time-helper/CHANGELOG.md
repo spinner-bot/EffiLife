@@ -1,5 +1,36 @@
 # 浪兮效率时钟 - 更新日志
 
+## [1.5.1] - 2026-09-20
+
+### 新增
+- **通用 UI 组件**
+  - `EmptyState` 组件：友好的空状态展示，支持图标、标题、描述、操作按钮
+  - `SkeletonLoader` 组件：骨架屏加载效果，支持 card/list/text 三种类型
+  - `useFormValidation` composable：表单验证工具，支持 required/min/max/pattern/custom validator
+
+### 优化
+- **视图空状态改进**
+  - HomeView：无计划数据时显示 EmptyState 组件
+  - PlanView：无记录时显示 EmptyState 组件
+  - CalendarView：本月无数据时显示 EmptyState 组件
+  - SettingsView：加载时显示 SkeletonLoader 骨架屏
+
+- **表单验证增强**
+  - PlanView 记录表单：添加实时验证（内容必填、标签必选）
+  - PlanView 计划表单：添加实时验证（计划名称必填）
+  - 验证错误即时显示，带动画效果
+
+- **动画优化**
+  - 页面切换：添加 fade + slide 过渡动画
+  - 按钮交互：active 状态添加 scale 缩放效果
+  - 列表项：TransitionGroup fade + slide 动画（已有）
+  - 模态框：scale + fade 进入动画（已有）
+
+### 版本
+- 版本升至 1.5.1
+
+---
+
 ## [1.4.0] - 2026-09-20
 
 ### 新增
