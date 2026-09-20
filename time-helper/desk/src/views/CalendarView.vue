@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3 } from 'lucide-vue-next'
 import { DataService } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
+import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 
 const router = useRouter()
 
@@ -183,10 +184,58 @@ function onDayClick(day: DayMeta) {
 // 星期标题
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 
-// 监听月份变化，重新加载数据
-watch([currentYear, currentMonth], loadMonthData)
+// 月份切换动画方向
+const slideDirection = ref<'left' | 'right'>('right')
 
-onMounted(loadMonthData)
+// 热力图数据（最近 26 周的完成度）
+const heatmapData = ref<Record<string, number>>({})
+const showHeatmap = ref(true)
+const isLoadingHeatmap = ref(false)
+
+async function loadHeatmapData() {
+  isLoadingHeatmap.value = true
+  const data: Record<string, number> = {}
+  const today = new Date()
+  const totalDays = 26 * 7 + 7 // 26 weeks + padding for alignment
+  const startDate = new Date(today)
+  startDate.setDate(startDate.getDate() - totalDays)
+
+  const promises = []
+  const current = new Date(startDate)
+  while (current <= today) {
+    const dateStr = `${current.getFullYear()}-${(current.getMonth() + 1).toString().padStart(2, '0')}-${current.getDate().toString().padStart(2, '0')}`
+    promises.push(
+      DataService.calcRealTimeStat(dateStr).then(stat => {
+        data[dateStr] = stat.progress
+      })
+    )
+    current.setDate(current.getDate() + 1)
+  }
+  await Promise.all(promises)
+  heatmapData.value = data
+  isLoadingHeatmap.value = false
+}
+
+// 热力图点击事件
+function onHeatmapClick(dateStr: string) {
+  router.push(`/day/${dateStr}`)
+}
+
+// 监听月份变化，重新加载数据
+watch([currentYear, currentMonth], (newVal, oldVal) => {
+  // 判断动画方向
+  const [newY, newM] = newVal
+  const [oldY, oldM] = oldVal
+  const newTime = newY * 12 + newM
+  const oldTime = oldY * 12 + oldM
+  slideDirection.value = newTime > oldTime ? 'right' : 'left'
+  loadMonthData()
+})
+
+onMounted(() => {
+  loadMonthData()
+  loadHeatmapData()
+})
 </script>
 
 <template>
@@ -214,6 +263,30 @@ onMounted(loadMonthData)
           <span class="overview-value">{{ monthStats.avgProgress }}%</span>
           <span class="overview-label">平均完成</span>
         </div>
+      </div>
+
+      <!-- 年度热力图 -->
+      <div class="heatmap-section" v-if="showHeatmap">
+        <div class="section-header-row">
+          <div class="section-title-row">
+            <BarChart3 :size="16" class="section-icon" />
+            <h3 class="section-subtitle">年度活跃</h3>
+          </div>
+          <button class="toggle-heatmap-btn" @click="showHeatmap = !showHeatmap">
+            {{ showHeatmap ? '收起' : '展开' }}
+          </button>
+        </div>
+        <div v-if="isLoadingHeatmap" class="loading-bar">
+          <div class="loading-fill"></div>
+        </div>
+        <ContributionHeatmap
+          v-else
+          :data="heatmapData"
+          :weeks="26"
+          color-mode="progress"
+          title=""
+          @cell-click="onHeatmapClick"
+        />
       </div>
 
       <!-- 导航栏 -->
@@ -251,7 +324,8 @@ onMounted(loadMonthData)
       </div>
 
       <!-- 日历网格 -->
-      <div class="calendar-grid">
+      <Transition :name="'slide-' + slideDirection" mode="out-in">
+      <div class="calendar-grid" :key="`${currentYear}-${currentMonth}`">
         <template v-for="(day, index) in calendarDays" :key="index">
           <div
             v-if="day"
@@ -285,6 +359,7 @@ onMounted(loadMonthData)
           <div v-else class="day-cell empty"></div>
         </template>
       </div>
+      </Transition>
 
       <!-- 图例 -->
       <div class="legend">
@@ -648,5 +723,79 @@ onMounted(loadMonthData)
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* 热力图区域 */
+.heatmap-section {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.section-icon {
+  color: var(--color-primary);
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.toggle-heatmap-btn {
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-tertiary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggle-heatmap-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+/* 月份切换动画 */
+.slide-right-enter-active,
+.slide-right-leave-active,
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
 }
 </style>
