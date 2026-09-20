@@ -255,6 +255,7 @@ function openCreateRule() {
   editingRuleType.value = 'week'
   editingRuleValue.value = ''
   editingRulePlan.value = Object.keys(plans.value)[0] || ''
+  selectedWeekDays.value = new Set()
   manageView.value = 'editRule'
 }
 function openEditRule(index: number) {
@@ -264,11 +265,24 @@ function openEditRule(index: number) {
   editingRuleType.value = rule.rule_type
   editingRuleValue.value = rule.value
   editingRulePlan.value = rule.plan_name
+  // 如果是 week 类型，还原 selectedWeekDays
+  if (rule.rule_type === 'week') {
+    selectedWeekDays.value = new Set(rule.value.split(','))
+  } else {
+    selectedWeekDays.value = new Set()
+  }
   manageView.value = 'editRule'
 }
 async function saveRule() {
   if (!editingRulePlan.value) { alert('请选择关联计划'); return }
   if (editingRuleType.value === 'default') { alert('默认规则不可编辑'); return }
+
+  // 对于 week 类型，从 selectedWeekDays 构建 value
+  if (editingRuleType.value === 'week') {
+    if (selectedWeekDays.value.size === 0) { alert('请至少选择一个星期几'); return }
+    editingRuleValue.value = Array.from(selectedWeekDays.value).sort().join(',')
+  }
+
   if (!editingRuleValue.value) { alert('请设置规则参数'); return }
   const newRule: ScheduleRule = {
     rule_type: editingRuleType.value,
