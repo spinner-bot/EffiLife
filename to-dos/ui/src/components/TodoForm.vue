@@ -1,9 +1,14 @@
 <script setup lang="ts">
+/**
+ * TodoForm (v0.5.0)
+ * 新增：start_time, estimated_time, urgent, important, priority_rank 字段
+ */
+
 import { ref, computed, watch, onMounted } from 'vue'
 import { useTodosStore } from '@/stores/todos'
 import {
   X, Calendar, Tag, Clock, AlignLeft, Repeat, Bell,
-  FileText, Info,
+  FileText, Info, AlertTriangle, Star, Hash,
 } from 'lucide-vue-next'
 import type { Priority, RecurrenceType } from '@/types'
 import { PRIORITY_CONFIG, RECURRENCE_CONFIG } from '@/types'
@@ -30,6 +35,12 @@ const timeEstimate = ref<number | null>(null)
 const notes = ref('')
 const recurrence = ref<RecurrenceType>('none')
 const deadlineWarningDays = ref(3)
+// v0.5.0 新增字段
+const priorityRank = ref(0)
+const urgent = ref(false)
+const important = ref(false)
+const startTime = ref('')
+const estimatedTime = ref<number | null>(null)
 
 // 编辑模式
 const isEditing = computed(() => !!props.todoId)
@@ -53,6 +64,14 @@ onMounted(() => {
     notes.value = existingTodo.value.notes || ''
     recurrence.value = existingTodo.value.recurrence || 'none'
     deadlineWarningDays.value = existingTodo.value.deadline_warning_days ?? 3
+    // v0.5.0 新增字段
+    priorityRank.value = existingTodo.value.priority_rank ?? 0
+    urgent.value = existingTodo.value.urgent ?? false
+    important.value = existingTodo.value.important ?? false
+    startTime.value = existingTodo.value.start_time
+      ? existingTodo.value.start_time.slice(0, 16)
+      : ''
+    estimatedTime.value = existingTodo.value.estimated_time ?? null
   }
   // 自动聚焦标题输入框
   setTimeout(() => {
@@ -96,6 +115,12 @@ function handleSubmit() {
     notes: notes.value.trim() || undefined,
     recurrence: recurrence.value,
     deadline_warning_days: deadlineWarningDays.value,
+    // v0.5.0 新增字段
+    priority_rank: priorityRank.value,
+    urgent: urgent.value,
+    important: important.value,
+    start_time: startTime.value ? new Date(startTime.value).toISOString() : undefined,
+    estimated_time: estimatedTime.value || undefined,
   }
 
   if (isEditing.value && props.todoId) {
@@ -189,6 +214,37 @@ const warningDayOptions = [
           </div>
         </div>
 
+        <!-- v0.5.0: 紧急/重要/排位 -->
+        <div class="form-group">
+          <label class="form-label">
+            <AlertTriangle :size="14" />
+            优先属性
+          </label>
+          <div class="priority-toggles">
+            <label class="toggle-chip" :class="{ active: urgent }">
+              <input type="checkbox" v-model="urgent" class="toggle-input" />
+              <AlertTriangle :size="14" />
+              紧急
+            </label>
+            <label class="toggle-chip" :class="{ active: important }">
+              <input type="checkbox" v-model="important" class="toggle-input" />
+              <Star :size="14" />
+              重要
+            </label>
+            <div class="rank-input-wrap">
+              <Hash :size="14" class="rank-icon" />
+              <input
+                v-model.number="priorityRank"
+                type="number"
+                class="form-input rank-input"
+                placeholder="排位"
+                min="0"
+                title="优先级排位，0 为最高"
+              />
+            </div>
+          </div>
+        </div>
+
         <!-- 截止日期 -->
         <div class="form-group">
           <label class="form-label">
@@ -200,6 +256,35 @@ const warningDayOptions = [
             type="datetime-local"
             class="form-input"
           />
+        </div>
+
+        <!-- v0.5.0: 开始时间 + 预估时间 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">
+              <Clock :size="14" />
+              开始时间
+            </label>
+            <input
+              v-model="startTime"
+              type="datetime-local"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <Clock :size="14" />
+              预估时间（分钟）
+            </label>
+            <input
+              v-model.number="estimatedTime"
+              type="number"
+              class="form-input"
+              placeholder="例如：120"
+              min="0"
+            />
+          </div>
         </div>
 
         <!-- 行：截止日期提醒 + 重复 -->
@@ -229,17 +314,17 @@ const warningDayOptions = [
           </div>
         </div>
 
-        <!-- 预估时间 -->
+        <!-- 预估时间（旧字段，保留兼容） -->
         <div class="form-group">
           <label class="form-label">
             <Clock :size="14" />
-            预估时间（分钟）
+            时间记录（分钟）
           </label>
           <input
             v-model.number="timeEstimate"
             type="number"
             class="form-input"
-            placeholder="例如：60"
+            placeholder="实际花费的时间"
             min="0"
           />
         </div>
@@ -535,5 +620,77 @@ const warningDayOptions = [
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* v0.5.0: 优先属性切换 */
+.priority-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.toggle-chip:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-hover);
+}
+
+.toggle-chip.active {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.toggle-chip.active:nth-child(2) {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+}
+
+.toggle-input {
+  display: none;
+}
+
+.rank-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 0 10px;
+}
+
+.rank-icon {
+  color: var(--color-text-tertiary);
+}
+
+.rank-input {
+  width: 60px;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-text-primary);
+}
+
+.rank-input:focus {
+  outline: none;
 }
 </style>
