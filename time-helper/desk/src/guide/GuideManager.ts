@@ -60,29 +60,29 @@ export const MAIN_GUIDE: GuideConfig = {
       isDemo: true
     },
 
-    // ========== 核心功能：记录时间 ==========
+    // ========== 核心功能：计划（记录 + 管理）==========
     {
-      id: 'go-records',
-      title: '第一步：记录时间',
-      description: '点击下方的"记录"按钮，开始体验时间记录功能。',
+      id: 'go-plan',
+      title: '第一步：计划中心',
+      description: '点击下方的"计划"按钮，这里集合了记录和管理两大功能。',
       target: '.nav-btn:nth-child(1)',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.nav-btn:nth-child(1)',
-      navigateTo: '/records',
+      navigateTo: '/plan',
       autoAdvance: true,
       position: 'bottom'
     },
     {
       id: 'add-record',
       title: '添加一条记录',
-      description: '点击"新增"按钮，添加一条时间记录。试试填写"测试活动"，时间设为1小时。',
-      target: '.add-btn',
+      description: '点击右上角"新增"按钮，添加一条时间记录。试试填写"测试活动"，时间设为1小时。',
+      target: '.pv-add-btn',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.add-btn',
+      actionTarget: '.pv-add-btn',
       autoAdvance: true,
       position: 'bottom'
     },
@@ -90,27 +90,26 @@ export const MAIN_GUIDE: GuideConfig = {
       id: 'fill-record',
       title: '填写记录内容',
       description: '填写内容（如"测试活动"），选择类别，设置时间为1小时，然后点击"保存"。',
-      target: '.modal, .form-section',
+      target: '.pv-modal, .pv-form-group',
       highlight: true,
       actionRequired: true,
       actionType: 'input',
       skippable: true,
       validateAction: () => {
-        // 检查是否回到了记录列表（说明保存成功）
-        return !document.querySelector('.modal')
+        // 检查弹窗是否关闭（说明保存成功）
+        return !document.querySelector('.pv-modal-overlay')
       },
       position: 'bottom'
     },
     {
       id: 'record-saved',
       title: '记录已保存！',
-      description: '很好！你刚刚添加了一条时间记录。现在点击"返回"回到主页，继续下一步。',
-      target: '.back-btn',
+      description: '很好！你刚刚添加了一条时间记录。现在可以切换到"计划管理"标签页查看管理功能。',
+      target: '.pv-tab',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.back-btn',
-      navigateTo: '/',
+      actionTarget: '.pv-tab:nth-child(2)',
       autoAdvance: true,
       position: 'bottom'
     },
@@ -172,25 +171,24 @@ export const MAIN_GUIDE: GuideConfig = {
     {
       id: 'go-management',
       title: '第三步：计划管理',
-      description: '点击"管理"按钮，了解如何设置日计划和预警规则。',
-      target: '.nav-btn:nth-child(3)',
+      description: '切换到"计划管理"标签页，了解如何设置日计划和日程规则。',
+      target: '.pv-tab:nth-child(2)',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.nav-btn:nth-child(3)',
-      navigateTo: '/management',
+      actionTarget: '.pv-tab:nth-child(2)',
       autoAdvance: true,
       position: 'bottom'
     },
     {
       id: 'management-overview',
       title: '管理中心',
-      description: '这里有三个功能：日程安排、日计划管理、临时计划变更。点击"日计划管理"查看详情。',
-      target: '.action-btn:nth-child(2)',
+      description: '这里有三个功能：日计划管理、日程规则、临时变更。点击"日计划管理"查看详情。',
+      target: '.pv-action-card:nth-child(1)',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.action-btn:nth-child(2)',
+      actionTarget: '.pv-action-card:nth-child(1)',
       autoAdvance: true,
       position: 'bottom'
     },
@@ -198,23 +196,23 @@ export const MAIN_GUIDE: GuideConfig = {
       id: 'plan-list',
       title: '日计划列表',
       description: '这里管理你的所有日计划。你可以创建新计划、编辑现有计划。点击"返回"回到管理中心。',
-      target: '.btn.secondary',
+      target: '.pv-back-link',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.btn.secondary',
+      actionTarget: '.pv-back-link',
       autoAdvance: true,
       position: 'bottom'
     },
     {
       id: 'back-home-2',
       title: '返回主页',
-      description: '点击管理中心的"返回"按钮回到主页，继续探索设置功能。',
-      target: '.back-btn',
+      description: '点击左上角的返回按钮回到主页，继续探索设置功能。',
+      target: '.pv-back',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.back-btn',
+      actionTarget: '.pv-back',
       navigateTo: '/',
       autoAdvance: true,
       position: 'bottom'
@@ -225,11 +223,11 @@ export const MAIN_GUIDE: GuideConfig = {
       id: 'go-settings',
       title: '探索设置',
       description: '点击"设置"按钮，了解个性化选项。这些功能不需要操作，只需了解即可。',
-      target: '.nav-btn:nth-child(4)',
+      target: '.nav-btn:nth-child(5)',
       highlight: true,
       actionRequired: true,
       actionType: 'click',
-      actionTarget: '.nav-btn:nth-child(4)',
+      actionTarget: '.nav-btn:nth-child(5)',
       navigateTo: '/settings',
       position: 'bottom'
     },
