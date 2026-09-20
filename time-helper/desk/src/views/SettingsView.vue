@@ -79,7 +79,7 @@ const appStore = useAppStore()
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
 const currentView = ref<ViewType>('main')
 // 导航历史栈（用于返回上一级）
 const viewHistory = ref<ViewType[]>(['main'])
@@ -359,6 +359,61 @@ async function onFileSelected(event: Event) {
   }
 }
 
+// ============ 数据恢复 ============
+const backupsList = ref<BackupData[]>([])
+const dataStatus = ref<{
+  localStorageEmpty: boolean
+  indexedDBEmpty: boolean
+  hasBackups: boolean
+  backupCount: number
+} | null>(null)
+
+async function loadDataStatus() {
+  try {
+    const status = await checkDataIntegrity()
+    dataStatus.value = status
+    backupsList.value = getAllBackups()
+  } catch (e) {
+    console.error('Failed to load data status:', e)
+  }
+}
+
+async function handleRestoreBackup(backup: BackupData) {
+  if (!confirm(`确定要从 ${new Date(backup.timestamp).toLocaleString('zh-CN')} 的备份恢复数据吗？\n这将覆盖当前数据。`)) {
+    return
+  }
+
+  try {
+    const result = await restoreFromSpecificBackup(backup)
+    if (result.success) {
+      alert(result.message + '\n\n需要刷新页面以应用更改，是否立即刷新？')
+      if (confirm('是否立即刷新页面？')) {
+        window.location.reload()
+      }
+    } else {
+      alert(result.message)
+    }
+  } catch (e) {
+    alert('恢复失败：' + (e as Error).message)
+  }
+}
+
+async function handleEmergencyExport() {
+  try {
+    const jsonStr = await exportEmergencyBackup()
+    const blob = new Blob([jsonStr], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `efflife_emergency_${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    alert('紧急备份已下载！')
+  } catch (e) {
+    alert('导出失败：' + (e as Error).message)
+  }
+}
+
 // 同步配置到本地状态
 watch(() => config.value, (newConfig) => {
   overtimeThreshold.value = newConfig.overtime_threshold
@@ -373,11 +428,26 @@ watch(() => config.value, (newConfig) => {
 }, { immediate: true, deep: true })
 
 // 初始化完成后关闭加载状态
-onMounted(() => {
+onMounted(async () => {
   // 短暂延迟以展示骨架屏过渡效果
   setTimeout(() => {
     isLoading.value = false
   }, 300)
+
+  // 检查数据完整性
+  try {
+    const status = await checkDataIntegrity()
+    if (status.localStorageEmpty && status.indexedDBEmpty) {
+      // 数据都为空，检查是否有备份
+      if (status.hasBackups) {
+        if (confirm('检测到数据为空，但发现备份文件。是否要恢复到设置页面查看备份？')) {
+          navigateTo('restore')
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
 })
 </script>
 
@@ -420,6 +490,10 @@ onMounted(() => {
           </button>
           <button class="settings-item" @click="navigateTo('archive')">
             <span>存档管理</span>
+            <ChevronRight :size="16" />
+          </button>
+          <button class="settings-item" @click="navigateTo('restore')">
+            <span>数据恢复</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('more')">
@@ -862,6 +936,71 @@ onMounted(() => {
           存档文件为 .efl 格式，包含所有数据（配置、计划、记录、设置等）。<br>
           可用于备份或在设备间迁移数据。
         </p>
+
+        <button class="btn secondary full" @click="goBack">返回</button>
+      </template>
+
+      <!-- 数据恢复 -->
+      <template v-else-if="currentView === 'restore'">
+        <h2>数据恢复</h2>
+
+        <!-- 数据状态 -->
+        <div class="data-stats">
+          <h3>数据状态</h3>
+          <div v-if="dataStatus" class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStatus.localStorageEmpty ? '空' : '有' }}</span>
+              <span class="stat-label">localStorage</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStatus.indexedDBEmpty ? '空' : '有' }}</span>
+              <span class="stat-label">IndexedDB</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStatus.backupCount }}</span>
+              <span class="stat-label">可用备份</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 紧急操作 -->
+        <div class="reset-section">
+          <h3>紧急操作</h3>
+          <button class="btn secondary full" @click="handleEmergencyExport">
+            导出紧急备份
+          </button>
+          <p class="archive-hint">
+            将当前所有数据导出为 JSON 文件，用于紧急恢复。
+          </p>
+        </div>
+
+        <!-- 备份列表 -->
+        <div class="reset-section" v-if="backupsList.length > 0">
+          <h3>可用备份 ({{ backupsList.length }})</h3>
+          <div class="backup-list">
+            <div
+              v-for="backup in backupsList"
+              :key="`${backup.module}_${backup.timestamp}`"
+              class="backup-item"
+            >
+              <div class="backup-info">
+                <span class="backup-module">{{ backup.module }}</span>
+                <span class="backup-time">{{ new Date(backup.timestamp).toLocaleString('zh-CN') }}</span>
+              </div>
+              <button class="btn primary" @click="handleRestoreBackup(backup)">
+                恢复
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reset-section" v-else>
+          <h3>无可用备份</h3>
+          <p class="archive-hint">
+            暂无备份文件。建议定期导出存档以保护数据安全。<br>
+            数据变更时会自动创建备份（最多保留10个）。
+          </p>
+        </div>
 
         <button class="btn secondary full" @click="goBack">返回</button>
       </template>
@@ -1429,6 +1568,51 @@ h2 {
   padding: var(--spacing-md);
   background: var(--color-bg-secondary);
   border-radius: var(--radius-md);
+}
+
+/* 数据恢复页面样式 */
+.backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.backup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.backup-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.backup-module {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.backup-time {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.backup-item .btn {
+  flex-shrink: 0;
+  margin-left: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: 0.8125rem;
 }
 
 /* 恢复页面样式 */
