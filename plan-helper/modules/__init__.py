@@ -17,6 +17,9 @@ MODULE_ALIASES = \
     "text": "tx",
     "file": "f",
     "prompt": "pp",
+    "api": "api",
+    "template": "tmpl",
+    "manager": "mgr",
 }
 # ==========================================
 
