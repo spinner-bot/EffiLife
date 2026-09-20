@@ -7,11 +7,17 @@ import type { SoundType } from './AudioManager'
 export type EventType =
   | 'plan_complete_100'
   | 'plan_complete_90'
+  | 'plan_complete_50'       // 半程完成
   | 'progress_warning'       // 进度预警（基于规则）
   | 'record_added'
   | 'record_deleted'
   | 'plan_changed'
   | 'achievement_unlocked'
+  | 'checkin_complete'       // 打卡完成
+  | 'streak_milestone'       // 连续打卡里程碑（7/14/30/60/90/180/365天）
+  | 'idle_reminder'          // 长时间未操作提醒
+  | 'weekly_summary'         // 周报摘要
+  | 'daily_first_record'     // 当天第一条记录
 
 // 预警规则
 export interface WarningRule {
@@ -68,11 +74,17 @@ export const DEFAULT_EVENT_SETTINGS: EventSettings = {
   enabled: {
     plan_complete_100: true,
     plan_complete_90: true,
+    plan_complete_50: true,
     progress_warning: true,
     record_added: false,
     record_deleted: false,
     plan_changed: false,
-    achievement_unlocked: true
+    achievement_unlocked: true,
+    checkin_complete: true,
+    streak_milestone: true,
+    idle_reminder: true,
+    weekly_summary: true,
+    daily_first_record: true
   },
   warningRules: DEFAULT_WARNING_RULES.map(r => ({ ...r })),
   popupDuration: 8000,
@@ -405,6 +417,10 @@ class EventSystemClass {
         sound = 'success'
         icon = '⭐'
         break
+      case 'plan_complete_50':
+        sound = 'success'
+        icon = '📈'
+        break
       case 'progress_warning':
         sound = 'warning'
         icon = '⚠️'
@@ -413,9 +429,33 @@ class EventSystemClass {
         sound = 'notification'
         icon = '📝'
         break
+      case 'record_deleted':
+        sound = 'notification'
+        icon = '🗑️'
+        break
       case 'plan_changed':
         sound = 'toggle'
         icon = '🔄'
+        break
+      case 'checkin_complete':
+        sound = 'achievement'
+        icon = '🔥'
+        break
+      case 'streak_milestone':
+        sound = 'achievement'
+        icon = '🎊'
+        break
+      case 'idle_reminder':
+        sound = 'notification'
+        icon = '💤'
+        break
+      case 'weekly_summary':
+        sound = 'success'
+        icon = '📊'
+        break
+      case 'daily_first_record':
+        sound = 'notification'
+        icon = '🌅'
         break
     }
 
@@ -477,6 +517,87 @@ class EventSystemClass {
         { progress, planName }
       )
     }
+  }
+
+  // ========= 半程完成检查 =========
+
+  checkHalfProgress(progress: number, planName: string) {
+    if (!this.settings.value.enabled.plan_complete_50) return
+    // 仅当进度刚跨过 50% 时触发（50-89 区间内，避免与 90% 和 100% 冲突）
+    if (progress >= 50 && progress < 90) {
+      this.triggerEvent(
+        'plan_complete_50',
+        '半程完成！',
+        `「${planName}」计划已完成${progress}%，继续加油！`,
+        { progress, planName }
+      )
+    }
+  }
+
+  // ========= 打卡里程碑检查 =========
+
+  checkStreakMilestone(streak: number) {
+    if (!this.settings.value.enabled.streak_milestone) return
+    const milestones = [7, 14, 30, 60, 90, 180, 365]
+    if (milestones.includes(streak)) {
+      const titles: Record<number, string> = {
+        7: '一周坚持！',
+        14: '两周达人！',
+        30: '月度先锋！',
+        60: '两月勇士！',
+        90: '季度精英！',
+        180: '半年之星！',
+        365: '年度传说！'
+      }
+      this.triggerEvent(
+        'streak_milestone',
+        titles[streak] || `连续${streak}天！`,
+        `连续打卡${streak}天，这是一个了不起的里程碑！🔥`,
+        { streak }
+      )
+    }
+  }
+
+  // ========= 空闲提醒 =========
+
+  triggerIdleReminder(minutesIdle: number) {
+    if (!this.settings.value.enabled.idle_reminder) return
+    this.triggerEvent(
+      'idle_reminder',
+      '休息一下？',
+      `你已经${minutesIdle}分钟没有操作了，记得记录时间哦`,
+      { minutesIdle }
+    )
+  }
+
+  // ========= 周报摘要 =========
+
+  triggerWeeklySummary(data: {
+    totalRecords: number
+    totalHours: number
+    avgProgress: number
+    checkinDays: number
+    topTag: string
+  }) {
+    if (!this.settings.value.enabled.weekly_summary) return
+    this.triggerEvent(
+      'weekly_summary',
+      '本周摘要',
+      `记录${data.totalRecords}条，共${data.totalHours.toFixed(1)}小时，平均完成${data.avgProgress}%，打卡${data.checkinDays}天`,
+      data
+    )
+  }
+
+  // ========= 当天第一条记录 =========
+
+  triggerDailyFirstRecord(planName: string) {
+    if (!this.settings.value.enabled.daily_first_record) return
+    this.triggerEvent(
+      'daily_first_record',
+      '新的一天',
+      `今天的第一条记录已开始，「${planName}」加油！`,
+      { planName }
+    )
   }
 
   // ========= 预警检查（核心：支持延迟发布） =========
