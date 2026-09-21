@@ -503,7 +503,7 @@ onMounted(() => {
         </div>
 
         <!-- ============ 管理二级视图 ============ -->
-        <div v-if="manageView !== 'overview'" key="manage" class="pv-panel">
+        <div v-else key="manage" class="pv-panel">
           <!-- 管理子视图 -->
 
           <!-- 日计划列表 -->
