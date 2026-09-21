@@ -167,6 +167,100 @@ def delete_plan(plan_id):
         return error_response("Invalid plan ID")
 
 
+def archive_plan(plan_id, archive_dir=None):
+    """Archive a plan to a recoverable JSON file and remove it from active plans."""
+    try:
+        plan_id = int(plan_id)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        p = plan_module.Plan.registry[plan_id]
+        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        archive_file = target_dir / f"plan_{plan_id}_{timestamp}.json"
+        with open(archive_file, "w", encoding="utf-8") as handle:
+            json.dump({
+                "archived_at": datetime.now().isoformat(),
+                "plan": p.plan,
+            }, handle, ensure_ascii=False, indent=2)
+        p.delete()
+        return success_response(data={
+            "plan_id": plan_id,
+            "archived": True,
+            "file": str(archive_file),
+        })
+    except (ValueError, TypeError, OSError) as e:
+        return error_response(str(e))
+
+
+def list_archives(archive_dir=None):
+    """List recoverable archived plans."""
+    try:
+        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        if not target_dir.exists():
+            return success_response(data={"archives": [], "count": 0})
+        archives = []
+        for archive_file in sorted(target_dir.glob("plan_*.json"), reverse=True):
+            try:
+                with open(archive_file, "r", encoding="utf-8") as handle:
+                    payload = json.load(handle)
+                plan_data = payload.get("plan", {})
+                head = plan_data.get("head", {})
+                archives.append({
+                    "file": archive_file.name,
+                    "path": str(archive_file),
+                    "plan_id": head.get("index"),
+                    "name": head.get("name"),
+                    "date": list(head.get("date", ())),
+                    "archived_at": payload.get("archived_at"),
+                })
+            except (OSError, ValueError, json.JSONDecodeError):
+                continue
+        return success_response(data={"archives": archives, "count": len(archives)})
+    except OSError as e:
+        return error_response(str(e))
+
+
+def restore_archive(filename, archive_dir=None, new_id=None):
+    """Restore an archived plan into the active registry."""
+    try:
+        safe_name = Path(str(filename)).name
+        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        archive_file = target_dir / safe_name
+        if not archive_file.exists() or archive_file.suffix != ".json":
+            return error_response("Archive not found", code=404)
+        with open(archive_file, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        plan_data = payload.get("plan")
+        if not isinstance(plan_data, dict):
+            return error_response("Invalid archive format")
+        restored = plan_module.Plan.load_from_json(json.dumps(plan_data, ensure_ascii=False), new_id=new_id)
+        return success_response(data=_serialize_plan(restored), code=201)
+    except (OSError, ValueError, TypeError, IndexError, json.JSONDecodeError) as e:
+        return error_response(str(e))
+
+
+def get_management_stats():
+    """Return plans-level aggregate statistics for management screens."""
+    summaries = [_serialize_plan_summary(p) for p in plan_module.Plan.registry.values()]
+    total_tasks = sum(item["total_tasks"] for item in summaries)
+    completed_tasks = sum(item["completed_tasks"] for item in summaries)
+    total_minutes = sum(item["estimated_minutes"] for item in summaries)
+    by_date = {}
+    for item in summaries:
+        key = "/".join(str(part).zfill(2) for part in item["date"])
+        by_date[key] = by_date.get(key, 0) + 1
+    return success_response(data={
+        "plan_count": len(summaries),
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+        "estimated_minutes": round(total_minutes, 1),
+        "completion_percentage": round(completed_tasks / total_tasks * 100, 1) if total_tasks else 0,
+        "by_date": by_date,
+        "plans": summaries,
+    })
+
+
 # ==========================================
 # Section Operations
 # ==========================================

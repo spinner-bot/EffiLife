@@ -27,6 +27,7 @@ const app = createApp({
         const templates = ref([]);
         const suggestions = ref(null);
         const backups = ref([]);
+        const archives = ref([]);
         const editPlan = ref(null);
 
         // Form state
@@ -439,6 +440,17 @@ const app = createApp({
             }
         }
 
+        async function archivePlan(planId) {
+            if (!confirm('归档后计划会从当前列表移除，但仍可在设置中读取恢复。继续吗？')) return;
+            const resp = await apiPost(`/api/plans/${planId}/archive`, {});
+            if (resp && resp.success) {
+                showToast('计划已归档', 'success');
+                currentView.value = 'dashboard';
+                await loadPlans();
+                await loadArchives();
+            } else showToast(resp?.error || '归档失败', 'error');
+        }
+
         async function exportPlan(planId) {
             const resp = await apiGet(`/api/plans/${planId}/full`);
             if (resp && resp.success) {
@@ -487,6 +499,22 @@ const app = createApp({
         async function loadBackups() {
             const resp = await apiGet('/api/backups');
             if (resp && resp.success) backups.value = resp.data.backups || [];
+        }
+
+        async function loadArchives() {
+            const resp = await apiGet('/api/archives');
+            if (resp && resp.success) archives.value = resp.data.archives || [];
+        }
+
+        async function restoreArchive(filename) {
+            const resp = await apiPost('/api/archives/restore', { file: filename });
+            if (resp && resp.success) {
+                showToast('计划已读取恢复', 'success');
+                await loadPlans();
+                await loadArchives();
+                showSettings.value = false;
+                openPlan(resp.data.id);
+            } else showToast(resp?.error || '读取归档失败', 'error');
         }
 
         // ==========================================
@@ -576,6 +604,7 @@ const app = createApp({
         onMounted(async () => {
             await loadPlans();
             await loadBackups();
+            await loadArchives();
         });
 
         return {
@@ -583,7 +612,7 @@ const app = createApp({
             currentView, sidebarCollapsed, showCreatePlan, showAddLog, showImport, showSettings, showEditPlan,
             plans, selectedPlan, planDetail, planProgress, planConflicts,
             templates, suggestions,
-            backups, backupLoading, editPlan, newPlan, newLog, importJson,
+            backups, archives, backupLoading, editPlan, newPlan, newLog, importJson,
             toast,
             // Computed
             totalTasks, completedTasks, overallProgress,
@@ -596,8 +625,8 @@ const app = createApp({
             addEditSection, addEditTask, removeEditSection, removeEditTask,
             addNewSection, removeNewSection, addNewTask, removeNewTask,
             completeTask, toggleTaskComplete, submitLog,
-            quickLog, deletePlan, exportPlan, importPlan,
-            createBackup, loadBackups, loadSuggestions,
+            quickLog, deletePlan, archivePlan, exportPlan, importPlan,
+            createBackup, loadBackups, loadArchives, restoreArchive, loadSuggestions,
             // Drag & Drop
             onDragStart, onDrop,
             // Helpers
