@@ -286,7 +286,7 @@ const app = createApp({
                             time_minutes: Number(task.time_minutes) || 0,
                         });
                     } else {
-                        taskResp = await apiPut(`/api/plans/${editPlan.value.id}/tasks/${section.letter}${task.index}`, {
+                        taskResp = await apiPut(`/api/plans/${editPlan.value.id}/tasks/${task.internal_id}`, {
                             content: task.content,
                             time_minutes: Number(task.time_minutes) || 0,
                         });
@@ -319,7 +319,7 @@ const app = createApp({
             if (!confirm(`确定删除任务“${task.content}”吗？`)) return;
             const section = editPlan.value.sections.find(item => item.tasks.includes(task));
             if (!section) return;
-            const resp = await apiDelete(`/api/plans/${editPlan.value.id}/tasks/${section.letter}${task.index}`);
+            const resp = await apiDelete(`/api/plans/${editPlan.value.id}/tasks/${task.internal_id}`);
             if (resp && resp.success) {
                 task.is_active = false;
                 showToast('任务已删除', 'success');
@@ -380,12 +380,12 @@ const app = createApp({
             if (!planDetail.value) return;
             const now = new Date();
             const resp = await apiPost(`/api/plans/${planDetail.value.id}/complete`, {
-                task_id: `${section.letter}${task.index}`,
+                task_id: task.internal_id,
                 day: 0,
                 time: [now.getHours(), now.getMinutes()],
             });
             if (resp && resp.success) {
-                showToast(`任务 ${section.letter}${task.index} 已完成`, 'success');
+                showToast(`任务 ${task.display_id} 已完成`, 'success');
                 // Reload plan detail
                 await openPlan(planDetail.value.id);
                 await loadPlans();

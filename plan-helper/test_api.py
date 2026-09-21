@@ -126,6 +126,37 @@ def test_api_sections_tasks():
     print("  🎉 All section/task tests passed!\n")
 
 
+def test_soft_delete_compacts_display_ids():
+    """Soft deletion keeps storage references stable but compacts the UI IDs."""
+    print("=" * 50)
+    print("Test: Soft-delete display numbering")
+    print("=" * 50)
+
+    resp = api.create_plan(name="Display ID Test")
+    assert resp.success
+    plan_id = resp.data["id"]
+    api.add_section(plan_id, "Section A")
+    api.add_task(plan_id, 0, "Task 1", 10)
+    api.add_task(plan_id, 0, "Task 2", 10)
+    api.add_task(plan_id, 0, "Task 3", 10)
+    api.add_log(plan_id, 0, "A3", [10, 99], "Historical A3 log")
+
+    assert api.delete_task(plan_id, "A2").success
+    tasks = api.get_plan_full(plan_id).data["sections"][0]["tasks"]
+    assert [task["display_id"] for task in tasks] == ["A1", "A2"]
+    assert [task["internal_id"] for task in tasks] == ["A1", "A3"]
+
+    # The displayed A2 resolves to the stored A3 without rewriting its log.
+    assert api.complete_task(plan_id, "A2", day=0, time_tuple=(11, 99)).success
+    stored = Plan.registry[plan_id].plan["main"][0]["plan"]
+    assert stored[2]["is_active"] is False
+    assert stored[3].get("finish") == {"time": (11, 99), "day": 0}
+    assert Plan.registry[plan_id].plan["log"][0]["plan"] == "A3"
+
+    Plan.registry[plan_id].delete()
+    print("  🎉 Soft-delete display numbering passed!\n")
+
+
 def test_api_create_and_edit_full_plan():
     """Test creating and editing a non-empty plan through the API."""
     print("=" * 50)
@@ -439,6 +470,7 @@ if __name__ == "__main__":
     tests = [
         test_api_plan_crud,
         test_api_sections_tasks,
+        test_soft_delete_compacts_display_ids,
         test_api_create_and_edit_full_plan,
         test_api_lifecycle_and_management,
         test_api_logs,

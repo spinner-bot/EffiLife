@@ -338,6 +338,51 @@ def delete_section(plan_id, section_index):
 # Task (Plan Item) Operations
 # ==========================================
 
+def _active_task_entries(p, section_index):
+    """Return active tasks with a compact, derived display index.
+
+    The plan data keeps its original ordered slots so soft deletion does not
+    invalidate historical task references.  Display numbering is deliberately
+    calculated on demand and is never persisted.
+    """
+    section = p.plan["main"][section_index]
+    entries = []
+    display_index = 0
+    for internal_index, task in enumerate(section.get("plan", [])):
+        if internal_index == 0 or not task or not task.get("is_active", True):
+            continue
+        display_index += 1
+        entries.append((internal_index, display_index, task))
+    return entries
+
+
+def _task_id_for_display(p, task_id):
+    """Resolve an API task ID while preserving stable internal references.
+
+    A stable internal ID is preferred when it points at an active task.  If
+    that slot is inactive, the numeric part is interpreted as the compact
+    display position among active tasks.  This lets the UI show A1, A2, ...
+    after soft deletion without rewriting logs or stored task data.
+    """
+    section_index, requested_index = plan_module.Plan.sep_index(str(task_id))
+    if section_index < 0 or requested_index < 1:
+        return None
+    if section_index >= len(p.plan["main"]):
+        return None
+
+    section = p.plan["main"][section_index]
+    raw_tasks = section.get("plan", [])
+    if requested_index < len(raw_tasks):
+        task = raw_tasks[requested_index]
+        if task and task.get("is_active", True):
+            return plan_module.Plan.syn_index(section_index, requested_index)
+
+    entries = _active_task_entries(p, section_index)
+    for internal_index, display_index, _task in entries:
+        if display_index == requested_index:
+            return plan_module.Plan.syn_index(section_index, internal_index)
+    return None
+
 def add_task(plan_id, section_index, content, time_minutes):
     """
     Add a task to a section.
@@ -367,8 +412,11 @@ def update_task(plan_id, task_id, content=None, time_minutes=None):
         if content is not None and not str(content).strip():
             return error_response("Task content is required")
         p = plan_module.Plan.registry[plan_id]
+        internal_id = _task_id_for_display(p, task_id)
+        if internal_id is None:
+            return error_response(f"Invalid task ID: {task_id}", code=400)
         task = p.update_plan_item(
-            task_id,
+            internal_id,
             content=content,
             t_m=(float(time_minutes) / 6.0) if time_minutes is not None else None,
         )
@@ -394,16 +442,17 @@ def get_tasks(plan_id, section_index=None):
         for sec_idx, sec in enumerate(sections):
             if section_index is not None and sec_idx != int(section_index):
                 continue
-            for task_idx, task in enumerate(sec.get("plan", [])):
-                if task is None or task_idx == 0:
-                    continue
-                if not task.get("is_active", True):
-                    continue
+            for task_idx, display_idx, task in _active_task_entries(p, sec_idx):
+                internal_id = plan_module.Plan.syn_index(sec_idx, task_idx)
+                display_id = plan_module.Plan.syn_index(sec_idx, display_idx)
                 tasks.append({
-                    "id": plan_module.Plan.syn_index(sec_idx, task_idx),
+                    "id": internal_id,
+                    "internal_id": internal_id,
+                    "display_id": display_id,
                     "section_index": sec_idx,
                     "section_letter": chr(ord('A') + sec_idx),
-                    "task_index": task_idx,
+                    "task_index": display_idx,
+                    "internal_index": task_idx,
                     "content": task.get("content", ""),
                     "time_minutes": round(task.get("t_m", 0) * 6, 1),
                     "is_active": task.get("is_active", True),
@@ -433,7 +482,10 @@ def complete_task(plan_id, task_id, day=None, time_tuple=None):
             now = datetime.now()
             time_tuple = (now.hour, now.minute)
 
-        result = p.finish(task_id, day, time_tuple)
+        internal_id = _task_id_for_display(p, task_id)
+        if internal_id is None:
+            return error_response(f"Invalid task ID: {task_id}", code=400)
+        result = p.finish(internal_id, day, time_tuple)
         if result == -1:
             return error_response(f"Failed to mark task {task_id} as complete")
         return success_response(data={"plan_id": plan_id, "task_id": task_id, "completed": True})
@@ -448,7 +500,10 @@ def delete_task(plan_id, task_id):
         if plan_id not in plan_module.Plan.registry:
             return error_response(f"Plan {plan_id} not found", code=404)
         p = plan_module.Plan.registry[plan_id]
-        result = p.del_plan(task_id)
+        internal_id = _task_id_for_display(p, task_id)
+        if internal_id is None:
+            return error_response(f"Invalid task ID: {task_id}", code=400)
+        result = p.del_plan(internal_id)
         if result == -1:
             return error_response(f"Invalid task ID: {task_id}")
         return success_response(data={"plan_id": plan_id, "task_id": task_id, "deleted": True})
@@ -664,14 +719,18 @@ def _serialize_plan_full(p):
     sections = []
     for sec_idx, sec in enumerate(p.plan["main"]):
         tasks = []
-        for task_idx, task in enumerate(sec.get("plan", [])):
-            if task is None:
-                continue
+        for task_idx, display_idx, task in _active_task_entries(p, sec_idx):
+            internal_id = plan_module.Plan.syn_index(sec_idx, task_idx)
+            display_id = plan_module.Plan.syn_index(sec_idx, display_idx)
             tasks.append({
-                "index": task_idx,
+                "index": display_idx,
+                "display_index": display_idx,
+                "display_id": display_id,
+                "internal_index": task_idx,
+                "internal_id": internal_id,
                 "content": task.get("content", ""),
                 "time_minutes": round(task.get("t_m", 0) * 6, 1),
-                "is_active": task.get("is_active", True),
+                "is_active": True,
                 "finish": task.get("finish"),
             })
 

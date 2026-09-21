@@ -203,7 +203,7 @@
                                     <span v-else>○</span>
                                 </div>
                                 <div class="task-content">
-                                    <span class="task-text">{{ task.content }}</span>
+                                    <span class="task-text"><span class="task-id">{{ task.display_id }}</span> {{ task.content }}</span>
                                     <span class="task-time">{{ task.time_minutes }}分钟</span>
                                 </div>
                                 <div class="task-actions">
