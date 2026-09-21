@@ -66,6 +66,11 @@ export const useAppStore = defineStore('app', () => {
     await DataService.saveConfig(newConfig)
   }
 
+  // 仅更新运行时配置，用于设置页实时预览；不会写入持久化存储。
+  function previewConfig(newConfig: Config) {
+    config.value = newConfig
+  }
+
   // 保存计划
   async function savePlans(newPlans: Plans) {
     plans.value = newPlans
@@ -123,6 +128,7 @@ export const useAppStore = defineStore('app', () => {
     init,
     refreshTodayData,
     saveConfig,
+    previewConfig,
     savePlans,
     saveScheduleRules,
     addRecord,

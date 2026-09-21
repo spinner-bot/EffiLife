@@ -91,7 +91,12 @@ function navigateTo(view: ViewType) {
 }
 
 // 返回上一级
-function goBack() {
+async function goBack() {
+  if (currentView.value === 'theme' && themeDirty.value) {
+    const shouldSave = confirm('主题已发生变化，是否保存当前主题？')
+    if (shouldSave) await saveTheme()
+    else await discardThemeChanges()
+  }
   if (viewHistory.value.length > 1) {
     viewHistory.value.pop()
     currentView.value = viewHistory.value[viewHistory.value.length - 1]
@@ -160,6 +165,43 @@ const neonConfig = ref<NeonThemeConfig>(config.value.theme.neon || {
   accent_color: '#ff00ff'
 })
 
+function cloneTheme(theme: Config['theme']): Config['theme'] {
+  return JSON.parse(JSON.stringify(theme)) as Config['theme']
+}
+
+const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
+
+function buildDraftTheme(): Config['theme'] {
+  return {
+    type: themeType.value,
+    solid: solidConfig.value,
+    gradient: gradientConfig.value,
+    glass: glassConfig.value,
+    neon: neonConfig.value,
+  }
+}
+
+const themeDirty = computed(() =>
+  JSON.stringify(buildDraftTheme()) !== JSON.stringify(savedThemeSnapshot.value)
+)
+
+function previewTheme() {
+  const theme = buildDraftTheme()
+  if (JSON.stringify(theme) !== JSON.stringify(config.value.theme)) {
+    appStore.previewConfig({ ...config.value, theme })
+  }
+}
+
+async function discardThemeChanges() {
+  const restored = cloneTheme(savedThemeSnapshot.value)
+  appStore.previewConfig({ ...config.value, theme: restored })
+  themeType.value = restored.type
+  if (restored.solid) solidConfig.value = { ...restored.solid }
+  if (restored.gradient) gradientConfig.value = { ...restored.gradient }
+  if (restored.glass) glassConfig.value = { ...restored.glass }
+  if (restored.neon) neonConfig.value = { ...restored.neon }
+}
+
 // 所有可用主题
 const availableThemes = [
   // 基础主题
@@ -192,16 +234,10 @@ const availableThemes = [
 async function saveTheme() {
   const newConfig: Config = {
     ...config.value,
-    theme: {
-      type: themeType.value,
-      solid: solidConfig.value,
-      gradient: gradientConfig.value,
-      glass: glassConfig.value,
-      neon: neonConfig.value,
-    }
+    theme: buildDraftTheme()
   }
   await appStore.saveConfig(newConfig)
-  alert('主题已保存')
+  savedThemeSnapshot.value = cloneTheme(newConfig.theme)
 }
 
 // 纯色预设
@@ -426,6 +462,8 @@ watch(() => config.value, (newConfig) => {
   if (newConfig.theme.glass) glassConfig.value = { ...newConfig.theme.glass }
   if (newConfig.theme.neon) neonConfig.value = { ...newConfig.theme.neon }
 }, { immediate: true, deep: true })
+
+watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], previewTheme, { deep: true })
 
 // 初始化完成后关闭加载状态
 onMounted(async () => {
@@ -753,7 +791,7 @@ onMounted(async () => {
 
         <div class="form-actions">
           <button class="btn secondary" @click="goBack">返回</button>
-          <button class="btn primary" @click="saveTheme">保存</button>
+          <span class="theme-preview-status">选择后立即预览，返回时可选择是否保存</span>
         </div>
       </template>
 
@@ -1430,6 +1468,13 @@ h2 {
   justify-content: flex-end;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-xl);
+}
+
+.theme-preview-status {
+  margin-right: auto;
+  align-self: center;
+  color: var(--color-text-tertiary);
+  font-size: 0.8rem;
 }
 
 .btn {

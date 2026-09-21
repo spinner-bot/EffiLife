@@ -10,7 +10,7 @@ import {
 import {
   ArrowLeft, Plus, Pencil, Trash2, X, Check,
   Calendar, FolderKanban, RefreshCw, ClipboardList,
-  Clock, Layers, ChevronRight
+  Clock, ChevronRight
 } from 'lucide-vue-next'
 import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
 import EmptyState from '@/components/EmptyState.vue'
@@ -18,10 +18,6 @@ import { useFormValidation } from '@/composables/useFormValidation'
 
 const router = useRouter()
 const appStore = useAppStore()
-
-// ============ Tab 状态 ============
-type TabType = 'records' | 'manage'
-const activeTab = ref<TabType>('records')
 
 // ============ Records 相关状态 ============
 const records = computed(() => appStore.todayRecords)
@@ -403,31 +399,12 @@ onMounted(() => {
       <button class="pv-back" @click="AudioManager.playSound('click'); router.push('/')">
         <ArrowLeft :size="18" />
       </button>
-      <div class="pv-tabs">
-        <button
-          class="pv-tab"
-          :class="{ active: activeTab === 'records' }"
-          @click="AudioManager.playSound('click'); activeTab = 'records'"
-        >
-          <Clock :size="16" />
-          <span>今日记录</span>
-        </button>
-        <button
-          class="pv-tab"
-          :class="{ active: activeTab === 'manage' }"
-          @click="AudioManager.playSound('click'); activeTab = 'manage'"
-        >
-          <Layers :size="16" />
-          <span>计划管理</span>
-        </button>
-        <div class="pv-tab-indicator" :class="{ right: activeTab === 'manage' }"></div>
+      <div class="pv-header-title">
+        <Clock :size="18" />
+        <span>计划工作台</span>
       </div>
       <div class="pv-header-actions">
-        <button
-          v-if="activeTab === 'records'"
-          class="pv-add-btn"
-          @click="AudioManager.playSound('click'); openAddForm()"
-        >
+        <button class="pv-add-btn" @click="AudioManager.playSound('click'); openAddForm()">
           <Plus :size="16" />
           <span>新增</span>
         </button>
@@ -437,8 +414,8 @@ onMounted(() => {
     <!-- 内容区域 -->
     <main class="pv-content">
       <Transition name="tab-fade" mode="out-in">
-        <!-- ============ 记录 Tab ============ -->
-        <div v-if="activeTab === 'records'" key="records" class="pv-panel">
+        <!-- ============ 统一计划工作台 ============ -->
+        <div v-if="manageView === 'overview'" key="overview" class="pv-panel">
           <!-- 今日概览卡片 -->
           <div class="pv-summary-card">
             <div class="pv-summary-left">
@@ -488,15 +465,9 @@ onMounted(() => {
             description="点击上方「新增」按钮开始记录你的时间"
             @action="AudioManager.playSound('click'); openAddForm()"
           />
-        </div>
 
-        <!-- ============ 管理 Tab ============ -->
-        <div v-else key="manage" class="pv-panel">
-          <!-- 管理子视图 -->
-
-          <!-- 管理主页 -->
-          <template v-if="manageView === 'overview'">
-            <!-- 今日计划卡片 -->
+          <!-- 计划管理与记录共用同一工作台，不再拆成独立顶层页面 -->
+          <section class="pv-management-summary">
             <div class="pv-plan-hero">
               <div class="pv-plan-hero-header">
                 <span class="pv-plan-hero-label">今日计划</span>
@@ -504,57 +475,39 @@ onMounted(() => {
               </div>
               <h2 class="pv-plan-hero-name">{{ todayPlan.name }}</h2>
               <div class="pv-plan-hero-items" v-if="plans[todayPlan.name]">
-                <div
-                  v-for="item in plans[todayPlan.name].items"
-                  :key="item.name"
-                  class="pv-plan-hero-item"
-                >
+                <div v-for="item in plans[todayPlan.name].items" :key="item.name" class="pv-plan-hero-item">
                   <span class="pv-plan-item-dot" :style="{ background: getPlanItemColor(item.name) }"></span>
                   <span>{{ item.name }}</span>
                   <span class="pv-plan-item-hours">{{ item.hours }}h</span>
                 </div>
               </div>
             </div>
-
-            <!-- 功能入口 -->
             <div class="pv-action-cards">
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openPlanList()">
-                <div class="pv-action-icon" style="--icon-bg: rgba(99,102,241,0.12); --icon-color: #6366f1;">
-                  <FolderKanban :size="22" />
-                </div>
-                <div class="pv-action-text">
-                  <span class="pv-action-title">日计划管理</span>
-                  <span class="pv-action-desc">创建、编辑计划模板</span>
-                </div>
+                <div class="pv-action-icon" style="--icon-bg: rgba(99,102,241,0.12); --icon-color: #6366f1;"><FolderKanban :size="22" /></div>
+                <div class="pv-action-text"><span class="pv-action-title">日计划管理</span><span class="pv-action-desc">创建、编辑计划模板</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
-
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openRuleList()">
-                <div class="pv-action-icon" style="--icon-bg: rgba(34,197,94,0.12); --icon-color: #22c55e;">
-                  <Calendar :size="22" />
-                </div>
-                <div class="pv-action-text">
-                  <span class="pv-action-title">日程规则</span>
-                  <span class="pv-action-desc">自动分配每日计划</span>
-                </div>
+                <div class="pv-action-icon" style="--icon-bg: rgba(34,197,94,0.12); --icon-color: #22c55e;"><Calendar :size="22" /></div>
+                <div class="pv-action-text"><span class="pv-action-title">日程规则</span><span class="pv-action-desc">自动分配每日计划</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
-
               <button class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
-                <div class="pv-action-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #f59e0b;">
-                  <RefreshCw :size="22" />
-                </div>
-                <div class="pv-action-text">
-                  <span class="pv-action-title">临时变更</span>
-                  <span class="pv-action-desc">快速切换今日计划</span>
-                </div>
+                <div class="pv-action-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #f59e0b;"><RefreshCw :size="22" /></div>
+                <div class="pv-action-text"><span class="pv-action-title">临时变更</span><span class="pv-action-desc">快速切换今日计划</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
             </div>
-          </template>
+          </section>
+        </div>
+
+        <!-- ============ 管理二级视图 ============ -->
+        <div v-if="manageView !== 'overview'" key="manage" class="pv-panel">
+          <!-- 管理子视图 -->
 
           <!-- 日计划列表 -->
-          <template v-else-if="manageView === 'plans'">
+          <template v-if="manageView === 'plans'">
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
@@ -1259,9 +1212,29 @@ onMounted(() => {
 }
 .pv-action-card:hover {
   border-color: var(--color-border-hover);
-  background: var(--color-bg-tertiary);
+  background: transparent;
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 0 1px var(--color-border-hover), var(--shadow-sm);
+}
+
+.pv-action-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  background: transparent;
+}
+
+.pv-header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.pv-management-summary {
+  display: grid;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
 }
 
 .pv-action-icon {
