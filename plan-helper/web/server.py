@@ -48,8 +48,6 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         # Serve static files or index.html for SPA routing
         if path == "/" or path == "":
             self._serve_file("index.html", "text/html")
-        elif path == "/calendar":
-            self._serve_file("index.html", "text/html")
         elif path == "/templates":
             self._serve_file("index.html", "text/html")
         else:

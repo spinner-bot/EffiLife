@@ -309,6 +309,8 @@ const app = createApp({
             if (resp && resp.success) {
                 editPlan.value.sections = editPlan.value.sections.filter(item => item !== section);
                 showToast('章节已删除', 'success');
+                await openPlan(editPlan.value.id);
+                startEditPlan();
             } else showToast(resp?.error || '删除章节失败', 'error');
         }
 

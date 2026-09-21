@@ -126,6 +126,39 @@ def test_api_sections_tasks():
     print("  🎉 All section/task tests passed!\n")
 
 
+def test_api_create_and_edit_full_plan():
+    """Test creating and editing a non-empty plan through the API."""
+    print("=" * 50)
+    print("Test: Full Plan Create & Edit")
+    print("=" * 50)
+
+    resp = api.create_plan(
+        name="完整计划",
+        date_tuple=(2026, 9, 21),
+        sections=[{
+            "name": "第一阶段",
+            "info": "基础任务",
+            "tasks": [{"content": "完成设计", "time_minutes": 45}],
+        }],
+    )
+    assert resp.success
+    plan_id = resp.data["id"]
+    full = api.get_plan_full(plan_id)
+    assert full.data["sections"][0]["tasks"][0]["content"] == "完成设计"
+
+    assert api.update_plan(plan_id, "修改后的计划", (2026, 9, 22)).success
+    assert api.update_section(plan_id, 0, "修改阶段", "更新说明").success
+    assert api.update_task(plan_id, "A1", "完成实现", 60).success
+    full = api.get_plan_full(plan_id)
+    assert full.data["name"] == "修改后的计划"
+    assert full.data["date"] == [2026, 9, 22]
+    assert full.data["sections"][0]["tasks"][0]["time_minutes"] == 60
+
+    assert not api.create_plan(name="非法日期", date_tuple=(2026, 2, 30)).success
+    api.delete_plan(plan_id)
+    print("  🎉 Full plan create/edit tests passed!\n")
+
+
 def test_api_logs():
     """Test Log operations."""
     print("=" * 50)
@@ -375,6 +408,7 @@ if __name__ == "__main__":
     tests = [
         test_api_plan_crud,
         test_api_sections_tasks,
+        test_api_create_and_edit_full_plan,
         test_api_logs,
         test_template_system,
         test_conflict_detection,
