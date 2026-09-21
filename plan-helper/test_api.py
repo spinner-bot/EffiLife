@@ -159,6 +159,37 @@ def test_api_create_and_edit_full_plan():
     print("  🎉 Full plan create/edit tests passed!\n")
 
 
+def test_api_lifecycle_and_management():
+    """Test archive/read lifecycle and plans-level management statistics."""
+    print("=" * 50)
+    print("Test: Plan Lifecycle & Management")
+    print("=" * 50)
+
+    import tempfile
+    import shutil
+
+    archive_dir = tempfile.mkdtemp(prefix="plan_helper_archives_")
+    try:
+        resp = api.create_plan(name="待归档计划", date_tuple=(2026, 9, 21))
+        assert resp.success
+        plan_id = resp.data["id"]
+        stats = api.get_management_stats()
+        assert stats.data["plan_count"] >= 1
+
+        archived = api.archive_plan(plan_id, archive_dir)
+        assert archived.success
+        assert not api.get_plan(plan_id).success
+        archives = api.list_archives(archive_dir)
+        assert archives.data["count"] == 1
+        restored = api.restore_archive(archives.data["archives"][0]["file"], archive_dir)
+        assert restored.success
+        assert api.get_plan(restored.data["id"]).success
+        api.delete_plan(restored.data["id"])
+        print("  🎉 Lifecycle and management tests passed!\n")
+    finally:
+        shutil.rmtree(archive_dir, ignore_errors=True)
+
+
 def test_api_logs():
     """Test Log operations."""
     print("=" * 50)
@@ -409,6 +440,7 @@ if __name__ == "__main__":
         test_api_plan_crud,
         test_api_sections_tasks,
         test_api_create_and_edit_full_plan,
+        test_api_lifecycle_and_management,
         test_api_logs,
         test_template_system,
         test_conflict_detection,

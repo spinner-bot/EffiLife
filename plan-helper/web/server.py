@@ -151,6 +151,10 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             resp = tmpl.suggest_plan_based_on_history()
         elif path == "/api/backups":
             resp = dt.list_backups()
+        elif path == "/api/archives":
+            resp = api.list_archives()
+        elif path == "/api/stats":
+            resp = api.get_management_stats()
         elif path == "/api/validate":
             plan_id = params.get("plan_id")
             if plan_id:
@@ -172,6 +176,8 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
                 plan_id=data.get("plan_id"),
                 sections=data.get("sections", []),
             )
+        elif path.startswith("/api/plans/") and path.endswith("/archive"):
+            resp = api.archive_plan(path.split("/")[3])
         elif path == "/api/plans/from-template":
             resp = tmpl.apply_template(
                 data.get("template_id", "workday"),
@@ -219,6 +225,8 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         elif path.startswith("/api/backup/restore/"):
             backup_file = data.get("file", "")
             resp = dt.restore_from_backup(backup_file)
+        elif path == "/api/archives/restore":
+            resp = api.restore_archive(data.get("file", ""), new_id=data.get("new_id"))
         else:
             resp = api.error_response("Unknown API endpoint", code=404)
 
