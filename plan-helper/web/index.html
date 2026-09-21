@@ -27,10 +27,6 @@
                     <span class="nav-icon">📊</span>
                     <span v-show="!sidebarCollapsed">计划总览</span>
                 </li>
-                <li class="nav-item" :class="{ active: currentView === 'calendar' }" @click="navigate('calendar')">
-                    <span class="nav-icon">📅</span>
-                    <span v-show="!sidebarCollapsed">日历视图</span>
-                </li>
                 <li class="nav-item" :class="{ active: currentView === 'templates' }" @click="navigate('templates')">
                     <span class="nav-icon">📑</span>
                     <span v-show="!sidebarCollapsed">计划模板</span>
@@ -60,12 +56,11 @@
                     <span v-else-if="currentView === 'detail'">
                         <a @click="navigate('dashboard')">计划总览</a> / {{ selectedPlan?.name || '计划详情' }}
                     </span>
-                    <span v-else-if="currentView === 'calendar'">日历视图</span>
                     <span v-else-if="currentView === 'templates'">计划模板</span>
                     <span v-else-if="currentView === 'suggestions'">智能建议</span>
                 </div>
                 <div class="top-actions">
-                    <button class="btn btn-primary" @click="showCreatePlan = true">
+                    <button class="btn btn-primary" @click="openCreatePlan">
                         + 新建计划
                     </button>
                 </div>
@@ -117,7 +112,7 @@
                     <h2>还没有任何计划</h2>
                     <p>点击下方按钮创建你的第一个计划，或从模板快速开始</p>
                     <div class="empty-actions">
-                        <button class="btn btn-primary" @click="showCreatePlan = true">+ 创建计划</button>
+                        <button class="btn btn-primary" @click="openCreatePlan">+ 创建计划</button>
                         <button class="btn btn-outline" @click="navigate('templates')">浏览模板</button>
                     </div>
                 </div>
@@ -156,6 +151,7 @@
                         </div>
                     </div>
                     <div class="detail-actions">
+                        <button class="btn btn-primary" @click="startEditPlan">编辑计划</button>
                         <button class="btn btn-primary" @click="showAddLog = true">📝 记录进展</button>
                         <button class="btn btn-outline" @click="exportPlan(planDetail.id)">📤 导出</button>
                         <button class="btn btn-danger" @click="deletePlan(planDetail.id)">🗑️ 删除</button>
@@ -244,33 +240,6 @@
                 </div>
             </section>
 
-            <!-- Calendar View -->
-            <section v-if="currentView === 'calendar'" class="view calendar-view">
-                <div class="calendar-header">
-                    <button class="btn-icon" @click="calendarPrev">←</button>
-                    <h2>{{ calendarTitle }}</h2>
-                    <button class="btn-icon" @click="calendarNext">→</button>
-                </div>
-                <div class="calendar-grid">
-                    <div class="calendar-weekdays">
-                        <span v-for="day in ['一', '二', '三', '四', '五', '六', '日']">周{{ day }}</span>
-                    </div>
-                    <div class="calendar-days">
-                        <div v-for="day in calendarDays" :key="day.dateStr"
-                             class="calendar-day"
-                             :class="{
-                                 'other-month': !day.currentMonth,
-                                 'today': day.isToday,
-                                 'has-plan': day.hasPlan
-                             }"
-                             @click="onCalendarDayClick(day)">
-                            <span class="day-number">{{ day.day }}</span>
-                            <div v-if="day.hasPlan" class="day-indicator" :class="day.planClass"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- Templates View -->
             <section v-if="currentView === 'templates'" class="view templates-view">
                 <h2>计划模板</h2>
@@ -339,10 +308,85 @@
                         <label>计划日期</label>
                         <input v-model="newPlan.date" type="date" class="input">
                     </div>
+                    <div v-for="(section, sectionIndex) in newPlan.sections" :key="sectionIndex" class="form-section-editor">
+                        <div class="form-row">
+                            <input v-model="section.name" placeholder="章节名称" class="input">
+                            <button class="btn-sm btn-danger" @click="removeNewSection(sectionIndex)">删除章节</button>
+                        </div>
+                        <input v-model="section.info" placeholder="章节说明（可选）" class="input">
+                        <div v-for="(task, taskIndex) in section.tasks" :key="taskIndex" class="form-row task-editor-row">
+                            <input v-model="task.content" placeholder="任务内容" class="input">
+                            <input v-model.number="task.time_minutes" type="number" min="0" step="1" placeholder="分钟" class="input task-minutes">
+                            <button class="btn-sm btn-danger" @click="removeNewTask(sectionIndex, taskIndex)">删除</button>
+                        </div>
+                        <button class="btn btn-outline btn-sm" @click="addNewTask(sectionIndex)">+ 添加任务</button>
+                    </div>
+                    <button class="btn btn-outline" @click="addNewSection">+ 添加章节</button>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" @click="showCreatePlan = false">取消</button>
                     <button class="btn btn-primary" @click="createPlan">创建</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Plan Modal -->
+        <div v-if="showEditPlan" class="modal-overlay" @click.self="closeEditPlan">
+            <div class="modal modal-wide">
+                <div class="modal-header">
+                    <h2>编辑计划</h2>
+                    <button class="btn-icon" @click="closeEditPlan">×</button>
+                </div>
+                <div class="modal-body" v-if="editPlan">
+                    <div class="form-group">
+                        <label for="edit-plan-name">计划名称</label>
+                        <input id="edit-plan-name" v-model="editPlan.name" class="input">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-plan-date">计划日期</label>
+                        <input id="edit-plan-date" v-model="editPlan.date" type="date" class="input">
+                    </div>
+                    <div v-for="section in editPlan.sections" :key="section.index" class="form-section-editor">
+                        <div class="form-row">
+                            <input v-model="section.name" class="input">
+                            <button class="btn-sm btn-danger" @click="removeEditSection(section)">删除章节</button>
+                        </div>
+                        <input v-model="section.info" class="input" placeholder="章节说明">
+                        <div v-for="task in section.tasks" :key="task.index" class="form-row task-editor-row">
+                            <input v-model="task.content" class="input">
+                            <input v-model.number="task.time_minutes" type="number" min="0" class="input task-minutes">
+                            <button class="btn-sm btn-danger" @click="removeEditTask(task)">删除</button>
+                        </div>
+                        <button class="btn btn-outline btn-sm" @click="addEditTask(section)">+ 添加任务</button>
+                    </div>
+                    <button class="btn btn-outline" @click="addEditSection">+ 添加章节</button>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" @click="closeEditPlan">取消</button>
+                    <button class="btn btn-primary" @click="saveEditPlan">保存修改</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>设置与存档</h2>
+                    <button class="btn-icon" @click="showSettings = false">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="settings-description">管理计划数据的备份与恢复。备份不会修改当前计划。</p>
+                    <button class="btn btn-primary" :disabled="backupLoading" @click="createBackup">
+                        {{ backupLoading ? '备份中…' : '立即创建备份' }}
+                    </button>
+                    <div class="backup-list" v-if="backups.length">
+                        <h3>最近备份</h3>
+                        <div v-for="backup in backups" :key="backup.file" class="backup-item">
+                            <span>{{ backup.backup_time }} · {{ backup.plan_count }} 个计划</span>
+                        </div>
+                    </div>
+                    <p v-else class="muted">暂无备份记录</p>
                 </div>
             </div>
         </div>

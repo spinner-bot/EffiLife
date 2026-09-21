@@ -132,6 +132,15 @@ class Plan:
             "group":{}
         })
 
+    def update_section(self, index, name=None, info=None):
+        """Update section metadata without replacing its tasks."""
+        section = self.plan["main"][int(index)]
+        if name is not None:
+            section["name"] = str(name).strip()
+        if info is not None:
+            section["info"] = str(info).strip()
+        return section
+
     def del_section(self, index):
         self.plan["main"][index]["plan"] = [None,]
 
@@ -145,6 +154,20 @@ class Plan:
             "t_m": t_m
         })
         return Plan.syn_index(section, len(self.plan["main"][section]["plan"])-1)
+
+    def update_plan_item(self, index, content=None, t_m=None):
+        """Update an active task while preserving completion metadata."""
+        section_index, task_index = Plan.sep_index(str(index))
+        if section_index < 0 or task_index < 1:
+            raise ValueError(f"Invalid task ID: {index}")
+        task = self.plan["main"][section_index]["plan"][task_index]
+        if not task or not task.get("is_active", True):
+            raise ValueError(f"Task not found: {index}")
+        if content is not None:
+            task["content"] = str(content).strip()
+        if t_m is not None:
+            task["t_m"] = float(t_m)
+        return task
 
     def del_plan(self, index):
         temp = Plan.sep_index(index)
