@@ -16,6 +16,8 @@ const app = createApp({
         const showAddLog = ref(false);
         const showImport = ref(false);
         const showSettings = ref(false);
+        const showEditPlan = ref(false);
+        const backupLoading = ref(false);
 
         const plans = ref([]);
         const selectedPlan = ref(null);
@@ -24,13 +26,11 @@ const app = createApp({
         const planConflicts = ref(null);
         const templates = ref([]);
         const suggestions = ref(null);
-
-        // Calendar state
-        const calendarDate = ref(new Date());
-        const calendarDays = ref([]);
+        const backups = ref([]);
+        const editPlan = ref(null);
 
         // Form state
-        const newPlan = reactive({ name: '', date: '' });
+        const newPlan = reactive({ name: '', date: todayInput(), sections: [] });
         const newLog = reactive({ taskId: 'base', content: '', time: '' });
         const importJson = ref('');
 
@@ -51,11 +51,6 @@ const app = createApp({
         const overallProgress = computed(() => {
             if (totalTasks.value === 0) return 0;
             return Math.round(completedTasks.value / totalTasks.value * 100);
-        });
-
-        const calendarTitle = computed(() => {
-            const d = calendarDate.value;
-            return `${d.getFullYear()}年${d.getMonth() + 1}月`;
         });
 
         const allTasks = computed(() => {
@@ -184,22 +179,43 @@ const app = createApp({
             currentView.value = view;
             if (view === 'templates') loadTemplates();
             if (view === 'suggestions') loadSuggestions();
-            if (view === 'calendar') buildCalendar();
             if (view === 'dashboard') loadPlans();
         }
 
+        function openCreatePlan() {
+            newPlan.name = '';
+            newPlan.date = todayInput();
+            newPlan.sections = [newSection()];
+            showCreatePlan.value = true;
+        }
+
         async function createPlan() {
-            const data = { name: newPlan.name || undefined };
-            if (newPlan.date) {
-                const [y, m, d] = newPlan.date.split('-').map(Number);
-                data.date = [y, m, d];
+            if (!newPlan.name.trim()) {
+                showToast('请输入计划名称', 'error');
+                return;
             }
+            if (!newPlan.date) {
+                showToast('请选择计划日期', 'error');
+                return;
+            }
+            const data = {
+                name: newPlan.name.trim(),
+                date: dateInputToTuple(newPlan.date),
+                sections: newPlan.sections.map(section => ({
+                    name: section.name.trim(),
+                    info: section.info.trim(),
+                    tasks: section.tasks
+                        .filter(task => task.content.trim())
+                        .map(task => ({ content: task.content.trim(), time_minutes: Number(task.time_minutes) || 0 }))
+                })).filter(section => section.name),
+            };
             const resp = await apiPost('/api/plans', data);
             if (resp && resp.success) {
                 showToast('计划创建成功', 'success');
                 showCreatePlan.value = false;
                 newPlan.name = '';
-                newPlan.date = '';
+                newPlan.date = todayInput();
+                newPlan.sections = [];
                 await loadPlans();
                 if (resp.data.id) {
                     openPlan(resp.data.id);
@@ -207,6 +223,128 @@ const app = createApp({
             } else {
                 showToast(resp?.error || '创建失败', 'error');
             }
+        }
+
+        function startEditPlan() {
+            if (!planDetail.value) return;
+            editPlan.value = {
+                id: planDetail.value.id,
+                name: planDetail.value.name || '',
+                date: tupleToDateInput(planDetail.value.date),
+                sections: JSON.parse(JSON.stringify(planDetail.value.sections || [])),
+            };
+            showEditPlan.value = true;
+        }
+
+        function closeEditPlan() {
+            showEditPlan.value = false;
+            editPlan.value = null;
+        }
+
+        async function saveEditPlan() {
+            if (!editPlan.value || !editPlan.value.name.trim() || !editPlan.value.date) {
+                showToast('计划名称和日期不能为空', 'error');
+                return;
+            }
+            const meta = await apiPut(`/api/plans/${editPlan.value.id}`, {
+                name: editPlan.value.name.trim(),
+                date: dateInputToTuple(editPlan.value.date),
+            });
+            if (!meta || !meta.success) {
+                showToast(meta?.error || '计划信息保存失败', 'error');
+                return;
+            }
+            for (const section of editPlan.value.sections) {
+                let sectionResp;
+                if (section.index === undefined) {
+                    sectionResp = await apiPost(`/api/plans/${editPlan.value.id}/sections`, {
+                        name: section.name,
+                        info: section.info,
+                    });
+                    if (sectionResp?.success) {
+                        section.index = sectionResp.data.section_index;
+                        section.letter = String.fromCharCode(65 + section.index);
+                    }
+                } else {
+                    sectionResp = await apiPut(`/api/plans/${editPlan.value.id}/sections/${section.index}`, {
+                        name: section.name,
+                        info: section.info,
+                    });
+                }
+                if (!sectionResp || !sectionResp.success) {
+                    showToast(sectionResp?.error || '章节保存失败', 'error');
+                    return;
+                }
+                for (const task of section.tasks || []) {
+                    if (!task.is_active) continue;
+                    let taskResp;
+                    if (task.index === undefined) {
+                        taskResp = await apiPost(`/api/plans/${editPlan.value.id}/tasks`, {
+                            section_index: section.index,
+                            content: task.content,
+                            time_minutes: Number(task.time_minutes) || 0,
+                        });
+                    } else {
+                        taskResp = await apiPut(`/api/plans/${editPlan.value.id}/tasks/${section.letter}${task.index}`, {
+                            content: task.content,
+                            time_minutes: Number(task.time_minutes) || 0,
+                        });
+                    }
+                    if (!taskResp || !taskResp.success) {
+                        showToast(taskResp?.error || '任务保存失败', 'error');
+                        return;
+                    }
+                }
+            }
+            closeEditPlan();
+            showToast('计划修改已保存', 'success');
+            await loadPlans();
+            await openPlan(planDetail.value.id);
+        }
+
+        async function removeEditSection(section) {
+            if (section.index === undefined) return;
+            if (!confirm(`确定删除章节“${section.name}”吗？`)) return;
+            const resp = await apiDelete(`/api/plans/${editPlan.value.id}/sections/${section.index}`);
+            if (resp && resp.success) {
+                editPlan.value.sections = editPlan.value.sections.filter(item => item !== section);
+                showToast('章节已删除', 'success');
+            } else showToast(resp?.error || '删除章节失败', 'error');
+        }
+
+        async function removeEditTask(task) {
+            if (!confirm(`确定删除任务“${task.content}”吗？`)) return;
+            const section = editPlan.value.sections.find(item => item.tasks.includes(task));
+            if (!section) return;
+            const resp = await apiDelete(`/api/plans/${editPlan.value.id}/tasks/${section.letter}${task.index}`);
+            if (resp && resp.success) {
+                task.is_active = false;
+                showToast('任务已删除', 'success');
+            } else showToast(resp?.error || '删除任务失败', 'error');
+        }
+
+        function addEditSection() {
+            editPlan.value.sections.push({ index: undefined, letter: '?', name: '新章节', info: '', tasks: [] });
+        }
+
+        function addEditTask(section) {
+            section.tasks.push({ index: undefined, content: '新任务', time_minutes: 30, is_active: true });
+        }
+
+        function addNewSection() {
+            newPlan.sections.push(newSection());
+        }
+
+        function removeNewSection(index) {
+            newPlan.sections.splice(index, 1);
+        }
+
+        function addNewTask(sectionIndex) {
+            newPlan.sections[sectionIndex].tasks.push({ content: '', time_minutes: 30 });
+        }
+
+        function removeNewTask(sectionIndex, taskIndex) {
+            newPlan.sections[sectionIndex].tasks.splice(taskIndex, 1);
         }
 
         async function applyTemplate(templateId) {
@@ -333,108 +471,20 @@ const app = createApp({
         }
 
         async function createBackup() {
+            backupLoading.value = true;
             const resp = await apiPost('/api/backup', {});
             if (resp && resp.success) {
                 showToast(`备份成功 (${resp.data.plan_count} 个计划)`, 'success');
+                await loadBackups();
             } else {
                 showToast('备份失败', 'error');
             }
+            backupLoading.value = false;
         }
 
-        // ==========================================
-        // Calendar
-        // ==========================================
-        function buildCalendar() {
-            const d = calendarDate.value;
-            const year = d.getFullYear();
-            const month = d.getMonth();
-
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-
-            // Adjust to Monday start
-            let startDow = firstDay.getDay();
-            if (startDow === 0) startDow = 7;
-
-            const days = [];
-            const today = new Date();
-
-            // Previous month days
-            const prevMonthLast = new Date(year, month, 0).getDate();
-            for (let i = startDow - 1; i > 0; i--) {
-                days.push({
-                    day: prevMonthLast - i + 1,
-                    dateStr: `${year}-${month}-${prevMonthLast - i + 1}`,
-                    currentMonth: false,
-                    isToday: false,
-                    hasPlan: false,
-                });
-            }
-
-            // Current month days
-            for (let i = 1; i <= lastDay.getDate(); i++) {
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === i;
-
-                // Check if any plan matches this date
-                const hasPlan = plans.value.some(p => {
-                    if (p.date && p.date.length >= 3) {
-                        return p.date[0] === year && p.date[1] === month + 1 && p.date[2] === i;
-                    }
-                    return false;
-                });
-
-                days.push({
-                    day: i,
-                    dateStr,
-                    currentMonth: true,
-                    isToday,
-                    hasPlan,
-                    planClass: hasPlan ? 'has-plan' : '',
-                });
-            }
-
-            // Next month days (fill to 42 = 6 rows)
-            const remaining = 42 - days.length;
-            for (let i = 1; i <= remaining; i++) {
-                days.push({
-                    day: i,
-                    dateStr: `${year}-${month + 2}-${i}`,
-                    currentMonth: false,
-                    isToday: false,
-                    hasPlan: false,
-                });
-            }
-
-            calendarDays.value = days;
-        }
-
-        function calendarPrev() {
-            const d = new Date(calendarDate.value);
-            d.setMonth(d.getMonth() - 1);
-            calendarDate.value = d;
-            buildCalendar();
-        }
-
-        function calendarNext() {
-            const d = new Date(calendarDate.value);
-            d.setMonth(d.getMonth() + 1);
-            calendarDate.value = d;
-            buildCalendar();
-        }
-
-        function onCalendarDayClick(day) {
-            if (!day.currentMonth) return;
-            // Find plan for this day
-            const plan = plans.value.find(p => {
-                if (p.date && p.date.length >= 3) {
-                    return p.date[2] === day.day;
-                }
-                return false;
-            });
-            if (plan) {
-                openPlan(plan.id);
-            }
+        async function loadBackups() {
+            const resp = await apiGet('/api/backups');
+            if (resp && resp.success) backups.value = resp.data.backups || [];
         }
 
         // ==========================================
@@ -464,6 +514,24 @@ const app = createApp({
         function formatDate(dateArr) {
             if (!dateArr || dateArr.length < 3) return '未知';
             return `${dateArr[0]}/${String(dateArr[1]).padStart(2, '0')}/${String(dateArr[2]).padStart(2, '0')}`;
+        }
+
+        function todayInput() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function dateInputToTuple(value) {
+            return value.split('-').map(Number);
+        }
+
+        function tupleToDateInput(value) {
+            if (!value || value.length < 3) return todayInput();
+            return `${value[0]}-${String(value[1]).padStart(2, '0')}-${String(value[2]).padStart(2, '0')}`;
+        }
+
+        function newSection() {
+            return { name: '', info: '', tasks: [{ content: '', time_minutes: 30 }] };
         }
 
         function formatLogTime(timeArr) {
@@ -505,29 +573,29 @@ const app = createApp({
         // ==========================================
         onMounted(async () => {
             await loadPlans();
-            buildCalendar();
+            await loadBackups();
         });
 
         return {
             // State
-            currentView, sidebarCollapsed, showCreatePlan, showAddLog, showImport, showSettings,
+            currentView, sidebarCollapsed, showCreatePlan, showAddLog, showImport, showSettings, showEditPlan,
             plans, selectedPlan, planDetail, planProgress, planConflicts,
             templates, suggestions,
-            calendarDate, calendarDays,
-            newPlan, newLog, importJson,
+            backups, backupLoading, editPlan, newPlan, newLog, importJson,
             toast,
             // Computed
             totalTasks, completedTasks, overallProgress,
-            calendarTitle, allTasks, weekdayRatio,
+            allTasks, weekdayRatio,
             // Navigation
             navigate, openPlan,
             // Actions
-            createPlan, applyTemplate, copyYesterday,
+            openCreatePlan, createPlan, applyTemplate, copyYesterday,
+            startEditPlan, closeEditPlan, saveEditPlan,
+            addEditSection, addEditTask, removeEditSection, removeEditTask,
+            addNewSection, removeNewSection, addNewTask, removeNewTask,
             completeTask, toggleTaskComplete, submitLog,
             quickLog, deletePlan, exportPlan, importPlan,
-            createBackup, loadSuggestions,
-            // Calendar
-            calendarPrev, calendarNext, onCalendarDayClick,
+            createBackup, loadBackups, loadSuggestions,
             // Drag & Drop
             onDragStart, onDrop,
             // Helpers

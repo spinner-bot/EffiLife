@@ -241,7 +241,12 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         self._send_json(resp)
 
     def _handle_api_delete(self, path):
-        if path.startswith("/api/plans/") and path.count("/") == 3:
+        parts = path.split("/")
+        if len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "sections":
+            resp = api.delete_section(parts[3], parts[5])
+        elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "tasks":
+            resp = api.delete_task(parts[3], parts[5])
+        elif path.startswith("/api/plans/") and path.count("/") == 3:
             plan_id = path.split("/")[-1]
             resp = api.delete_plan(plan_id)
         else:
