@@ -55,7 +55,7 @@ def error_response(message, code=400):
 # Plan CRUD Operations
 # ==========================================
 
-def create_plan(name=None, date_tuple=None, plan_id=None):
+def create_plan(name=None, date_tuple=None, plan_id=None, sections=None):
     """
     Create a new plan.
     Args:
@@ -77,7 +77,21 @@ def create_plan(name=None, date_tuple=None, plan_id=None):
             today = date.today()
             date_tuple = (today.year, today.month, today.day)
 
-        p = plan_module.Plan(plan_id, name=name, date=date_tuple)
+        if not name or not str(name).strip():
+            return error_response("Plan name is required")
+        _validate_date_tuple(date_tuple)
+        p = plan_module.Plan(plan_id, name=str(name).strip(), date=date_tuple)
+        for section in sections or []:
+            section_name = str(section.get("name", "")).strip()
+            if not section_name:
+                continue
+            p.add_section(section_name, section.get("info", ""))
+            section_index = len(p.plan["main"]) - 1
+            for task in section.get("tasks", []):
+                content = str(task.get("content", "")).strip()
+                if content:
+                    minutes = max(float(task.get("time_minutes", 0) or 0), 0)
+                    p.add_plan(section_index, content, minutes / 6.0)
         return success_response(data=_serialize_plan(p), code=201)
     except Exception as e:
         return error_response(str(e))
@@ -113,10 +127,31 @@ def update_plan_name(plan_id, name):
         if plan_id not in plan_module.Plan.registry:
             return error_response(f"Plan {plan_id} not found", code=404)
         p = plan_module.Plan.registry[plan_id]
-        p.plan["head"]["name"] = name
-        return success_response(data={"plan_id": plan_id, "name": name})
+        if not str(name or "").strip():
+            return error_response("Plan name is required")
+        p.plan["head"]["name"] = str(name).strip()
+        return success_response(data={"plan_id": plan_id, "name": p.plan["head"]["name"]})
     except (ValueError, TypeError):
         return error_response("Invalid plan ID")
+
+
+def update_plan(plan_id, name=None, date_tuple=None):
+    """Update plan metadata."""
+    try:
+        plan_id = int(plan_id)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        p = plan_module.Plan.registry[plan_id]
+        if name is not None:
+            if not str(name).strip():
+                return error_response("Plan name is required")
+            p.plan["head"]["name"] = str(name).strip()
+        if date_tuple is not None:
+            _validate_date_tuple(date_tuple)
+            p.plan["head"]["date"] = tuple(int(v) for v in date_tuple)
+        return success_response(data=_serialize_plan(p))
+    except (ValueError, TypeError) as e:
+        return error_response(str(e))
 
 
 def delete_plan(plan_id):
@@ -151,6 +186,24 @@ def add_section(plan_id, name, info=""):
         )
     except Exception as e:
         return error_response(str(e))
+
+
+def update_section(plan_id, section_index, name=None, info=None):
+    """Update section metadata."""
+    try:
+        plan_id = int(plan_id)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        p = plan_module.Plan.registry[plan_id]
+        section = p.update_section(int(section_index), name, info)
+        return success_response(data={
+            "plan_id": plan_id,
+            "section_index": int(section_index),
+            "name": section.get("name", ""),
+            "info": section.get("info", ""),
+        })
+    except (IndexError, ValueError, TypeError) as e:
+        return error_response(str(e), code=400)
 
 
 def get_sections(plan_id):
@@ -209,6 +262,30 @@ def add_task(plan_id, section_index, content, time_minutes):
         )
     except Exception as e:
         return error_response(str(e))
+
+
+def update_task(plan_id, task_id, content=None, time_minutes=None):
+    """Update task content and estimated duration."""
+    try:
+        plan_id = int(plan_id)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        if content is not None and not str(content).strip():
+            return error_response("Task content is required")
+        p = plan_module.Plan.registry[plan_id]
+        task = p.update_plan_item(
+            task_id,
+            content=content,
+            t_m=(float(time_minutes) / 6.0) if time_minutes is not None else None,
+        )
+        return success_response(data={
+            "plan_id": plan_id,
+            "task_id": task_id,
+            "content": task.get("content", ""),
+            "time_minutes": round(task.get("t_m", 0) * 6, 1),
+        })
+    except (ValueError, TypeError, IndexError) as e:
+        return error_response(str(e), code=400)
 
 
 def get_tasks(plan_id, section_index=None):
@@ -537,3 +614,13 @@ def _serialize_plan_full(p):
         "sections": sections,
         "logs": logs,
     }
+
+
+def _validate_date_tuple(date_tuple):
+    """Validate and normalize a [year, month, day] date tuple."""
+    if not date_tuple or len(date_tuple) != 3:
+        raise ValueError("Date must be year, month and day")
+    try:
+        date(int(date_tuple[0]), int(date_tuple[1]), int(date_tuple[2]))
+    except (TypeError, ValueError):
+        raise ValueError("Invalid date")

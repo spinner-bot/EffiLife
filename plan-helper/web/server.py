@@ -172,6 +172,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
                 name=data.get("name"),
                 date_tuple=tuple(data["date"]) if data.get("date") else None,
                 plan_id=data.get("plan_id"),
+                sections=data.get("sections", []),
             )
         elif path == "/api/plans/from-template":
             resp = tmpl.apply_template(
@@ -226,9 +227,15 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         self._send_json(resp)
 
     def _handle_api_put(self, path, data):
+        parts = path.split("/")
         if path.startswith("/api/plans/") and path.count("/") == 3:
             plan_id = path.split("/")[-1]
-            resp = api.update_plan_name(plan_id, data.get("name", ""))
+            date_tuple = tuple(data["date"]) if data.get("date") else None
+            resp = api.update_plan(plan_id, data.get("name"), date_tuple)
+        elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "sections":
+            resp = api.update_section(parts[3], parts[5], data.get("name"), data.get("info"))
+        elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "tasks":
+            resp = api.update_task(parts[3], parts[5], data.get("content"), data.get("time_minutes"))
         else:
             resp = api.error_response("Unknown API endpoint", code=404)
         self._send_json(resp)
