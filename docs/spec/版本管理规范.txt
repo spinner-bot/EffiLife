@@ -37,3 +37,8 @@
 - 所有分支合并必须使用 `no-FF merge`，保留明确的合并提交。
 - 严禁使用 fast-forward 合并。
 - 合并示例：`git merge --no-ff <branch-name>`
+
+## 迭代工作流
+
+- 日常功能迭代直接在 `main` 分支进行，不再为每项任务创建功能分支。
+- 如需合并外部或历史分支，仍必须使用 `git merge --no-ff`，严禁 fast-forward。
