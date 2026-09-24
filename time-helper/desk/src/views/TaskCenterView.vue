@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
+import { DataService, getTodayDate } from '@/services/dataService'
 import {
   TodoCategoryService,
   TodoService,
@@ -40,6 +41,8 @@ const isSaving = ref(false)
 const expandedTodoId = ref<string | null>(null)
 const subtaskTitle = ref('')
 const subtaskSaving = ref(false)
+const trackedMinutes = ref(25)
+const trackingTodoId = ref<string | null>(null)
 const planSummaries = ref<PlanSummary[]>([])
 const planGatewayState = ref<PlanGatewayState>('idle')
 const planTasks = ref<PlanTaskSummary[]>([])
@@ -301,6 +304,44 @@ function subtaskProgress(todo: UnifiedTodo): string {
   return `${completed}/${todo.subtasks.length}`
 }
 
+function makeTimeRecordId(): string {
+  const suffix = typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+  return `TR-${suffix.toUpperCase()}`
+}
+
+function formatClock(date: Date): string {
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+}
+
+async function trackTodoTime(todo: UnifiedTodo) {
+  if (trackingTodoId.value || !Number.isInteger(trackedMinutes.value) || trackedMinutes.value < 1 || trackedMinutes.value > 1440) return
+  trackingTodoId.value = todo.id
+  try {
+    const minutes = trackedMinutes.value
+    const startDate = new Date()
+    const endDate = new Date(startDate.getTime() + minutes * 60 * 1000)
+    const recordId = makeTimeRecordId()
+    await DataService.saveRecord({
+      id: recordId,
+      todo_id: todo.id,
+      date: getTodayDate(),
+      start: formatClock(startDate),
+      end: formatClock(endDate),
+      duration: minutes / 60,
+      content: todo.title,
+      tag: todo.category || 'default',
+    })
+    replaceTodo(await TodoService.trackTime(todo.id, minutes, recordId))
+    trackedMinutes.value = 25
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')
+  } finally {
+    trackingTodoId.value = null
+  }
+}
+
 async function addSubtask(todo: UnifiedTodo) {
   if (!subtaskTitle.value.trim() || subtaskSaving.value) return
   subtaskSaving.value = true
@@ -504,6 +545,7 @@ watch(selectedPlanId, (planId) => {
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
+            <span v-if="todo.time_spent" class="task-time-spent">{{ t('tasks.timeSpent') }} {{ todo.time_spent }} min</span>
             <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
             <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
@@ -524,6 +566,12 @@ watch(selectedPlanId, (planId) => {
               </div>
             </div>
             <p v-else class="subtask-empty">{{ t('tasks.noSubtasks') }}</p>
+            <form class="time-track-form" @submit.prevent="trackTodoTime(todo)">
+              <label :for="`track-time-${todo.id}`">{{ t('tasks.trackTime') }}</label>
+              <input :id="`track-time-${todo.id}`" v-model.number="trackedMinutes" type="number" min="1" max="1440" step="1" />
+              <span>min</span>
+              <button type="submit" :disabled="trackingTodoId === todo.id">{{ trackingTodoId === todo.id ? t('tasks.saving') : t('tasks.recordTime') }}</button>
+            </form>
             <form class="subtask-add-form" @submit.prevent="addSubtask(todo)">
               <input v-model="subtaskTitle" :placeholder="t('tasks.subtaskPlaceholder')" :disabled="subtaskSaving" />
               <button type="submit" :disabled="subtaskSaving || !subtaskTitle.trim()"><Plus :size="14" /> {{ t('tasks.addSubtask') }}</button>
@@ -571,6 +619,7 @@ watch(selectedPlanId, (planId) => {
 .task-priority { padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; white-space: nowrap; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-block; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
+.task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
@@ -597,6 +646,10 @@ watch(selectedPlanId, (planId) => {
 .subtask-delete { display: grid; place-items: center; margin-left: auto; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .subtask-delete:hover { color: var(--color-error); }
 .subtask-empty { margin: 0 0 10px; color: var(--color-text-tertiary); font-size: 12px; }
+.time-track-form { display: flex; align-items: center; gap: 7px; margin: 10px 0; color: var(--color-text-tertiary); font-size: 12px; }
+.time-track-form input { width: 66px; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
+.time-track-form button { border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 9px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
+.time-track-form button:disabled { cursor: wait; opacity: .6; }
 .subtask-add-form { display: flex; gap: 7px; margin-top: 10px; }
 .subtask-add-form input { min-width: 0; flex: 1; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .subtask-add-form button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }

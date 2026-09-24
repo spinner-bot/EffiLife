@@ -1,6 +1,8 @@
 // 数据类型定义（对应 Python 版本的数据结构）
 
 export interface TimeRecord {
+  id?: string
+  todo_id?: string
   date: string
   start: string
   end: string

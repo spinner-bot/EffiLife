@@ -271,4 +271,19 @@ export const TodoService = {
   async remove(id: string): Promise<void> {
     await deleteRaw(STORE_NAMES.TODOS, id)
   },
+
+  async trackTime(id: string, minutes: number, timeRecordId?: string): Promise<UnifiedTodo> {
+    const todos = await this.list()
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error('任务不存在')
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+      throw new Error('记录时长必须是 1 到 1440 分钟之间的整数')
+    }
+    return this.update(id, {
+      time_spent: (current.time_spent || 0) + minutes,
+      related_time_record_ids: timeRecordId
+        ? [...(current.related_time_record_ids || []), timeRecordId]
+        : current.related_time_record_ids,
+    })
+  },
 }
