@@ -3,7 +3,7 @@ import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 
 // 存档版本
-const ARCHIVE_VERSION = '2.0'
+const ARCHIVE_VERSION = '2.1'
 
 // 检测是否在 Tauri 环境
 function isTauri(): boolean {
@@ -64,6 +64,7 @@ export interface ArchiveData {
   dailyTrigger: Record<string, unknown> | null
   checkin: Record<string, unknown> | null
   records: Record<string, unknown[]>
+  todos: unknown[]
 }
 
 // 获取所有日期记录
@@ -99,7 +100,8 @@ function writeJSON(key: string, data: unknown): void {
 }
 
 // 收集所有数据
-function collectAllData(): ArchiveData {
+async function collectAllData(): Promise<ArchiveData> {
+  const { getRawAll, STORE_NAMES } = await import('@/storage')
   return {
     version: ARCHIVE_VERSION,
     exportDate: new Date().toISOString(),
@@ -114,12 +116,13 @@ function collectAllData(): ArchiveData {
     dailyTrigger: readJSON(STORAGE_KEYS.DAILY_TRIGGER),
     checkin: readJSON(STORAGE_KEYS.CHECKIN),
     records: getAllRecords(),
+    todos: await getRawAll(STORE_NAMES.TODOS),
   }
 }
 
 // 导出数据为 .efl 文件
 export async function exportArchive(): Promise<{ success: boolean; path?: string }> {
-  const data = collectAllData()
+  const data = await collectAllData()
   const zip = new JSZip()
 
   // 添加主数据文件
@@ -253,7 +256,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     }
 
     // 导入存储模块
-    const { set: idbSet, STORE_NAMES, clear: idbClear } = await import('@/storage')
+    const { set: idbSet, putRaw, STORE_NAMES, clear: idbClear } = await import('@/storage')
 
     // 恢复数据（同时写入 localStorage 和 IndexedDB）
     if (data.config) {
@@ -316,6 +319,16 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       }
     }
 
+    // 恢复统一待办对象存储
+    if (Array.isArray(data.todos)) {
+      await idbClear(STORE_NAMES.TODOS)
+      for (const todo of data.todos) {
+        if (todo && typeof todo === 'object' && 'id' in todo) {
+          await putRaw(STORE_NAMES.TODOS, todo)
+        }
+      }
+    }
+
   return { success: true, message: '存档导入成功' }
 }
 
@@ -350,6 +363,7 @@ export async function resetData(type: ResetType): Promise<void> {
       await idbClear(STORE_NAMES.WARNING_INBOX)
       await idbClear(STORE_NAMES.DAILY_TRIGGER)
       await idbClear(STORE_NAMES.CHECKIN)
+      await idbClear(STORE_NAMES.TODOS)
       break
 
     case 'records':
