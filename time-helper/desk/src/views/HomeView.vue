@@ -306,7 +306,7 @@ onUnmounted(() => {
       </section>
 
       <nav class="nav-buttons">
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/plan')">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/plans')">
           <ClipboardList :size="22" />
           <span>{{ t('nav.plan') }}</span>
         </button>

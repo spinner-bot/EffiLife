@@ -17,9 +17,33 @@ export interface PlanTaskSummary {
   finish?: { day?: number; time?: [number, number] }
 }
 
+export interface PlanSection {
+  index: number
+  letter: string
+  name: string
+  info: string
+  tasks: PlanTaskSummary[]
+  groups: Record<string, { title: string; description: string }>
+}
+
+export interface PlanFull extends PlanSummary {
+  sections: PlanSection[]
+  logs: Array<{ index: number; day?: number; plan: string; time: [number, number]; content: string }>
+}
+
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
 
 const PLAN_HELPER_ORIGIN = 'http://127.0.0.1:8765'
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${PLAN_HELPER_ORIGIN}${path}`, {
+    ...options,
+    headers: { Accept: 'application/json', ...(options.headers || {}) },
+  })
+  const payload = await response.json() as { success?: boolean; data?: T; error?: string }
+  if (!response.ok || !payload.success) throw new Error(payload.error || `计划服务响应异常（${response.status}）`)
+  return payload.data as T
+}
 
 export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSummary[]> {
   const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/plans`, {
@@ -44,4 +68,62 @@ export async function getPlanTasks(planId: string, signal?: AbortSignal): Promis
   const payload = await response.json() as { success?: boolean; data?: { tasks?: PlanTaskSummary[] }; error?: string }
   if (!payload.success) throw new Error(payload.error || '计划任务服务返回失败')
   return (payload.data?.tasks || []).filter((task) => task.is_active !== false)
+}
+
+export async function getPlanFull(planId: string): Promise<PlanFull> {
+  return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}/full`)
+}
+
+export async function createEventPlan(name: string, date: [number, number, number]): Promise<PlanSummary> {
+  return request<PlanSummary>('/api/plans', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, date }),
+  })
+}
+
+export async function updateEventPlan(planId: string, name: string, date: [number, number, number]): Promise<PlanFull> {
+  return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, date }),
+  })
+}
+
+export async function addPlanSection(planId: string, name: string, info = ''): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, info }),
+  })
+}
+
+export async function addPlanTask(planId: string, sectionIndex: number, content: string, timeMinutes: number): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ section_index: sectionIndex, content, time_minutes: timeMinutes }),
+  })
+}
+
+export async function updatePlanTask(planId: string, taskId: string, content: string, timeMinutes: number): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content, time_minutes: timeMinutes }),
+  })
+}
+
+export async function completePlanTask(planId: string, taskId: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ task_id: taskId }),
+  })
+}
+
+export async function deletePlanTask(planId: string, taskId: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}`, {
+    method: 'DELETE',
+  })
 }
