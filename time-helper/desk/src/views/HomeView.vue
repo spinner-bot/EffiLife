@@ -117,10 +117,10 @@ function formatInboxTime(isoStr: string): string {
   const diffH = Math.floor(diffMs / 3600000)
   const diffD = Math.floor(diffMs / 86400000)
 
-  if (diffMin < 1) return '刚刚'
-  if (diffMin < 60) return `${diffMin}分钟前`
-  if (diffH < 24) return `${diffH}小时前`
-  if (diffD < 7) return `${diffD}天前`
+  if (diffMin < 1) return t('home.justNow')
+  if (diffMin < 60) return `${diffMin}${t('home.minutesAgo')}`
+  if (diffH < 24) return `${diffH}${t('home.hoursAgo')}`
+  if (diffD < 7) return `${diffD}${t('home.daysAgo')}`
   return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
 }
 
@@ -177,7 +177,7 @@ onUnmounted(() => {
 <template>
   <div class="home-view">
     <header class="header">
-      <h1 class="logo">浪兮效率时钟</h1>
+      <h1 class="logo">{{ t('home.appTitle') }}</h1>
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
         <button class="inbox-btn" :class="{ 'has-unread': unreadCount > 0 }" @click="AudioManager.playSound('click'); toggleInboxPanel()">
@@ -189,9 +189,9 @@ onUnmounted(() => {
       <Transition name="inbox-dropdown">
         <div v-if="showInboxPanel" class="inbox-panel">
         <div class="inbox-panel-header">
-          <h3 class="inbox-panel-title">收件箱</h3>
+          <h3 class="inbox-panel-title">{{ t('home.inbox') }}</h3>
           <div class="inbox-panel-actions">
-            <button v-if="unreadCount > 0" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">全部已读</button>
+            <button v-if="unreadCount > 0" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">{{ t('home.markAllRead') }}</button>
             <button class="inbox-close-btn" @click="closeInboxPanel()">
               <X :size="16" />
             </button>
@@ -199,7 +199,7 @@ onUnmounted(() => {
         </div>
         <div class="inbox-panel-body">
           <div v-if="inboxEntries.length === 0" class="inbox-empty">
-            <EmptyState :icon="InboxIcon" title="暂无消息" description="所有通知将显示在这里" />
+            <EmptyState :icon="InboxIcon" :title="t('home.noMessages')" :description="t('home.notificationsHere')" />
           </div>
           <div v-else class="inbox-panel-list">
             <div
@@ -223,7 +223,7 @@ onUnmounted(() => {
         </div>
         <div class="inbox-panel-footer">
           <button class="inbox-panel-more" @click="closeInboxPanel(); router.push('/event-manager')">
-            查看全部
+            {{ t('home.viewAll') }}
             <ChevronRight :size="14" />
           </button>
         </div>
@@ -243,11 +243,11 @@ onUnmounted(() => {
         <div class="checkin-badges">
           <div class="checkin-badge" v-if="checkinStreak > 0">
             <Flame :size="18" class="flame-icon" />
-            <span>连续 <strong>{{ checkinStreak }}</strong> 天</span>
+            <span>{{ t('home.streak') }} <strong>{{ checkinStreak }}</strong> {{ t('home.days') }}</span>
           </div>
           <div class="checkin-reminder" v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100">
             <Bell :size="14" />
-            <span>可打卡</span>
+            <span>{{ t('home.canCheckin') }}</span>
             <span class="red-dot"></span>
           </div>
         </div>
@@ -258,7 +258,7 @@ onUnmounted(() => {
         <div class="overview-grid">
         <div class="stats-card" @click="router.push('/plan')">
           <div class="stats-header-row">
-            <h2 class="stats-title">今日进度</h2>
+            <h2 class="stats-title">{{ t('home.todayProgress') }}</h2>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
           </div>
           <div class="stats-content" v-if="stat && stat.plan_exists">
@@ -282,7 +282,7 @@ onUnmounted(() => {
               </svg>
               <div class="ring-center">
                 <span class="ring-value" :style="{ color: getProgressColor(overallProgress) }">{{ overallProgress }}%</span>
-                <span class="ring-label">总完成度</span>
+                <span class="ring-label">{{ t('home.overallProgress') }}</span>
               </div>
             </div>
 
@@ -316,9 +316,9 @@ onUnmounted(() => {
           <div class="stats-content" v-else>
             <EmptyState
               :icon="ClipboardList"
-              title="暂无计划数据"
-              description="创建计划后即可查看今日进度"
-              action-text="前往管理"
+              :title="t('home.noPlanData')"
+              :description="t('home.createPlanForProgress')"
+              :action-text="t('home.goToManage')"
               action-route="/plan"
             />
           </div>
@@ -362,7 +362,7 @@ onUnmounted(() => {
     </main>
 
     <footer class="footer">
-      <p>浪兮效率 | 专注高效生活</p>
+      <p>{{ t('home.footer') }}</p>
     </footer>
   </div>
 </template>
