@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
-import { TodoService, type TodoPriority, type UnifiedTodo } from '@/services/todoService'
+import { TodoService, type TodoPriority, type TodoRecurrence, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { useI18n } from '@/i18n'
 
@@ -12,6 +12,8 @@ const { t, locale } = useI18n()
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
 const priority = ref<TodoPriority>('normal')
+const deadline = ref('')
+const recurrence = ref<TodoRecurrence>('none')
 const selectedPlanId = ref('')
 const selectedPlanTaskId = ref('')
 const filter = ref<'all' | 'active' | 'completed'>('active')
@@ -20,6 +22,8 @@ const errorMessage = ref('')
 const editingId = ref<string | null>(null)
 const editingTitle = ref('')
 const editingPriority = ref<TodoPriority>('normal')
+const editingDeadline = ref('')
+const editingRecurrence = ref<TodoRecurrence>('none')
 const editingPlanId = ref('')
 const editingPlanTaskId = ref('')
 const isSaving = ref(false)
@@ -46,6 +50,14 @@ const priorityLabels = computed<Record<TodoPriority, string>>(() => ({
   normal: t('priority.normal'),
 }))
 
+const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
+  none: t('tasks.recurrenceNone'),
+  daily: t('tasks.recurrenceDaily'),
+  weekly: t('tasks.recurrenceWeekly'),
+  monthly: t('tasks.recurrenceMonthly'),
+  custom: t('tasks.recurrenceCustom'),
+}))
+
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
 const planTaskById = computed(() => Object.fromEntries(planTasks.value.map((task) => [task.internal_id, task])))
 
@@ -67,12 +79,16 @@ async function addTodo() {
     const todo = await TodoService.create({
       title: title.value,
       priority: priority.value,
+      deadline: deadline.value ? new Date(`${deadline.value}T23:59:59`).toISOString() : undefined,
+      recurrence: recurrence.value,
       related_plan_id: selectedPlanId.value || undefined,
       related_plan_task_id: selectedPlanId.value ? selectedPlanTaskId.value || undefined : undefined,
     })
     todos.value = [todo, ...todos.value]
     title.value = ''
     priority.value = 'normal'
+    deadline.value = ''
+    recurrence.value = 'none'
     selectedPlanId.value = ''
     selectedPlanTaskId.value = ''
   } catch (error) {
@@ -123,6 +139,8 @@ function startEdit(todo: UnifiedTodo) {
   editingId.value = todo.id
   editingTitle.value = todo.title
   editingPriority.value = todo.priority
+  editingDeadline.value = todo.deadline ? todo.deadline.slice(0, 10) : ''
+  editingRecurrence.value = todo.recurrence || 'none'
   editingPlanId.value = todo.related_plan_id || ''
   editingPlanTaskId.value = todo.related_plan_task_id || ''
   loadPlanTasks(editingPlanId.value)
@@ -133,6 +151,8 @@ function cancelEdit() {
   editingId.value = null
   editingTitle.value = ''
   editingPriority.value = 'normal'
+  editingDeadline.value = ''
+  editingRecurrence.value = 'none'
   editingPlanId.value = ''
   editingPlanTaskId.value = ''
   loadPlanTasks(selectedPlanId.value)
@@ -145,6 +165,8 @@ async function saveEdit(todo: UnifiedTodo) {
     const updated = await TodoService.update(todo.id, {
       title: editingTitle.value,
       priority: editingPriority.value,
+      deadline: editingDeadline.value ? new Date(`${editingDeadline.value}T23:59:59`).toISOString() : undefined,
+      recurrence: editingRecurrence.value,
       related_plan_id: editingPlanId.value || undefined,
       related_plan_task_id: editingPlanId.value ? editingPlanTaskId.value || undefined : undefined,
     })
@@ -261,6 +283,12 @@ watch(selectedPlanId, (planId) => {
         <select id="new-task-priority" v-model="priority" class="task-select">
           <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
         </select>
+        <label class="task-field-label" for="new-task-deadline">{{ t('tasks.deadline') }}</label>
+        <input id="new-task-deadline" v-model="deadline" class="task-date-input" type="date" />
+        <label class="task-field-label" for="new-task-recurrence">{{ t('tasks.recurrence') }}</label>
+        <select id="new-task-recurrence" v-model="recurrence" class="task-select">
+          <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
+        </select>
         <label class="task-field-label" for="new-task-plan">{{ t('tasks.plan') }}</label>
         <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState === 'loading'">
           <option value="">{{ t('tasks.noPlan') }}</option>
@@ -304,6 +332,12 @@ watch(selectedPlanId, (planId) => {
             <select :id="`edit-priority-${todo.id}`" v-model="editingPriority" class="task-edit-select">
               <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
             </select>
+            <label :for="`edit-deadline-${todo.id}`">{{ t('tasks.deadline') }}</label>
+            <input :id="`edit-deadline-${todo.id}`" v-model="editingDeadline" class="task-edit-select" type="date" />
+            <label :for="`edit-recurrence-${todo.id}`">{{ t('tasks.recurrence') }}</label>
+            <select :id="`edit-recurrence-${todo.id}`" v-model="editingRecurrence" class="task-edit-select">
+              <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
+            </select>
             <label :for="`edit-plan-${todo.id}`">{{ t('tasks.plan') }}</label>
             <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState === 'loading'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
               <option value="">{{ t('tasks.noPlan') }}</option>
@@ -325,6 +359,7 @@ watch(selectedPlanId, (planId) => {
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
+            <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
             <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
             <span v-if="todo.related_plan_task_id" class="task-plan-reference">任务：{{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
           </div>
@@ -367,6 +402,7 @@ watch(selectedPlanId, (planId) => {
 .task-field-label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
 .task-input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--color-text-primary); background: transparent; font-size: 15px; }
 .task-select { border: 1px solid var(--color-border); border-radius: 10px; padding: 0 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-date-input { width: 132px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-add { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; padding: 0 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
 .task-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 2px 12px; }
 .task-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
@@ -387,6 +423,7 @@ watch(selectedPlanId, (planId) => {
 .task-priority { padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; white-space: nowrap; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
+.task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-details-toggle { display: inline-flex; align-items: center; gap: 4px; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; font-size: 12px; }
