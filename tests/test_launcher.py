@@ -21,8 +21,15 @@ def test_launcher_keeps_unified_workspace_as_first_menu_entry():
 
     assert modules["1"]["name"] == "EffiLife 统一工作台"
     assert modules["1"]["url"] == "http://127.0.0.1:1420"
-    assert modules["1"]["cmd"][-3:] == ["--host", "127.0.0.1", "--strictPort"]
+    assert modules["1"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1420", "--strictPort"]
     assert modules["1"]["companions"][0]["name"] == "plan-helper API"
+
+
+def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
+    modules = launcher.build_modules()
+
+    assert modules["4"]["url"] == "http://127.0.0.1:1421"
+    assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
 
 
 def test_launcher_cleans_up_when_companion_cannot_start(monkeypatch):
