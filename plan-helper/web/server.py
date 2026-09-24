@@ -93,6 +93,18 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    def do_OPTIONS(self):
+        """Answer browser CORS preflight requests for API routes."""
+        parsed = urllib.parse.urlparse(self.path)
+        if not parsed.path.startswith("/api/"):
+            self.send_error(404)
+            return
+
+        self.send_response(204)
+        self._send_cors_headers()
+        self.send_header("Access-Control-Max-Age", "600")
+        self.end_headers()
+
     def _serve_file(self, filename, content_type):
         filepath = WEB_DIR / filename
         try:
@@ -111,9 +123,14 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         self.send_response(response.code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", len(content))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._send_cors_headers()
         self.end_headers()
         self.wfile.write(content)
+
+    def _send_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Accept, Content-Type")
 
     def _handle_api_get(self, path, query_string):
         params = dict(urllib.parse.parse_qsl(query_string))
