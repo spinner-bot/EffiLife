@@ -45,3 +45,30 @@ def test_bundle_does_not_overwrite_by_default(tmp_path):
 
     with pytest.raises(FileExistsError):
         import_bundle(bundle, destination)
+
+
+def test_bundle_import_preflights_all_targets_before_writing(tmp_path):
+    bundle = tmp_path / "effilife.efl"
+    export_bundle(bundle, {"first": {"value": 1}, "second": {"value": 2}})
+    destination = tmp_path / "imported"
+    destination.mkdir()
+    (destination / "second.json").write_text("existing", encoding="utf-8")
+
+    with pytest.raises(FileExistsError):
+        import_bundle(bundle, destination)
+
+    assert not (destination / "first.json").exists()
+    assert (destination / "second.json").read_text(encoding="utf-8") == "existing"
+
+
+def test_bundle_import_overwrite_uses_staging_and_cleans_up(tmp_path):
+    bundle = tmp_path / "effilife.efl"
+    export_bundle(bundle, {"first": {"value": 1}, "second": {"value": 2}})
+    destination = tmp_path / "imported"
+    destination.mkdir()
+    (destination / "first.json").write_text("old", encoding="utf-8")
+    import_bundle(bundle, destination, overwrite=True)
+
+    assert json.loads((destination / "first.json").read_text(encoding="utf-8")) == {"value": 1}
+    assert json.loads((destination / "second.json").read_text(encoding="utf-8")) == {"value": 2}
+    assert not any(path.name.startswith(".effilife-import-") for path in destination.iterdir())

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import tempfile
 import zipfile
 from datetime import datetime, timezone
@@ -124,11 +125,20 @@ def import_bundle(
     _manifest, datasets = read_bundle(bundle_path)
     target_dir = Path(destination)
     target_dir.mkdir(parents=True, exist_ok=True)
-    written: dict[str, Path] = {}
-    for name, value in datasets.items():
-        target = target_dir / f"{name}.json"
-        if target.exists() and not overwrite:
-            raise FileExistsError(f"Dataset already exists: {target}")
-        target.write_bytes(_json_bytes(value))
-        written[name] = target
-    return written
+    targets = {name: target_dir / f"{name}.json" for name in datasets}
+    if not overwrite:
+        for target in targets.values():
+            if target.exists():
+                raise FileExistsError(f"Dataset already exists: {target}")
+
+    staging_dir = Path(tempfile.mkdtemp(prefix=".effilife-import-", dir=target_dir))
+    try:
+        for name, value in datasets.items():
+            (staging_dir / f"{name}.json").write_bytes(_json_bytes(value))
+        written: dict[str, Path] = {}
+        for name, target in targets.items():
+            os.replace(staging_dir / f"{name}.json", target)
+            written[name] = target
+        return written
+    finally:
+        shutil.rmtree(staging_dir, ignore_errors=True)
