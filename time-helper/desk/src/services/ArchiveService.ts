@@ -4,6 +4,8 @@ import { saveAs } from 'file-saver'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
+const ARCHIVE_FORMAT = 'effilife.bundle'
+const ARCHIVE_FORMAT_VERSION = '1.0.0'
 
 // 检测是否在 Tauri 环境
 function isTauri(): boolean {
@@ -153,8 +155,8 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const { records, todos, planHelper, ...app } = data
   const datasets = ['app', 'records', 'todos', 'plan_helper']
   zip.file('manifest.json', JSON.stringify({
-    format: 'effilife.bundle',
-    format_version: '1.0.0',
+    format: ARCHIVE_FORMAT,
+    format_version: ARCHIVE_FORMAT_VERSION,
     created_at: data.exportDate,
     datasets,
     metadata: { source: 'time-helper', archive_version: ARCHIVE_VERSION },
@@ -166,7 +168,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 
   // 添加说明文件
   zip.file('README.txt', `浪兮效率时钟存档文件
-协议: effilife.bundle 1.0.0
+协议: ${ARCHIVE_FORMAT} ${ARCHIVE_FORMAT_VERSION}
 版本: ${ARCHIVE_VERSION}
 导出时间: ${new Date(data.exportDate).toLocaleString('zh-CN')}
 
@@ -293,13 +295,16 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     } catch {
       throw new Error('存档 manifest.json 无效')
     }
-    if (manifest.format !== 'effilife.bundle' || !Array.isArray(manifest.datasets)) {
+    if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets)) {
       throw new Error('不支持的 .efl 存档协议')
     }
 
     const datasets: Record<string, unknown> = {}
+    const datasetNames = new Set<string>()
     for (const name of manifest.datasets) {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(`非法数据集名称：${name}`)
+      if (datasetNames.has(name)) throw new Error(`数据集重复声明：${name}`)
+      datasetNames.add(name)
       const file = zip.file(`data/${name}.json`)
       if (!file) throw new Error(`存档缺少数据集：${name}`)
       try {
