@@ -108,6 +108,12 @@ def build_modules():
             "cwd": BASE_DIR / "time-helper" / "desk",
             "url": th_url,
             "setup": th_setup,
+            "companions": [{
+                "name": "plan-helper API",
+                "cmd": [sys.executable, "-m", "web.server"],
+                "cwd": BASE_DIR / "plan-helper",
+                "url": "http://127.0.0.1:8765",
+            }],
         },
         "2": {
             "name": "plan-helper（兼容入口）",
@@ -225,6 +231,10 @@ def run_module(choice, modules):
     print("-" * 50)
     print("按 Ctrl+C 停止\n")
 
+    companion_processes = start_companions(module, env)
+    if companion_processes is None:
+        return
+
     try:
         process = subprocess.Popen(
             module["cmd"],
@@ -255,6 +265,9 @@ def run_module(choice, modules):
     except FileNotFoundError as e:
         print(f"\n❌ 找不到命令: {e}")
         print(f"请确保已安装所需依赖")
+    finally:
+        for companion_process in companion_processes:
+            terminate_process(companion_process)
 
 
 def stream_output(process):
@@ -263,6 +276,58 @@ def stream_output(process):
         return
     for line in process.stdout:
         print(line, end="")
+
+
+def service_is_ready(url):
+    """Check whether a local companion service is already running."""
+    try:
+        with urlopen(url, timeout=1) as response:
+            return response.status < 500
+    except (OSError, URLError):
+        return False
+
+
+def terminate_process(process):
+    """Stop a process started by the launcher without affecting external services."""
+    if process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+
+def start_companions(module, env):
+    """Start only companion services not already provided by the user."""
+    managed = []
+    for companion in module.get("companions", []):
+        if companion.get("url") and service_is_ready(companion["url"]):
+            print(f"使用已运行的 {companion['name']}: {companion['url']}")
+            continue
+
+        print(f"启动配套服务: {companion['name']}")
+        process = subprocess.Popen(
+            companion["cmd"],
+            cwd=companion["cwd"],
+            shell=False,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+        )
+        output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
+        output_thread.start()
+        if companion.get("url") and not wait_for_service(process, companion["url"]):
+            terminate_process(process)
+            for started in managed:
+                terminate_process(started)
+            return None
+        managed.append(process)
+    return managed
 
 
 def wait_for_service(process, url, timeout=30):
