@@ -80,3 +80,32 @@ def test_todo_adapter_preserves_advanced_fields_roundtrip():
 
     for key in ("priority_rank", "urgent", "important", "start_time", "estimated_time", "related_time_record_ids", "subtasks"):
         assert restored[key] == source[key]
+
+
+def test_legacy_todo_migration_accepts_wrapped_and_raw_payloads():
+    from common.migrations.todos import migrate_legacy_todos
+
+    todo = {"id": "TODO-1", "title": "迁移任务", "subtasks": [{"id": "SUB-1", "title": "子项"}]}
+    wrapped = migrate_legacy_todos({"version": "0.3.0", "todos": [todo], "categories": [{"id": "work"}]})
+    raw = migrate_legacy_todos([todo])
+
+    assert wrapped["source_version"] == "0.3.0"
+    assert wrapped["categories"] == [{"id": "work"}]
+    assert wrapped["todos"][0]["subtasks"] == todo["subtasks"]
+    assert raw["source_version"] is None
+
+
+def test_legacy_todo_migration_strict_and_lenient_errors():
+    from common.migrations.todos import TodoMigrationError, migrate_legacy_todos
+
+    invalid = [{"id": "TODO-1", "title": "有效"}, {"title": "缺少 id"}]
+    try:
+        migrate_legacy_todos(invalid)
+    except TodoMigrationError as error:
+        assert "缺少 id" in str(error)
+    else:
+        raise AssertionError("strict migration should reject invalid entries")
+
+    result = migrate_legacy_todos(invalid, strict=False)
+    assert len(result["todos"]) == 1
+    assert len(result["warnings"]) == 1
