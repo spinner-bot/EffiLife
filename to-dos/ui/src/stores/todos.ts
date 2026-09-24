@@ -361,7 +361,8 @@ export const useTodosStore = defineStore('todos', () => {
   function addTodo(data: Partial<Todo>): Todo {
     const now = new Date().toISOString()
     const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order || 0), 0)
-    const id = `TODO-${now.replace(/[-:T]/g, '').slice(0, 8)}-${String(todos.value.length + 1).padStart(4, '0')}`
+    const compactNow = now.split('-').join('').split(':').join('').split('T').join('')
+    const id = `TODO-${compactNow.slice(0, 8)}-${String(todos.value.length + 1).padStart(4, '0')}`
 
     const newTodo: Todo = {
       id,
