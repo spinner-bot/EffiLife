@@ -1,0 +1,26 @@
+{
+  "app": {
+    "name": "EffiLife",
+    "tagline": "个人时间管理"
+  },
+  "common": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "loading": "加载中…",
+    "unknown_error": "发生未知错误"
+  },
+  "navigation": {
+    "today": "今日",
+    "planning": "计划",
+    "tasks": "待办",
+    "time": "时间",
+    "insights": "复盘",
+    "settings": "设置"
+  },
+  "status": {
+    "completed": "已完成",
+    "pending": "待处理",
+    "in_progress": "进行中"
+  }
+}

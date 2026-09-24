@@ -1,0 +1,26 @@
+{
+  "app": {
+    "name": "EffiLife",
+    "tagline": "Personal time management"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "loading": "Loading…",
+    "unknown_error": "Something went wrong"
+  },
+  "navigation": {
+    "today": "Today",
+    "planning": "Planning",
+    "tasks": "Tasks",
+    "time": "Time",
+    "insights": "Insights",
+    "settings": "Settings"
+  },
+  "status": {
+    "completed": "Completed",
+    "pending": "Pending",
+    "in_progress": "In progress"
+  }
+}
