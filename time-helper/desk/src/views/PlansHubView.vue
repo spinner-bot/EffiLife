@@ -7,11 +7,15 @@ import { useI18n } from '@/i18n'
 import {
   addPlanSection,
   addPlanTask,
+  archivePlan,
   completePlanTask,
   createEventPlan,
   deletePlanTask,
   getPlanFull,
+  listPlanArchives,
   listPlanSummaries,
+  restorePlanArchive,
+  type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
   updatePlanTask,
@@ -22,6 +26,7 @@ const router = useRouter()
 const { t, locale } = useI18n()
 const view = ref<'hub' | 'events' | 'detail'>('hub')
 const plans = ref<PlanSummary[]>([])
+const archives = ref<PlanArchiveSummary[]>([])
 const selectedPlan = ref<PlanFull | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -59,9 +64,41 @@ async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    plans.value = await listPlanSummaries()
+    const [activePlans, archivedPlans] = await Promise.all([listPlanSummaries(), listPlanArchives()])
+    plans.value = activePlans
+    archives.value = archivedPlans
   } catch (error) {
     plans.value = []
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function archiveSelectedPlan() {
+  if (!selectedPlan.value || !confirm(t('plans.archiveConfirm'))) return
+  const planId = selectedPlan.value.id
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await archivePlan(planId)
+    selectedPlan.value = null
+    view.value = 'events'
+    await loadPlans()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function restoreArchive(archive: PlanArchiveSummary) {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await restorePlanArchive(archive.file)
+    await loadPlans()
+  } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
     isLoading.value = false
@@ -239,13 +276,24 @@ onMounted(loadPlans)
             <small>{{ plan.total_tasks || 0 }} {{ t('tasks.completed') }}</small>
           </button>
         </section>
+        <section class="archives-panel theme-card">
+          <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
+          <p v-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
+          <div v-for="archive in archives" :key="archive.file" class="archive-row">
+            <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
+            <button class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
+          </div>
+        </section>
       </template>
 
       <template v-else-if="selectedPlan">
         <div v-if="errorMessage" class="plans-error">{{ errorMessage }}</div>
         <div class="detail-toolbar">
           <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
-          <button class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
+          <div class="detail-actions">
+            <button class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
+            <button class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
+          </div>
         </div>
         <section v-if="editingMeta" class="meta-editor theme-card">
           <label>{{ t('plans.name') }}<input v-model="planName" /></label>
@@ -321,6 +369,7 @@ onMounted(loadPlans)
 .plans-empty strong { color: var(--color-text-secondary); }
 .plans-error { margin-bottom: 14px; color: var(--color-error); font-size: 13px; }
 .detail-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.detail-actions { display: flex; gap: 8px; }
 .meta-editor, .section-editor { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
 .meta-editor label, .section-editor label, .task-editor label, .create-modal label { display: grid; gap: 6px; color: var(--color-text-secondary); font-size: 12px; }
 .meta-editor input, .section-editor input, .task-editor input, .create-modal input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
@@ -351,6 +400,12 @@ onMounted(loadPlans)
 .task-complete:disabled { color: var(--color-button-text); background: var(--color-primary); }
 .group-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .group-list span { padding: 4px 7px; border-radius: 6px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); font-size: 11px; }
+.archives-panel { margin-top: 24px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }
+.archives-panel header h2, .archives-panel header p { margin: 0; }
+.archives-panel header p { margin-top: 4px; color: var(--color-text-tertiary); font-size: 12px; }
+.archive-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.archive-row > div { display: grid; gap: 4px; min-width: 0; }
+.archive-row span { color: var(--color-text-tertiary); font-size: 12px; }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.3); }
 .create-modal { display: grid; gap: 14px; width: min(440px, 100%); padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-bg); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.2)); }
 .create-modal h2, .create-modal p { margin: 0; }

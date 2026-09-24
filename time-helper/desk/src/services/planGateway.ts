@@ -31,6 +31,14 @@ export interface PlanFull extends PlanSummary {
   logs: Array<{ index: number; day?: number; plan: string; time: [number, number]; content: string }>
 }
 
+export interface PlanArchiveSummary {
+  file: string
+  plan_id?: number
+  name?: string
+  date?: [number, number, number]
+  archived_at?: string
+}
+
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
 
 const PLAN_HELPER_ORIGIN = 'http://127.0.0.1:8765'
@@ -57,6 +65,11 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
     ...plan,
     id: String(plan.id),
   }))
+}
+
+export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
+  const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
+  return data.archives || []
 }
 
 export async function getPlanTasks(planId: string, signal?: AbortSignal): Promise<PlanTaskSummary[]> {
@@ -87,6 +100,18 @@ export async function updateEventPlan(planId: string, name: string, date: [numbe
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, date }),
+  })
+}
+
+export async function archivePlan(planId: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/archive`, { method: 'POST' })
+}
+
+export async function restorePlanArchive(file: string): Promise<void> {
+  await request('/api/archives/restore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file }),
   })
 }
 
