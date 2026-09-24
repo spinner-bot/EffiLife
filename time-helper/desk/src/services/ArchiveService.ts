@@ -88,7 +88,7 @@ export interface ArchiveData {
 }
 
 // 获取所有日期记录
-function getAllRecords(): Record<string, unknown[]> {
+function getLocalStorageRecords(): Record<string, unknown[]> {
   const records: Record<string, unknown[]> = {}
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
@@ -100,6 +100,23 @@ function getAllRecords(): Record<string, unknown[]> {
         records[date] = []
       }
     }
+  }
+  return records
+}
+
+// IndexedDB is the primary archive source; localStorage remains a compatibility fallback.
+async function getAllRecords(): Promise<Record<string, unknown[]>> {
+  const records = getLocalStorageRecords()
+  try {
+    const { getRawAll, STORE_NAMES } = await import('@/storage')
+    const entries = await getRawAll<{ key?: string; value?: unknown }>(STORE_NAMES.RECORDS)
+    for (const entry of entries) {
+      if (typeof entry.key === 'string' && Array.isArray(entry.value)) {
+        records[entry.key] = entry.value
+      }
+    }
+  } catch {
+    // IndexedDB unavailable: retain the legacy localStorage snapshot.
   }
   return records
 }
@@ -154,7 +171,7 @@ async function collectAllData(): Promise<ArchiveData> {
     dailyTrigger: readJSON(STORAGE_KEYS.DAILY_TRIGGER),
     checkin: readJSON(STORAGE_KEYS.CHECKIN),
     locale: localStorage.getItem('effilife_locale') || 'zh-CN',
-    records: getAllRecords(),
+    records: await getAllRecords(),
     todos,
     categories: await TodoCategoryService.ensureDefaults(todos),
     todoSettings: await TodoSettingsService.get(),
@@ -648,7 +665,7 @@ export function getDataStats(): {
   hasEventSettings: boolean
   hasCheckin: boolean
 } {
-  const records = getAllRecords()
+  const records = getLocalStorageRecords()
   let totalRecords = 0
   for (const dateRecords of Object.values(records)) {
     totalRecords += dateRecords.length
