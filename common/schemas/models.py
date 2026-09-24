@@ -20,6 +20,7 @@ class UnifiedCategory:
     icon: str = 'circle'
     description: Optional[str] = None
     module: str = 'to-dos'
+    difficulty: int = 5
     created_at: str = field(default_factory=UnifiedTimestamp.now)
 
     def to_dict(self) -> dict:
@@ -30,6 +31,7 @@ class UnifiedCategory:
             'icon': self.icon,
             'description': self.description,
             'module': self.module,
+            'difficulty': self.difficulty,
             'created_at': self.created_at,
         }
 
@@ -42,6 +44,7 @@ class UnifiedCategory:
             icon=data.get('icon', 'circle'),
             description=data.get('description'),
             module=data.get('module', 'to-dos'),
+            difficulty=data.get('difficulty', 5),
             created_at=data.get('created_at', UnifiedTimestamp.now()),
         )
 

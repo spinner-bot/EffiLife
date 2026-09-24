@@ -139,6 +139,28 @@ class TimeAdapter:
 
     @staticmethod
     def to_unified_record(record: dict, record_id: str = '') -> UnifiedTimeRecord:
+        if any(key in record for key in ('date', 'start', 'end', 'duration', 'content', 'tag')):
+            start = str(record.get('start') or '00:00')
+            end = str(record.get('end') or '00:00')
+            try:
+                sh, sm = map(int, start.split(':'))
+                eh, em = map(int, end.split(':'))
+                duration = (eh * 60 + em - sh * 60 - sm) / 60
+                if duration < 0:
+                    duration += 24
+            except (ValueError, TypeError):
+                duration = float(record.get('duration', 0) or 0)
+            return UnifiedTimeRecord(
+                id=record_id or record.get('id') or f"TR-{record.get('date', '')}-{start.replace(':', '')}",
+                date=record.get('date', ''),
+                start_time=start,
+                end_time=end,
+                duration_hours=round(duration, 2),
+                content=record.get('content', ''),
+                tag=record.get('tag', ''),
+                related_todo_id=record.get('todo_id') or record.get('related_todo_id'),
+                related_plan_id=record.get('related_plan_id'),
+            )
         """将 time-helper 的 record 转换为 UnifiedTimeRecord"""
         # 计算时长
         start = record.get('开始', '00:00')

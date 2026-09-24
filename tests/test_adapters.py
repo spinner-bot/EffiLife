@@ -109,3 +109,31 @@ def test_legacy_todo_migration_strict_and_lenient_errors():
     result = migrate_legacy_todos(invalid, strict=False)
     assert len(result["todos"]) == 1
     assert len(result["warnings"]) == 1
+
+
+def test_time_adapter_accepts_unified_frontend_record_fields():
+    from common.api_gateway.adapters import TimeAdapter
+
+    record = TimeAdapter.to_unified_record({
+        "id": "TR-1",
+        "date": "2026-09-25",
+        "start": "09:00",
+        "end": "10:30",
+        "duration": 1.5,
+        "content": "统一任务",
+        "tag": "work",
+        "todo_id": "TODO-1",
+    })
+
+    assert record.id == "TR-1"
+    assert record.date == "2026-09-25"
+    assert record.duration_hours == 1.5
+    assert record.related_todo_id == "TODO-1"
+
+
+def test_unified_category_preserves_difficulty():
+    from common.schemas.models import UnifiedCategory
+
+    category = UnifiedCategory(id="work", name="工作", difficulty=8)
+
+    assert UnifiedCategory.from_dict(category.to_dict()).difficulty == 8
