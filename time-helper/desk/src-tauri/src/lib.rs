@@ -98,7 +98,11 @@ pub struct AppState {
 
 // 获取数据目录
 fn get_data_dir() -> PathBuf {
-    let mut path = std::env::current_dir().unwrap_or_default();
+    let mut path = dirs::data_local_dir()
+        .or_else(dirs::data_dir)
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_default();
+    path.push("EffiLife");
     path.push("data");
     if !path.exists() {
         fs::create_dir_all(&path).ok();
