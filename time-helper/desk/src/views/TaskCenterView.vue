@@ -6,10 +6,12 @@ import { AudioManager } from '@/audio'
 import { DataService, getTodayDate } from '@/services/dataService'
 import {
   TodoCategoryService,
+  TodoSettingsService,
   TodoService,
   type TodoCategory,
   type TodoPriority,
   type TodoRecurrence,
+  type TodoSettings,
   type UnifiedTodo,
 } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
@@ -64,6 +66,8 @@ const editingCategoryName = ref('')
 const editingCategoryColor = ref('#6366f1')
 const editingCategoryDifficulty = ref(5)
 const priorityClock = ref(Date.now())
+const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
+const settingsSaving = ref(false)
 let priorityTimer: number | null = null
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
@@ -111,8 +115,8 @@ const categoryStats = computed(() => categories.value.map((category) => {
 }))
 
 const activeCategoryStats = computed(() => categoryStats.value.filter((item) => item.count > 0))
-const topCategoryStats = computed(() => activeCategoryStats.value.slice(0, 5))
-const moreCategoryStats = computed(() => activeCategoryStats.value.slice(5))
+const topCategoryStats = computed(() => activeCategoryStats.value.slice(0, todoSettings.value.expandCount))
+const moreCategoryStats = computed(() => activeCategoryStats.value.slice(todoSettings.value.expandCount))
 const emptyCategoryStats = computed(() => categoryStats.value.filter((item) => item.count === 0))
 
 const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
@@ -128,6 +132,29 @@ function priorityKind(isUrgent: boolean, isImportant: boolean): TodoPriority {
   if (isImportant) return 'important'
   if (isUrgent) return 'urgent'
   return 'normal'
+}
+
+function restartPriorityTimer() {
+  if (priorityTimer !== null) window.clearInterval(priorityTimer)
+  if (todoSettings.value.updateFrequency <= 0) return
+  priorityTimer = window.setInterval(() => { priorityClock.value = Date.now() }, todoSettings.value.updateFrequency)
+}
+
+async function loadTodoSettings() {
+  todoSettings.value = await TodoSettingsService.get()
+  restartPriorityTimer()
+}
+
+async function saveTodoSettings() {
+  settingsSaving.value = true
+  try {
+    todoSettings.value = await TodoSettingsService.save(todoSettings.value)
+    restartPriorityTimer()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.settings')
+  } finally {
+    settingsSaving.value = false
+  }
 }
 
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
@@ -450,7 +477,7 @@ function formatDeadline(deadline?: string): string {
 onMounted(() => {
   loadTodos().then(loadCategories)
   loadPlanSummaries()
-  priorityTimer = window.setInterval(() => { priorityClock.value = Date.now() }, 60_000)
+  loadTodoSettings()
 })
 
 onUnmounted(() => {
@@ -563,6 +590,25 @@ watch(selectedPlanId, (planId) => {
             <span class="category-rank-name"><i class="category-rank-dot" :style="{ background: item.category.color }"></i>{{ item.category.name }}<small>0</small></span>
             <strong>0</strong>
           </button>
+        </div>
+        <div class="task-ranking-settings">
+          <label>{{ t('tasks.scoreRefresh') }}
+            <select v-model.number="todoSettings.updateFrequency" :disabled="settingsSaving" @change="saveTodoSettings">
+              <option :value="5000">5s</option>
+              <option :value="10000">10s</option>
+              <option :value="15000">15s</option>
+              <option :value="30000">30s</option>
+              <option :value="60000">60s</option>
+            </select>
+          </label>
+          <label>{{ t('tasks.categoryExpandCount') }}
+            <select v-model.number="todoSettings.expandCount" :disabled="settingsSaving" @change="saveTodoSettings">
+              <option :value="3">3</option>
+              <option :value="5">5</option>
+              <option :value="10">10</option>
+              <option :value="15">15</option>
+            </select>
+          </label>
         </div>
       </aside>
 
@@ -732,6 +778,9 @@ watch(selectedPlanId, (planId) => {
 .category-rank-secondary { padding-top: 2px; }
 .category-rank-empty-list .category-rank-item { opacity: .72; }
 .category-rank-empty { margin: 0; color: var(--color-text-tertiary); font-size: 12px; text-align: left; }
+.task-ranking-settings { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; border-top: 1px solid var(--color-border); color: var(--color-text-tertiary); font-size: 11px; }
+.task-ranking-settings label { display: inline-flex; align-items: center; gap: 6px; }
+.task-ranking-settings select { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-list { display: grid; gap: 10px; }
 .task-item { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }

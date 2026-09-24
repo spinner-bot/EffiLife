@@ -1,4 +1,4 @@
-import { deleteRaw, getRawAll, putRaw, STORE_NAMES } from '@/storage'
+import { deleteRaw, get, getRawAll, putRaw, set, STORE_NAMES } from '@/storage'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 export type TodoPriority = 'urgent-important' | 'important' | 'urgent' | 'normal'
@@ -20,6 +20,28 @@ export interface TodoCategory {
   pinned?: boolean
   created_at: string
   difficulty: number
+}
+
+export interface TodoSettings {
+  updateFrequency: number
+  expandCount: number
+}
+
+export const DEFAULT_TODO_SETTINGS: TodoSettings = {
+  updateFrequency: 60_000,
+  expandCount: 5,
+}
+
+const TODO_SETTINGS_KEY = 'todo_settings'
+
+function normalizeTodoSettings(value: Partial<TodoSettings> | null | undefined): TodoSettings {
+  const allowedFrequencies = [5_000, 10_000, 15_000, 30_000, 60_000]
+  const frequency = Number(value?.updateFrequency)
+  const expandCount = Number(value?.expandCount)
+  return {
+    updateFrequency: allowedFrequencies.includes(frequency) ? frequency : DEFAULT_TODO_SETTINGS.updateFrequency,
+    expandCount: Number.isFinite(expandCount) ? Math.max(1, Math.min(20, Math.trunc(expandCount))) : DEFAULT_TODO_SETTINGS.expandCount,
+  }
 }
 
 export const DEFAULT_TODO_CATEGORIES: TodoCategory[] = [
@@ -211,6 +233,18 @@ export const TodoCategoryService = {
   async remove(id: string): Promise<void> {
     if (id === 'default') throw new Error('默认分类不能删除')
     await deleteRaw(STORE_NAMES.TODO_CATEGORIES, id)
+  },
+}
+
+export const TodoSettingsService = {
+  async get(): Promise<TodoSettings> {
+    return normalizeTodoSettings(await get<Partial<TodoSettings>>(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY))
+  },
+
+  async save(value: Partial<TodoSettings>): Promise<TodoSettings> {
+    const settings = normalizeTodoSettings(value)
+    await set(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY, settings)
+    return settings
   },
 }
 

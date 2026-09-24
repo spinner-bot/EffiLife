@@ -6,7 +6,9 @@ import {
   normalizeImportedCategory,
   normalizeImportedTodo,
   TodoCategoryService,
+  TodoSettingsService,
   type TodoCategory,
+  type TodoSettings,
   type UnifiedTodo,
 } from './todoService'
 
@@ -77,6 +79,7 @@ export interface ArchiveData {
   records: Record<string, unknown[]>
   todos: UnifiedTodo[]
   categories: TodoCategory[]
+  todoSettings: TodoSettings
   planHelper: {
     available: boolean
     plans: unknown[]
@@ -153,6 +156,7 @@ async function collectAllData(): Promise<ArchiveData> {
     records: getAllRecords(),
     todos,
     categories: await TodoCategoryService.ensureDefaults(todos),
+    todoSettings: await TodoSettingsService.get(),
     planHelper: await collectPlanHelperData(),
   }
 }
@@ -356,6 +360,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
       todos: importedTodos as UnifiedTodo[],
       categories,
+      todoSettings: app.todoSettings || await TodoSettingsService.get(),
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
     }
   }
@@ -382,6 +387,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     locale: legacy.locale || 'zh-CN',
     todos: importedTodos as UnifiedTodo[],
     categories,
+    todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
 }
@@ -472,6 +478,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       writeJSON(STORAGE_KEYS.CHECKIN, data.checkin)
       await idbSet(STORE_NAMES.CHECKIN, 'data', data.checkin)
     }
+    await TodoSettingsService.save(data.todoSettings)
     if (data.locale === 'zh-CN' || data.locale === 'en-US') {
       localStorage.setItem('effilife_locale', data.locale)
     }
