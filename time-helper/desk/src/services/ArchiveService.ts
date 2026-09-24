@@ -656,7 +656,7 @@ export async function resetData(type: ResetType): Promise<void> {
 }
 
 // 获取数据统计
-export function getDataStats(): {
+export async function getDataStats(): Promise<{
   recordDays: number
   totalRecords: number
   hasConfig: boolean
@@ -664,8 +664,8 @@ export function getDataStats(): {
   hasAudioSettings: boolean
   hasEventSettings: boolean
   hasCheckin: boolean
-} {
-  const records = getLocalStorageRecords()
+}> {
+  const records = await getAllRecords()
   let totalRecords = 0
   for (const dateRecords of Object.values(records)) {
     totalRecords += dateRecords.length

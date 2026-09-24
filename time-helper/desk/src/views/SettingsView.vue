@@ -27,6 +27,7 @@ function startGuide() {
   setTimeout(() => {
     GuideManager.startGuide()
   }, 300)
+
 }
 
 // ============ 反馈功能 ============
@@ -366,7 +367,15 @@ function pickColor(target: string) {
 }
 
 // ============ 恢复设置 ============
-const dataStats = computed(() => getDataStats())
+const dataStats = ref({
+  recordDays: 0,
+  totalRecords: 0,
+  hasConfig: false,
+  hasPlans: false,
+  hasAudioSettings: false,
+  hasEventSettings: false,
+  hasCheckin: false,
+})
 
 async function handleReset(type: ResetType) {
   const messages: Record<ResetType, string> = {
@@ -512,6 +521,7 @@ watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], preview
 
 // 初始化完成后关闭加载状态
 onMounted(async () => {
+  dataStats.value = await getDataStats()
   // 短暂延迟以展示骨架屏过渡效果
   setTimeout(() => {
     isLoading.value = false
