@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Settings2, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { DataService, getTodayDate } from '@/services/dataService'
 import {
@@ -280,6 +280,15 @@ async function removeCategory(item: TodoCategory) {
     categories.value = categories.value.filter((categoryItem) => categoryItem.id !== item.id)
     if (categoryFilter.value === item.id) categoryFilter.value = ''
     if (category.value === item.id) category.value = 'default'
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  }
+}
+
+async function toggleCategoryPinned(item: TodoCategory) {
+  try {
+    const updated = await TodoCategoryService.update(item.id, { pinned: !item.pinned })
+    categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
   }
@@ -655,6 +664,7 @@ watch(selectedPlanId, (planId) => {
               <span class="category-swatch" :style="{ background: item.color }" />
               <strong>{{ item.name }}</strong>
               <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
+              <button type="button" class="category-pin" :class="{ active: item.pinned }" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
               <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
               <button v-if="item.id !== 'default'" type="button" class="task-delete" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
             </template>
@@ -864,6 +874,8 @@ watch(selectedPlanId, (planId) => {
 .category-row { display: flex; align-items: center; gap: 9px; min-height: 34px; border-top: 1px solid var(--color-border); padding-top: 7px; }
 .category-row strong { min-width: 110px; color: var(--color-text-primary); font-size: 13px; }
 .category-row small { margin-right: auto; color: var(--color-text-tertiary); font-size: 11px; }
+.category-pin { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.category-pin.active, .category-pin:hover { color: var(--color-primary); }
 .category-swatch { width: 10px; height: 10px; border-radius: 50%; }
 .category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
