@@ -28,7 +28,7 @@ import {
 import { completeLinkedTodos } from '@/services/workspaceSync'
 
 const router = useRouter()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const view = ref<'hub' | 'events' | 'detail'>('hub')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
@@ -71,7 +71,7 @@ function toDateTuple(value: string): [number, number, number] {
 function formatPlanDate(date?: [number, number, number]): string {
   if (!date) return ''
   const [year, month, day] = date
-  return new Date(year, month - 1, day).toLocaleDateString(locale.value)
+  return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`
 }
 
 async function loadPlans() {
