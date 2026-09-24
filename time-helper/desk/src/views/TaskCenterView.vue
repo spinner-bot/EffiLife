@@ -15,7 +15,7 @@ import {
   type UnifiedTodo,
 } from '@/services/todoService'
 import { completePlanTask, getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
-import { formatPriorityScore, getPriorityScore } from '@/services/priority'
+import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
 
@@ -78,8 +78,6 @@ let priorityTimer: number | null = null
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
 const categoryById = computed(() => new Map(categories.value.map((item) => [item.id, item])))
-const showMoreCategories = ref(false)
-const showEmptyCategories = ref(false)
 
 function scoreFor(todo: UnifiedTodo) {
   return getPriorityScore(todo, categoryById.value.get(todo.category), new Date(priorityClock.value))
@@ -100,29 +98,6 @@ const visibleTodos = computed(() => {
     return right.updated_at.localeCompare(left.updated_at)
   })
 })
-
-const categoryStats = computed(() => categories.value.map((category) => {
-  const items = activeTodos.value.filter((todo) => todo.category === category.id)
-  const total = items.reduce((sum, todo) => sum + scoreFor(todo).score, 0)
-  const score = items.length ? Math.trunc(total / Math.sqrt(items.length)) : 0
-  return {
-    category,
-    count: items.length,
-    score,
-    display: formatPriorityScore(score),
-  }
-}).sort((left, right) => {
-  if (Boolean(right.category.pinned) !== Boolean(left.category.pinned)) {
-    return Number(Boolean(right.category.pinned)) - Number(Boolean(left.category.pinned))
-  }
-  if (right.score !== left.score) return right.score - left.score
-  return left.category.name.localeCompare(right.category.name)
-}))
-
-const activeCategoryStats = computed(() => categoryStats.value.filter((item) => item.count > 0))
-const topCategoryStats = computed(() => activeCategoryStats.value.slice(0, todoSettings.value.expandCount))
-const moreCategoryStats = computed(() => activeCategoryStats.value.slice(todoSettings.value.expandCount))
-const emptyCategoryStats = computed(() => categoryStats.value.filter((item) => item.count === 0))
 
 const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
   none: t('tasks.recurrenceNone'),
@@ -588,60 +563,6 @@ watch(selectedPlanId, (planId) => {
         <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
       </section>
 
-      <aside class="category-rank-panel theme-card" :aria-label="t('tasks.categoryRanking')">
-        <div class="category-rank-header">
-          <div>
-            <strong>{{ t('tasks.categoryRanking') }}</strong>
-            <small>{{ t('tasks.categoryRankingHint') }}</small>
-          </div>
-          <button v-if="categoryFilter" type="button" class="category-clear" @click="categoryFilter = ''">{{ t('tasks.clearCategoryFilter') }}</button>
-        </div>
-        <div v-if="topCategoryStats.length" class="category-rank-list">
-          <button v-for="item in topCategoryStats" :key="item.category.id" type="button" class="category-rank-item" :class="{ active: categoryFilter === item.category.id }" @click="categoryFilter = categoryFilter === item.category.id ? '' : item.category.id">
-            <span class="category-rank-name"><i class="category-rank-dot" :style="{ background: item.category.color }"></i>{{ item.category.name }}<small>{{ item.count }}</small></span>
-            <strong>{{ item.display }}</strong>
-          </button>
-        </div>
-        <p v-else class="category-rank-empty">{{ t('tasks.noActiveCategory') }}</p>
-        <button v-if="moreCategoryStats.length" type="button" class="category-more-toggle" @click="showMoreCategories = !showMoreCategories">
-          {{ showMoreCategories ? t('tasks.hideMoreCategories') : t('tasks.showMoreCategories') }} ({{ moreCategoryStats.length }})
-        </button>
-        <div v-if="showMoreCategories" class="category-rank-list category-rank-secondary">
-          <button v-for="item in moreCategoryStats" :key="item.category.id" type="button" class="category-rank-item" :class="{ active: categoryFilter === item.category.id }" @click="categoryFilter = categoryFilter === item.category.id ? '' : item.category.id">
-            <span class="category-rank-name"><i class="category-rank-dot" :style="{ background: item.category.color }"></i>{{ item.category.name }}<small>{{ item.count }}</small></span>
-            <strong>{{ item.display }}</strong>
-          </button>
-        </div>
-        <button v-if="emptyCategoryStats.length" type="button" class="category-more-toggle" @click="showEmptyCategories = !showEmptyCategories">
-          {{ showEmptyCategories ? t('tasks.hideEmptyCategories') : t('tasks.showEmptyCategories') }} ({{ emptyCategoryStats.length }})
-        </button>
-        <div v-if="showEmptyCategories" class="category-rank-list category-rank-secondary category-rank-empty-list">
-          <button v-for="item in emptyCategoryStats" :key="item.category.id" type="button" class="category-rank-item" :class="{ active: categoryFilter === item.category.id }" @click="categoryFilter = categoryFilter === item.category.id ? '' : item.category.id">
-            <span class="category-rank-name"><i class="category-rank-dot" :style="{ background: item.category.color }"></i>{{ item.category.name }}<small>0</small></span>
-            <strong>0</strong>
-          </button>
-        </div>
-        <div class="task-ranking-settings">
-          <label>{{ t('tasks.scoreRefresh') }}
-            <select v-model.number="todoSettings.updateFrequency" :disabled="settingsSaving" @change="saveTodoSettings">
-              <option :value="5000">5s</option>
-              <option :value="10000">10s</option>
-              <option :value="15000">15s</option>
-              <option :value="30000">30s</option>
-              <option :value="60000">60s</option>
-            </select>
-          </label>
-          <label>{{ t('tasks.categoryExpandCount') }}
-            <select v-model.number="todoSettings.expandCount" :disabled="settingsSaving" @change="saveTodoSettings">
-              <option :value="3">3</option>
-              <option :value="5">5</option>
-              <option :value="10">10</option>
-              <option :value="15">15</option>
-            </select>
-          </label>
-        </div>
-      </aside>
-
       <section v-if="showCategoryManager" class="category-manager theme-card" @keydown.esc="showCategoryManager = false">
         <div class="category-manager-header">
           <div>
@@ -676,6 +597,18 @@ watch(selectedPlanId, (planId) => {
               <button v-if="item.id !== 'default'" type="button" class="task-delete" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
             </template>
           </div>
+        </div>
+        <div class="task-ranking-settings">
+          <span>{{ t('tasks.priorityScore') }}</span>
+          <label>{{ t('tasks.scoreRefresh') }}
+            <select v-model.number="todoSettings.updateFrequency" :disabled="settingsSaving" @change="saveTodoSettings">
+              <option :value="5000">5s</option>
+              <option :value="10000">10s</option>
+              <option :value="15000">15s</option>
+              <option :value="30000">30s</option>
+              <option :value="60000">60s</option>
+            </select>
+          </label>
         </div>
       </section>
 
@@ -795,22 +728,6 @@ watch(selectedPlanId, (planId) => {
 .task-category-manage { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
-.category-rank-panel { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 14px; }
-.category-rank-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.category-rank-header > div { display: grid; gap: 3px; text-align: left; }
-.category-rank-header small { color: var(--color-text-tertiary); font-size: 11px; }
-.category-clear, .category-more-toggle { justify-self: start; border: 0; padding: 0; color: var(--color-primary); background: transparent; cursor: pointer; font-size: 12px; }
-.category-clear { justify-self: end; }
-.category-rank-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 7px; }
-.category-rank-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; text-align: left; }
-.category-rank-item:hover, .category-rank-item.active { border-color: var(--color-primary); color: var(--color-text-primary); }
-.category-rank-item strong { color: var(--color-primary); font-size: 11px; font-variant-numeric: tabular-nums; }
-.category-rank-name { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.category-rank-name small { color: var(--color-text-tertiary); font-size: 10px; }
-.category-rank-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; }
-.category-rank-secondary { padding-top: 2px; }
-.category-rank-empty-list .category-rank-item { opacity: .72; }
-.category-rank-empty { margin: 0; color: var(--color-text-tertiary); font-size: 12px; text-align: left; }
 .task-ranking-settings { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; border-top: 1px solid var(--color-border); color: var(--color-text-tertiary); font-size: 11px; }
 .task-ranking-settings label { display: inline-flex; align-items: center; gap: 6px; }
 .task-ranking-settings select { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
