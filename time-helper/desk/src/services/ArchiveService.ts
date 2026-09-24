@@ -11,6 +11,7 @@ import {
   type TodoSettings,
   type UnifiedTodo,
 } from './todoService'
+import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -120,7 +121,7 @@ function writeJSON(key: string, data: unknown): void {
 
 async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
   try {
-    const response = await fetch('http://127.0.0.1:8765/api/data/export', {
+    const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/export`, {
       headers: { Accept: 'application/json' },
     })
     if (!response.ok) throw new Error(`plan-helper responded with ${response.status}`)
@@ -521,7 +522,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     const warnings: string[] = []
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
-        const response = await fetch('http://127.0.0.1:8765/api/data/import', {
+        const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({ plans: data.planHelper.plans, replace: true }),
@@ -543,7 +544,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 
 async function clearPlanHelperData(): Promise<void> {
   try {
-    await fetch('http://127.0.0.1:8765/api/data/import', {
+    await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plans: [], replace: true }),

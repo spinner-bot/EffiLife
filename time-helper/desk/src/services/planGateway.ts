@@ -1,3 +1,5 @@
+import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
+
 export interface PlanSummary {
   id: string
   name: string
@@ -41,8 +43,6 @@ export interface PlanArchiveSummary {
 }
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
-
-const PLAN_HELPER_ORIGIN = 'http://127.0.0.1:8765'
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${PLAN_HELPER_ORIGIN}${path}`, {
