@@ -132,8 +132,10 @@ def test_time_adapter_accepts_unified_frontend_record_fields():
 
 
 def test_unified_category_preserves_difficulty():
+    from common.api_gateway.adapters import CategoryAdapter
     from common.schemas.models import UnifiedCategory
 
-    category = UnifiedCategory(id="work", name="工作", difficulty=8)
+    category = CategoryAdapter.to_unified_category({"id": "work", "name": "工作", "difficulty": 8})
 
     assert UnifiedCategory.from_dict(category.to_dict()).difficulty == 8
+    assert CategoryAdapter.from_unified_category(category)["difficulty"] == 8

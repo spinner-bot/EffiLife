@@ -5,6 +5,6 @@
 """
 
 from .gateway import APIGateway
-from .adapters import PlanAdapter, TodoAdapter, TimeAdapter
+from .adapters import CategoryAdapter, PlanAdapter, TodoAdapter, TimeAdapter
 
-__all__ = ['APIGateway', 'PlanAdapter', 'TodoAdapter', 'TimeAdapter']
+__all__ = ['APIGateway', 'CategoryAdapter', 'PlanAdapter', 'TodoAdapter', 'TimeAdapter']

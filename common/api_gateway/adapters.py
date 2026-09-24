@@ -7,7 +7,7 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-from ..schemas.models import UnifiedPlan, UnifiedTodo, UnifiedTimeRecord
+from ..schemas.models import UnifiedCategory, UnifiedPlan, UnifiedTodo, UnifiedTimeRecord
 
 
 def _format_date(parts) -> Optional[str]:
@@ -67,6 +67,35 @@ class PlanAdapter:
                 if task_id:
                     task_ids.append(str(task_id))
         return task_ids
+
+
+class CategoryAdapter:
+    """to-dos 分类与公共分类模型之间的适配器。"""
+
+    @staticmethod
+    def to_unified_category(category_data: dict) -> UnifiedCategory:
+        return UnifiedCategory(
+            id=str(category_data.get('id', '')),
+            name=category_data.get('name', ''),
+            color=category_data.get('color', '#6366f1'),
+            icon=category_data.get('icon', 'circle'),
+            description=category_data.get('description'),
+            module='to-dos',
+            created_at=category_data.get('created_at', ''),
+            difficulty=category_data.get('difficulty', 5),
+        )
+
+    @staticmethod
+    def from_unified_category(category: UnifiedCategory) -> dict:
+        return {
+            'id': category.id,
+            'name': category.name,
+            'color': category.color,
+            'icon': category.icon,
+            'description': category.description,
+            'created_at': category.created_at,
+            'difficulty': category.difficulty,
+        }
 
 
 class TodoAdapter:
