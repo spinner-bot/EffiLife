@@ -2566,6 +2566,49 @@ export function getThemeStyle(theme: Theme | undefined): ThemeStyle {
   }
 }
 
+/**
+ * 将主题引擎结果转换为统一应用壳的 CSS 设计令牌。
+ *
+ * 其他领域页面只依赖这些变量，不需要知道主题是纯色、Canvas 动效还是
+ * 高级预设。这样 plan-helper / to-dos 接入桌面壳后可以自动继承 th 的主题。
+ */
+export function getThemeCssVariables(theme: Theme | undefined): Record<string, string> {
+  const style = getThemeStyle(theme)
+  return {
+    '--color-bg': style.bgColor,
+    '--color-bg-secondary': style.cardBg,
+    '--color-bg-tertiary': style.borderColor,
+    '--color-bg-elevated': style.cardBg,
+    '--color-bg-hover': style.buttonBg,
+    '--color-text-primary': style.textColor,
+    '--color-text-secondary': style.textSecondary,
+    '--color-text-tertiary': style.textTertiary,
+    '--color-text-disabled': style.textTertiary,
+    '--color-border': style.borderColor,
+    '--color-border-hover': style.accentColor,
+    '--color-border-subtle': style.borderColor,
+    '--color-button-bg': style.buttonBg,
+    '--color-button-text': style.buttonText,
+    '--color-primary': style.accentColor,
+    '--color-primary-hover': style.accentColor,
+    '--color-primary-active': style.accentColor,
+    '--color-primary-muted': style.buttonBg,
+    '--color-accent': style.accentColor,
+    '--color-success': '#22c55e',
+    '--color-success-bg': 'rgba(34, 197, 94, 0.12)',
+    '--color-warning': '#f59e0b',
+    '--color-warning-bg': 'rgba(245, 158, 11, 0.12)',
+    '--color-error': '#ef4444',
+    '--color-error-bg': 'rgba(239, 68, 68, 0.12)',
+    '--color-info': '#3b82f6',
+    '--color-info-bg': 'rgba(59, 130, 246, 0.12)',
+    '--theme-backdrop-filter': style.backdropFilter || 'none',
+    '--theme-box-shadow': style.boxShadow || 'none',
+    '--theme-text-shadow': style.textShadow || 'none',
+    '--theme-bg-gradient': style.bgGradient || 'none',
+  }
+}
+
 // 计算颜色亮度
 function getLuminance(hex: string): number {
   const num = parseInt(hex.replace('#', ''), 16)

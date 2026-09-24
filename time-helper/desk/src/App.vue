@@ -3,14 +3,14 @@ import { RouterView } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ref, onMounted, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
-import { getThemeStyle } from './theme/ThemeEngine'
+import { getThemeCssVariables } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 
 const appStore = useAppStore()
 
-const themeStyle = computed(() => getThemeStyle(appStore.config.theme))
+const themeVariables = computed(() => getThemeCssVariables(appStore.config.theme))
 
 // 打卡弹窗状态
 const showCheckinPopup = ref(false)
@@ -20,31 +20,9 @@ const hasPromptedCheckin = ref(false)
 
 // 应用主题到 CSS 变量
 function applyTheme() {
-  const style = themeStyle.value
   const root = document.documentElement
-
-  root.style.setProperty('--color-bg', style.bgColor)
-  root.style.setProperty('--color-text-primary', style.textColor)
-  root.style.setProperty('--color-text-secondary', style.textSecondary)
-  root.style.setProperty('--color-text-tertiary', style.textTertiary)
-  root.style.setProperty('--color-border', style.borderColor)
-  root.style.setProperty('--color-button-bg', style.buttonBg)
-  root.style.setProperty('--color-button-text', style.buttonText)
-  root.style.setProperty('--color-primary', style.accentColor)
-  root.style.setProperty('--color-accent', style.accentColor)  // 用于按钮悬停文字
-  root.style.setProperty('--color-bg-secondary', style.cardBg)
-
-  if (style.backdropFilter) {
-    root.style.setProperty('--theme-backdrop-filter', style.backdropFilter)
-  }
-  if (style.boxShadow) {
-    root.style.setProperty('--theme-box-shadow', style.boxShadow)
-  }
-  if (style.textShadow) {
-    root.style.setProperty('--theme-text-shadow', style.textShadow)
-  }
-  if (style.bgGradient) {
-    root.style.setProperty('--theme-bg-gradient', style.bgGradient)
+  for (const [name, value] of Object.entries(themeVariables.value)) {
+    root.style.setProperty(name, value)
   }
 }
 
