@@ -399,7 +399,7 @@ watch(selectedPlanId, (planId) => {
 <template>
   <div class="task-center">
     <header class="task-header">
-      <button class="task-back" @click="AudioManager.playSound('click'); router.push('/')" aria-label="返回首页">
+      <button class="task-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('common.backHome')">
         <ArrowLeft :size="18" />
       </button>
       <div>
@@ -504,7 +504,7 @@ watch(selectedPlanId, (planId) => {
       </section>
       <section v-else class="task-list">
         <article v-for="todo in visibleTodos" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed' }">
-          <button class="task-check" :disabled="todo.status === 'completed'" :aria-label="todo.status === 'completed' ? '已完成' : '完成任务'" @click="completeTodo(todo)">
+          <button class="task-check" :disabled="todo.status === 'completed'" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
           <div v-if="editingId === todo.id" class="task-edit-form">
@@ -546,17 +546,17 @@ watch(selectedPlanId, (planId) => {
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
             <span v-if="todo.time_spent" class="task-time-spent">{{ t('tasks.timeSpent') }} {{ todo.time_spent }} min</span>
-            <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
+            <span v-if="todo.deadline" class="task-deadline">{{ t('tasks.deadlinePrefix') }} {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
-            <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
-            <span v-if="todo.related_plan_task_id" class="task-plan-reference">任务：{{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
+            <span v-if="todo.related_plan_id" class="task-plan-reference">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
+            <span v-if="todo.related_plan_task_id" class="task-plan-reference">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
           </div>
           <button v-if="editingId !== todo.id" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
             <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
           </button>
           <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
           <button v-if="editingId !== todo.id" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
-          <button class="task-delete" aria-label="删除任务" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
+          <button class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
             <div v-if="todo.subtasks.length" class="subtask-list">
               <div v-for="subtask in todo.subtasks" :key="subtask.id" class="subtask-row" :class="{ completed: subtask.completed }">
