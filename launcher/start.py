@@ -110,7 +110,7 @@ def build_modules():
             "setup": th_setup,
             "companions": [{
                 "name": "plan-helper API",
-                "cmd": [sys.executable, "-m", "web.server"],
+                "cmd": [sys.executable, "web/server.py"],
                 "cwd": BASE_DIR / "plan-helper",
                 "url": "http://127.0.0.1:8765",
             }],
@@ -118,7 +118,7 @@ def build_modules():
         "2": {
             "name": "plan-helper（兼容入口）",
             "desc": "旧版计划编辑器，仅用于迁移与调试",
-            "cmd": [sys.executable, "-m", "web.server"],
+            "cmd": [sys.executable, "web/server.py"],
             "cwd": BASE_DIR / "plan-helper",
             "url": "http://127.0.0.1:8765",
             "setup": None,

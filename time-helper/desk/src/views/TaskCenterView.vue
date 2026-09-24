@@ -62,6 +62,7 @@ async function addTodo() {
     todos.value = [todo, ...todos.value]
     title.value = ''
     priority.value = 'normal'
+    selectedPlanId.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '待办创建失败'
   }
