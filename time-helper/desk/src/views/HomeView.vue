@@ -783,7 +783,8 @@ onUnmounted(() => {
 
 .stats-card:hover {
   border-color: var(--color-border-hover);
-  background: var(--color-bg-tertiary);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
 }
 
 .event-overview-card {
@@ -803,7 +804,8 @@ onUnmounted(() => {
 
 .event-overview-card:hover {
   border-color: var(--color-border-hover);
-  background: var(--color-bg-tertiary);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
 }
 
 .event-overview-header { display: flex; align-items: center; justify-content: space-between; width: 100%; color: var(--color-text-tertiary); }
