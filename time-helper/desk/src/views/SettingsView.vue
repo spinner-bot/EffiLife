@@ -9,6 +9,7 @@ import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/vers
 import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
 import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -506,6 +507,9 @@ onMounted(async () => {
 
       <!-- 主视图 -->
       <template v-else-if="currentView === 'main'">
+        <div class="settings-locale-row">
+          <LocaleSwitcher />
+        </div>
         <div class="settings-list">
           <button class="settings-item" @click="navigateTo('custom')">
             <span>自定义</span>
@@ -1214,6 +1218,8 @@ onMounted(async () => {
   margin: 0 auto;
   width: 100%;
 }
+
+.settings-locale-row { display: flex; justify-content: flex-end; margin-bottom: var(--spacing-md); }
 
 .settings-list {
   display: flex;

@@ -5,8 +5,10 @@ import { ArrowLeft, Check, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-nex
 import { AudioManager } from '@/audio'
 import { TodoService, type TodoPriority, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
 const priority = ref<TodoPriority>('normal')
@@ -34,12 +36,12 @@ const visibleTodos = computed(() => {
   return todos.value
 })
 
-const priorityLabels: Record<TodoPriority, string> = {
-  'urgent-important': '紧急重要',
-  important: '重要',
-  urgent: '紧急',
-  normal: '普通',
-}
+const priorityLabels = computed<Record<TodoPriority, string>>(() => ({
+  'urgent-important': t('priority.urgentImportant'),
+  important: t('priority.important'),
+  urgent: t('priority.urgent'),
+  normal: t('priority.normal'),
+}))
 
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
 const planTaskById = computed(() => Object.fromEntries(planTasks.value.map((task) => [task.internal_id, task])))
@@ -50,7 +52,7 @@ async function loadTodos() {
   try {
     todos.value = await TodoService.list()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '待办加载失败'
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.load')
   } finally {
     isLoading.value = false
   }
@@ -71,7 +73,7 @@ async function addTodo() {
     selectedPlanId.value = ''
     selectedPlanTaskId.value = ''
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '待办创建失败'
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
   }
 }
 
@@ -110,7 +112,7 @@ async function completeTodo(todo: UnifiedTodo) {
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '待办更新失败'
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
   }
 }
 
@@ -147,7 +149,7 @@ async function saveEdit(todo: UnifiedTodo) {
     if (index >= 0) todos.value[index] = updated
     cancelEdit()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '待办保存失败'
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.save')
   } finally {
     isSaving.value = false
   }
@@ -158,14 +160,14 @@ async function removeTodo(todo: UnifiedTodo) {
     await TodoService.remove(todo.id)
     todos.value = todos.value.filter((item) => item.id !== todo.id)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '待办删除失败'
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
   }
 }
 
 function formatDeadline(deadline?: string): string {
   if (!deadline) return ''
   const date = new Date(deadline)
-  return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString('zh-CN')
+  return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
 }
 
 onMounted(() => {
@@ -186,53 +188,53 @@ watch(selectedPlanId, (planId) => {
         <ArrowLeft :size="18" />
       </button>
       <div>
-        <p class="task-eyebrow">统一工作台</p>
-        <h1><ListTodo :size="24" /> 待办中心</h1>
+        <p class="task-eyebrow">{{ t('tasks.workspace') }}</p>
+        <h1><ListTodo :size="24" /> {{ t('tasks.title') }}</h1>
       </div>
       <div class="task-counts">
-        <span>{{ activeTodos.length }} 项待处理</span>
-        <span>{{ completedTodos.length }} 项已完成</span>
+        <span>{{ activeTodos.length }} {{ t('tasks.pending') }}</span>
+        <span>{{ completedTodos.length }} {{ t('tasks.completed') }}</span>
       </div>
     </header>
 
     <main class="task-content">
       <section class="task-create theme-card">
-        <label class="task-field-label" for="new-task-title">新建待办</label>
-        <input id="new-task-title" v-model="title" class="task-input" placeholder="添加一个可执行的任务…" @keyup.enter="addTodo" />
-        <label class="task-field-label" for="new-task-priority">优先级</label>
+        <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
+        <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
+        <label class="task-field-label" for="new-task-priority">{{ t('tasks.priority') }}</label>
         <select id="new-task-priority" v-model="priority" class="task-select">
           <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
         </select>
-        <label class="task-field-label" for="new-task-plan">关联计划</label>
+        <label class="task-field-label" for="new-task-plan">{{ t('tasks.plan') }}</label>
         <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState === 'loading'">
-          <option value="">不关联</option>
+          <option value="">{{ t('tasks.noPlan') }}</option>
           <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
         </select>
-        <label class="task-field-label" for="new-task-plan-task">计划任务</label>
+        <label class="task-field-label" for="new-task-plan-task">{{ t('tasks.planTask') }}</label>
         <select id="new-task-plan-task" v-model="selectedPlanTaskId" class="task-select task-plan-select" :disabled="!selectedPlanId || planTaskState === 'loading'">
-          <option value="">不指定</option>
+          <option value="">{{ t('tasks.noTask') }}</option>
           <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
         <button class="task-add" @click="AudioManager.playSound('click'); addTodo()">
-          <Plus :size="17" /> 添加
+          <Plus :size="17" /> {{ t('tasks.add') }}
         </button>
       </section>
 
       <section class="task-toolbar">
-        <div class="task-tabs" role="tablist" aria-label="待办筛选">
-          <button :class="{ active: filter === 'active' }" @click="filter = 'active'">待处理</button>
-          <button :class="{ active: filter === 'all' }" @click="filter = 'all'">全部</button>
-          <button :class="{ active: filter === 'completed' }" @click="filter = 'completed'">已完成</button>
+        <div class="task-tabs" role="tablist" :aria-label="t('tasks.title')">
+          <button :class="{ active: filter === 'active' }" @click="filter = 'active'">{{ t('tasks.active') }}</button>
+          <button :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ t('tasks.all') }}</button>
+          <button :class="{ active: filter === 'completed' }" @click="filter = 'completed'">{{ t('tasks.completedTab') }}</button>
         </div>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
-        <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">计划服务未连接，仍可正常管理待办</span>
+        <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
       </section>
 
-      <section v-if="isLoading" class="task-empty theme-card">正在加载待办…</section>
+      <section v-if="isLoading" class="task-empty theme-card">{{ t('tasks.loading') }}</section>
       <section v-else-if="visibleTodos.length === 0" class="task-empty theme-card">
         <ListTodo :size="34" />
-        <strong>{{ filter === 'completed' ? '还没有完成的任务' : '今天没有待办' }}</strong>
-        <span>把下一步写下来，时间管理从行动开始。</span>
+        <strong>{{ filter === 'completed' ? t('tasks.emptyCompleted') : t('tasks.emptyActive') }}</strong>
+        <span>{{ t('tasks.emptyHint') }}</span>
       </section>
       <section v-else class="task-list">
         <article v-for="todo in visibleTodos" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed' }">
@@ -240,25 +242,25 @@ watch(selectedPlanId, (planId) => {
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
           <div v-if="editingId === todo.id" class="task-edit-form">
-            <label :for="`edit-title-${todo.id}`">编辑待办内容</label>
+            <label :for="`edit-title-${todo.id}`">{{ t('tasks.editContent') }}</label>
             <input :id="`edit-title-${todo.id}`" v-model="editingTitle" class="task-edit-input" @keyup.enter="saveEdit(todo)" />
-            <label :for="`edit-priority-${todo.id}`">优先级</label>
+            <label :for="`edit-priority-${todo.id}`">{{ t('tasks.priority') }}</label>
             <select :id="`edit-priority-${todo.id}`" v-model="editingPriority" class="task-edit-select">
               <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
             </select>
-            <label :for="`edit-plan-${todo.id}`">关联计划</label>
+            <label :for="`edit-plan-${todo.id}`">{{ t('tasks.plan') }}</label>
             <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState === 'loading'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
-              <option value="">不关联</option>
+              <option value="">{{ t('tasks.noPlan') }}</option>
               <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
             </select>
-            <label :for="`edit-plan-task-${todo.id}`">计划任务</label>
+            <label :for="`edit-plan-task-${todo.id}`">{{ t('tasks.planTask') }}</label>
             <select :id="`edit-plan-task-${todo.id}`" v-model="editingPlanTaskId" class="task-edit-select" :disabled="!editingPlanId || planTaskState === 'loading'">
-              <option value="">不指定</option>
+              <option value="">{{ t('tasks.noTask') }}</option>
               <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
             </select>
             <div class="task-edit-actions">
-              <button class="task-edit-cancel" @click="cancelEdit">取消</button>
-              <button class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? '保存中…' : '保存' }}</button>
+              <button class="task-edit-cancel" @click="cancelEdit">{{ t('tasks.cancel') }}</button>
+              <button class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? t('tasks.saving') : t('tasks.save') }}</button>
             </div>
           </div>
           <div v-else class="task-main">
@@ -271,7 +273,7 @@ watch(selectedPlanId, (planId) => {
             <span v-if="todo.related_plan_task_id" class="task-plan-reference">任务：{{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
           </div>
           <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
-          <button v-if="editingId !== todo.id" class="task-edit" aria-label="编辑任务" @click="startEdit(todo)"><Pencil :size="16" /></button>
+          <button v-if="editingId !== todo.id" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
           <button class="task-delete" aria-label="删除任务" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
         </article>
       </section>

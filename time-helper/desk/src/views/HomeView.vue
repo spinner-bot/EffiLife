@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
@@ -9,9 +9,11 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoService } from '@/services/todoService'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const appStore = useAppStore()
+const { t, locale } = useI18n()
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -47,13 +49,15 @@ const updateTime = () => {
       : `${hours12}:${minutes} ${ampm}`
   }
 
-  currentDate.value = now.toLocaleDateString('zh-CN', {
+  currentDate.value = now.toLocaleDateString(locale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     weekday: 'long'
   })
 }
+
+watch(locale, updateTime)
 
 const getProgressColor = (progress: number): string => {
   if (progress === 0) return 'var(--color-text-primary)'
@@ -304,24 +308,24 @@ onUnmounted(() => {
       <nav class="nav-buttons">
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/plan')">
           <ClipboardList :size="22" />
-          <span>计划</span>
+          <span>{{ t('nav.plan') }}</span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
           <Calendar :size="22" />
-          <span>日历</span>
+          <span>{{ t('nav.calendar') }}</span>
         </button>
         <button class="nav-btn checkin-nav" @click="AudioManager.playSound('click'); router.push('/checkin')">
           <CheckCircle :size="22" />
-          <span>打卡</span>
+          <span>{{ t('nav.checkin') }}</span>
           <span v-if="canCheckinToday && !hasCheckedInToday" class="nav-red-dot"></span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/tasks')">
           <ListTodo :size="22" />
-          <span>待办<span v-if="activeTodoCount > 0" class="nav-count">{{ activeTodoCount }}</span></span>
+          <span>{{ t('nav.tasks') }}<span v-if="activeTodoCount > 0" class="nav-count">{{ activeTodoCount }}</span></span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
           <Settings :size="22" />
-          <span>设置</span>
+          <span>{{ t('nav.settings') }}</span>
         </button>
       </nav>
     </main>
