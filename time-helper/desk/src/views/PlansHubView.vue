@@ -329,7 +329,7 @@ function cancelTaskEdit() {
   taskMinutes.value = 30
 }
 
-async function completeTask(taskId: string) {
+async function completeTask(taskId: string, displayTaskId = taskId) {
   if (!selectedPlan.value) return
   const planId = selectedPlan.value.id
   isLoading.value = true
@@ -337,7 +337,7 @@ async function completeTask(taskId: string) {
   try {
     await completePlanTask(planId, taskId)
     try {
-      await completeLinkedTodos(planId, taskId)
+      await completeLinkedTodos(planId, [taskId, displayTaskId])
     } catch {
       errorMessage.value = t('plans.todoSyncFailed')
     }
@@ -498,7 +498,7 @@ onMounted(loadPlans)
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
-            <button class="task-complete" :disabled="!!task.finish || isLoading" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
+            <button class="task-complete" :disabled="!!task.finish || isLoading" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
             <button class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
