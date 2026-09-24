@@ -17,6 +17,7 @@ import {
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { formatPriorityScore, getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
+import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
 
 const router = useRouter()
 const { t, locale } = useI18n()
@@ -60,10 +61,14 @@ const categories = ref<TodoCategory[]>([])
 const showCategoryManager = ref(false)
 const categoryName = ref('')
 const categoryColor = ref('#6366f1')
+const categoryIcon = ref('circle')
+const categoryAsciiIcon = ref('')
 const categoryDifficulty = ref(5)
 const editingCategoryId = ref<string | null>(null)
 const editingCategoryName = ref('')
 const editingCategoryColor = ref('#6366f1')
+const editingCategoryIcon = ref('circle')
+const editingCategoryAsciiIcon = ref('')
 const editingCategoryDifficulty = ref(5)
 const priorityClock = ref(Date.now())
 const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
@@ -216,11 +221,14 @@ function beginCategoryEdit(item: TodoCategory) {
   editingCategoryId.value = item.id
   editingCategoryName.value = item.name
   editingCategoryColor.value = item.color
+  editingCategoryIcon.value = item.icon || 'circle'
+  editingCategoryAsciiIcon.value = item.ascii_icon || ''
   editingCategoryDifficulty.value = item.difficulty
 }
 
 function cancelCategoryEdit() {
   editingCategoryId.value = null
+  editingCategoryAsciiIcon.value = ''
 }
 
 async function createCategory() {
@@ -229,11 +237,15 @@ async function createCategory() {
     const created = await TodoCategoryService.create({
       name: categoryName.value,
       color: categoryColor.value,
+      icon: categoryIcon.value,
+      ascii_icon: categoryAsciiIcon.value || undefined,
       difficulty: categoryDifficulty.value,
     })
     categories.value = [...categories.value, created].sort((a, b) => a.name.localeCompare(b.name))
     categoryName.value = ''
     categoryColor.value = '#6366f1'
+    categoryIcon.value = 'circle'
+    categoryAsciiIcon.value = ''
     categoryDifficulty.value = 5
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
@@ -245,6 +257,8 @@ async function saveCategory(item: TodoCategory) {
     const updated = await TodoCategoryService.update(item.id, {
       name: editingCategoryName.value,
       color: editingCategoryColor.value,
+      icon: editingCategoryIcon.value,
+      ascii_icon: editingCategoryAsciiIcon.value || undefined,
       difficulty: editingCategoryDifficulty.value,
     })
     categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
@@ -624,6 +638,7 @@ watch(selectedPlanId, (planId) => {
           <input v-model="categoryName" :placeholder="t('tasks.categoryName')" aria-label="category name" />
           <input v-model="categoryColor" type="color" :aria-label="t('tasks.categoryColor')" />
           <label>{{ t('tasks.categoryDifficulty') }} <input v-model.number="categoryDifficulty" type="number" min="0" max="10" /></label>
+          <CategoryIconPicker v-model="categoryIcon" v-model:model-color="categoryColor" v-model:model-ascii="categoryAsciiIcon" />
           <button type="submit" class="task-edit-save" :disabled="!categoryName.trim()"><Plus :size="14" /> {{ t('tasks.add') }}</button>
         </form>
         <div class="category-list">
@@ -632,6 +647,7 @@ watch(selectedPlanId, (planId) => {
               <input v-model="editingCategoryName" class="task-edit-input" />
               <input v-model="editingCategoryColor" type="color" />
               <input v-model.number="editingCategoryDifficulty" class="category-difficulty" type="number" min="0" max="10" />
+              <CategoryIconPicker v-model="editingCategoryIcon" v-model:model-color="editingCategoryColor" v-model:model-ascii="editingCategoryAsciiIcon" />
               <button type="button" class="task-edit-save" @click="saveCategory(item)">{{ t('tasks.save') }}</button>
               <button type="button" class="task-edit-cancel" @click="cancelCategoryEdit">{{ t('tasks.cancel') }}</button>
             </template>
@@ -842,6 +858,7 @@ watch(selectedPlanId, (planId) => {
 .category-create { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .category-create input:not([type='color']), .category-create label input { width: 90px; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 .category-create input:first-child { min-width: 180px; flex: 1; }
+.category-create .category-icon-picker, .category-row .category-icon-picker { flex: 1 1 100%; min-width: 260px; }
 .category-create input[type='color'], .category-row input[type='color'] { width: 32px; height: 32px; border: 0; padding: 0; background: transparent; cursor: pointer; }
 .category-list { display: grid; gap: 7px; }
 .category-row { display: flex; align-items: center; gap: 9px; min-height: 34px; border-top: 1px solid var(--color-border); padding-top: 7px; }

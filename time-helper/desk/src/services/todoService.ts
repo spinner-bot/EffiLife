@@ -238,7 +238,11 @@ export const TodoCategoryService = {
 
 export const TodoSettingsService = {
   async get(): Promise<TodoSettings> {
-    return normalizeTodoSettings(await get<Partial<TodoSettings>>(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY))
+    try {
+      return normalizeTodoSettings(await get<Partial<TodoSettings>>(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY))
+    } catch {
+      return { ...DEFAULT_TODO_SETTINGS }
+    }
   },
 
   async save(value: Partial<TodoSettings>): Promise<TodoSettings> {
