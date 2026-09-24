@@ -14,6 +14,7 @@ import {
   listPlanSummaries,
   type PlanFull,
   type PlanSummary,
+  updatePlanTask,
   updateEventPlan,
 } from '@/services/planGateway'
 
@@ -31,6 +32,8 @@ const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
 const taskSectionIndex = ref<number | null>(null)
+const editingTaskId = ref<string | null>(null)
+const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
 const taskMinutes = ref(30)
 
@@ -132,12 +135,36 @@ async function saveSection() {
 }
 
 async function saveTask() {
-  if (!selectedPlan.value || taskSectionIndex.value === null || !taskContent.value.trim()) return
-  await addPlanTask(selectedPlan.value.id, taskSectionIndex.value, taskContent.value.trim(), Math.max(0, Number(taskMinutes.value) || 0))
+  if (!selectedPlan.value || !taskContent.value.trim()) return
+  const minutes = Math.max(0, Number(taskMinutes.value) || 0)
+  if (editingTaskId.value) {
+    await updatePlanTask(selectedPlan.value.id, editingTaskId.value, taskContent.value.trim(), minutes)
+  } else {
+    if (taskSectionIndex.value === null) return
+    await addPlanTask(selectedPlan.value.id, taskSectionIndex.value, taskContent.value.trim(), minutes)
+  }
   taskContent.value = ''
   taskMinutes.value = 30
   taskSectionIndex.value = null
+  editingTaskId.value = null
+  editingTaskSectionIndex.value = null
   selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+}
+
+function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
+  taskSectionIndex.value = null
+  editingTaskId.value = task.internal_id
+  editingTaskSectionIndex.value = sectionIndex
+  taskContent.value = task.content
+  taskMinutes.value = task.time_minutes
+}
+
+function cancelTaskEdit() {
+  taskSectionIndex.value = null
+  editingTaskId.value = null
+  editingTaskSectionIndex.value = null
+  taskContent.value = ''
+  taskMinutes.value = 30
 }
 
 async function completeTask(taskId: string) {
@@ -238,16 +265,18 @@ onMounted(loadPlans)
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
           <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><button class="plans-secondary" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button></header>
-          <div v-if="taskSectionIndex === section.index" class="task-editor">
+          <div v-if="taskSectionIndex === section.index || editingTaskSectionIndex === section.index" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <label>{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
-            <button class="plans-primary" @click="saveTask">{{ t('plans.save') }}</button>
+            <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
+            <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
             <button class="task-complete" :disabled="!!task.finish" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
+            <button class="task-edit" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button class="task-delete" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="Object.keys(section.groups).length" class="group-list"><span v-for="(group, key) in section.groups" :key="key">{{ key }} · {{ group.title }}</span></div>
@@ -310,14 +339,14 @@ onMounted(loadPlans)
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-editor label:first-child { flex: 1; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
-.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 28px; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 28px 28px; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .event-task-row > div strong { color: var(--color-primary); font-size: 12px; }
 .event-task-row > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-task-row > small { color: var(--color-text-tertiary); white-space: nowrap; }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.finished span { text-decoration: line-through; }
-.task-complete, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-complete, .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-complete { width: 22px; height: 22px; border: 2px solid var(--color-border-hover); border-radius: 50%; }
 .task-complete:disabled { color: var(--color-button-text); background: var(--color-primary); }
 .group-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
