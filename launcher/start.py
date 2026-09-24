@@ -348,6 +348,10 @@ def wait_for_service(process, url, timeout=30):
 
 
 def main():
+    if "--unified" in sys.argv:
+        run_module("1", build_modules())
+        return
+
     modules = build_modules()
     while True:
         show_menu(modules)
