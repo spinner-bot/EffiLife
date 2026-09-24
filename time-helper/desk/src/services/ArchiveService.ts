@@ -65,6 +65,10 @@ export interface ArchiveData {
   checkin: Record<string, unknown> | null
   records: Record<string, unknown[]>
   todos: unknown[]
+  planHelper: {
+    available: boolean
+    plans: unknown[]
+  }
 }
 
 // 获取所有日期记录
@@ -99,6 +103,23 @@ function writeJSON(key: string, data: unknown): void {
   localStorage.setItem(key, JSON.stringify(data))
 }
 
+async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
+  try {
+    const response = await fetch('http://127.0.0.1:8765/api/data/export', {
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(`plan-helper responded with ${response.status}`)
+    const payload = await response.json() as {
+      success?: boolean
+      data?: { plans?: unknown[] }
+    }
+    if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error('Invalid plan-helper export')
+    return { available: true, plans: payload.data.plans }
+  } catch {
+    return { available: false, plans: [] }
+  }
+}
+
 // 收集所有数据
 async function collectAllData(): Promise<ArchiveData> {
   const { getRawAll, STORE_NAMES } = await import('@/storage')
@@ -117,11 +138,12 @@ async function collectAllData(): Promise<ArchiveData> {
     checkin: readJSON(STORAGE_KEYS.CHECKIN),
     records: getAllRecords(),
     todos: await getRawAll(STORE_NAMES.TODOS),
+    planHelper: await collectPlanHelperData(),
   }
 }
 
 // 导出数据为 .efl 文件
-export async function exportArchive(): Promise<{ success: boolean; path?: string }> {
+export async function exportArchive(): Promise<{ success: boolean; path?: string; warning?: string }> {
   const data = await collectAllData()
   const zip = new JSZip()
 
@@ -136,6 +158,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 此文件包含以下数据:
 - 应用配置
 - 计划和时间表规则
+- plan-helper 原始事件计划快照
 - 音频和事件设置
 - 打卡记录
 - 历史记录
@@ -176,7 +199,11 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
         setDownloadPath(dir + '/' + fileName.replace(/_[\d-]+\.efl$/, '_'))
       }
 
-      return { success: true, path: filePath }
+      return {
+        success: true,
+        path: filePath,
+        warning: data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+      }
     } catch (e) {
       // Tauri API 失败，回退到浏览器下载
       console.warn('Tauri export failed, falling back to browser:', e)
@@ -186,7 +213,10 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   // 移动端 Tauri 或浏览器环境，使用浏览器下载
   // Tauri Mobile 的 WebView 也支持 saveAs 下载
   saveAs(blob, fileName)
-  return { success: true }
+  return {
+    success: true,
+    warning: data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+  }
 }
 
 // 从 .efl 文件导入数据
@@ -329,7 +359,39 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       }
     }
 
-  return { success: true, message: '存档导入成功' }
+    const warnings: string[] = []
+    if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
+      try {
+        const response = await fetch('http://127.0.0.1:8765/api/data/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ plans: data.planHelper.plans, replace: true }),
+        })
+        const payload = await response.json() as { success?: boolean; error?: string }
+        if (!response.ok || !payload.success) throw new Error(payload.error || `HTTP ${response.status}`)
+      } catch (error) {
+        warnings.push(`事件计划恢复失败：${error instanceof Error ? error.message : '计划服务不可用'}`)
+      }
+    } else if (data.planHelper && !data.planHelper.available) {
+      warnings.push('存档生成时 plan-helper 不可用，未包含事件计划快照')
+    }
+
+  return {
+    success: true,
+    message: warnings.length ? `存档已导入，但有提示：${warnings.join('；')}` : '存档导入成功',
+  }
+}
+
+async function clearPlanHelperData(): Promise<void> {
+  try {
+    await fetch('http://127.0.0.1:8765/api/data/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plans: [], replace: true }),
+    })
+  } catch {
+    // plan-helper may not be running; local reset remains valid.
+  }
 }
 
 // 重置类型
@@ -364,6 +426,7 @@ export async function resetData(type: ResetType): Promise<void> {
       await idbClear(STORE_NAMES.DAILY_TRIGGER)
       await idbClear(STORE_NAMES.CHECKIN)
       await idbClear(STORE_NAMES.TODOS)
+      await clearPlanHelperData()
       break
 
     case 'records':
@@ -388,6 +451,7 @@ export async function resetData(type: ResetType): Promise<void> {
       await idbClear(STORE_NAMES.PLANS)
       await idbClear(STORE_NAMES.SCHEDULE_RULES)
       await idbClear(STORE_NAMES.MANUAL_PLANS)
+      await clearPlanHelperData()
       break
 
     case 'config':

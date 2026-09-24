@@ -670,6 +670,75 @@ def get_plan_full(plan_id):
         return error_response(str(e))
 
 
+def export_registry():
+    """Export raw Plan.plan snapshots without compacting or reshaping them."""
+    try:
+        plans = [copy.deepcopy(plan_obj.plan) for plan_obj in plan_module.Plan.registry.values()]
+        return success_response(data={
+            "format": "plan-helper.raw.v1",
+            "plans": plans,
+            "count": len(plans),
+        })
+    except Exception as e:
+        return error_response(str(e))
+
+
+def import_registry(plans, replace=True):
+    """Restore raw Plan.plan snapshots atomically.
+
+    The raw structure is validated before touching the live registry.  This
+    deliberately avoids reconstructing a plan through display summaries so
+    soft-deleted slots, nested groups, and log references remain intact.
+    """
+    if not isinstance(plans, list):
+        return error_response("plans must be a list")
+
+    prepared = []
+    seen_ids = set()
+    try:
+        for raw_plan in plans:
+            if not isinstance(raw_plan, dict):
+                return error_response("Each plan snapshot must be an object")
+            head = raw_plan.get("head")
+            main = raw_plan.get("main")
+            logs = raw_plan.get("log")
+            if not isinstance(head, dict) or not isinstance(main, list) or not isinstance(logs, list):
+                return error_response("Invalid raw plan snapshot")
+            plan_id = int(head.get("index"))
+            if plan_id in seen_ids:
+                return error_response(f"Duplicate plan ID: {plan_id}")
+            seen_ids.add(plan_id)
+            prepared.append(copy.deepcopy(raw_plan))
+    except (TypeError, ValueError) as e:
+        return error_response(f"Invalid plan ID: {e}")
+
+    backup = plan_module.Plan.registry.copy()
+    imported = []
+    skipped = []
+    try:
+        if replace:
+            plan_module.Plan.registry.clear()
+        for raw_plan in prepared:
+            plan_id = int(raw_plan["head"]["index"])
+            if plan_id in plan_module.Plan.registry:
+                skipped.append(plan_id)
+                continue
+            plan_module.Plan.load_from_json(json.dumps(raw_plan, ensure_ascii=False), new_id=plan_id)
+            imported.append(plan_id)
+    except Exception as e:
+        plan_module.Plan.registry.clear()
+        plan_module.Plan.registry.update(backup)
+        return error_response(f"Plan import rolled back: {e}")
+
+    return success_response(data={
+        "format": "plan-helper.raw.v1",
+        "imported": imported,
+        "skipped": skipped,
+        "count": len(imported),
+        "replaced": bool(replace),
+    })
+
+
 # ==========================================
 # Internal Serialization Helpers
 # ==========================================

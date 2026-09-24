@@ -345,9 +345,9 @@ async function handleExportArchive() {
     const result = await exportArchive()
     if (result.success) {
       if (result.path) {
-        alert(`存档已保存到：\n${result.path}`)
+          alert(`存档已保存到：\n${result.path}${result.warning ? `\n\n提示：${result.warning}` : ''}`)
       } else {
-        alert('存档已下载！')
+          alert(`存档已下载！${result.warning ? `\n\n提示：${result.warning}` : ''}`)
       }
     }
   } catch (e) {

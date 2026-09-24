@@ -118,7 +118,9 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
     def _handle_api_get(self, path, query_string):
         params = dict(urllib.parse.parse_qsl(query_string))
 
-        if path == "/api/plans":
+        if path == "/api/data/export":
+            resp = api.export_registry()
+        elif path == "/api/plans":
             resp = api.list_plans()
         elif path.startswith("/api/plans/") and path.count("/") == 3:
             plan_id = path.split("/")[-1]
@@ -169,7 +171,9 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         self._send_json(resp)
 
     def _handle_api_post(self, path, data):
-        if path == "/api/plans":
+        if path == "/api/data/import":
+            resp = api.import_registry(data.get("plans", []), replace=data.get("replace", True))
+        elif path == "/api/plans":
             resp = api.create_plan(
                 name=data.get("name"),
                 date_tuple=tuple(data["date"]) if data.get("date") else None,
