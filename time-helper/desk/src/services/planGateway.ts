@@ -11,6 +11,7 @@ export interface PlanSummary {
 export interface PlanTaskSummary {
   display_id: string
   internal_id: string
+  internal_index: number
   content: string
   time_minutes: number
   is_active: boolean
@@ -121,6 +122,26 @@ export async function addPlanSection(planId: string, name: string, info = ''): P
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, info }),
   })
+}
+
+export async function addPlanGroup(planId: string, sectionIndex: number, title: string, description: string, startIndex: number, endIndex: number): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, description, start_index: startIndex, end_index: endIndex }),
+  })
+}
+
+export async function updatePlanGroup(planId: string, sectionIndex: number, groupKey: string, title: string, description: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups/${encodeURIComponent(groupKey)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, description }),
+  })
+}
+
+export async function deletePlanGroup(planId: string, sectionIndex: number, groupKey: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups/${encodeURIComponent(groupKey)}`, { method: 'DELETE' })
 }
 
 export async function addPlanTask(planId: string, sectionIndex: number, content: string, timeMinutes: number): Promise<void> {

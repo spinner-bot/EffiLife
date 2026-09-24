@@ -194,6 +194,16 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         elif path.startswith("/api/plans/") and path.endswith("/sections"):
             plan_id = path.split("/")[3]
             resp = api.add_section(plan_id, data.get("name", ""), data.get("info", ""))
+        elif path.startswith("/api/plans/") and path.endswith("/groups"):
+            parts = path.split("/")
+            resp = api.add_group(
+                parts[3],
+                parts[5],
+                data.get("title", ""),
+                data.get("description", ""),
+                data.get("start_index", 0),
+                data.get("end_index", 0),
+            )
         elif path.startswith("/api/plans/") and path.endswith("/tasks"):
             parts = path.split("/")
             plan_id = parts[3]
@@ -244,6 +254,8 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             resp = api.update_plan(plan_id, data.get("name"), date_tuple)
         elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "sections":
             resp = api.update_section(parts[3], parts[5], data.get("name"), data.get("info"))
+        elif len(parts) == 8 and parts[1:3] == ["api", "plans"] and parts[4] == "sections" and parts[6] == "groups":
+            resp = api.update_group(parts[3], parts[5], parts[7], data.get("title"), data.get("description"))
         elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "tasks":
             resp = api.update_task(parts[3], parts[5], data.get("content"), data.get("time_minutes"))
         else:
@@ -254,6 +266,8 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         parts = path.split("/")
         if len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "sections":
             resp = api.delete_section(parts[3], parts[5])
+        elif len(parts) == 8 and parts[1:3] == ["api", "plans"] and parts[4] == "sections" and parts[6] == "groups":
+            resp = api.delete_group(parts[3], parts[5], parts[7])
         elif len(parts) == 6 and parts[1:3] == ["api", "plans"] and parts[4] == "tasks":
             resp = api.delete_task(parts[3], parts[5])
         elif path.startswith("/api/plans/") and path.count("/") == 3:

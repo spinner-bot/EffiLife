@@ -126,6 +126,35 @@ def test_api_sections_tasks():
     print("  🎉 All section/task tests passed!\n")
 
 
+def test_api_nested_groups():
+    """Group endpoints preserve nesting and reject crossing ranges."""
+    print("=" * 50)
+    print("Test: API Nested Groups")
+    print("=" * 50)
+
+    resp = api.create_plan(name="Group Test")
+    assert resp.success
+    plan_id = resp.data["id"]
+    api.add_section(plan_id, "Section A")
+    for title in ("Task 1", "Task 2", "Task 3", "Task 4", "Task 5"):
+        assert api.add_task(plan_id, 0, title, 10).success
+
+    outer = api.add_group(plan_id, 0, "Outer", "Parent", 1, 5)
+    assert outer.success
+    inner = api.add_group(plan_id, 0, "Inner", "Nested", 2, 3)
+    assert inner.success
+    crossing = api.add_group(plan_id, 0, "Crossing", "Invalid", 3, 6)
+    assert not crossing.success and crossing.code == 409
+
+    groups = api.get_plan_full(plan_id).data["sections"][0]["groups"]
+    assert set(groups) == {"1_5", "2_3"}
+    assert api.update_group(plan_id, 0, "2_3", "Inner updated", "Nested updated").success
+    assert api.delete_group(plan_id, 0, "2_3").success
+    assert set(api.get_plan_full(plan_id).data["sections"][0]["groups"]) == {"1_5"}
+    Plan.registry[plan_id].delete()
+    print("  🎉 Nested group tests passed!\n")
+
+
 def test_soft_delete_compacts_display_ids():
     """Soft deletion keeps storage references stable but compacts the UI IDs."""
     print("=" * 50)
@@ -470,6 +499,7 @@ if __name__ == "__main__":
     tests = [
         test_api_plan_crud,
         test_api_sections_tasks,
+        test_api_nested_groups,
         test_soft_delete_compacts_display_ids,
         test_api_create_and_edit_full_plan,
         test_api_lifecycle_and_management,

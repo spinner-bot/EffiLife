@@ -6,12 +6,14 @@ import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
   addPlanSection,
+  addPlanGroup,
   addPlanLog,
   addPlanTask,
   archivePlan,
   completePlanTask,
   createEventPlan,
   deletePlanTask,
+  deletePlanGroup,
   getPlanFull,
   listPlanArchives,
   listPlanSummaries,
@@ -20,6 +22,7 @@ import {
   type PlanFull,
   type PlanSummary,
   updatePlanTask,
+  updatePlanGroup,
   updateEventPlan,
 } from '@/services/planGateway'
 
@@ -42,6 +45,12 @@ const editingTaskId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
 const taskMinutes = ref(30)
+const groupSectionIndex = ref<number | null>(null)
+const editingGroupKey = ref<string | null>(null)
+const groupTitle = ref('')
+const groupDescription = ref('')
+const groupStart = ref(0)
+const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
@@ -244,6 +253,65 @@ function groupEntries(section: PlanFull['sections'][number]) {
   }))
 }
 
+function startNewGroup(section: PlanFull['sections'][number]) {
+  const taskIndexes = section.tasks.map((task) => task.internal_index)
+  groupSectionIndex.value = section.index
+  editingGroupKey.value = null
+  groupTitle.value = ''
+  groupDescription.value = ''
+  groupStart.value = taskIndexes[0] ?? 0
+  groupEnd.value = taskIndexes[taskIndexes.length - 1] ?? 1
+}
+
+function startGroupEdit(section: PlanFull['sections'][number], group: ReturnType<typeof groupEntries>[number]) {
+  groupSectionIndex.value = section.index
+  editingGroupKey.value = group.key
+  groupTitle.value = group.title
+  groupDescription.value = group.description
+  groupStart.value = group.start
+  groupEnd.value = group.end
+}
+
+function cancelGroupEdit() {
+  groupSectionIndex.value = null
+  editingGroupKey.value = null
+  groupTitle.value = ''
+  groupDescription.value = ''
+}
+
+async function saveGroup() {
+  if (!selectedPlan.value || groupSectionIndex.value === null || !groupTitle.value.trim()) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    if (editingGroupKey.value) {
+      await updatePlanGroup(selectedPlan.value.id, groupSectionIndex.value, editingGroupKey.value, groupTitle.value.trim(), groupDescription.value.trim())
+    } else {
+      await addPlanGroup(selectedPlan.value.id, groupSectionIndex.value, groupTitle.value.trim(), groupDescription.value.trim(), groupStart.value, groupEnd.value)
+    }
+    selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    cancelGroupEdit()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function deleteGroup(sectionIndex: number, groupKey: string) {
+  if (!selectedPlan.value || !confirm(t('plans.deleteGroupConfirm'))) return
+  isLoading.value = true
+  try {
+    await deletePlanGroup(selectedPlan.value.id, sectionIndex, groupKey)
+    selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    cancelGroupEdit()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
   taskSectionIndex.value = null
   editingTaskId.value = task.internal_id
@@ -407,12 +475,20 @@ onMounted(loadPlans)
         </section>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <div v-if="taskSectionIndex === section.index || editingTaskSectionIndex === section.index" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <label>{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
             <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
             <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
+          </div>
+          <div v-if="groupSectionIndex === section.index" class="group-editor">
+            <label>{{ t('plans.groupTitle') }}<input v-model="groupTitle" autofocus /></label>
+            <label>{{ t('plans.groupDescription') }}<input v-model="groupDescription" /></label>
+            <label>{{ t('plans.groupStart') }}<select v-model.number="groupStart"><option v-for="task in section.tasks" :key="`start-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
+            <label>{{ t('plans.groupEnd') }}<select v-model.number="groupEnd"><option v-for="task in section.tasks" :key="`end-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
+            <button class="plans-secondary" @click="cancelGroupEdit">{{ t('plans.cancel') }}</button>
+            <button class="plans-primary" :disabled="isLoading || !groupTitle.trim() || groupEnd <= groupStart" @click="saveGroup">{{ editingGroupKey ? t('plans.save') : t('plans.addGroup') }}</button>
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
@@ -427,6 +503,8 @@ onMounted(loadPlans)
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
               <span class="group-range">{{ group.key }}</span>
               <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
+              <button class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
+              <button class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
             </div>
           </div>
         </section>
@@ -497,10 +575,14 @@ onMounted(loadPlans)
 .plan-section { margin-bottom: 12px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-section > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .plan-section > header > div { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.section-actions { display: flex; gap: 7px; }
 .section-letter { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--color-button-text); background: var(--color-primary); font-size: 12px; font-weight: 700; }
 .plan-section header small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; }
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-editor label:first-child { flex: 1; }
+.group-editor { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(160px, 1.4fr) 110px 110px auto auto; align-items: end; gap: 8px; margin: 10px 0; padding: 10px; border: 1px dashed var(--color-border); border-radius: 10px; background: var(--color-bg-secondary); }
+.group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
+.group-editor input, .group-editor select { min-width: 0; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
 .event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
@@ -518,6 +600,10 @@ onMounted(loadPlans)
 .group-item > div { display: grid; gap: 2px; min-width: 0; text-align: left; }
 .group-range { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, monospace); }
 .group-item small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; }
+.group-action { display: grid; place-items: center; margin-left: auto; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.group-action + .group-action { margin-left: 0; }
+.group-action:hover { color: var(--color-primary); }
+.group-action.danger:hover { color: var(--color-error); }
 .archives-panel { margin-top: 24px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }
 .archives-panel header h2, .archives-panel header p { margin: 0; }
 .archives-panel header p { margin-top: 4px; color: var(--color-text-tertiary); font-size: 12px; }
@@ -530,5 +616,5 @@ onMounted(loadPlans)
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor { display: flex; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>

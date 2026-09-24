@@ -683,6 +683,77 @@ def export_registry():
         return error_response(str(e))
 
 
+def add_group(plan_id, section_index, title, description="", start_index=0, end_index=0):
+    """Add a non-crossing task range group while preserving nested groups."""
+    try:
+        plan_id = int(plan_id)
+        section_index = int(section_index)
+        start_index = int(start_index)
+        end_index = int(end_index)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        if start_index < 0 or end_index <= start_index:
+            return error_response("Group range must have end > start", code=400)
+        if not str(title).strip():
+            return error_response("Group title is required", code=400)
+        p = plan_module.Plan.registry[plan_id]
+        result = p.add_group(section_index, str(title).strip(), str(description or "").strip(), start_index, end_index)
+        if result is False:
+            return error_response("Group range crosses an existing group", code=409)
+        return success_response(data={
+            "plan_id": plan_id,
+            "section_index": section_index,
+            "key": f"{start_index}_{end_index}",
+            "title": str(title).strip(),
+            "description": str(description or "").strip(),
+        }, code=201)
+    except (IndexError, KeyError, TypeError, ValueError) as e:
+        return error_response(str(e), code=400)
+
+
+def update_group(plan_id, section_index, group_key, title=None, description=None):
+    """Update group metadata without changing its range or nesting."""
+    try:
+        plan_id = int(plan_id)
+        section_index = int(section_index)
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        p = plan_module.Plan.registry[plan_id]
+        group = p.plan["main"][section_index].get("group", {}).get(str(group_key))
+        if group is None:
+            return error_response("Group not found", code=404)
+        if title is not None:
+            if not str(title).strip():
+                return error_response("Group title is required", code=400)
+            group["title"] = str(title).strip()
+        if description is not None:
+            group["description"] = str(description).strip()
+        return success_response(data={
+            "plan_id": plan_id,
+            "section_index": section_index,
+            "key": str(group_key),
+            "title": group.get("title", ""),
+            "description": group.get("description", ""),
+        })
+    except (IndexError, KeyError, TypeError, ValueError) as e:
+        return error_response(str(e), code=400)
+
+
+def delete_group(plan_id, section_index, group_key):
+    """Delete only group metadata; task slots and log references are untouched."""
+    try:
+        plan_id = int(plan_id)
+        section_index = int(section_index)
+        start_index, end_index = (int(part) for part in str(group_key).split("_", 1))
+        if plan_id not in plan_module.Plan.registry:
+            return error_response(f"Plan {plan_id} not found", code=404)
+        p = plan_module.Plan.registry[plan_id]
+        p.pur_group(section_index, start_index, end_index)
+        return success_response(data={"plan_id": plan_id, "section_index": section_index, "key": str(group_key), "deleted": True})
+    except (IndexError, KeyError, TypeError, ValueError) as e:
+        return error_response(str(e), code=400)
+
+
 def import_registry(plans, replace=True):
     """Restore raw Plan.plan snapshots atomically.
 
