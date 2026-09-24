@@ -2,6 +2,14 @@ import { deleteRaw, getRawAll, putRaw, STORE_NAMES } from '@/storage'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 export type TodoPriority = 'urgent-important' | 'important' | 'urgent' | 'normal'
+export type TodoRecurrence = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom'
+
+export interface TodoSubtask {
+  id: string
+  title: string
+  completed: boolean
+  completed_at?: string
+}
 
 export interface UnifiedTodo {
   id: string
@@ -15,11 +23,20 @@ export interface UnifiedTodo {
   deadline?: string
   completed_at?: string
   tags: string[]
+  subtasks: TodoSubtask[]
   related_plan_id?: string
   time_estimate?: number
   time_spent?: number
   notes?: string
+  recurrence: TodoRecurrence
+  deadline_warning_days: number
+  sort_order: number
   pinned?: boolean
+  priority_rank?: number
+  urgent?: boolean
+  important?: boolean
+  start_time?: string
+  estimated_time?: number
 }
 
 function now(): string {
@@ -28,7 +45,10 @@ function now(): string {
 
 function makeId(): string {
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  return `TODO-${stamp}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
+  const suffix = typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+  return `TODO-${stamp}-${suffix.toUpperCase()}`
 }
 
 function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): UnifiedTodo {
@@ -45,11 +65,20 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     deadline: todo.deadline,
     completed_at: todo.completed_at,
     tags: todo.tags || [],
+    subtasks: todo.subtasks || [],
     related_plan_id: todo.related_plan_id,
     time_estimate: todo.time_estimate,
     time_spent: todo.time_spent,
     notes: todo.notes,
+    recurrence: todo.recurrence || 'none',
+    deadline_warning_days: todo.deadline_warning_days ?? 3,
+    sort_order: todo.sort_order ?? 0,
     pinned: todo.pinned || false,
+    priority_rank: todo.priority_rank,
+    urgent: todo.urgent,
+    important: todo.important,
+    start_time: todo.start_time,
+    estimated_time: todo.estimated_time,
   }
 }
 
