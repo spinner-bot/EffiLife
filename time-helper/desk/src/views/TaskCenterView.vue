@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Check, ListTodo, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { TodoService, type TodoPriority, type UnifiedTodo } from '@/services/todoService'
 
@@ -12,6 +12,10 @@ const priority = ref<TodoPriority>('normal')
 const filter = ref<'all' | 'active' | 'completed'>('active')
 const isLoading = ref(true)
 const errorMessage = ref('')
+const editingId = ref<string | null>(null)
+const editingTitle = ref('')
+const editingPriority = ref<TodoPriority>('normal')
+const isSaving = ref(false)
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
@@ -53,12 +57,44 @@ async function addTodo() {
 }
 
 async function completeTodo(todo: UnifiedTodo) {
+  if (todo.status === 'completed') return
   try {
     const updated = await TodoService.complete(todo.id)
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '待办更新失败'
+  }
+}
+
+function startEdit(todo: UnifiedTodo) {
+  editingId.value = todo.id
+  editingTitle.value = todo.title
+  editingPriority.value = todo.priority
+  errorMessage.value = ''
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editingTitle.value = ''
+  editingPriority.value = 'normal'
+}
+
+async function saveEdit(todo: UnifiedTodo) {
+  if (!editingTitle.value.trim() || isSaving.value) return
+  isSaving.value = true
+  try {
+    const updated = await TodoService.update(todo.id, {
+      title: editingTitle.value,
+      priority: editingPriority.value,
+    })
+    const index = todos.value.findIndex((item) => item.id === todo.id)
+    if (index >= 0) todos.value[index] = updated
+    cancelEdit()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '待办保存失败'
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -98,8 +134,10 @@ onMounted(loadTodos)
 
     <main class="task-content">
       <section class="task-create theme-card">
-        <input v-model="title" class="task-input" placeholder="添加一个可执行的任务…" @keyup.enter="addTodo" />
-        <select v-model="priority" class="task-select" aria-label="优先级">
+        <label class="task-field-label" for="new-task-title">新建待办</label>
+        <input id="new-task-title" v-model="title" class="task-input" placeholder="添加一个可执行的任务…" @keyup.enter="addTodo" />
+        <label class="task-field-label" for="new-task-priority">优先级</label>
+        <select id="new-task-priority" v-model="priority" class="task-select">
           <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
         </select>
         <button class="task-add" @click="AudioManager.playSound('click'); addTodo()">
@@ -124,17 +162,30 @@ onMounted(loadTodos)
       </section>
       <section v-else class="task-list">
         <article v-for="todo in visibleTodos" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed' }">
-          <button class="task-check" :aria-label="todo.status === 'completed' ? '已完成' : '完成任务'" @click="completeTodo(todo)">
+          <button class="task-check" :disabled="todo.status === 'completed'" :aria-label="todo.status === 'completed' ? '已完成' : '完成任务'" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
-          <div class="task-main">
+          <div v-if="editingId === todo.id" class="task-edit-form">
+            <label :for="`edit-title-${todo.id}`">编辑待办内容</label>
+            <input :id="`edit-title-${todo.id}`" v-model="editingTitle" class="task-edit-input" @keyup.enter="saveEdit(todo)" />
+            <label :for="`edit-priority-${todo.id}`">优先级</label>
+            <select :id="`edit-priority-${todo.id}`" v-model="editingPriority" class="task-edit-select">
+              <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
+            </select>
+            <div class="task-edit-actions">
+              <button class="task-edit-cancel" @click="cancelEdit">取消</button>
+              <button class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? '保存中…' : '保存' }}</button>
+            </div>
+          </div>
+          <div v-else class="task-main">
             <div class="task-title-row">
               <h2>{{ todo.title }}</h2>
-              <span class="task-priority">{{ priorityLabels[todo.priority] }}</span>
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
           </div>
+          <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
+          <button v-if="editingId !== todo.id" class="task-edit" aria-label="编辑任务" @click="startEdit(todo)"><Pencil :size="16" /></button>
           <button class="task-delete" aria-label="删除任务" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
         </article>
       </section>
@@ -151,7 +202,8 @@ onMounted(loadTodos)
 .task-counts { display: flex; gap: 8px; margin-left: auto; color: var(--color-text-secondary); font-size: 13px; }
 .task-counts span { padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-bg-secondary); }
 .task-content { max-width: 980px; margin: 0 auto; padding: 8px 28px 48px; }
-.task-create { display: flex; gap: 10px; padding: 13px; border: 1px solid var(--color-border); border-radius: 16px; }
+.task-create { display: flex; align-items: center; gap: 10px; padding: 13px; border: 1px solid var(--color-border); border-radius: 16px; }
+.task-field-label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
 .task-input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--color-text-primary); background: transparent; font-size: 15px; }
 .task-select { border: 1px solid var(--color-border); border-radius: 10px; padding: 0 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-add { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; padding: 0 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
@@ -165,6 +217,7 @@ onMounted(loadTodos)
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }
 .task-item.completed { opacity: .68; }
 .task-check { display: grid; place-items: center; width: 23px; height: 23px; flex: 0 0 23px; border: 2px solid var(--color-border-hover); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
+.task-check:disabled { cursor: default; opacity: .85; }
 .task-main { min-width: 0; flex: 1; }
 .task-title-row { display: flex; align-items: center; gap: 9px; }
 .task-title-row h2 { overflow: hidden; margin: 0; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
@@ -172,9 +225,19 @@ onMounted(loadTodos)
 .task-priority { padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; white-space: nowrap; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
-.task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-edit:hover { color: var(--color-primary); }
 .task-delete:hover { color: var(--color-error); }
+.task-edit-form { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto minmax(100px, 140px) auto; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.task-edit-form label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
+.task-edit-input, .task-edit-select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.task-edit-input:focus, .task-edit-select:focus, .task-input:focus, .task-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.task-edit-actions { display: flex; gap: 6px; }
+.task-edit-cancel, .task-edit-save { border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
+.task-edit-save { border-color: var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
+.task-edit-save:disabled { cursor: wait; opacity: .6; }
 .task-empty { display: grid; place-items: center; gap: 9px; min-height: 220px; border: 1px dashed var(--color-border); border-radius: 16px; color: var(--color-text-tertiary); text-align: center; }
 .task-empty strong { color: var(--color-text-secondary); }
-@media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } }
+@media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
+@media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } }
 </style>
