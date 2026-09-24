@@ -9,6 +9,7 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoService } from '@/services/todoService'
+import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -20,6 +21,8 @@ const currentDate = ref('')
 let timer: number | null = null
 let refreshTimer: number | null = null
 const activeTodoCount = ref(0)
+const eventPlans = ref<PlanSummary[]>([])
+const eventPlanState = ref<PlanGatewayState>('idle')
 
 async function refreshTodoSummary() {
   try {
@@ -30,6 +33,20 @@ async function refreshTodoSummary() {
     activeTodoCount.value = 0
   }
 }
+
+async function refreshEventPlanSummary() {
+  eventPlanState.value = 'loading'
+  try {
+    eventPlans.value = await listPlanSummaries()
+    eventPlanState.value = 'ready'
+  } catch {
+    eventPlans.value = []
+    eventPlanState.value = 'unavailable'
+  }
+}
+
+const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
+const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
 
 const updateTime = () => {
   const now = new Date()
@@ -140,12 +157,14 @@ const overallDashOffset = computed(() => {
 onMounted(async () => {
   await appStore.init()
   await refreshTodoSummary()
+  await refreshEventPlanSummary()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
   refreshTimer = window.setInterval(() => {
     appStore.refreshTodayData()
     refreshTodoSummary()
+    refreshEventPlanSummary()
   }, 60000)
 })
 
@@ -236,6 +255,7 @@ onUnmounted(() => {
 
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
+        <div class="overview-grid">
         <div class="stats-card" @click="router.push('/plan')">
           <div class="stats-header-row">
             <h2 class="stats-title">今日进度</h2>
@@ -302,6 +322,17 @@ onUnmounted(() => {
               action-route="/plan"
             />
           </div>
+        </div>
+        <button class="event-overview-card" @click="router.push('/plans')">
+          <div class="event-overview-header"><h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" /></div>
+          <template v-if="eventPlanState === 'ready'">
+            <strong class="event-overview-count">{{ eventPlans.length }}</strong>
+            <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
+            <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
+          </template>
+          <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
+          <span v-else class="event-overview-muted">{{ t('home.eventPlansUnavailable') }}</span>
+        </button>
         </div>
       </section>
 
@@ -735,6 +766,12 @@ onUnmounted(() => {
   width: 100%;
 }
 
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, .55fr);
+  gap: var(--spacing-md);
+}
+
 .stats-card {
   background: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
@@ -747,6 +784,38 @@ onUnmounted(() => {
 .stats-card:hover {
   border-color: var(--color-border-hover);
   background: var(--color-bg-tertiary);
+}
+
+.event-overview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 100%;
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.event-overview-card:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-tertiary);
+}
+
+.event-overview-header { display: flex; align-items: center; justify-content: space-between; width: 100%; color: var(--color-text-tertiary); }
+.event-overview-header svg { color: var(--color-primary); }
+.event-overview-count { margin-top: var(--spacing-xl); color: var(--color-primary); font-size: 2.4rem; line-height: 1; }
+.event-overview-label { margin-top: 7px; color: var(--color-text-secondary); font-size: 13px; }
+.event-overview-metrics { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: auto; padding-top: var(--spacing-lg); color: var(--color-text-tertiary); font-size: 12px; }
+.event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
+
+@media (max-width: 760px) {
+  .overview-grid { grid-template-columns: 1fr; }
+  .event-overview-card { min-height: 180px; }
 }
 
 .stats-header-row {
