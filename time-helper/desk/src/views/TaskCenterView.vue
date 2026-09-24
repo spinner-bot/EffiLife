@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Check, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { TodoService, type TodoPriority, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
@@ -23,6 +23,9 @@ const editingPriority = ref<TodoPriority>('normal')
 const editingPlanId = ref('')
 const editingPlanTaskId = ref('')
 const isSaving = ref(false)
+const expandedTodoId = ref<string | null>(null)
+const subtaskTitle = ref('')
+const subtaskSaving = ref(false)
 const planSummaries = ref<PlanSummary[]>([])
 const planGatewayState = ref<PlanGatewayState>('idle')
 const planTasks = ref<PlanTaskSummary[]>([])
@@ -164,6 +167,59 @@ async function removeTodo(todo: UnifiedTodo) {
   }
 }
 
+function replaceTodo(updated: UnifiedTodo) {
+  const index = todos.value.findIndex((item) => item.id === updated.id)
+  if (index >= 0) todos.value[index] = updated
+}
+
+function toggleTodoDetails(todo: UnifiedTodo) {
+  expandedTodoId.value = expandedTodoId.value === todo.id ? null : todo.id
+  subtaskTitle.value = ''
+  errorMessage.value = ''
+}
+
+function subtaskProgress(todo: UnifiedTodo): string {
+  const completed = todo.subtasks.filter((subtask) => subtask.completed).length
+  return `${completed}/${todo.subtasks.length}`
+}
+
+async function addSubtask(todo: UnifiedTodo) {
+  if (!subtaskTitle.value.trim() || subtaskSaving.value) return
+  subtaskSaving.value = true
+  try {
+    replaceTodo(await TodoService.addSubtask(todo.id, subtaskTitle.value))
+    subtaskTitle.value = ''
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+  } finally {
+    subtaskSaving.value = false
+  }
+}
+
+async function toggleSubtask(todo: UnifiedTodo, subtaskId: string) {
+  if (subtaskSaving.value) return
+  subtaskSaving.value = true
+  try {
+    replaceTodo(await TodoService.toggleSubtask(todo.id, subtaskId))
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+  } finally {
+    subtaskSaving.value = false
+  }
+}
+
+async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
+  if (subtaskSaving.value || !confirm(`${t('tasks.deleteSubtask')}?`)) return
+  subtaskSaving.value = true
+  try {
+    replaceTodo(await TodoService.removeSubtask(todo.id, subtaskId))
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+  } finally {
+    subtaskSaving.value = false
+  }
+}
+
 function formatDeadline(deadline?: string): string {
   if (!deadline) return ''
   const date = new Date(deadline)
@@ -272,9 +328,26 @@ watch(selectedPlanId, (planId) => {
             <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
             <span v-if="todo.related_plan_task_id" class="task-plan-reference">任务：{{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
           </div>
+          <button v-if="editingId !== todo.id" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
+            <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
+          </button>
           <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
           <button v-if="editingId !== todo.id" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
           <button class="task-delete" aria-label="删除任务" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
+          <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
+            <div v-if="todo.subtasks.length" class="subtask-list">
+              <div v-for="subtask in todo.subtasks" :key="subtask.id" class="subtask-row" :class="{ completed: subtask.completed }">
+                <input type="checkbox" :aria-label="subtask.title" :checked="subtask.completed" :disabled="subtaskSaving" @change="toggleSubtask(todo, subtask.id)" />
+                <span>{{ subtask.title }}</span>
+                <button type="button" class="subtask-delete" :disabled="subtaskSaving" :aria-label="t('tasks.deleteSubtask')" @click.prevent="removeSubtask(todo, subtask.id)"><Trash2 :size="14" /></button>
+              </div>
+            </div>
+            <p v-else class="subtask-empty">{{ t('tasks.noSubtasks') }}</p>
+            <form class="subtask-add-form" @submit.prevent="addSubtask(todo)">
+              <input v-model="subtaskTitle" :placeholder="t('tasks.subtaskPlaceholder')" :disabled="subtaskSaving" />
+              <button type="submit" :disabled="subtaskSaving || !subtaskTitle.trim()"><Plus :size="14" /> {{ t('tasks.addSubtask') }}</button>
+            </form>
+          </div>
         </article>
       </section>
     </main>
@@ -302,7 +375,7 @@ watch(selectedPlanId, (planId) => {
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-list { display: grid; gap: 10px; }
-.task-item { display: flex; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
+.task-item { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }
 .task-item.completed { opacity: .68; }
 .task-check { display: grid; place-items: center; width: 23px; height: 23px; flex: 0 0 23px; border: 2px solid var(--color-border-hover); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
@@ -316,6 +389,10 @@ watch(selectedPlanId, (planId) => {
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-details-toggle { display: inline-flex; align-items: center; gap: 4px; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; font-size: 12px; }
+.task-details-toggle svg { transition: transform .2s; }
+.task-details-toggle.expanded svg { transform: rotate(180deg); }
+.task-details-toggle small { color: var(--color-primary); }
 .task-edit:hover { color: var(--color-primary); }
 .task-delete:hover { color: var(--color-error); }
 .task-edit-form { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto minmax(100px, 140px) auto; align-items: center; gap: 8px; min-width: 0; flex: 1; }
@@ -326,6 +403,18 @@ watch(selectedPlanId, (planId) => {
 .task-edit-cancel, .task-edit-save { border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-edit-save { border-color: var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
 .task-edit-save:disabled { cursor: wait; opacity: .6; }
+.task-subtasks { flex-basis: 100%; margin: 3px 0 0 36px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.subtask-list { display: grid; gap: 7px; }
+.subtask-row { display: flex; align-items: center; gap: 8px; color: var(--color-text-secondary); font-size: 13px; }
+.subtask-row input { accent-color: var(--color-primary); }
+.subtask-row.completed span { color: var(--color-text-tertiary); text-decoration: line-through; }
+.subtask-delete { display: grid; place-items: center; margin-left: auto; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.subtask-delete:hover { color: var(--color-error); }
+.subtask-empty { margin: 0 0 10px; color: var(--color-text-tertiary); font-size: 12px; }
+.subtask-add-form { display: flex; gap: 7px; margin-top: 10px; }
+.subtask-add-form input { min-width: 0; flex: 1; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.subtask-add-form button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
+.subtask-add-form button:disabled { cursor: wait; opacity: .6; }
 .task-empty { display: grid; place-items: center; gap: 9px; min-height: 220px; border: 1px dashed var(--color-border); border-radius: 16px; color: var(--color-text-tertiary); text-align: center; }
 .task-empty strong { color: var(--color-text-secondary); }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }

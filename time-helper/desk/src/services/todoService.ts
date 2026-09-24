@@ -52,6 +52,13 @@ function makeId(): string {
   return `TODO-${stamp}-${suffix.toUpperCase()}`
 }
 
+function makeSubtaskId(): string {
+  const suffix = typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+  return `SUB-${suffix.toUpperCase()}`
+}
+
 function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): UnifiedTodo {
   const timestamp = now()
   return {
@@ -111,6 +118,41 @@ export const TodoService = {
 
   async complete(id: string): Promise<UnifiedTodo> {
     return this.update(id, { status: 'completed', completed_at: now() })
+  },
+
+  async addSubtask(id: string, title: string): Promise<UnifiedTodo> {
+    const cleanTitle = title.trim()
+    if (!cleanTitle) throw new Error('子任务标题不能为空')
+    const todos = await this.list()
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error('任务不存在')
+    return this.update(id, {
+      subtasks: [...current.subtasks, { id: makeSubtaskId(), title: cleanTitle, completed: false }],
+    })
+  },
+
+  async toggleSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
+    const todos = await this.list()
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error('任务不存在')
+    let found = false
+    const subtasks = current.subtasks.map((subtask) => {
+      if (subtask.id !== subtaskId) return subtask
+      found = true
+      const completed = !subtask.completed
+      return { ...subtask, completed, completed_at: completed ? now() : undefined }
+    })
+    if (!found) throw new Error('子任务不存在')
+    return this.update(id, { subtasks })
+  },
+
+  async removeSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
+    const todos = await this.list()
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error('任务不存在')
+    const subtasks = current.subtasks.filter((subtask) => subtask.id !== subtaskId)
+    if (subtasks.length === current.subtasks.length) throw new Error('子任务不存在')
+    return this.update(id, { subtasks })
   },
 
   async remove(id: string): Promise<void> {
