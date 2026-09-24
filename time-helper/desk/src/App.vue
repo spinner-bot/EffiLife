@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ref, onMounted, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
@@ -8,8 +8,12 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
+import { Home, ClipboardList, ListTodo, Clock3, Settings } from 'lucide-vue-next'
+import { useI18n } from '@/i18n'
 
 const appStore = useAppStore()
+const route = useRoute()
+const { t } = useI18n()
 
 const themeVariables = computed(() => getThemeCssVariables(appStore.config.theme))
 
@@ -127,6 +131,29 @@ watch(() => appStore.todayStat, () => {
 
     <!-- 主内容 -->
     <div class="app-content">
+      <header class="global-nav theme-card" aria-label="EffiLife">
+        <RouterLink class="global-brand" to="/" aria-label="EffiLife home">
+          <span class="global-brand-mark">E</span>
+          <span>EffiLife</span>
+        </RouterLink>
+        <nav class="global-nav-links" :aria-label="t('nav.primary')">
+          <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }">
+            <Home :size="16" /> <span>{{ t('nav.home') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+            <ClipboardList :size="16" /> <span>{{ t('nav.plans') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+            <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+            <Clock3 :size="16" /> <span>{{ t('nav.records') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" to="/settings" :class="{ active: route.path.startsWith('/settings') }">
+            <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
+          </RouterLink>
+        </nav>
+      </header>
       <RouterView v-slot="{ Component }">
         <Transition name="page-fade" mode="out-in">
           <component :is="Component" />
@@ -162,7 +189,35 @@ watch(() => appStore.todayStat, () => {
 .app-content {
   position: relative;
   z-index: 2;
+  min-height: 100vh;
+  padding-top: 64px;
 }
+
+.global-nav {
+  position: fixed;
+  z-index: 10;
+  top: 14px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(1120px, calc(100% - 28px));
+  min-height: 48px;
+  padding: 7px 10px 7px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0, 0, 0, .08));
+  transform: translateX(-50%);
+}
+
+.global-brand, .global-nav-link { text-decoration: none; }
+.global-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-primary); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.global-brand-mark { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; color: var(--color-button-text); background: var(--color-primary); font-size: 13px; }
+.global-nav-links { display: flex; align-items: center; gap: 3px; }
+.global-nav-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 10px; color: var(--color-text-tertiary); font-size: 12px; transition: color .2s, background-color .2s; }
+.global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
 
 /* 全局主题效果 */
 .theme-card {
@@ -192,5 +247,14 @@ watch(() => appStore.todayStat, () => {
 .page-fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+@media (max-width: 680px) {
+  .app-content { padding-top: 58px; }
+  .global-nav { top: 8px; width: calc(100% - 16px); gap: 8px; }
+  .global-brand > span:last-child { display: none; }
+  .global-nav-links { flex: 1; justify-content: space-between; }
+  .global-nav-link { flex: 1; justify-content: center; padding: 8px 5px; }
+  .global-nav-link span { display: none; }
 }
 </style>

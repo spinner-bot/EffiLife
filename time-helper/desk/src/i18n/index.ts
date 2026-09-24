@@ -470,13 +470,28 @@ function readLocale(): Locale {
 
 export const currentLocale = ref<Locale>(readLocale())
 
+const navigationFallbacks: Record<Locale, Record<string, string>> = {
+  'zh-CN': {
+    'nav.primary': '\u4e3b\u5bfc\u822a\u680f',
+    'nav.home': '\u9996\u9875',
+    'nav.plans': '\u8ba1\u5212\u4e2d\u5fc3',
+    'nav.records': '\u65f6\u95f4\u8bb0\u5f55',
+  },
+  'en-US': {
+    'nav.primary': 'Primary navigation',
+    'nav.home': 'Today',
+    'nav.plans': 'Plans',
+    'nav.records': 'Time',
+  },
+}
+
 export function setLocale(next: string): void {
   currentLocale.value = next === 'en-US' ? 'en-US' : 'zh-CN'
   localStorage.setItem(STORAGE_KEY, currentLocale.value)
 }
 
 export function translate(key: string, params: Record<string, string | number> = {}): string {
-  const value = catalogs[currentLocale.value][key] || catalogs['zh-CN'][key] || key
+  const value = catalogs[currentLocale.value][key] || navigationFallbacks[currentLocale.value][key] || catalogs['zh-CN'][key] || navigationFallbacks['zh-CN'][key] || key
   return value.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? `{${name}}`))
 }
 
