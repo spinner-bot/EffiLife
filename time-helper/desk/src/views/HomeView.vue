@@ -8,6 +8,7 @@ import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
+import { TodoService } from '@/services/todoService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -16,6 +17,17 @@ const currentTime = ref('')
 const currentDate = ref('')
 let timer: number | null = null
 let refreshTimer: number | null = null
+const activeTodoCount = ref(0)
+
+async function refreshTodoSummary() {
+  try {
+    const todos = await TodoService.list()
+    activeTodoCount.value = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)).length
+  } catch {
+    // 待办存储不可用时不阻断首页的计划和时间功能
+    activeTodoCount.value = 0
+  }
+}
 
 const updateTime = () => {
   const now = new Date()
@@ -123,11 +135,13 @@ const overallDashOffset = computed(() => {
 
 onMounted(async () => {
   await appStore.init()
+  await refreshTodoSummary()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
   refreshTimer = window.setInterval(() => {
     appStore.refreshTodayData()
+    refreshTodoSummary()
   }, 60000)
 })
 
@@ -303,7 +317,7 @@ onUnmounted(() => {
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/tasks')">
           <ListTodo :size="22" />
-          <span>待办</span>
+          <span>待办<span v-if="activeTodoCount > 0" class="nav-count">{{ activeTodoCount }}</span></span>
         </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
           <Settings :size="22" />
@@ -904,6 +918,21 @@ onUnmounted(() => {
   background: var(--color-bg-tertiary);
   border-color: var(--color-border-hover);
   transform: translateY(-2px);
+}
+
+.nav-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  color: var(--color-button-text);
+  background: var(--color-primary);
+  font-size: 0.6875rem;
+  line-height: 1;
 }
 
 .nav-btn:active {
