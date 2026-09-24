@@ -147,11 +147,24 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const data = await collectAllData()
   const zip = new JSZip()
 
-  // 添加主数据文件
-  zip.file('archive.json', JSON.stringify(data, null, 2))
+  // 使用公共层约定的 manifest + datasets 协议导出。
+  const { records, todos, planHelper, ...app } = data
+  const datasets = ['app', 'records', 'todos', 'plan_helper']
+  zip.file('manifest.json', JSON.stringify({
+    format: 'effilife.bundle',
+    format_version: '1.0.0',
+    created_at: data.exportDate,
+    datasets,
+    metadata: { source: 'time-helper', archive_version: ARCHIVE_VERSION },
+  }, null, 2))
+  zip.file('data/app.json', JSON.stringify(app, null, 2))
+  zip.file('data/records.json', JSON.stringify(records, null, 2))
+  zip.file('data/todos.json', JSON.stringify(todos, null, 2))
+  zip.file('data/plan_helper.json', JSON.stringify(planHelper, null, 2))
 
   // 添加说明文件
   zip.file('README.txt', `浪兮效率时钟存档文件
+协议: effilife.bundle 1.0.0
 版本: ${ARCHIVE_VERSION}
 导出时间: ${new Date(data.exportDate).toLocaleString('zh-CN')}
 
@@ -269,21 +282,75 @@ export async function importArchiveWithDialog(): Promise<{ success: boolean; mes
   }
 }
 
+async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
+  const manifestFile = zip.file('manifest.json')
+  if (manifestFile) {
+    let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[] }
+    try {
+      manifest = JSON.parse(await manifestFile.async('text'))
+    } catch {
+      throw new Error('存档 manifest.json 无效')
+    }
+    if (manifest.format !== 'effilife.bundle' || !Array.isArray(manifest.datasets)) {
+      throw new Error('不支持的 .efl 存档协议')
+    }
+
+    const datasets: Record<string, unknown> = {}
+    for (const name of manifest.datasets) {
+      if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(`非法数据集名称：${name}`)
+      const file = zip.file(`data/${name}.json`)
+      if (!file) throw new Error(`存档缺少数据集：${name}`)
+      try {
+        datasets[name] = JSON.parse(await file.async('text'))
+      } catch {
+        throw new Error(`数据集无效：${name}`)
+      }
+    }
+
+    const app = (datasets.app && typeof datasets.app === 'object') ? datasets.app as Partial<ArchiveData> : {}
+    const planHelper = datasets.plan_helper || datasets.planHelper || {
+      available: Array.isArray(datasets.plans),
+      plans: Array.isArray(datasets.plans) ? datasets.plans : [],
+    }
+    return {
+      version: String(app.version || manifest.format_version || '1.0.0'),
+      exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
+      config: app.config || null,
+      plans: app.plans || null,
+      scheduleRules: app.scheduleRules || null,
+      manualPlans: app.manualPlans || null,
+      audioSettings: app.audioSettings || null,
+      eventSettings: app.eventSettings || null,
+      eventInbox: app.eventInbox || null,
+      warningInbox: app.warningInbox || null,
+      dailyTrigger: app.dailyTrigger || null,
+      checkin: app.checkin || null,
+      records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
+      todos: Array.isArray(datasets.todos) ? datasets.todos : [],
+      planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
+    }
+  }
+
+  // 兼容 2.0 及更早的单文件 archive.json 存档。
+  const archiveFile = zip.file('archive.json')
+  if (!archiveFile) throw new Error('存档格式无效：缺少 manifest.json 或 archive.json')
+  let legacy: ArchiveData
+  try {
+    legacy = JSON.parse(await archiveFile.async('text')) as ArchiveData
+  } catch {
+    throw new Error('旧版 archive.json 无效')
+  }
+  if (!legacy.version) throw new Error('存档文件格式无效：缺少版本信息')
+  return {
+    ...legacy,
+    todos: Array.isArray(legacy.todos) ? legacy.todos : [],
+    planHelper: legacy.planHelper || { available: false, plans: [] },
+  }
+}
+
 // 处理存档数据（内部函数）
 async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
-  // 读取主数据文件
-    const archiveFile = zip.file('archive.json')
-    if (!archiveFile) {
-      return { success: false, message: '存档文件格式无效：缺少 archive.json' }
-    }
-
-    const content = await archiveFile.async('text')
-    const data: ArchiveData = JSON.parse(content)
-
-    // 验证版本
-    if (!data.version) {
-      return { success: false, message: '存档文件格式无效：缺少版本信息' }
-    }
+    const data = await parseArchiveData(zip)
 
     // 导入存储模块
     const { set: idbSet, putRaw, STORE_NAMES, clear: idbClear } = await import('@/storage')

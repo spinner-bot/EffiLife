@@ -88,6 +88,7 @@ const viewHistory = ref<ViewType[]>(['main'])
 function navigateTo(view: ViewType) {
   viewHistory.value.push(view)
   currentView.value = view
+  if (view === 'restore') loadDataStatus()
 }
 
 // 返回上一级
