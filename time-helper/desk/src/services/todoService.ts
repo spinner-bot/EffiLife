@@ -24,6 +24,10 @@ export const DEFAULT_TODO_CATEGORIES: TodoCategory[] = [
   { id: 'default', name: '默认', color: '#6366f1', icon: 'circle', created_at: '2026-01-01T00:00:00.000Z', difficulty: 5 },
 ]
 
+const LEGACY_TODOS_KEY = 'to-dos-data'
+const LEGACY_MIGRATION_MARKER = 'effilife_todos_legacy_migrated_v1'
+let legacyMigrationAttempted = false
+
 export interface UnifiedTodo {
   id: string
   title: string
@@ -205,6 +209,53 @@ export const TodoCategoryService = {
 }
 
 export const TodoService = {
+  async migrateLegacyLocalStorage(): Promise<{ migrated: number; categories: number; skipped: number }> {
+    if (legacyMigrationAttempted) return { migrated: 0, categories: 0, skipped: 0 }
+    legacyMigrationAttempted = true
+    if (localStorage.getItem(LEGACY_MIGRATION_MARKER)) return { migrated: 0, categories: 0, skipped: 0 }
+
+    const source = localStorage.getItem(LEGACY_TODOS_KEY)
+    if (!source) {
+      localStorage.setItem(LEGACY_MIGRATION_MARKER, new Date().toISOString())
+      return { migrated: 0, categories: 0, skipped: 0 }
+    }
+
+    try {
+      const payload = JSON.parse(source) as { todos?: unknown[]; categories?: unknown[] }
+      const existingTodos = await this.list()
+      const existingIds = new Set(existingTodos.map((todo) => todo.id))
+      let migrated = 0
+      let skipped = 0
+      for (const raw of Array.isArray(payload.todos) ? payload.todos : []) {
+        const todo = normalizeImportedTodo(raw)
+        if (!todo || existingIds.has(todo.id)) {
+          skipped += 1
+          continue
+        }
+        await putRaw(STORE_NAMES.TODOS, todo)
+        existingIds.add(todo.id)
+        migrated += 1
+      }
+
+      const existingCategories = await TodoCategoryService.list()
+      const categoryIds = new Set(existingCategories.map((category) => category.id))
+      let categories = 0
+      for (const raw of Array.isArray(payload.categories) ? payload.categories : []) {
+        const category = normalizeImportedCategory(raw)
+        if (!category || categoryIds.has(category.id)) continue
+        await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+        categoryIds.add(category.id)
+        categories += 1
+      }
+      await TodoCategoryService.ensureDefaults([...existingTodos, ...(Array.isArray(payload.todos) ? payload.todos.map(normalizeImportedTodo).filter((todo): todo is UnifiedTodo => todo !== null) : [])])
+      localStorage.setItem(LEGACY_MIGRATION_MARKER, new Date().toISOString())
+      return { migrated, categories, skipped }
+    } catch {
+      legacyMigrationAttempted = false
+      return { migrated: 0, categories: 0, skipped: 0 }
+    }
+  },
+
   async list(): Promise<UnifiedTodo[]> {
     const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
     return todos.sort((a, b) => {

@@ -7,6 +7,7 @@ import { getThemeCssVariables } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
+import { TodoService } from './services/todoService'
 
 const appStore = useAppStore()
 
@@ -69,6 +70,7 @@ function onCheckinClose() {
 
 onMounted(async () => {
   await appStore.init()
+  await TodoService.migrateLegacyLocalStorage()
   applyTheme()
 
   // 启动背景音乐
