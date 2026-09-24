@@ -130,15 +130,6 @@ function highlightText(text: string, query: string): string {
     <!-- 内容区 -->
     <div class="todo-content">
       <div class="todo-header">
-        <!-- v0.5.0: 优先排位分 -->
-        <span
-          v-if="scoreDisplay && scoreDisplay !== '0'"
-          class="score-badge"
-          :class="{ 'score-high': (todo._score ?? 0) >= 1000, 'score-expired': scoreDisplay === '过期' }"
-          :title="`优先排位分: ${todo._score ?? 0}`"
-        >
-          {{ scoreDisplay }}
-        </span>
         <span class="todo-title" v-html="highlightText(todo.title, searchQuery || '')"></span>
         <div class="todo-meta">
           <!-- 优先级标记 -->
@@ -168,8 +159,18 @@ function highlightText(text: string, query: string): string {
             class="deadline-badge"
             :class="{ overdue: isOverdue, today: deadlineText === '今天截止', soon: isDeadlineSoon && !isOverdue }"
           >
-            <CalendarIcon :size="12" />
+           <CalendarIcon :size="12" />
             {{ deadlineText }}
+          </span>
+
+          <!-- v0.5.0: 排位分固定在待办条目右端 -->
+          <span
+            v-if="scoreDisplay && scoreDisplay !== '0'"
+            class="score-badge"
+            :class="{ 'score-high': (todo._score ?? 0) >= 1000, 'score-expired': scoreDisplay === '过期' }"
+            :title="`优先排位分: ${todo._score ?? 0}`"
+          >
+            {{ scoreDisplay }}
           </span>
 
           <!-- 操作菜单 -->
@@ -344,10 +345,13 @@ function highlightText(text: string, query: string): string {
 }
 
 .todo-title {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
   line-height: 1.4;
+  text-align: left;
   word-break: break-word;
 }
 
