@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
-import { DataService, getTodayDate } from '@/services/dataService'
+import { DataService } from '@/services/dataService'
 import {
   TodoCategoryService,
   TodoSettingsService,
@@ -409,25 +409,47 @@ function formatClock(date: Date): string {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
+function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+}
+
 async function trackTodoTime(todo: UnifiedTodo) {
   if (trackingTodoId.value || !Number.isInteger(trackedMinutes.value) || trackedMinutes.value < 1 || trackedMinutes.value > 1440) return
   trackingTodoId.value = todo.id
   try {
     const minutes = trackedMinutes.value
     const startDate = new Date()
-    const endDate = new Date(startDate.getTime() + minutes * 60 * 1000)
-    const recordId = makeTimeRecordId()
-    await DataService.saveRecord({
-      id: recordId,
-      todo_id: todo.id,
-      date: getTodayDate(),
-      start: formatClock(startDate),
-      end: formatClock(endDate),
-      duration: minutes / 60,
-      content: todo.title,
-      tag: todo.category || 'default',
-    })
-    replaceTodo(await TodoService.trackTime(todo.id, minutes, recordId))
+    startDate.setSeconds(0, 0)
+    let cursor = startDate
+    let remaining = minutes
+    const recordIds: string[] = []
+
+    while (remaining > 0) {
+      const nextMidnight = new Date(cursor)
+      nextMidnight.setHours(24, 0, 0, 0)
+      const minutesUntilMidnight = Math.max(1, Math.round((nextMidnight.getTime() - cursor.getTime()) / 60000))
+      const chunk = Math.min(remaining, minutesUntilMidnight)
+      const endsAtMidnight = chunk === minutesUntilMidnight
+      const endDate = endsAtMidnight
+        ? nextMidnight
+        : new Date(cursor.getTime() + chunk * 60 * 1000)
+      const recordId = makeTimeRecordId()
+      recordIds.push(recordId)
+      await DataService.saveRecord({
+        id: recordId,
+        todo_id: todo.id,
+        date: formatLocalDate(cursor),
+        start: formatClock(cursor),
+        end: endsAtMidnight ? '24:00' : formatClock(endDate),
+        duration: chunk / 60,
+        content: todo.title,
+        tag: todo.category || 'default',
+      }, formatLocalDate(cursor))
+      remaining -= chunk
+      cursor = endDate
+    }
+
+    replaceTodo(await TodoService.trackTime(todo.id, minutes, recordIds))
     trackedMinutes.value = 25
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')

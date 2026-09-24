@@ -116,6 +116,7 @@ export function hmToHours(h: number, m: number): number {
 export function timeStrToMinutes(tStr: string): number {
   try {
     const [h, m] = tStr.split(':').map(Number)
+    if (h === 24 && m === 0) return 24 * 60
     return h * 60 + m
   } catch {
     return 0
