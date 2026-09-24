@@ -230,6 +230,20 @@ function startLog(taskId = 'base') {
   logContent.value = ''
 }
 
+function groupEntries(section: PlanFull['sections'][number]) {
+  const entries = Object.entries(section.groups || {}).flatMap(([key, group]) => {
+    const [start, end] = key.split('_').map(Number)
+    return Number.isInteger(start) && Number.isInteger(end)
+      ? [{ key, start, end, title: group.title, description: group.description }]
+      : []
+  }).sort((left, right) => left.start - right.start || right.end - left.end)
+
+  return entries.map((entry) => ({
+    ...entry,
+    depth: entries.filter((parent) => parent !== entry && parent.start <= entry.start && parent.end >= entry.end).length,
+  }))
+}
+
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
   taskSectionIndex.value = null
   editingTaskId.value = task.internal_id
@@ -409,7 +423,12 @@ onMounted(loadPlans)
             <button class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
-          <div v-if="Object.keys(section.groups).length" class="group-list"><span v-for="(group, key) in section.groups" :key="key">{{ key }} · {{ group.title }}</span></div>
+          <div v-if="groupEntries(section).length" class="group-list">
+            <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
+              <span class="group-range">{{ group.key }}</span>
+              <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
+            </div>
+          </div>
         </section>
       </template>
     </main>
@@ -494,8 +513,11 @@ onMounted(loadPlans)
 .task-complete, .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-complete { width: 22px; height: 22px; border: 2px solid var(--color-border-hover); border-radius: 50%; }
 .task-complete:disabled { color: var(--color-button-text); background: var(--color-primary); }
-.group-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.group-list span { padding: 4px 7px; border-radius: 6px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); font-size: 11px; }
+.group-list { display: grid; gap: 5px; margin-top: 10px; }
+.group-item { display: flex; align-items: flex-start; gap: 7px; margin-left: calc(var(--group-depth) * 16px); border-left: 2px solid var(--color-primary-muted); padding: 5px 7px; border-radius: 5px; background: var(--color-bg-secondary); font-size: 11px; }
+.group-item > div { display: grid; gap: 2px; min-width: 0; text-align: left; }
+.group-range { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, monospace); }
+.group-item small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; }
 .archives-panel { margin-top: 24px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }
 .archives-panel header h2, .archives-panel header p { margin: 0; }
 .archives-panel header p { margin-top: 4px; color: var(--color-text-tertiary); font-size: 12px; }
