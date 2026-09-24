@@ -132,6 +132,7 @@ class UnifiedTodo:
     tags: list = field(default_factory=list)
     subtasks: list = field(default_factory=list)
     related_plan_id: Optional[str] = None
+    related_plan_task_id: Optional[str] = None
     related_time_record_ids: list = field(default_factory=list)
     time_estimate: Optional[int] = None     # 预估分钟
     time_spent: Optional[int] = None        # 实际分钟
@@ -157,6 +158,7 @@ class UnifiedTodo:
             'tags': self.tags,
             'subtasks': self.subtasks,
             'related_plan_id': self.related_plan_id,
+            'related_plan_task_id': self.related_plan_task_id,
             'related_time_record_ids': self.related_time_record_ids,
             'time_estimate': self.time_estimate,
             'time_spent': self.time_spent,
@@ -184,6 +186,7 @@ class UnifiedTodo:
             tags=data.get('tags', []),
             subtasks=data.get('subtasks', []),
             related_plan_id=data.get('related_plan_id'),
+            related_plan_task_id=data.get('related_plan_task_id'),
             related_time_record_ids=data.get('related_time_record_ids', []),
             time_estimate=data.get('time_estimate'),
             time_spent=data.get('time_spent'),

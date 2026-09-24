@@ -125,6 +125,7 @@ class Todo:
     tags: list = field(default_factory=list)
     subtasks: list = field(default_factory=list)
     related_plan_id: Optional[str] = None  # 关联 plan-helper
+    related_plan_task_id: Optional[str] = None  # plan-helper 稳定内部任务 ID
     time_estimate: Optional[int] = None    # 预估时间（分钟）
     time_spent: Optional[int] = None       # 实际花费（分钟）
     notes: Optional[str] = None
@@ -159,6 +160,7 @@ class Todo:
                 for s in self.subtasks
             ],
             'related_plan_id': self.related_plan_id,
+            'related_plan_task_id': self.related_plan_task_id,
             'time_estimate': self.time_estimate,
             'time_spent': self.time_spent,
             'notes': self.notes,
@@ -213,6 +215,7 @@ class Todo:
             tags=data.get('tags', []),
             subtasks=subtasks,
             related_plan_id=data.get('related_plan_id'),
+            related_plan_task_id=data.get('related_plan_task_id'),
             time_estimate=data.get('time_estimate'),
             time_spent=data.get('time_spent'),
             notes=data.get('notes'),

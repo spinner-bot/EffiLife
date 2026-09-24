@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { TodoService, type TodoPriority, type UnifiedTodo } from '@/services/todoService'
-import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 
 const router = useRouter()
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
 const priority = ref<TodoPriority>('normal')
 const selectedPlanId = ref('')
+const selectedPlanTaskId = ref('')
 const filter = ref<'all' | 'active' | 'completed'>('active')
 const isLoading = ref(true)
 const errorMessage = ref('')
@@ -18,9 +19,12 @@ const editingId = ref<string | null>(null)
 const editingTitle = ref('')
 const editingPriority = ref<TodoPriority>('normal')
 const editingPlanId = ref('')
+const editingPlanTaskId = ref('')
 const isSaving = ref(false)
 const planSummaries = ref<PlanSummary[]>([])
 const planGatewayState = ref<PlanGatewayState>('idle')
+const planTasks = ref<PlanTaskSummary[]>([])
+const planTaskState = ref<PlanGatewayState>('idle')
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
@@ -38,6 +42,7 @@ const priorityLabels: Record<TodoPriority, string> = {
 }
 
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
+const planTaskById = computed(() => Object.fromEntries(planTasks.value.map((task) => [task.internal_id, task])))
 
 async function loadTodos() {
   isLoading.value = true
@@ -58,11 +63,13 @@ async function addTodo() {
       title: title.value,
       priority: priority.value,
       related_plan_id: selectedPlanId.value || undefined,
+      related_plan_task_id: selectedPlanId.value ? selectedPlanTaskId.value || undefined : undefined,
     })
     todos.value = [todo, ...todos.value]
     title.value = ''
     priority.value = 'normal'
     selectedPlanId.value = ''
+    selectedPlanTaskId.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '待办创建失败'
   }
@@ -76,6 +83,23 @@ async function loadPlanSummaries() {
   } catch {
     planSummaries.value = []
     planGatewayState.value = 'unavailable'
+  }
+}
+
+async function loadPlanTasks(planId: string) {
+  planTasks.value = []
+  if (!planId) {
+    planTasks.value = []
+    planTaskState.value = 'idle'
+    return
+  }
+  planTaskState.value = 'loading'
+  try {
+    planTasks.value = await getPlanTasks(planId)
+    planTaskState.value = 'ready'
+  } catch {
+    planTasks.value = []
+    planTaskState.value = 'unavailable'
   }
 }
 
@@ -95,6 +119,8 @@ function startEdit(todo: UnifiedTodo) {
   editingTitle.value = todo.title
   editingPriority.value = todo.priority
   editingPlanId.value = todo.related_plan_id || ''
+  editingPlanTaskId.value = todo.related_plan_task_id || ''
+  loadPlanTasks(editingPlanId.value)
   errorMessage.value = ''
 }
 
@@ -103,6 +129,8 @@ function cancelEdit() {
   editingTitle.value = ''
   editingPriority.value = 'normal'
   editingPlanId.value = ''
+  editingPlanTaskId.value = ''
+  loadPlanTasks(selectedPlanId.value)
 }
 
 async function saveEdit(todo: UnifiedTodo) {
@@ -113,6 +141,7 @@ async function saveEdit(todo: UnifiedTodo) {
       title: editingTitle.value,
       priority: editingPriority.value,
       related_plan_id: editingPlanId.value || undefined,
+      related_plan_task_id: editingPlanId.value ? editingPlanTaskId.value || undefined : undefined,
     })
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
@@ -142,6 +171,11 @@ function formatDeadline(deadline?: string): string {
 onMounted(() => {
   loadTodos()
   loadPlanSummaries()
+})
+
+watch(selectedPlanId, (planId) => {
+  selectedPlanTaskId.value = ''
+  loadPlanTasks(planId)
 })
 </script>
 
@@ -173,6 +207,11 @@ onMounted(() => {
         <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState === 'loading'">
           <option value="">不关联</option>
           <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
+        </select>
+        <label class="task-field-label" for="new-task-plan-task">计划任务</label>
+        <select id="new-task-plan-task" v-model="selectedPlanTaskId" class="task-select task-plan-select" :disabled="!selectedPlanId || planTaskState === 'loading'">
+          <option value="">不指定</option>
+          <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
         <button class="task-add" @click="AudioManager.playSound('click'); addTodo()">
           <Plus :size="17" /> 添加
@@ -208,9 +247,14 @@ onMounted(() => {
               <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
             </select>
             <label :for="`edit-plan-${todo.id}`">关联计划</label>
-            <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState === 'loading'">
+            <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState === 'loading'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
               <option value="">不关联</option>
               <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
+            </select>
+            <label :for="`edit-plan-task-${todo.id}`">计划任务</label>
+            <select :id="`edit-plan-task-${todo.id}`" v-model="editingPlanTaskId" class="task-edit-select" :disabled="!editingPlanId || planTaskState === 'loading'">
+              <option value="">不指定</option>
+              <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
             </select>
             <div class="task-edit-actions">
               <button class="task-edit-cancel" @click="cancelEdit">取消</button>
@@ -224,6 +268,7 @@ onMounted(() => {
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
+            <span v-if="todo.related_plan_task_id" class="task-plan-reference">任务：{{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
           </div>
           <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
           <button v-if="editingId !== todo.id" class="task-edit" aria-label="编辑任务" @click="startEdit(todo)"><Pencil :size="16" /></button>

@@ -42,3 +42,18 @@ def test_plan_adapter_preserves_sections_tasks_and_nested_groups():
     assert unified.sections[0]["tasks"][0]["internal_id"] == "A1"
     assert unified.sections[0]["groups"]["0_5"]["title"] == "阶段总组"
     assert unified.sections[0]["groups"]["1_2"]["title"] == "嵌套组"
+
+
+def test_todo_adapter_keeps_stable_plan_task_reference():
+    from common.api_gateway.adapters import TodoAdapter
+
+    todo = TodoAdapter.to_unified_todo({
+        "id": "TODO-1",
+        "title": "写报告",
+        "related_plan_id": "7",
+        "related_plan_task_id": "A3",
+    })
+
+    assert todo.related_plan_id == "7"
+    assert todo.related_plan_task_id == "A3"
+    assert TodoAdapter.from_unified_todo(todo)["related_plan_task_id"] == "A3"

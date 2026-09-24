@@ -103,6 +103,7 @@ class TodoAPI:
         deadline: Optional[str] = None,
         tags: Optional[list] = None,
         related_plan_id: Optional[str] = None,
+        related_plan_task_id: Optional[str] = None,
         time_estimate: Optional[int] = None,
         # v0.5.0 新增参数
         priority_rank: int = 0,
@@ -158,6 +159,7 @@ class TodoAPI:
             deadline=deadline,
             tags=tags or [],
             related_plan_id=related_plan_id,
+            related_plan_task_id=related_plan_task_id,
             time_estimate=time_estimate,
         )
 

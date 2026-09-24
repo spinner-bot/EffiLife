@@ -25,6 +25,7 @@ export interface UnifiedTodo {
   tags: string[]
   subtasks: TodoSubtask[]
   related_plan_id?: string
+  related_plan_task_id?: string
   time_estimate?: number
   time_spent?: number
   notes?: string
@@ -67,6 +68,7 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     tags: todo.tags || [],
     subtasks: todo.subtasks || [],
     related_plan_id: todo.related_plan_id,
+    related_plan_task_id: todo.related_plan_task_id,
     time_estimate: todo.time_estimate,
     time_spent: todo.time_spent,
     notes: todo.notes,

@@ -136,6 +136,7 @@ class TodoStorage:
         deadline: Optional[str] = None,
         tags: Optional[list] = None,
         related_plan_id: Optional[str] = None,
+        related_plan_task_id: Optional[str] = None,
         time_estimate: Optional[int] = None,
         # v0.5.0 新增参数
         priority_rank: int = 0,
@@ -165,6 +166,7 @@ class TodoStorage:
             deadline=deadline,
             tags=tags or [],
             related_plan_id=related_plan_id,
+            related_plan_task_id=related_plan_task_id,
             time_estimate=time_estimate,
             priority_rank=priority_rank,
             urgent=urgent,
@@ -189,7 +191,7 @@ class TodoStorage:
         # 允许更新的字段
         updatable_fields = {
             'title', 'description', 'deadline', 'priority', 'category',
-            'tags', 'related_plan_id', 'time_estimate', 'time_spent',
+            'tags', 'related_plan_id', 'related_plan_task_id', 'time_estimate', 'time_spent',
             'notes', 'status', 'recurrence', 'deadline_warning_days',
             'sort_order', 'pinned',
             # v0.5.0 新增字段

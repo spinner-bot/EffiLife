@@ -89,6 +89,7 @@ class TodoAdapter:
             tags=todo_data.get('tags', []),
             subtasks=todo_data.get('subtasks', []),
             related_plan_id=todo_data.get('related_plan_id'),
+            related_plan_task_id=todo_data.get('related_plan_task_id'),
             time_estimate=todo_data.get('time_estimate'),
             time_spent=todo_data.get('time_spent'),
             notes=todo_data.get('notes'),
@@ -109,6 +110,7 @@ class TodoAdapter:
             'deadline': unified.deadline,
             'tags': unified.tags,
             'related_plan_id': unified.related_plan_id,
+            'related_plan_task_id': unified.related_plan_task_id,
             'time_estimate': unified.time_estimate,
         }
 
