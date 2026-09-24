@@ -10,6 +10,17 @@ from datetime import datetime
 from ..schemas.models import UnifiedPlan, UnifiedTodo, UnifiedTimeRecord
 
 
+def _format_date(parts) -> Optional[str]:
+    """Normalize [year, month, day] data for the shared model."""
+    if not parts or len(parts) < 3:
+        return None
+    try:
+        year, month, day = (int(parts[0]), int(parts[1]), int(parts[2]))
+    except (TypeError, ValueError):
+        return None
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+
 class PlanAdapter:
     """plan-helper 适配器"""
 
@@ -21,7 +32,7 @@ class PlanAdapter:
             name=plan_data.get('name', ''),
             module='plan-helper',
             plan_type='standard',
-            date='-'.join(str(d) for d in plan_data.get('date', [])) if plan_data.get('date') else None,
+            date=_format_date(plan_data.get('date')),
             sections=plan_data.get('sections', []),
             total_tasks=plan_data.get('total_tasks', 0),
             completed_tasks=plan_data.get('completed_tasks', 0),
@@ -37,7 +48,7 @@ class PlanAdapter:
             name=summary.get('name', ''),
             module='plan-helper',
             plan_type='standard',
-            date='-'.join(str(d) for d in summary.get('date', [])) if summary.get('date') else None,
+            date=_format_date(summary.get('date')),
             total_tasks=summary.get('total_tasks', 0),
             completed_tasks=summary.get('completed_tasks', 0),
             progress_percentage=summary.get('progress_percentage', 0.0),
@@ -50,9 +61,11 @@ class PlanAdapter:
         task_ids = []
         for section in plan_data.get('sections', []):
             for task in section.get('tasks', []):
-                task_id = task.get('content', '')
+                if not task.get('is_active', True):
+                    continue
+                task_id = task.get('internal_id') or task.get('id')
                 if task_id:
-                    task_ids.append(f"{section.get('letter', '')}{task.get('index', '')}")
+                    task_ids.append(str(task_id))
         return task_ids
 
 
