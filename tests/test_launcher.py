@@ -22,3 +22,26 @@ def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     assert modules["1"]["name"] == "EffiLife 统一工作台"
     assert modules["1"]["url"] == "http://localhost:1420"
     assert modules["1"]["companions"][0]["name"] == "plan-helper API"
+
+
+def test_launcher_cleans_up_when_companion_cannot_start(monkeypatch):
+    terminated = []
+
+    class FailingPopen:
+        def __init__(self, *args, **kwargs):
+            raise FileNotFoundError("python missing")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", FailingPopen)
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
+
+    result = launcher.start_companions({
+        "companions": [{
+            "name": "test companion",
+            "cmd": ["missing"],
+            "cwd": launcher.BASE_DIR,
+            "url": None,
+        }],
+    }, {})
+
+    assert result is None
+    assert terminated == []

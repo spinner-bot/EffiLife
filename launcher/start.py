@@ -307,18 +307,24 @@ def start_companions(module, env):
             continue
 
         print(f"启动配套服务: {companion['name']}")
-        process = subprocess.Popen(
-            companion["cmd"],
-            cwd=companion["cwd"],
-            shell=False,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            bufsize=1,
-        )
+        try:
+            process = subprocess.Popen(
+                companion["cmd"],
+                cwd=companion["cwd"],
+                shell=False,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                bufsize=1,
+            )
+        except OSError as error:
+            print(f"\n无法启动配套服务: {error}")
+            for started in managed:
+                terminate_process(started)
+            return None
         output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
         output_thread.start()
         if companion.get("url") and not wait_for_service(process, companion["url"]):
