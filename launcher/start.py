@@ -8,12 +8,16 @@ import sys
 import subprocess
 import webbrowser
 import shutil
+import threading
+import time
+from urllib.error import URLError
+from urllib.request import urlopen
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 
 # Custom Node.js location (F drive)
-CUSTOM_NODE_DIR = Path("F:/dev-tools/node")
+CUSTOM_NODE_DIR = Path(os.environ.get("EFFILIFE_NODE_DIR", "F:/dev-tools/node"))
 
 
 def find_npm():
@@ -35,6 +39,34 @@ def find_npm():
         if path:
             return path
     return None
+
+
+def find_node():
+    """Find the Node executable using the same rules as npm."""
+    candidates = []
+    if os.name == "nt":
+        candidates.append(CUSTOM_NODE_DIR / "node.exe")
+        system_node = shutil.which("node.exe") or shutil.which("node")
+        if system_node:
+            candidates.append(Path(system_node))
+    else:
+        system_node = shutil.which("node")
+        if system_node:
+            candidates.append(Path(system_node))
+    return next((str(path) for path in candidates if path.exists()), None)
+
+
+def node_environment():
+    """Build an environment that can run npm and its child processes."""
+    env = os.environ.copy()
+    if CUSTOM_NODE_DIR.exists():
+        env["PATH"] = str(CUSTOM_NODE_DIR) + os.pathsep + env.get("PATH", "")
+    return env
+
+
+def dependencies_ready(cwd):
+    """Avoid running npm install on every launch."""
+    return (Path(cwd) / "node_modules").is_dir()
 
 
 def get_time_helper_cmd():
@@ -119,12 +151,18 @@ def build_modules():
         },
     }
 
+    node_available = bool(find_node() or find_npm())
+
     # Mark modules that aren't available
     for key, mod in modules.items():
         if mod["cmd"] is None:
             mod["available"] = False
         else:
             mod["available"] = True
+        if mod["setup"] and not node_available:
+            mod["available"] = False
+            mod["unavailable_reason"] = "未找到 Node.js/npm"
+        mod["needs_setup"] = bool(mod["setup"] and not dependencies_ready(mod["cwd"]))
 
     return modules
 
@@ -169,15 +207,12 @@ def run_module(choice, modules):
 
     print(f"\n启动 {module['name']}...")
 
-    # Prepare environment with custom Node.js path
-    env = os.environ.copy()
-    if os.name == "nt" and CUSTOM_NODE_DIR.exists():
-        env["PATH"] = str(CUSTOM_NODE_DIR) + os.pathsep + env.get("PATH", "")
+    env = node_environment()
 
     # Setup if needed
-    if module.get("setup"):
+    if module.get("setup") and module.get("needs_setup"):
         print(f"首次运行，执行 setup: {' '.join(module['setup'])}")
-        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=True, env=env)
+        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=False, env=env)
         if result.returncode != 0:
             print(f"\n❌ Setup 失败，请手动执行:")
             print(f"   cd {module['cwd']}")
@@ -191,40 +226,29 @@ def run_module(choice, modules):
     print("按 Ctrl+C 停止\n")
 
     try:
-        # On Windows, use shell=True to inherit full PATH
-        use_shell = os.name == "nt"
+        process = subprocess.Popen(
+            module["cmd"],
+            cwd=module["cwd"],
+            shell=False,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+        )
 
-        # Use Popen to capture output and detect actual URL
+        output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
+        output_thread.start()
+
         if module.get("url"):
-            import re
-            process = subprocess.Popen(
-                module["cmd"],
-                cwd=module["cwd"],
-                shell=use_shell,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding="utf-8",
-                errors="replace"
-            )
+            if wait_for_service(process, module["url"]):
+                print(f"\n>>> 打开浏览器: {module['url']}")
+                webbrowser.open(module["url"])
 
-            # Wait for server to start and detect URL
-            url_opened = False
-            for line in process.stdout:
-                print(line, end="")
-                # Detect actual URL from Vite output
-                if not url_opened and "Local:" in line:
-                    match = re.search(r"http://localhost:\d+/?", line)
-                    if match:
-                        actual_url = match.group(0)
-                        print(f"\n>>> 打开浏览器: {actual_url}")
-                        webbrowser.open(actual_url)
-                        url_opened = True
-
-            process.wait()
-        else:
-            subprocess.run(module["cmd"], cwd=module["cwd"], shell=use_shell, env=env)
+        process.wait()
+        output_thread.join(timeout=2)
 
     except KeyboardInterrupt:
         print("\n已停止")
@@ -233,11 +257,40 @@ def run_module(choice, modules):
         print(f"请确保已安装所需依赖")
 
 
+def stream_output(process):
+    """Forward child output without blocking service readiness checks."""
+    if process.stdout is None:
+        return
+    for line in process.stdout:
+        print(line, end="")
+
+
+def wait_for_service(process, url, timeout=30):
+    """Wait for an HTTP service instead of trusting a particular log format."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            print(f"\n❌ 服务提前退出，退出码: {process.returncode}")
+            return False
+        try:
+            with urlopen(url, timeout=1) as response:
+                if response.status < 500:
+                    return True
+        except (OSError, URLError):
+            time.sleep(0.25)
+    print(f"\n⚠️ 服务在 {timeout} 秒内未响应，请手动打开: {url}")
+    return False
+
+
 def main():
     modules = build_modules()
     while True:
         show_menu(modules)
-        choice = input("请选择 [0-6]: ").strip()
+        try:
+            choice = input("请选择 [0-6]: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n再见！")
+            return
         run_module(choice, modules)
         input("\n按 Enter 继续...")
 
