@@ -207,6 +207,7 @@ watch(() => appStore.todayStat, () => {
   padding: 7px 10px 7px 14px;
   border: 1px solid var(--color-border);
   border-radius: 16px;
+  background: var(--color-bg);
   background: color-mix(in srgb, var(--color-bg) 82%, transparent);
   box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0, 0, 0, .08));
   transform: translateX(-50%);
