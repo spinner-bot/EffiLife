@@ -16,6 +16,8 @@ export interface TodoCategory {
   name: string
   color: string
   icon: string
+  ascii_icon?: string
+  pinned?: boolean
   created_at: string
   difficulty: number
 }
@@ -136,6 +138,8 @@ export function normalizeImportedCategory(value: unknown): TodoCategory | null {
     name: candidate.name.trim(),
     color: candidate.color,
     icon: typeof candidate.icon === 'string' && candidate.icon ? candidate.icon : 'circle',
+    ascii_icon: typeof candidate.ascii_icon === 'string' ? candidate.ascii_icon : undefined,
+    pinned: candidate.pinned === true,
     created_at: typeof candidate.created_at === 'string' && candidate.created_at
       ? candidate.created_at
       : new Date().toISOString(),
@@ -183,7 +187,7 @@ export const TodoCategoryService = {
     return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
   },
 
-  async create(input: Pick<TodoCategory, 'name' | 'color'> & Partial<Pick<TodoCategory, 'icon' | 'difficulty'>>): Promise<TodoCategory> {
+  async create(input: Pick<TodoCategory, 'name' | 'color'> & Partial<Pick<TodoCategory, 'icon' | 'ascii_icon' | 'pinned' | 'difficulty'>>): Promise<TodoCategory> {
     const category = normalizeImportedCategory({
       ...input,
       id: makeCategoryId(),
@@ -194,7 +198,7 @@ export const TodoCategoryService = {
     return category
   },
 
-  async update(id: string, patch: Partial<Pick<TodoCategory, 'name' | 'color' | 'icon' | 'difficulty'>>): Promise<TodoCategory> {
+  async update(id: string, patch: Partial<Pick<TodoCategory, 'name' | 'color' | 'icon' | 'ascii_icon' | 'pinned' | 'difficulty'>>): Promise<TodoCategory> {
     const categories = await this.list()
     const current = categories.find((category) => category.id === id)
     if (!current) throw new Error('分类不存在')
