@@ -206,6 +206,41 @@ export async function getAll<T>(storeName: string): Promise<T[]> {
   }
 }
 
+// 原始对象存储读写：用于 todos 等以业务对象自身作为 keyPath 的集合。
+// 与上面的 key/value 配置存储分开，避免把 { key, value } 包装写入业务表。
+export async function getRawAll<T>(storeName: string): Promise<T[]> {
+  const db = await openDB()
+  return new Promise<T[]>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readonly')
+    const store = transaction.objectStore(storeName)
+    const request = store.getAll()
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve((request.result || []) as T[])
+  })
+}
+
+export async function putRaw<T>(storeName: string, value: T): Promise<void> {
+  const db = await openDB()
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.put(value)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve()
+  })
+}
+
+export async function deleteRaw(storeName: string, key: IDBValidKey): Promise<void> {
+  const db = await openDB()
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.delete(key)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve()
+  })
+}
+
 // 清空存储
 export async function clear(storeName: string): Promise<void> {
   try {

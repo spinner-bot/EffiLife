@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X, Inbox as InboxIcon } from 'lucide-vue-next'
+import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -301,10 +301,10 @@ onUnmounted(() => {
           <span>打卡</span>
           <span v-if="canCheckinToday && !hasCheckedInToday" class="nav-red-dot"></span>
         </button>
-        <div class="nav-btn placeholder" aria-disabled="true">
-          <span class="nav-placeholder-icon">···</span>
-          <span class="nav-placeholder-text">敬请期待</span>
-        </div>
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/tasks')">
+          <ListTodo :size="22" />
+          <span>待办</span>
+        </button>
         <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
           <Settings :size="22" />
           <span>设置</span>
