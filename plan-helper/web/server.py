@@ -192,11 +192,11 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         elif path == "/api/plans/copy-yesterday":
             resp = tmpl.copy_yesterday_plan()
         elif path.startswith("/api/plans/") and path.endswith("/sections"):
-            plan_id = path.split("/")[2]
+            plan_id = path.split("/")[3]
             resp = api.add_section(plan_id, data.get("name", ""), data.get("info", ""))
         elif path.startswith("/api/plans/") and path.endswith("/tasks"):
             parts = path.split("/")
-            plan_id = parts[2]
+            plan_id = parts[3]
             resp = api.add_task(
                 plan_id,
                 data.get("section_index", 0),
@@ -205,7 +205,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             )
         elif path.startswith("/api/plans/") and path.endswith("/complete"):
             parts = path.split("/")
-            plan_id = parts[2]
+            plan_id = parts[3]
             resp = api.complete_task(
                 plan_id,
                 data.get("task_id", ""),
@@ -213,7 +213,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
                 time_tuple=tuple(data["time"]) if data.get("time") else None,
             )
         elif path.startswith("/api/plans/") and path.endswith("/logs"):
-            plan_id = path.split("/")[2]
+            plan_id = path.split("/")[3]
             resp = api.add_log(
                 plan_id,
                 data.get("day", 0),
