@@ -476,12 +476,16 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
     'nav.home': '\u9996\u9875',
     'nav.plans': '\u8ba1\u5212\u4e2d\u5fc3',
     'nav.records': '\u65f6\u95f4\u8bb0\u5f55',
+    'tasks.planSyncFailed': '\u5f85\u529e\u5df2\u5b8c\u6210\uff0c\u4f46\u8ba1\u5212\u4efb\u52a1\u540c\u6b65\u5931\u8d25',
+    'plans.todoSyncFailed': '\u8ba1\u5212\u4efb\u52a1\u5df2\u5b8c\u6210\uff0c\u4f46\u5173\u8054\u5f85\u529e\u540c\u6b65\u5931\u8d25',
   },
   'en-US': {
     'nav.primary': 'Primary navigation',
     'nav.home': 'Today',
     'nav.plans': 'Plans',
     'nav.records': 'Time',
+    'tasks.planSyncFailed': 'The task is complete, but the linked plan task could not be synced',
+    'plans.todoSyncFailed': 'The plan task is complete, but linked todos could not be synced',
   },
 }
 

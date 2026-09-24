@@ -14,7 +14,7 @@ import {
   type TodoSettings,
   type UnifiedTodo,
 } from '@/services/todoService'
-import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { completePlanTask, getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { formatPriorityScore, getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
@@ -328,6 +328,13 @@ async function completeTodo(todo: UnifiedTodo) {
     const updated = await TodoService.complete(todo.id)
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
+    if (todo.related_plan_id && todo.related_plan_task_id) {
+      try {
+        await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
+      } catch {
+        errorMessage.value = t('tasks.planSyncFailed')
+      }
+    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
   }

@@ -25,6 +25,7 @@ import {
   updatePlanGroup,
   updateEventPlan,
 } from '@/services/planGateway'
+import { completeLinkedTodos } from '@/services/workspaceSync'
 
 const router = useRouter()
 const { t, locale } = useI18n()
@@ -335,6 +336,11 @@ async function completeTask(taskId: string) {
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
+    try {
+      await completeLinkedTodos(planId, taskId)
+    } catch {
+      errorMessage.value = t('plans.todoSyncFailed')
+    }
     selectedPlan.value = await getPlanFull(planId)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
