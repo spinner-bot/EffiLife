@@ -11,6 +11,19 @@ export interface TodoSubtask {
   completed_at?: string
 }
 
+export interface TodoCategory {
+  id: string
+  name: string
+  color: string
+  icon: string
+  created_at: string
+  difficulty: number
+}
+
+export const DEFAULT_TODO_CATEGORIES: TodoCategory[] = [
+  { id: 'default', name: '默认', color: '#6366f1', icon: 'circle', created_at: '2026-01-01T00:00:00.000Z', difficulty: 5 },
+]
+
 export interface UnifiedTodo {
   id: string
   title: string
@@ -104,6 +117,58 @@ export function normalizeImportedTodo(value: unknown): UnifiedTodo | null {
   if (typeof candidate.title !== 'string' || !candidate.title.trim()) return null
   if (candidate.id !== undefined && typeof candidate.id !== 'string') return null
   return normalize(candidate as Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>)
+}
+
+export function normalizeImportedCategory(value: unknown): TodoCategory | null {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Partial<TodoCategory>
+  if (typeof candidate.id !== 'string' || !candidate.id.trim()) return null
+  if (typeof candidate.name !== 'string' || !candidate.name.trim()) return null
+  if (typeof candidate.color !== 'string' || !candidate.color.trim()) return null
+  return {
+    id: candidate.id,
+    name: candidate.name.trim(),
+    color: candidate.color,
+    icon: typeof candidate.icon === 'string' && candidate.icon ? candidate.icon : 'circle',
+    created_at: typeof candidate.created_at === 'string' && candidate.created_at
+      ? candidate.created_at
+      : new Date().toISOString(),
+    difficulty: typeof candidate.difficulty === 'number' && Number.isFinite(candidate.difficulty)
+      ? Math.max(0, Math.min(10, candidate.difficulty))
+      : 5,
+  }
+}
+
+export const TodoCategoryService = {
+  async list(): Promise<TodoCategory[]> {
+    const categories = await getRawAll<TodoCategory>(STORE_NAMES.TODO_CATEGORIES)
+    return categories.sort((a, b) => a.name.localeCompare(b.name))
+  },
+
+  async ensureDefaults(todos: UnifiedTodo[] = []): Promise<TodoCategory[]> {
+    const existing = await this.list()
+    const byId = new Map(existing.map((category) => [category.id, category]))
+    for (const category of DEFAULT_TODO_CATEGORIES) {
+      if (!byId.has(category.id)) {
+        await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+        byId.set(category.id, category)
+      }
+    }
+    for (const todo of todos) {
+      if (!todo.category || byId.has(todo.category)) continue
+      const inferred: TodoCategory = {
+        id: todo.category,
+        name: todo.category,
+        color: '#64748b',
+        icon: 'circle',
+        created_at: new Date().toISOString(),
+        difficulty: 5,
+      }
+      await putRaw(STORE_NAMES.TODO_CATEGORIES, inferred)
+      byId.set(inferred.id, inferred)
+    }
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
+  },
 }
 
 export const TodoService = {

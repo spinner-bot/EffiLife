@@ -1,7 +1,14 @@
 // 存档服务 - 处理数据导出/导入/重置
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
-import { normalizeImportedTodo, type UnifiedTodo } from './todoService'
+import {
+  DEFAULT_TODO_CATEGORIES,
+  normalizeImportedCategory,
+  normalizeImportedTodo,
+  TodoCategoryService,
+  type TodoCategory,
+  type UnifiedTodo,
+} from './todoService'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -69,6 +76,7 @@ export interface ArchiveData {
   locale?: string
   records: Record<string, unknown[]>
   todos: UnifiedTodo[]
+  categories: TodoCategory[]
   planHelper: {
     available: boolean
     plans: unknown[]
@@ -127,6 +135,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
 // 收集所有数据
 async function collectAllData(): Promise<ArchiveData> {
   const { getRawAll, STORE_NAMES } = await import('@/storage')
+  const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
   return {
     version: ARCHIVE_VERSION,
     exportDate: new Date().toISOString(),
@@ -142,7 +151,8 @@ async function collectAllData(): Promise<ArchiveData> {
     checkin: readJSON(STORAGE_KEYS.CHECKIN),
     locale: localStorage.getItem('effilife_locale') || 'zh-CN',
     records: getAllRecords(),
-    todos: await getRawAll(STORE_NAMES.TODOS),
+    todos,
+    categories: await TodoCategoryService.ensureDefaults(todos),
     planHelper: await collectPlanHelperData(),
   }
 }
@@ -153,8 +163,8 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const zip = new JSZip()
 
   // 使用公共层约定的 manifest + datasets 协议导出。
-  const { records, todos, planHelper, ...app } = data
-  const datasets = ['app', 'records', 'todos', 'plan_helper']
+  const { records, todos, categories, planHelper, ...app } = data
+  const datasets = ['app', 'records', 'todos', 'todo_categories', 'plan_helper']
   zip.file('manifest.json', JSON.stringify({
     format: ARCHIVE_FORMAT,
     format_version: ARCHIVE_FORMAT_VERSION,
@@ -165,6 +175,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   zip.file('data/app.json', JSON.stringify(app, null, 2))
   zip.file('data/records.json', JSON.stringify(records, null, 2))
   zip.file('data/todos.json', JSON.stringify(todos, null, 2))
+  zip.file('data/todo_categories.json', JSON.stringify(categories, null, 2))
   zip.file('data/plan_helper.json', JSON.stringify(planHelper, null, 2))
 
   // 添加说明文件
@@ -327,6 +338,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       throw new Error('待办数据包含无效任务：缺少有效标题或任务编号类型错误')
     }
 
+    const categories = normalizeImportedCategories(datasets.todo_categories, importedTodos as UnifiedTodo[])
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
@@ -343,6 +355,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
       todos: importedTodos as UnifiedTodo[],
+      categories,
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
     }
   }
@@ -363,15 +376,55 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   if (importedTodos.some((todo) => todo === null)) {
     throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
   }
+  const categories = normalizeImportedCategories(undefined, importedTodos as UnifiedTodo[])
   return {
     ...legacy,
     locale: legacy.locale || 'zh-CN',
     todos: importedTodos as UnifiedTodo[],
+    categories,
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
 }
 
 // 处理存档数据（内部函数）
+function normalizeImportedCategories(raw: unknown, todos: UnifiedTodo[]): TodoCategory[] {
+  const categories = raw === undefined
+    ? [...DEFAULT_TODO_CATEGORIES]
+    : Array.isArray(raw)
+      ? raw.map(normalizeImportedCategory)
+      : null
+  if (!categories || categories.some((category) => category === null)) {
+    throw new Error('分类数据无效：必须是包含有效编号、名称和颜色的数组')
+  }
+
+  const result = categories as TodoCategory[]
+  const ids = new Set<string>()
+  for (const category of result) {
+    if (ids.has(category.id)) throw new Error(`分类数据包含重复编号：${category.id}`)
+    ids.add(category.id)
+  }
+  for (const category of DEFAULT_TODO_CATEGORIES) {
+    if (!ids.has(category.id)) {
+      result.push(category)
+      ids.add(category.id)
+    }
+  }
+  for (const todo of todos) {
+    if (todo.category && !ids.has(todo.category)) {
+      result.push({
+        id: todo.category,
+        name: todo.category,
+        color: '#64748b',
+        icon: 'circle',
+        created_at: new Date().toISOString(),
+        difficulty: 5,
+      })
+      ids.add(todo.category)
+    }
+  }
+  return result
+}
+
 async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
     const data = await parseArchiveData(zip)
 
@@ -451,6 +504,12 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         }
       }
     }
+    if (Array.isArray(data.categories)) {
+      await idbClear(STORE_NAMES.TODO_CATEGORIES)
+      for (const category of data.categories) {
+        await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+      }
+    }
 
     const warnings: string[] = []
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
@@ -519,6 +578,7 @@ export async function resetData(type: ResetType): Promise<void> {
       await idbClear(STORE_NAMES.DAILY_TRIGGER)
       await idbClear(STORE_NAMES.CHECKIN)
       await idbClear(STORE_NAMES.TODOS)
+      await idbClear(STORE_NAMES.TODO_CATEGORIES)
       await clearPlanHelperData()
       break
 

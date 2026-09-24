@@ -3,7 +3,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
-import { TodoService, type TodoPriority, type TodoRecurrence, type UnifiedTodo } from '@/services/todoService'
+import {
+  TodoCategoryService,
+  TodoService,
+  type TodoCategory,
+  type TodoPriority,
+  type TodoRecurrence,
+  type UnifiedTodo,
+} from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { useI18n } from '@/i18n'
 
@@ -14,9 +21,11 @@ const title = ref('')
 const priority = ref<TodoPriority>('normal')
 const deadline = ref('')
 const recurrence = ref<TodoRecurrence>('none')
+const category = ref('default')
 const selectedPlanId = ref('')
 const selectedPlanTaskId = ref('')
 const filter = ref<'all' | 'active' | 'completed'>('active')
+const categoryFilter = ref('')
 const isLoading = ref(true)
 const errorMessage = ref('')
 const editingId = ref<string | null>(null)
@@ -24,6 +33,7 @@ const editingTitle = ref('')
 const editingPriority = ref<TodoPriority>('normal')
 const editingDeadline = ref('')
 const editingRecurrence = ref<TodoRecurrence>('none')
+const editingCategory = ref('default')
 const editingPlanId = ref('')
 const editingPlanTaskId = ref('')
 const isSaving = ref(false)
@@ -34,13 +44,19 @@ const planSummaries = ref<PlanSummary[]>([])
 const planGatewayState = ref<PlanGatewayState>('idle')
 const planTasks = ref<PlanTaskSummary[]>([])
 const planTaskState = ref<PlanGatewayState>('idle')
+const categories = ref<TodoCategory[]>([])
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
 const visibleTodos = computed(() => {
-  if (filter.value === 'active') return activeTodos.value
-  if (filter.value === 'completed') return completedTodos.value
-  return todos.value
+  const source = filter.value === 'active'
+    ? activeTodos.value
+    : filter.value === 'completed'
+      ? completedTodos.value
+      : todos.value
+  return categoryFilter.value
+    ? source.filter((todo) => todo.category === categoryFilter.value)
+    : source
 })
 
 const priorityLabels = computed<Record<TodoPriority, string>>(() => ({
@@ -81,6 +97,7 @@ async function addTodo() {
       priority: priority.value,
       deadline: deadline.value ? new Date(`${deadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: recurrence.value,
+      category: category.value,
       related_plan_id: selectedPlanId.value || undefined,
       related_plan_task_id: selectedPlanId.value ? selectedPlanTaskId.value || undefined : undefined,
     })
@@ -89,10 +106,19 @@ async function addTodo() {
     priority.value = 'normal'
     deadline.value = ''
     recurrence.value = 'none'
+    category.value = 'default'
     selectedPlanId.value = ''
     selectedPlanTaskId.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
+  }
+}
+
+async function loadCategories() {
+  try {
+    categories.value = await TodoCategoryService.ensureDefaults(todos.value)
+  } catch {
+    categories.value = []
   }
 }
 
@@ -141,6 +167,7 @@ function startEdit(todo: UnifiedTodo) {
   editingPriority.value = todo.priority
   editingDeadline.value = todo.deadline ? todo.deadline.slice(0, 10) : ''
   editingRecurrence.value = todo.recurrence || 'none'
+  editingCategory.value = todo.category || 'default'
   editingPlanId.value = todo.related_plan_id || ''
   editingPlanTaskId.value = todo.related_plan_task_id || ''
   loadPlanTasks(editingPlanId.value)
@@ -153,6 +180,7 @@ function cancelEdit() {
   editingPriority.value = 'normal'
   editingDeadline.value = ''
   editingRecurrence.value = 'none'
+  editingCategory.value = 'default'
   editingPlanId.value = ''
   editingPlanTaskId.value = ''
   loadPlanTasks(selectedPlanId.value)
@@ -167,6 +195,7 @@ async function saveEdit(todo: UnifiedTodo) {
       priority: editingPriority.value,
       deadline: editingDeadline.value ? new Date(`${editingDeadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: editingRecurrence.value,
+      category: editingCategory.value,
       related_plan_id: editingPlanId.value || undefined,
       related_plan_task_id: editingPlanId.value ? editingPlanTaskId.value || undefined : undefined,
     })
@@ -249,7 +278,7 @@ function formatDeadline(deadline?: string): string {
 }
 
 onMounted(() => {
-  loadTodos()
+  loadTodos().then(loadCategories)
   loadPlanSummaries()
 })
 
@@ -283,6 +312,10 @@ watch(selectedPlanId, (planId) => {
         <select id="new-task-priority" v-model="priority" class="task-select">
           <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
         </select>
+        <label class="task-field-label" for="new-task-category">{{ t('tasks.category') }}</label>
+        <select id="new-task-category" v-model="category" class="task-select">
+          <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
+        </select>
         <label class="task-field-label" for="new-task-deadline">{{ t('tasks.deadline') }}</label>
         <input id="new-task-deadline" v-model="deadline" class="task-date-input" type="date" />
         <label class="task-field-label" for="new-task-recurrence">{{ t('tasks.recurrence') }}</label>
@@ -310,6 +343,10 @@ watch(selectedPlanId, (planId) => {
           <button :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ t('tasks.all') }}</button>
           <button :class="{ active: filter === 'completed' }" @click="filter = 'completed'">{{ t('tasks.completedTab') }}</button>
         </div>
+        <select v-model="categoryFilter" class="task-filter-select" :aria-label="t('tasks.categoryFilter')">
+          <option value="">{{ t('tasks.allCategories') }}</option>
+          <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
+        </select>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
         <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
       </section>
@@ -331,6 +368,10 @@ watch(selectedPlanId, (planId) => {
             <label :for="`edit-priority-${todo.id}`">{{ t('tasks.priority') }}</label>
             <select :id="`edit-priority-${todo.id}`" v-model="editingPriority" class="task-edit-select">
               <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
+            </select>
+            <label :for="`edit-category-${todo.id}`">{{ t('tasks.category') }}</label>
+            <select :id="`edit-category-${todo.id}`" v-model="editingCategory" class="task-edit-select">
+              <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
             </select>
             <label :for="`edit-deadline-${todo.id}`">{{ t('tasks.deadline') }}</label>
             <input :id="`edit-deadline-${todo.id}`" v-model="editingDeadline" class="task-edit-select" type="date" />
@@ -358,6 +399,7 @@ watch(selectedPlanId, (planId) => {
               <h2>{{ todo.title }}</h2>
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
+            <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
             <span v-if="todo.deadline" class="task-deadline">截止 {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
             <span v-if="todo.related_plan_id" class="task-plan-reference">计划：{{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
@@ -408,6 +450,7 @@ watch(selectedPlanId, (planId) => {
 .task-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-tabs button { border: 0; border-radius: 7px; padding: 7px 13px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
 .task-tabs button.active { color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08)); }
+.task-filter-select { min-width: 120px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-list { display: grid; gap: 10px; }
@@ -422,6 +465,7 @@ watch(selectedPlanId, (planId) => {
 .completed .task-title-row h2 { text-decoration: line-through; }
 .task-priority { padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; white-space: nowrap; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
+.task-category { display: inline-block; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
