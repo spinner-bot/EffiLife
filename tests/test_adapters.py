@@ -129,6 +129,10 @@ def test_time_adapter_accepts_unified_frontend_record_fields():
     assert record.date == "2026-09-25"
     assert record.duration_hours == 1.5
     assert record.related_todo_id == "TODO-1"
+    restored = TimeAdapter.from_unified_record(record)
+    assert restored["id"] == "TR-1"
+    assert restored["todo_id"] == "TODO-1"
+    assert restored["start"] == "09:00"
 
 
 def test_unified_category_preserves_difficulty():
