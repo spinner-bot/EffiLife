@@ -153,7 +153,13 @@ class TodoStorage:
             self.load()
 
         now = TimeHelper.now_iso()
+        existing_ids = {item.id for item in self._todos}
         todo_id = IdGenerator.generate_todo_id()
+        while todo_id in existing_ids:
+            # The in-process counter is intentionally only a fast path. After
+            # restarting the CLI/server it may start at 0001 again, so the
+            # persisted collection remains the authority for uniqueness.
+            todo_id = IdGenerator.generate_todo_id()
 
         todo = Todo(
             id=todo_id,
