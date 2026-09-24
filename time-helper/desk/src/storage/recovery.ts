@@ -1,6 +1,6 @@
 // 数据恢复机制 - 启动时检测数据状态，提供恢复选项
 
-import { get, set, isEmpty, openDB, STORE_NAMES } from './indexedDB'
+import { get, set, openDB, STORE_NAMES } from './indexedDB'
 import { getAllBackups, restoreFromBackup, type BackupData } from './backup'
 import { hasLocalStorageData, hasIndexedDBData } from './migration'
 

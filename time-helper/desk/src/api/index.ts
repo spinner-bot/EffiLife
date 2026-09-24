@@ -2,7 +2,7 @@
 // 提供清晰的接口规范，便于未来与 plan-helper、to-dos 等模块互通
 
 import { DataService, hoursToHm, getTodayDate } from '@/services/dataService'
-import { CheckinSystem, checkinState } from '@/data'
+import { CheckinSystem } from '@/data'
 import { EventSystem } from '@/audio'
 import type { Config, Plans, ScheduleRule, TimeRecord, RealTimeStat, DayPlanInfo } from '@/types'
 import type { CheckinData, CheckinRecord } from '@/data'

@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { reactive, computed } from 'vue'
 
 // 单字段规则
 interface FieldRule {

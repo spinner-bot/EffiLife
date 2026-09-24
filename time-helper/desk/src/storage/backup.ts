@@ -25,7 +25,7 @@ export interface BackupData {
 }
 
 // 防抖计时器
-const debounceTimers: Record<string, NodeJS.Timeout> = {}
+const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
 // 获取所有备份（从 localStorage）
 export function getBackups(moduleName: string): BackupData[] {
@@ -86,14 +86,14 @@ async function saveBackupToFileSystem(
 
   try {
     const { appDataDir, join } = await import('@tauri-apps/api/path')
-    const { createDir, writeTextFile, exists } = await import('@tauri-apps/plugin-fs')
+    const { mkdir, writeTextFile, exists } = await import('@tauri-apps/plugin-fs')
 
     const baseDir = await appDataDir()
     const backupsDir = await join(baseDir, 'data', 'backups')
 
     // 确保目录存在
     if (!(await exists(backupsDir))) {
-      await createDir(backupsDir, { recursive: true })
+      await mkdir(backupsDir, { recursive: true })
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)

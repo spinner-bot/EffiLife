@@ -2,8 +2,6 @@
 // 这些测试可以在浏览器控制台或 Vitest 中运行
 
 import {
-  openDB,
-  closeDB,
   get,
   set,
   del,
@@ -11,23 +9,21 @@ import {
   clear,
   isEmpty,
   STORE_NAMES,
-} from '../storage/indexedDB'
+} from '../indexedDB'
 
 import {
   createBackup,
   getBackups,
   getAllBackups,
-  restoreFromBackup,
   clearModuleBackups,
-  type BackupData,
-} from '../storage/backup'
+} from '../backup'
 
 import {
   runMigration,
   isMigrationDone,
   hasIndexedDBData,
   hasLocalStorageData,
-} from '../storage/migration'
+} from '../migration'
 
 import {
   checkDataIntegrity,
@@ -35,7 +31,7 @@ import {
   restoreFromLatestBackup,
   exportEmergencyBackup,
   restoreFromEmergencyBackup,
-} from '../storage/recovery'
+} from '../recovery'
 
 // 简单的测试框架
 let passed = 0

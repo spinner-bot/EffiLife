@@ -80,7 +80,7 @@ const cells = computed(() => {
 })
 
 // 按周分组
-const weeks = computed(() => {
+const weekColumns = computed(() => {
   const result: HeatmapCell[][] = []
   let currentWeek: HeatmapCell[] = []
 
@@ -104,8 +104,8 @@ const monthLabels = computed(() => {
   const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
   let lastMonth = -1
 
-  for (let i = 0; i < weeks.value.length; i++) {
-    const firstDay = weeks.value[i][0]
+  for (let i = 0; i < weekColumns.value.length; i++) {
+    const firstDay = weekColumns.value[i][0]
     const d = new Date(firstDay.date)
     const month = d.getMonth()
     if (month !== lastMonth) {
@@ -146,13 +146,6 @@ function getCellColor(cell: HeatmapCell): string {
   }
 
   return colors[props.colorMode][cell.value]
-}
-
-function getCellBorder(cell: HeatmapCell): string {
-  if (cell.isToday) {
-    return '1.5px solid var(--color-primary)'
-  }
-  return 'none'
 }
 
 // 统计
@@ -199,10 +192,9 @@ function formatDate(d: Date): string {
 
 // 图例
 const legendLevels = [0, 1, 2, 3, 4]
-const legendLabels = ['0', '25%', '50%', '75%', '100%']
 
 // 计算 SVG 尺寸
-const svgWidth = computed(() => weeks.value.length * (props.cellSize + props.cellGap) + props.cellGap)
+const svgWidth = computed(() => weekColumns.value.length * (props.cellSize + props.cellGap) + props.cellGap)
 const svgHeight = computed(() => 7 * (props.cellSize + props.cellGap) + props.cellGap + 20) // +20 for month labels
 
 defineEmits<{
@@ -247,7 +239,7 @@ defineEmits<{
         class="heatmap-svg"
       >
         <g transform="translate(24, 18)">
-          <g v-for="(week, wi) in weeks" :key="wi">
+          <g v-for="(week, wi) in weekColumns" :key="wi">
             <rect
               v-for="(cell, di) in week"
               :key="`${wi}-${di}`"
@@ -272,7 +264,7 @@ defineEmits<{
     <div class="heatmap-legend">
       <span class="legend-label">少</span>
       <div
-        v-for="(level, i) in legendLevels"
+        v-for="level in legendLevels"
         :key="level"
         class="legend-cell"
         :style="{

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Check, BarChart3, Clock, X, CalendarDays } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, BarChart3, Clock, X, CalendarDays } from 'lucide-vue-next'
 import { DataService, hoursToHm } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'

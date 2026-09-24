@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Flame, Calendar, Trophy, TrendingUp, Check, BarChart3 } from 'lucide-vue-next'
 import { CheckinSystem, checkinState } from '@/data'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
-import { EventSystem } from '@/audio'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 
 const router = useRouter()
@@ -39,9 +38,10 @@ function doCheckin() {
 
   const result = CheckinSystem.checkin(planName.value, 100)
   if (result === null) return
+  const streak = result
 
   phase.value = 'animating'
-  const startStreak = result - 1
+  const startStreak = streak - 1
   displayStreak.value = startStreak
 
   const duration = 1200
@@ -51,12 +51,12 @@ function doCheckin() {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
     const eased = 1 - Math.pow(1 - progress, 3)
-    displayStreak.value = Math.round(startStreak + (result - startStreak) * eased)
+    displayStreak.value = Math.round(startStreak + (streak - startStreak) * eased)
 
     if (progress < 1) {
       requestAnimationFrame(animate)
     } else {
-      displayStreak.value = result
+      displayStreak.value = streak
       showBurst.value = true
       setTimeout(() => {
         phase.value = 'done'
