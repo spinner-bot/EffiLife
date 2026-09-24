@@ -104,7 +104,9 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     priority_rank: todo.priority_rank,
     urgent: todo.urgent,
     important: todo.important,
-    start_time: todo.start_time,
+    // Keep the algorithm's start boundary explicit for newly created tasks.
+    // Legacy imports without it still fall back to their creation timestamp.
+    start_time: todo.start_time || todo.created_at || timestamp,
     estimated_time: todo.estimated_time,
     related_time_record_ids: todo.related_time_record_ids,
   }

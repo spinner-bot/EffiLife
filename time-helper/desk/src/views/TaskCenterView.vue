@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -13,13 +13,17 @@ import {
   type UnifiedTodo,
 } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const { t, locale } = useI18n()
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
-const priority = ref<TodoPriority>('normal')
+const priorityRank = ref(0)
+const urgent = ref(false)
+const important = ref(false)
+const estimatedTime = ref(60)
 const deadline = ref('')
 const recurrence = ref<TodoRecurrence>('none')
 const category = ref('default')
@@ -31,7 +35,10 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 const editingId = ref<string | null>(null)
 const editingTitle = ref('')
-const editingPriority = ref<TodoPriority>('normal')
+const editingPriorityRank = ref(0)
+const editingUrgent = ref(false)
+const editingImportant = ref(false)
+const editingEstimatedTime = ref(60)
 const editingDeadline = ref('')
 const editingRecurrence = ref<TodoRecurrence>('none')
 const editingCategory = ref('default')
@@ -56,26 +63,32 @@ const editingCategoryId = ref<string | null>(null)
 const editingCategoryName = ref('')
 const editingCategoryColor = ref('#6366f1')
 const editingCategoryDifficulty = ref(5)
+const priorityClock = ref(Date.now())
+let priorityTimer: number | null = null
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
+const categoryById = computed(() => new Map(categories.value.map((item) => [item.id, item])))
+
+function scoreFor(todo: UnifiedTodo) {
+  return getPriorityScore(todo, categoryById.value.get(todo.category), new Date(priorityClock.value))
+}
+
 const visibleTodos = computed(() => {
   const source = filter.value === 'active'
     ? activeTodos.value
     : filter.value === 'completed'
       ? completedTodos.value
       : todos.value
-  return categoryFilter.value
+  const filtered = categoryFilter.value
     ? source.filter((todo) => todo.category === categoryFilter.value)
     : source
+  return [...filtered].sort((left, right) => {
+    const scoreDelta = scoreFor(right).score - scoreFor(left).score
+    if (scoreDelta !== 0) return scoreDelta
+    return right.updated_at.localeCompare(left.updated_at)
+  })
 })
-
-const priorityLabels = computed<Record<TodoPriority, string>>(() => ({
-  'urgent-important': t('priority.urgentImportant'),
-  important: t('priority.important'),
-  urgent: t('priority.urgent'),
-  normal: t('priority.normal'),
-}))
 
 const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
   none: t('tasks.recurrenceNone'),
@@ -84,6 +97,13 @@ const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
   monthly: t('tasks.recurrenceMonthly'),
   custom: t('tasks.recurrenceCustom'),
 }))
+
+function priorityKind(isUrgent: boolean, isImportant: boolean): TodoPriority {
+  if (isUrgent && isImportant) return 'urgent-important'
+  if (isImportant) return 'important'
+  if (isUrgent) return 'urgent'
+  return 'normal'
+}
 
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
 const planTaskById = computed(() => Object.fromEntries(planTasks.value.map((task) => [task.internal_id, task])))
@@ -105,7 +125,11 @@ async function addTodo() {
   try {
     const todo = await TodoService.create({
       title: title.value,
-      priority: priority.value,
+      priority: priorityKind(urgent.value, important.value),
+      priority_rank: Math.max(0, Math.trunc(Number(priorityRank.value) || 0)),
+      urgent: urgent.value,
+      important: important.value,
+      estimated_time: Math.max(1, Math.trunc(Number(estimatedTime.value) || 60)),
       deadline: deadline.value ? new Date(`${deadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: recurrence.value,
       category: category.value,
@@ -114,7 +138,10 @@ async function addTodo() {
     })
     todos.value = [todo, ...todos.value]
     title.value = ''
-    priority.value = 'normal'
+    priorityRank.value = 0
+    urgent.value = false
+    important.value = false
+    estimatedTime.value = 60
     deadline.value = ''
     recurrence.value = 'none'
     category.value = 'default'
@@ -234,7 +261,10 @@ async function completeTodo(todo: UnifiedTodo) {
 function startEdit(todo: UnifiedTodo) {
   editingId.value = todo.id
   editingTitle.value = todo.title
-  editingPriority.value = todo.priority
+  editingPriorityRank.value = todo.priority_rank ?? 0
+  editingUrgent.value = todo.urgent ?? (todo.priority === 'urgent' || todo.priority === 'urgent-important')
+  editingImportant.value = todo.important ?? (todo.priority === 'important' || todo.priority === 'urgent-important')
+  editingEstimatedTime.value = todo.estimated_time ?? todo.time_estimate ?? 60
   editingDeadline.value = todo.deadline ? todo.deadline.slice(0, 10) : ''
   editingRecurrence.value = todo.recurrence || 'none'
   editingCategory.value = todo.category || 'default'
@@ -247,7 +277,10 @@ function startEdit(todo: UnifiedTodo) {
 function cancelEdit() {
   editingId.value = null
   editingTitle.value = ''
-  editingPriority.value = 'normal'
+  editingPriorityRank.value = 0
+  editingUrgent.value = false
+  editingImportant.value = false
+  editingEstimatedTime.value = 60
   editingDeadline.value = ''
   editingRecurrence.value = 'none'
   editingCategory.value = 'default'
@@ -262,7 +295,11 @@ async function saveEdit(todo: UnifiedTodo) {
   try {
     const updated = await TodoService.update(todo.id, {
       title: editingTitle.value,
-      priority: editingPriority.value,
+      priority: priorityKind(editingUrgent.value, editingImportant.value),
+      priority_rank: Math.max(0, Math.trunc(Number(editingPriorityRank.value) || 0)),
+      urgent: editingUrgent.value,
+      important: editingImportant.value,
+      estimated_time: Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)),
       deadline: editingDeadline.value ? new Date(`${editingDeadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: editingRecurrence.value,
       category: editingCategory.value,
@@ -388,6 +425,11 @@ function formatDeadline(deadline?: string): string {
 onMounted(() => {
   loadTodos().then(loadCategories)
   loadPlanSummaries()
+  priorityTimer = window.setInterval(() => { priorityClock.value = Date.now() }, 60_000)
+})
+
+onUnmounted(() => {
+  if (priorityTimer !== null) window.clearInterval(priorityTimer)
 })
 
 watch(selectedPlanId, (planId) => {
@@ -416,10 +458,12 @@ watch(selectedPlanId, (planId) => {
       <section class="task-create theme-card">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
         <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
-        <label class="task-field-label" for="new-task-priority">{{ t('tasks.priority') }}</label>
-        <select id="new-task-priority" v-model="priority" class="task-select">
-          <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
-        </select>
+        <label class="task-field-label" for="new-task-priority-rank">{{ t('tasks.priorityRank') }}</label>
+        <input id="new-task-priority-rank" v-model.number="priorityRank" class="task-number-input" type="number" min="0" step="1" />
+        <label class="task-check-label"><input v-model="urgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
+        <label class="task-check-label"><input v-model="important" type="checkbox" /> {{ t('tasks.important') }}</label>
+        <label class="task-field-label" for="new-task-estimated-time">{{ t('tasks.estimatedTime') }}</label>
+        <input id="new-task-estimated-time" v-model.number="estimatedTime" class="task-number-input task-estimate-input" type="number" min="1" step="1" />
         <label class="task-field-label" for="new-task-category">{{ t('tasks.category') }}</label>
         <select id="new-task-category" v-model="category" class="task-select">
           <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -510,10 +554,12 @@ watch(selectedPlanId, (planId) => {
           <div v-if="editingId === todo.id" class="task-edit-form">
             <label :for="`edit-title-${todo.id}`">{{ t('tasks.editContent') }}</label>
             <input :id="`edit-title-${todo.id}`" v-model="editingTitle" class="task-edit-input" @keyup.enter="saveEdit(todo)" />
-            <label :for="`edit-priority-${todo.id}`">{{ t('tasks.priority') }}</label>
-            <select :id="`edit-priority-${todo.id}`" v-model="editingPriority" class="task-edit-select">
-              <option v-for="(label, value) in priorityLabels" :key="value" :value="value">{{ label }}</option>
-            </select>
+            <label :for="`edit-priority-${todo.id}`">{{ t('tasks.priorityRank') }}</label>
+            <input :id="`edit-priority-${todo.id}`" v-model.number="editingPriorityRank" class="task-edit-select" type="number" min="0" step="1" />
+            <label class="task-edit-check"><input v-model="editingUrgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
+            <label class="task-edit-check"><input v-model="editingImportant" type="checkbox" /> {{ t('tasks.important') }}</label>
+            <label :for="`edit-estimated-time-${todo.id}`">{{ t('tasks.estimatedTime') }}</label>
+            <input :id="`edit-estimated-time-${todo.id}`" v-model.number="editingEstimatedTime" class="task-edit-select" type="number" min="1" step="1" />
             <label :for="`edit-category-${todo.id}`">{{ t('tasks.category') }}</label>
             <select :id="`edit-category-${todo.id}`" v-model="editingCategory" class="task-edit-select">
               <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -554,10 +600,11 @@ watch(selectedPlanId, (planId) => {
           <button v-if="editingId !== todo.id" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
             <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
           </button>
-          <span v-if="editingId !== todo.id" class="task-priority">{{ priorityLabels[todo.priority] }}</span>
+          <span v-if="editingId !== todo.id" class="task-score" :class="{ expired: scoreFor(todo).expired }" :title="t('tasks.priorityScore')">{{ scoreFor(todo).display }}</span>
           <button v-if="editingId !== todo.id" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
           <button class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
+            <div class="task-score-detail"><span>{{ t('tasks.priorityScore') }}</span><strong>{{ scoreFor(todo).score }}</strong></div>
             <div v-if="todo.subtasks.length" class="subtask-list">
               <div v-for="subtask in todo.subtasks" :key="subtask.id" class="subtask-row" :class="{ completed: subtask.completed }">
                 <input type="checkbox" :aria-label="subtask.title" :checked="subtask.completed" :disabled="subtaskSaving" @change="toggleSubtask(todo, subtask.id)" />
@@ -597,6 +644,9 @@ watch(selectedPlanId, (planId) => {
 .task-input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--color-text-primary); background: transparent; font-size: 15px; }
 .task-select { border: 1px solid var(--color-border); border-radius: 10px; padding: 0 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-date-input { width: 132px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-number-input { width: 62px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-estimate-input { width: 70px; }
+.task-check-label { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
 .task-add { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; padding: 0 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
 .task-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 2px 12px; }
 .task-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
@@ -612,11 +662,12 @@ watch(selectedPlanId, (planId) => {
 .task-item.completed { opacity: .68; }
 .task-check { display: grid; place-items: center; width: 23px; height: 23px; flex: 0 0 23px; border: 2px solid var(--color-border-hover); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
 .task-check:disabled { cursor: default; opacity: .85; }
-.task-main { min-width: 0; flex: 1; }
+.task-main { min-width: 0; flex: 1; text-align: left; }
 .task-title-row { display: flex; align-items: center; gap: 9px; }
 .task-title-row h2 { overflow: hidden; margin: 0; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .completed .task-title-row h2 { text-decoration: line-through; }
-.task-priority { padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; white-space: nowrap; }
+.task-score { min-width: 42px; padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.task-score.expired { color: var(--color-text-tertiary); background: var(--color-bg-secondary); }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-block; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
@@ -633,12 +684,15 @@ watch(selectedPlanId, (planId) => {
 .task-edit-form { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto minmax(100px, 140px) auto; align-items: center; gap: 8px; min-width: 0; flex: 1; }
 .task-edit-form label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
 .task-edit-input, .task-edit-select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.task-edit-check { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
 .task-edit-input:focus, .task-edit-select:focus, .task-input:focus, .task-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .task-edit-actions { display: flex; gap: 6px; }
 .task-edit-cancel, .task-edit-save { border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-edit-save { border-color: var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
 .task-edit-save:disabled { cursor: wait; opacity: .6; }
 .task-subtasks { flex-basis: 100%; margin: 3px 0 0 36px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.task-score-detail { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: var(--color-text-tertiary); font-size: 12px; }
+.task-score-detail strong { color: var(--color-primary); font-variant-numeric: tabular-nums; }
 .subtask-list { display: grid; gap: 7px; }
 .subtask-row { display: flex; align-items: center; gap: 8px; color: var(--color-text-secondary); font-size: 13px; }
 .subtask-row input { accent-color: var(--color-primary); }
