@@ -253,9 +253,13 @@ def run_module(choice, modules):
         output_thread.start()
 
         if module.get("url"):
-            if wait_for_service(process, module["url"]):
-                print(f"\n>>> 打开浏览器: {module['url']}")
-                webbrowser.open(module["url"])
+            if not wait_for_service(process, module["url"]):
+                # Do not block forever when a child stays alive but never
+                # becomes reachable. The finally block cleans up companions.
+                terminate_process(process)
+                return
+            print(f"\n>>> 打开浏览器: {module['url']}")
+            webbrowser.open(module["url"])
 
         process.wait()
         output_thread.join(timeout=2)

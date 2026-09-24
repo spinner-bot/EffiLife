@@ -60,3 +60,39 @@ def test_launcher_cleans_up_when_companion_cannot_start(monkeypatch):
 
     assert result is None
     assert terminated == []
+
+
+def test_launcher_stops_unhealthy_main_service_instead_of_waiting_forever(monkeypatch):
+    terminated = []
+    waited = []
+
+    class RunningProcess:
+        stdout = None
+        returncode = None
+
+        def poll(self):
+            return None
+
+        def wait(self):
+            waited.append(True)
+
+    process = RunningProcess()
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: process)
+    monkeypatch.setattr(launcher, "stream_output", lambda _process: None)
+    monkeypatch.setattr(launcher, "wait_for_service", lambda _process, _url: False)
+    monkeypatch.setattr(launcher, "terminate_process", lambda item: terminated.append(item))
+    monkeypatch.setattr(launcher.webbrowser, "open", lambda _url: True)
+
+    launcher.run_module("test", {
+        "test": {
+            "name": "test",
+            "available": True,
+            "cmd": ["test"],
+            "cwd": launcher.BASE_DIR,
+            "url": "http://127.0.0.1:1",
+            "setup": None,
+        },
+    })
+
+    assert terminated == [process]
+    assert waited == []
