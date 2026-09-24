@@ -93,10 +93,16 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
             raise ValueError("Bundle manifest is invalid") from exc
         if manifest.get("format") != FORMAT_NAME:
             raise ValueError("Unsupported bundle format")
+        if manifest.get("format_version") != FORMAT_VERSION:
+            raise ValueError(f"Unsupported bundle version: {manifest.get('format_version')}")
         if not isinstance(manifest.get("datasets"), list):
             raise ValueError("Bundle datasets declaration is invalid")
+        normalized_names: list[str] = []
         for name in manifest["datasets"]:
             safe_name = _safe_dataset_name(name)
+            if safe_name in normalized_names:
+                raise ValueError("Bundle datasets declaration contains duplicates")
+            normalized_names.append(safe_name)
             if f"{DATA_PREFIX}{safe_name}.json" not in bundle.namelist():
                 raise ValueError(f"Dataset file is missing: {safe_name}")
         return manifest

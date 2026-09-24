@@ -36,6 +36,19 @@ def test_bundle_rejects_missing_manifest(tmp_path):
         inspect_bundle(bundle)
 
 
+def test_bundle_rejects_unsupported_version(tmp_path):
+    bundle = tmp_path / "future.efl"
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "9.0.0",
+            "datasets": [],
+        }))
+
+    with pytest.raises(ValueError, match="version"):
+        inspect_bundle(bundle)
+
+
 def test_bundle_does_not_overwrite_by_default(tmp_path):
     bundle = tmp_path / "effilife.efl"
     export_bundle(bundle, {"plans": []})
