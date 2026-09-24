@@ -74,7 +74,7 @@ def get_time_helper_cmd():
     npm = find_npm()
     if npm:
         # Dev mode - shows latest code changes
-        return [npm, "run", "dev"], "http://localhost:1420", [npm, "install"]
+        return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--strictPort"], "http://127.0.0.1:1420", [npm, "install"]
 
     # Fall back to compiled exe
     exe_paths = [
@@ -91,7 +91,7 @@ def get_todos_web_cmd():
     """Get command for to-dos web, checking for npm"""
     npm = find_npm()
     if npm:
-        return [npm, "run", "dev"], "http://localhost:1421", [npm, "install"]
+        return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--strictPort"], "http://127.0.0.1:1421", [npm, "install"]
     return None, None, None
 
 
