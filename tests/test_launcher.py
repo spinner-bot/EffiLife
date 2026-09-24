@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import launcher.start as launcher
 
@@ -30,6 +31,12 @@ def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
 
     assert modules["4"]["url"] == "http://127.0.0.1:1421"
     assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
+
+
+def test_posix_launcher_uses_the_same_unified_entrypoint():
+    script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
+
+    assert "python3 launcher/start.py --unified" in script
 
 
 def test_launcher_cleans_up_when_companion_cannot_start(monkeypatch):
