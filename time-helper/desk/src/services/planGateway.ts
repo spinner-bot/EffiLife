@@ -152,3 +152,11 @@ export async function deletePlanTask(planId: string, taskId: string): Promise<vo
     method: 'DELETE',
   })
 }
+
+export async function addPlanLog(planId: string, day: number, taskId: string, content: string): Promise<void> {
+  await request(`/api/plans/${encodeURIComponent(planId)}/logs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ day, task_id: taskId || 'base', time: 'acc', content }),
+  })
+}

@@ -6,6 +6,7 @@ import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
   addPlanSection,
+  addPlanLog,
   addPlanTask,
   archivePlan,
   completePlanTask,
@@ -41,6 +42,9 @@ const editingTaskId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
 const taskMinutes = ref(30)
+const logTaskId = ref('base')
+const logDay = ref(new Date().getDate())
+const logContent = ref('')
 
 function toDateInput(date: Date): string {
   const year = date.getFullYear()
@@ -206,6 +210,26 @@ async function saveTask() {
   }
 }
 
+async function saveLog() {
+  if (!selectedPlan.value || !logContent.value.trim()) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await addPlanLog(selectedPlan.value.id, Math.max(0, Math.min(31, Math.trunc(Number(logDay.value) || new Date().getDate()))), logTaskId.value, logContent.value.trim())
+    logContent.value = ''
+    selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.logUnavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function startLog(taskId = 'base') {
+  logTaskId.value = taskId
+  logContent.value = ''
+}
+
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
   taskSectionIndex.value = null
   editingTaskId.value = task.internal_id
@@ -341,6 +365,27 @@ onMounted(loadPlans)
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
           <div><span>{{ t('plans.completed') }}</span><strong>{{ selectedPlan.sections.reduce((n, section) => n + section.tasks.filter((task) => task.finish).length, 0) }}</strong></div>
         </section>
+        <section class="log-editor theme-card">
+          <div class="log-editor-heading"><div><strong>{{ t('plans.recordProgress') }}</strong><small>{{ t('plans.recordProgressHint') }}</small></div></div>
+          <label>{{ t('plans.logTask') }}
+            <select v-model="logTaskId">
+              <option value="base">{{ t('plans.generalProgress') }}</option>
+              <template v-for="section in selectedPlan.sections" :key="section.index">
+                <option v-for="task in section.tasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
+              </template>
+            </select>
+          </label>
+          <label>{{ t('plans.logDay') }}<input v-model.number="logDay" type="number" min="0" max="31" /></label>
+          <input v-model="logContent" class="log-content-input" :placeholder="t('plans.logContentPlaceholder')" @keyup.enter="saveLog" />
+          <button class="plans-primary" :disabled="isLoading || !logContent.trim()" @click="saveLog">{{ t('plans.record') }}</button>
+        </section>
+        <section v-if="selectedPlan.logs.length" class="log-list theme-card">
+          <header><strong>{{ t('plans.progressHistory') }}</strong><small>{{ selectedPlan.logs.length }}</small></header>
+          <article v-for="log in [...selectedPlan.logs].reverse()" :key="log.index" class="log-row">
+            <div class="log-time"><strong>{{ log.day }}</strong><span>{{ log.time?.[0] ?? '--' }}:{{ String(log.time?.[1] ?? 0).padStart(2, '0') }}</span></div>
+            <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
+          </article>
+        </section>
         <section class="section-editor theme-card">
           <input v-model="sectionName" :placeholder="t('plans.sectionName')" />
           <input v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
@@ -360,6 +405,7 @@ onMounted(loadPlans)
             <button class="task-complete" :disabled="!!task.finish || isLoading" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
+            <button class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
             <button class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
@@ -413,6 +459,19 @@ onMounted(loadPlans)
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
+.log-editor, .log-list { display: grid; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
+.log-editor { grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1.4fr) auto; align-items: end; }
+.log-editor-heading { display: grid; gap: 3px; }
+.log-editor-heading small, .log-list header small { color: var(--color-text-tertiary); font-size: 11px; }
+.log-editor label { display: grid; gap: 5px; color: var(--color-text-secondary); font-size: 11px; }
+.log-editor select, .log-editor label input, .log-content-input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.log-editor label input { width: 66px; }
+.log-content-input:focus, .log-editor select:focus, .log-editor label input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.log-list header { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-secondary); }
+.log-row { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; border-top: 1px solid var(--color-border); padding-top: 10px; text-align: left; }
+.log-time { display: grid; align-content: start; gap: 2px; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+.log-time span { color: var(--color-text-tertiary); font-size: 11px; }
+.log-row p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: 12px; }
 .section-editor { align-items: center; }
 .section-editor input:first-child { flex: 1; }
 .section-editor input:nth-child(2) { flex: 1.5; }
@@ -424,11 +483,12 @@ onMounted(loadPlans)
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-editor label:first-child { flex: 1; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
-.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 28px 28px; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .event-task-row > div strong { color: var(--color-primary); font-size: 12px; }
 .event-task-row > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-task-row > small { color: var(--color-text-tertiary); white-space: nowrap; }
+.task-log { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.finished span { text-decoration: line-through; }
 .task-complete, .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
@@ -448,5 +508,5 @@ onMounted(loadPlans)
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor { display: flex; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>
