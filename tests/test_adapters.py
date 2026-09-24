@@ -57,3 +57,26 @@ def test_todo_adapter_keeps_stable_plan_task_reference():
     assert todo.related_plan_id == "7"
     assert todo.related_plan_task_id == "A3"
     assert TodoAdapter.from_unified_todo(todo)["related_plan_task_id"] == "A3"
+
+
+def test_todo_adapter_preserves_advanced_fields_roundtrip():
+    from common.api_gateway.adapters import TodoAdapter
+
+    source = {
+        "id": "TODO-FULL",
+        "title": "完整待办",
+        "priority": "urgent-important",
+        "priority_rank": 2,
+        "urgent": True,
+        "important": True,
+        "start_time": "2026-09-25T09:00:00",
+        "estimated_time": 45,
+        "related_time_record_ids": ["TR-1", "TR-2"],
+        "subtasks": [{"id": "SUB-1", "title": "子项", "completed": False}],
+    }
+
+    unified = TodoAdapter.to_unified_todo(source)
+    restored = TodoAdapter.from_unified_todo(unified)
+
+    for key in ("priority_rank", "urgent", "important", "start_time", "estimated_time", "related_time_record_ids", "subtasks"):
+        assert restored[key] == source[key]

@@ -97,6 +97,12 @@ class TodoAdapter:
             deadline_warning_days=todo_data.get('deadline_warning_days', 3),
             sort_order=todo_data.get('sort_order', 0),
             pinned=todo_data.get('pinned', False),
+            priority_rank=todo_data.get('priority_rank', 0),
+            urgent=todo_data.get('urgent', False),
+            important=todo_data.get('important', False),
+            start_time=todo_data.get('start_time'),
+            estimated_time=todo_data.get('estimated_time'),
+            related_time_record_ids=todo_data.get('related_time_record_ids', []),
         )
 
     @staticmethod
@@ -111,7 +117,20 @@ class TodoAdapter:
             'tags': unified.tags,
             'related_plan_id': unified.related_plan_id,
             'related_plan_task_id': unified.related_plan_task_id,
+            'related_time_record_ids': unified.related_time_record_ids,
             'time_estimate': unified.time_estimate,
+            'time_spent': unified.time_spent,
+            'notes': unified.notes,
+            'recurrence': unified.recurrence,
+            'deadline_warning_days': unified.deadline_warning_days,
+            'sort_order': unified.sort_order,
+            'pinned': unified.pinned,
+            'priority_rank': unified.priority_rank,
+            'urgent': unified.urgent,
+            'important': unified.important,
+            'start_time': unified.start_time,
+            'estimated_time': unified.estimated_time,
+            'subtasks': unified.subtasks,
         }
 
 

@@ -141,6 +141,11 @@ class UnifiedTodo:
     deadline_warning_days: int = 3
     sort_order: int = 0
     pinned: bool = False
+    priority_rank: int = 0
+    urgent: bool = False
+    important: bool = False
+    start_time: Optional[str] = None
+    estimated_time: Optional[int] = None
     schema_version: str = SchemaVersion.CURRENT.value
 
     def to_dict(self) -> dict:
@@ -167,6 +172,11 @@ class UnifiedTodo:
             'deadline_warning_days': self.deadline_warning_days,
             'sort_order': self.sort_order,
             'pinned': self.pinned,
+            'priority_rank': self.priority_rank,
+            'urgent': self.urgent,
+            'important': self.important,
+            'start_time': self.start_time,
+            'estimated_time': self.estimated_time,
             'schema_version': self.schema_version,
         }
 
@@ -195,6 +205,11 @@ class UnifiedTodo:
             deadline_warning_days=data.get('deadline_warning_days', 3),
             sort_order=data.get('sort_order', 0),
             pinned=data.get('pinned', False),
+            priority_rank=data.get('priority_rank', 0),
+            urgent=data.get('urgent', False),
+            important=data.get('important', False),
+            start_time=data.get('start_time'),
+            estimated_time=data.get('estimated_time'),
             schema_version=data.get('schema_version', SchemaVersion.CURRENT.value),
         )
 
