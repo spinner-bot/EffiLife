@@ -63,6 +63,7 @@ export interface ArchiveData {
   warningInbox: unknown[] | null
   dailyTrigger: Record<string, unknown> | null
   checkin: Record<string, unknown> | null
+  locale?: string
   records: Record<string, unknown[]>
   todos: unknown[]
   planHelper: {
@@ -136,6 +137,7 @@ async function collectAllData(): Promise<ArchiveData> {
     warningInbox: readJSON(STORAGE_KEYS.WARNING_INBOX),
     dailyTrigger: readJSON(STORAGE_KEYS.DAILY_TRIGGER),
     checkin: readJSON(STORAGE_KEYS.CHECKIN),
+    locale: localStorage.getItem('effilife_locale') || 'zh-CN',
     records: getAllRecords(),
     todos: await getRawAll(STORE_NAMES.TODOS),
     planHelper: await collectPlanHelperData(),
@@ -325,6 +327,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       warningInbox: app.warningInbox || null,
       dailyTrigger: app.dailyTrigger || null,
       checkin: app.checkin || null,
+      locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
       todos: Array.isArray(datasets.todos) ? datasets.todos : [],
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
@@ -343,6 +346,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   if (!legacy.version) throw new Error('存档文件格式无效：缺少版本信息')
   return {
     ...legacy,
+    locale: legacy.locale || 'zh-CN',
     todos: Array.isArray(legacy.todos) ? legacy.todos : [],
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
@@ -395,6 +399,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     if (data.checkin) {
       writeJSON(STORAGE_KEYS.CHECKIN, data.checkin)
       await idbSet(STORE_NAMES.CHECKIN, 'data', data.checkin)
+    }
+    if (data.locale === 'zh-CN' || data.locale === 'en-US') {
+      localStorage.setItem('effilife_locale', data.locale)
     }
 
     // 恢复日期记录
