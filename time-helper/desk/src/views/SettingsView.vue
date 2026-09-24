@@ -10,6 +10,7 @@ import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDa
 import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
+import { useI18n } from '@/i18n'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -76,6 +77,7 @@ async function copyEmail() {
 
 const router = useRouter()
 const appStore = useAppStore()
+const { t } = useI18n()
 
 const config = computed(() => appStore.config)
 
@@ -232,6 +234,47 @@ const availableThemes = [
   { type: 'victorian_study' as ThemeType, name: '维多利亚书房', description: '壁炉火焰，灰尘粒子光束中，书香怀旧', category: '艺术' },
   { type: 'underwater_temple' as ThemeType, name: '海底神殿', description: '光线穿透深海，气泡上升，水草摇曳鱼群游过', category: '自然' },
 ]
+
+const themeMeta: Partial<Record<ThemeType, { nameKey: string; descriptionKey: string; categoryKey: string }>> = {
+  solid: { nameKey: 'theme.name.solid', descriptionKey: 'theme.desc.solid', categoryKey: 'theme.category.basic' },
+  gradient: { nameKey: 'theme.name.gradient', descriptionKey: 'theme.desc.gradient', categoryKey: 'theme.category.basic' },
+  glass: { nameKey: 'theme.name.glass', descriptionKey: 'theme.desc.glass', categoryKey: 'theme.category.basic' },
+  neon: { nameKey: 'theme.name.neon', descriptionKey: 'theme.desc.neon', categoryKey: 'theme.category.basic' },
+  ink: { nameKey: 'theme.name.ink', descriptionKey: 'theme.desc.ink', categoryKey: 'theme.category.art' },
+  vintage: { nameKey: 'theme.name.vintage', descriptionKey: 'theme.desc.vintage', categoryKey: 'theme.category.art' },
+  pixel: { nameKey: 'theme.name.pixel', descriptionKey: 'theme.desc.pixel', categoryKey: 'theme.category.art' },
+  midnight_library: { nameKey: 'theme.name.midnightLibrary', descriptionKey: 'theme.desc.midnightLibrary', categoryKey: 'theme.category.art' },
+  japanese_garden: { nameKey: 'theme.name.japaneseGarden', descriptionKey: 'theme.desc.japaneseGarden', categoryKey: 'theme.category.art' },
+  victorian_study: { nameKey: 'theme.name.victorianStudy', descriptionKey: 'theme.desc.victorianStudy', categoryKey: 'theme.category.art' },
+  aurora: { nameKey: 'theme.name.aurora', descriptionKey: 'theme.desc.aurora', categoryKey: 'theme.category.nature' },
+  sakura: { nameKey: 'theme.name.sakura', descriptionKey: 'theme.desc.sakura', categoryKey: 'theme.category.nature' },
+  ocean: { nameKey: 'theme.name.ocean', descriptionKey: 'theme.desc.ocean', categoryKey: 'theme.category.nature' },
+  forest: { nameKey: 'theme.name.forest', descriptionKey: 'theme.desc.forest', categoryKey: 'theme.category.nature' },
+  rainy_city: { nameKey: 'theme.name.rainyCity', descriptionKey: 'theme.desc.rainyCity', categoryKey: 'theme.category.nature' },
+  desert_dusk: { nameKey: 'theme.name.desertDusk', descriptionKey: 'theme.desc.desertDusk', categoryKey: 'theme.category.nature' },
+  bamboo_dawn: { nameKey: 'theme.name.bambooDawn', descriptionKey: 'theme.desc.bambooDawn', categoryKey: 'theme.category.nature' },
+  nordic_polar_night: { nameKey: 'theme.name.nordicPolarNight', descriptionKey: 'theme.desc.nordicPolarNight', categoryKey: 'theme.category.nature' },
+  underwater_temple: { nameKey: 'theme.name.underwaterTemple', descriptionKey: 'theme.desc.underwaterTemple', categoryKey: 'theme.category.nature' },
+  cyberpunk: { nameKey: 'theme.name.cyberpunk', descriptionKey: 'theme.desc.cyberpunk', categoryKey: 'theme.category.tech' },
+  star_voyage: { nameKey: 'theme.name.starVoyage', descriptionKey: 'theme.desc.starVoyage', categoryKey: 'theme.category.tech' },
+  tech: { nameKey: 'theme.name.tech', descriptionKey: 'theme.desc.tech', categoryKey: 'theme.category.tech' },
+}
+
+function themeMetaFor(theme: { type: ThemeType }) {
+  return themeMeta[theme.type] || { nameKey: theme.type, descriptionKey: theme.type, categoryKey: 'theme.category.basic' }
+}
+
+function themeCategory(theme: { type: ThemeType }): string {
+  return themeMetaFor(theme).categoryKey
+}
+
+function themeName(theme: { type: ThemeType }): string {
+  return t(themeMetaFor(theme).nameKey)
+}
+
+function themeDescription(theme: { type: ThemeType }): string {
+  return t(themeMetaFor(theme).descriptionKey)
+}
 
 async function saveTheme() {
   const newConfig: Config = {
@@ -586,18 +629,18 @@ onMounted(async () => {
         <h2>主题设置</h2>
 
         <div class="form-section">
-          <label>基础主题</label>
+          <label>{{ t('theme.category.basic') }}</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes.filter(t => t.category === '基础')"
+              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.basic')"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               @click="themeType = theme.type"
             >
               <div class="theme-info">
-                <span class="theme-name">{{ theme.name }}</span>
-                <span class="theme-desc">{{ theme.description }}</span>
+                <span class="theme-name">{{ themeName(theme) }}</span>
+                <span class="theme-desc">{{ themeDescription(theme) }}</span>
               </div>
               <span v-if="themeType === theme.type" class="selected">✓</span>
             </button>
@@ -605,18 +648,18 @@ onMounted(async () => {
         </div>
 
         <div class="form-section">
-          <label>艺术风格</label>
+          <label>{{ t('theme.category.art') }}</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes.filter(t => t.category === '艺术')"
+              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.art')"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               @click="themeType = theme.type"
             >
               <div class="theme-info">
-                <span class="theme-name">{{ theme.name }}</span>
-                <span class="theme-desc">{{ theme.description }}</span>
+                <span class="theme-name">{{ themeName(theme) }}</span>
+                <span class="theme-desc">{{ themeDescription(theme) }}</span>
               </div>
               <span v-if="themeType === theme.type" class="selected">✓</span>
             </button>
@@ -624,18 +667,18 @@ onMounted(async () => {
         </div>
 
         <div class="form-section">
-          <label>自然风格</label>
+          <label>{{ t('theme.category.nature') }}</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes.filter(t => t.category === '自然')"
+              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.nature')"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               @click="themeType = theme.type"
             >
               <div class="theme-info">
-                <span class="theme-name">{{ theme.name }}</span>
-                <span class="theme-desc">{{ theme.description }}</span>
+                <span class="theme-name">{{ themeName(theme) }}</span>
+                <span class="theme-desc">{{ themeDescription(theme) }}</span>
               </div>
               <span v-if="themeType === theme.type" class="selected">✓</span>
             </button>
@@ -643,18 +686,18 @@ onMounted(async () => {
         </div>
 
         <div class="form-section">
-          <label>科技风格</label>
+          <label>{{ t('theme.category.tech') }}</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes.filter(t => t.category === '科技')"
+              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.tech')"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               @click="themeType = theme.type"
             >
               <div class="theme-info">
-                <span class="theme-name">{{ theme.name }}</span>
-                <span class="theme-desc">{{ theme.description }}</span>
+                <span class="theme-name">{{ themeName(theme) }}</span>
+                <span class="theme-desc">{{ themeDescription(theme) }}</span>
               </div>
               <span v-if="themeType === theme.type" class="selected">✓</span>
             </button>
