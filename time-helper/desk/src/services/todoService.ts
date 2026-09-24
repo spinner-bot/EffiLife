@@ -139,6 +139,13 @@ export function normalizeImportedCategory(value: unknown): TodoCategory | null {
   }
 }
 
+function makeCategoryId(): string {
+  const suffix = typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10)
+  return `CAT-${suffix.toUpperCase()}`
+}
+
 export const TodoCategoryService = {
   async list(): Promise<TodoCategory[]> {
     const categories = await getRawAll<TodoCategory>(STORE_NAMES.TODO_CATEGORIES)
@@ -168,6 +175,32 @@ export const TodoCategoryService = {
       byId.set(inferred.id, inferred)
     }
     return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
+  },
+
+  async create(input: Pick<TodoCategory, 'name' | 'color'> & Partial<Pick<TodoCategory, 'icon' | 'difficulty'>>): Promise<TodoCategory> {
+    const category = normalizeImportedCategory({
+      ...input,
+      id: makeCategoryId(),
+      created_at: new Date().toISOString(),
+    })
+    if (!category) throw new Error('分类名称和颜色不能为空')
+    await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+    return category
+  },
+
+  async update(id: string, patch: Partial<Pick<TodoCategory, 'name' | 'color' | 'icon' | 'difficulty'>>): Promise<TodoCategory> {
+    const categories = await this.list()
+    const current = categories.find((category) => category.id === id)
+    if (!current) throw new Error('分类不存在')
+    const next = normalizeImportedCategory({ ...current, ...patch })
+    if (!next) throw new Error('分类名称和颜色不能为空')
+    await putRaw(STORE_NAMES.TODO_CATEGORIES, next)
+    return next
+  },
+
+  async remove(id: string): Promise<void> {
+    if (id === 'default') throw new Error('默认分类不能删除')
+    await deleteRaw(STORE_NAMES.TODO_CATEGORIES, id)
   },
 }
 

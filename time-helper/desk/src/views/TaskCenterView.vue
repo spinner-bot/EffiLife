@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import {
   TodoCategoryService,
@@ -45,6 +45,14 @@ const planGatewayState = ref<PlanGatewayState>('idle')
 const planTasks = ref<PlanTaskSummary[]>([])
 const planTaskState = ref<PlanGatewayState>('idle')
 const categories = ref<TodoCategory[]>([])
+const showCategoryManager = ref(false)
+const categoryName = ref('')
+const categoryColor = ref('#6366f1')
+const categoryDifficulty = ref(5)
+const editingCategoryId = ref<string | null>(null)
+const editingCategoryName = ref('')
+const editingCategoryColor = ref('#6366f1')
+const editingCategoryDifficulty = ref(5)
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
@@ -119,6 +127,65 @@ async function loadCategories() {
     categories.value = await TodoCategoryService.ensureDefaults(todos.value)
   } catch {
     categories.value = []
+  }
+}
+
+function beginCategoryEdit(item: TodoCategory) {
+  editingCategoryId.value = item.id
+  editingCategoryName.value = item.name
+  editingCategoryColor.value = item.color
+  editingCategoryDifficulty.value = item.difficulty
+}
+
+function cancelCategoryEdit() {
+  editingCategoryId.value = null
+}
+
+async function createCategory() {
+  if (!categoryName.value.trim()) return
+  try {
+    const created = await TodoCategoryService.create({
+      name: categoryName.value,
+      color: categoryColor.value,
+      difficulty: categoryDifficulty.value,
+    })
+    categories.value = [...categories.value, created].sort((a, b) => a.name.localeCompare(b.name))
+    categoryName.value = ''
+    categoryColor.value = '#6366f1'
+    categoryDifficulty.value = 5
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  }
+}
+
+async function saveCategory(item: TodoCategory) {
+  try {
+    const updated = await TodoCategoryService.update(item.id, {
+      name: editingCategoryName.value,
+      color: editingCategoryColor.value,
+      difficulty: editingCategoryDifficulty.value,
+    })
+    categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
+    editingCategoryId.value = null
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  }
+}
+
+async function removeCategory(item: TodoCategory) {
+  if (item.id === 'default' || !confirm(`${t('tasks.deleteCategory')}?`)) return
+  try {
+    const affected = todos.value.filter((todo) => todo.category === item.id)
+    for (const todo of affected) {
+      const updated = await TodoService.update(todo.id, { category: 'default' })
+      replaceTodo(updated)
+    }
+    await TodoCategoryService.remove(item.id)
+    categories.value = categories.value.filter((categoryItem) => categoryItem.id !== item.id)
+    if (categoryFilter.value === item.id) categoryFilter.value = ''
+    if (category.value === item.id) category.value = 'default'
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
   }
 }
 
@@ -347,8 +414,45 @@ watch(selectedPlanId, (planId) => {
           <option value="">{{ t('tasks.allCategories') }}</option>
           <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
         </select>
+        <button class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
+          <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
+        </button>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
         <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
+      </section>
+
+      <section v-if="showCategoryManager" class="category-manager theme-card" @keydown.esc="showCategoryManager = false">
+        <div class="category-manager-header">
+          <div>
+            <h2>{{ t('tasks.manageCategories') }}</h2>
+            <p>{{ t('tasks.categoryHint') }}</p>
+          </div>
+          <button type="button" class="task-edit-cancel" @click="showCategoryManager = false">{{ t('tasks.cancel') }}</button>
+        </div>
+        <form class="category-create" @submit.prevent="createCategory">
+          <input v-model="categoryName" :placeholder="t('tasks.categoryName')" aria-label="category name" />
+          <input v-model="categoryColor" type="color" :aria-label="t('tasks.categoryColor')" />
+          <label>{{ t('tasks.categoryDifficulty') }} <input v-model.number="categoryDifficulty" type="number" min="0" max="10" /></label>
+          <button type="submit" class="task-edit-save" :disabled="!categoryName.trim()"><Plus :size="14" /> {{ t('tasks.add') }}</button>
+        </form>
+        <div class="category-list">
+          <div v-for="item in categories" :key="item.id" class="category-row">
+            <template v-if="editingCategoryId === item.id">
+              <input v-model="editingCategoryName" class="task-edit-input" />
+              <input v-model="editingCategoryColor" type="color" />
+              <input v-model.number="editingCategoryDifficulty" class="category-difficulty" type="number" min="0" max="10" />
+              <button type="button" class="task-edit-save" @click="saveCategory(item)">{{ t('tasks.save') }}</button>
+              <button type="button" class="task-edit-cancel" @click="cancelCategoryEdit">{{ t('tasks.cancel') }}</button>
+            </template>
+            <template v-else>
+              <span class="category-swatch" :style="{ background: item.color }" />
+              <strong>{{ item.name }}</strong>
+              <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
+              <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
+              <button v-if="item.id !== 'default'" type="button" class="task-delete" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
+            </template>
+          </div>
+        </div>
       </section>
 
       <section v-if="isLoading" class="task-empty theme-card">{{ t('tasks.loading') }}</section>
@@ -451,6 +555,7 @@ watch(selectedPlanId, (planId) => {
 .task-tabs button { border: 0; border-radius: 7px; padding: 7px 13px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
 .task-tabs button.active { color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08)); }
 .task-filter-select { min-width: 120px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-category-manage { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-list { display: grid; gap: 10px; }
@@ -498,6 +603,20 @@ watch(selectedPlanId, (planId) => {
 .subtask-add-form button:disabled { cursor: wait; opacity: .6; }
 .task-empty { display: grid; place-items: center; gap: 9px; min-height: 220px; border: 1px dashed var(--color-border); border-radius: 16px; color: var(--color-text-tertiary); text-align: center; }
 .task-empty strong { color: var(--color-text-secondary); }
+.category-manager { display: grid; gap: 14px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; }
+.category-manager-header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.category-manager-header h2 { margin: 0; font-size: 15px; }
+.category-manager-header p { margin: 4px 0 0; color: var(--color-text-tertiary); font-size: 12px; }
+.category-create { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.category-create input:not([type='color']), .category-create label input { width: 90px; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
+.category-create input:first-child { min-width: 180px; flex: 1; }
+.category-create input[type='color'], .category-row input[type='color'] { width: 32px; height: 32px; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.category-list { display: grid; gap: 7px; }
+.category-row { display: flex; align-items: center; gap: 9px; min-height: 34px; border-top: 1px solid var(--color-border); padding-top: 7px; }
+.category-row strong { min-width: 110px; color: var(--color-text-primary); font-size: 13px; }
+.category-row small { margin-right: auto; color: var(--color-text-tertiary); font-size: 11px; }
+.category-swatch { width: 10px; height: 10px; border-radius: 50%; }
+.category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
 @media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } }
 </style>
