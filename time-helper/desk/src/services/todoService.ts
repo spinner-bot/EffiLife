@@ -38,6 +38,7 @@ export interface UnifiedTodo {
   important?: boolean
   start_time?: string
   estimated_time?: number
+  related_time_record_ids?: string[]
 }
 
 function now(): string {
@@ -88,7 +89,21 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     important: todo.important,
     start_time: todo.start_time,
     estimated_time: todo.estimated_time,
+    related_time_record_ids: todo.related_time_record_ids,
   }
+}
+
+/**
+ * Normalize a record coming from an archive or another module before it is
+ * written to the local todo store. Invalid records are rejected so imports do
+ * not create silently corrupted tasks.
+ */
+export function normalizeImportedTodo(value: unknown): UnifiedTodo | null {
+  if (!value || typeof value !== 'object') return null
+  const candidate = value as Partial<UnifiedTodo>
+  if (typeof candidate.title !== 'string' || !candidate.title.trim()) return null
+  if (candidate.id !== undefined && typeof candidate.id !== 'string') return null
+  return normalize(candidate as Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>)
 }
 
 export const TodoService = {

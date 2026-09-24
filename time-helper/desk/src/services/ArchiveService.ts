@@ -1,6 +1,7 @@
 // 存档服务 - 处理数据导出/导入/重置
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
+import { normalizeImportedTodo, type UnifiedTodo } from './todoService'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -67,7 +68,7 @@ export interface ArchiveData {
   checkin: Record<string, unknown> | null
   locale?: string
   records: Record<string, unknown[]>
-  todos: unknown[]
+  todos: UnifiedTodo[]
   planHelper: {
     available: boolean
     plans: unknown[]
@@ -319,6 +320,13 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       available: Array.isArray(datasets.plans),
       plans: Array.isArray(datasets.plans) ? datasets.plans : [],
     }
+    const importedTodos = Array.isArray(datasets.todos)
+      ? datasets.todos.map(normalizeImportedTodo)
+      : []
+    if (importedTodos.some((todo) => todo === null)) {
+      throw new Error('待办数据包含无效任务：缺少有效标题或任务编号类型错误')
+    }
+
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
@@ -334,7 +342,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
-      todos: Array.isArray(datasets.todos) ? datasets.todos : [],
+      todos: importedTodos as UnifiedTodo[],
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
     }
   }
@@ -349,10 +357,16 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     throw new Error('旧版 archive.json 无效')
   }
   if (!legacy.version) throw new Error('存档文件格式无效：缺少版本信息')
+  const importedTodos = Array.isArray(legacy.todos)
+    ? legacy.todos.map(normalizeImportedTodo)
+    : []
+  if (importedTodos.some((todo) => todo === null)) {
+    throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
+  }
   return {
     ...legacy,
     locale: legacy.locale || 'zh-CN',
-    todos: Array.isArray(legacy.todos) ? legacy.todos : [],
+    todos: importedTodos as UnifiedTodo[],
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
 }
