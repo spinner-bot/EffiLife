@@ -165,27 +165,45 @@ function startMetaEdit() {
 
 async function saveSection() {
   if (!selectedPlan.value || !sectionName.value.trim()) return
-  await addPlanSection(selectedPlan.value.id, sectionName.value.trim(), sectionInfo.value.trim())
-  sectionName.value = ''
-  sectionInfo.value = ''
-  selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+  const planId = selectedPlan.value.id
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await addPlanSection(planId, sectionName.value.trim(), sectionInfo.value.trim())
+    sectionName.value = ''
+    sectionInfo.value = ''
+    selectedPlan.value = await getPlanFull(planId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function saveTask() {
   if (!selectedPlan.value || !taskContent.value.trim()) return
+  const planId = selectedPlan.value.id
   const minutes = Math.max(0, Number(taskMinutes.value) || 0)
-  if (editingTaskId.value) {
-    await updatePlanTask(selectedPlan.value.id, editingTaskId.value, taskContent.value.trim(), minutes)
-  } else {
-    if (taskSectionIndex.value === null) return
-    await addPlanTask(selectedPlan.value.id, taskSectionIndex.value, taskContent.value.trim(), minutes)
+  if (!editingTaskId.value && taskSectionIndex.value === null) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    if (editingTaskId.value) {
+      await updatePlanTask(planId, editingTaskId.value, taskContent.value.trim(), minutes)
+    } else if (taskSectionIndex.value !== null) {
+      await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
+    }
+    taskContent.value = ''
+    taskMinutes.value = 30
+    taskSectionIndex.value = null
+    editingTaskId.value = null
+    editingTaskSectionIndex.value = null
+    selectedPlan.value = await getPlanFull(planId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
   }
-  taskContent.value = ''
-  taskMinutes.value = 30
-  taskSectionIndex.value = null
-  editingTaskId.value = null
-  editingTaskSectionIndex.value = null
-  selectedPlan.value = await getPlanFull(selectedPlan.value.id)
 }
 
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
@@ -206,14 +224,32 @@ function cancelTaskEdit() {
 
 async function completeTask(taskId: string) {
   if (!selectedPlan.value) return
-  await completePlanTask(selectedPlan.value.id, taskId)
-  selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+  const planId = selectedPlan.value.id
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await completePlanTask(planId, taskId)
+    selectedPlan.value = await getPlanFull(planId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function deleteTask(taskId: string) {
   if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
-  await deletePlanTask(selectedPlan.value.id, taskId)
-  selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+  const planId = selectedPlan.value.id
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await deletePlanTask(planId, taskId)
+    selectedPlan.value = await getPlanFull(planId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 function backFromDetail() {
@@ -308,11 +344,11 @@ onMounted(loadPlans)
         <section class="section-editor theme-card">
           <input v-model="sectionName" :placeholder="t('plans.sectionName')" />
           <input v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
-          <button class="plans-secondary" @click="saveSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
+          <button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
         </section>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><button class="plans-secondary" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button></header>
           <div v-if="taskSectionIndex === section.index || editingTaskSectionIndex === section.index" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <label>{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
@@ -321,11 +357,11 @@ onMounted(loadPlans)
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
-            <button class="task-complete" :disabled="!!task.finish" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
+            <button class="task-complete" :disabled="!!task.finish || isLoading" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
-            <button class="task-edit" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button class="task-delete" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+            <button class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
+            <button class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="Object.keys(section.groups).length" class="group-list"><span v-for="(group, key) in section.groups" :key="key">{{ key }} · {{ group.title }}</span></div>
         </section>
@@ -333,7 +369,7 @@ onMounted(loadPlans)
     </main>
 
     <div v-if="showCreate" class="modal-backdrop" @click.self="showCreate = false">
-      <form class="create-modal theme-card" @submit.prevent="createPlan">
+      <form class="create-modal theme-card" @submit.prevent="createPlan" @keydown.esc="showCreate = false">
         <h2>{{ t('plans.create') }}</h2>
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input v-model="planName" required autofocus /></label>
