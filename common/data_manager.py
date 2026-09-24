@@ -25,6 +25,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from .schemas.core import CrossReference, UnifiedTimestamp
+from .data_exchange import export_bundle as write_bundle, read_bundle as load_bundle
 
 
 class DataManager:
@@ -197,6 +198,30 @@ class DataManager:
             json.dump(backup_data, f, ensure_ascii=False, indent=2)
 
         return str(backup_file)
+
+    # ========== 统一数据交换 ==========
+
+    def export_bundle(
+        self,
+        output_path: str,
+        datasets: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """导出统一数据包，自动包含当前跨模块引用。
+
+        ``datasets`` 允许模块适配器加入自己的 canonical 数据。DataManager
+        只负责共享部分和交换协议，不读取或改写模块私有存储。
+        """
+        if not self._loaded:
+            self.load()
+        payload = dict(datasets or {})
+        payload["cross_refs"] = [reference.to_dict() for reference in self._references]
+        return str(write_bundle(output_path, payload, metadata=metadata))
+
+    @staticmethod
+    def read_bundle(bundle_path: str):
+        """读取并校验统一数据包，不修改本地数据。"""
+        return load_bundle(bundle_path)
 
     # ========== 模块数据目录注册 ==========
 
