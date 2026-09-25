@@ -48,6 +48,8 @@ const editingCategory = ref('default')
 const editingPlanId = ref('')
 const editingPlanTaskId = ref('')
 const isSaving = ref(false)
+const creatingTodo = ref(false)
+const completingTodoId = ref<string | null>(null)
 const expandedTodoId = ref<string | null>(null)
 const subtaskTitle = ref('')
 const subtaskSaving = ref(false)
@@ -153,7 +155,8 @@ async function loadTodos() {
 }
 
 async function addTodo() {
-  if (!title.value.trim()) return
+  if (!title.value.trim() || creatingTodo.value) return
+  creatingTodo.value = true
   try {
     const todo = await TodoService.create({
       title: title.value,
@@ -181,6 +184,8 @@ async function addTodo() {
     selectedPlanTaskId.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
+  } finally {
+    creatingTodo.value = false
   }
 }
 
@@ -298,7 +303,8 @@ async function loadPlanTasks(planId: string) {
 }
 
 async function completeTodo(todo: UnifiedTodo) {
-  if (todo.status === 'completed') return
+  if (todo.status === 'completed' || completingTodoId.value === todo.id) return
+  completingTodoId.value = todo.id
   try {
     const updated = await TodoService.complete(todo.id)
     const index = todos.value.findIndex((item) => item.id === todo.id)
@@ -312,6 +318,8 @@ async function completeTodo(todo: UnifiedTodo) {
     }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+  } finally {
+    completingTodoId.value = null
   }
 }
 
@@ -563,7 +571,7 @@ watch(selectedPlanId, (planId) => {
           <option value="">{{ t('tasks.noTask') }}</option>
           <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
-        <button class="task-add" @click="AudioManager.playSound('click'); addTodo()">
+        <button class="task-add" :disabled="creatingTodo || !title.trim()" @click="AudioManager.playSound('click'); addTodo()">
           <Plus :size="17" /> {{ t('tasks.add') }}
         </button>
       </section>
@@ -642,7 +650,7 @@ watch(selectedPlanId, (planId) => {
       </section>
       <section v-else class="task-list">
         <article v-for="todo in visibleTodos" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed' }">
-          <button class="task-check" :disabled="todo.status === 'completed'" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
+          <button class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
           <div v-if="editingId === todo.id" class="task-edit-form">
