@@ -23,6 +23,7 @@ const availableTags = computed(() => {
 const isEditing = ref(false)
 const editingIndex = ref(-1)
 const showForm = ref(false)
+const isSaving = ref(false)
 
 // 表单数据
 const formMode = ref<'time' | 'duration'>('time')
@@ -96,6 +97,16 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
 
 // 保存记录
 async function saveRecord() {
+  if (isSaving.value) return
+  isSaving.value = true
+  try {
+    await saveRecordInternal()
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function saveRecordInternal() {
   // 验证内容
   if (!formContent.value.trim()) {
     alert('请填写内容')
@@ -285,7 +296,7 @@ onMounted(() => {
 
     <!-- 表单弹窗 -->
     <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
-      <div class="modal">
+      <div class="modal" @keydown.esc="showForm = false">
         <div class="modal-header">
           <h2>{{ isEditing ? '编辑记录' : '新增记录' }}</h2>
           <button class="close-btn" @click="showForm = false">
@@ -375,7 +386,7 @@ onMounted(() => {
 
         <div class="modal-footer">
           <button class="btn secondary" @click="showForm = false">取消</button>
-          <button class="btn primary" @click="saveRecord">
+          <button class="btn primary" :disabled="isSaving" @click="saveRecord">
             <Check :size="16" />
             <span>保存</span>
           </button>
