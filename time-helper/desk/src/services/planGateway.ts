@@ -44,12 +44,32 @@ export interface PlanArchiveSummary {
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
 
+interface ApiPayload<T> {
+  success?: boolean
+  data?: T
+  error?: string
+}
+
+async function readPayload<T>(response: Response): Promise<ApiPayload<T>> {
+  const raw = await response.text()
+  let payload: ApiPayload<T>
+  try {
+    payload = raw ? JSON.parse(raw) as ApiPayload<T> : {}
+  } catch {
+    throw new Error(response.ok ? '计划服务返回无效响应' : `计划服务响应异常（${response.status}）`)
+  }
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.error || `计划服务响应异常（${response.status}）`)
+  }
+  return payload
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${PLAN_HELPER_ORIGIN}${path}`, {
     ...options,
     headers: { Accept: 'application/json', ...(options.headers || {}) },
   })
-  const payload = await response.json() as { success?: boolean; data?: T; error?: string }
+  const payload = await readPayload<T>(response)
   if (!response.ok || !payload.success) throw new Error(payload.error || `计划服务响应异常（${response.status}）`)
   return payload.data as T
 }
@@ -60,7 +80,7 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) throw new Error(`计划服务响应异常（${response.status}）`)
-  const payload = await response.json() as { success?: boolean; data?: { plans?: PlanSummary[] }; error?: string }
+  const payload = await readPayload<{ plans?: PlanSummary[] }>(response)
   if (!payload.success) throw new Error(payload.error || '计划服务返回失败')
   return (payload.data?.plans || []).map((plan) => ({
     ...plan,
@@ -79,7 +99,7 @@ export async function getPlanTasks(planId: string, signal?: AbortSignal): Promis
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) throw new Error(`计划任务服务响应异常（${response.status}）`)
-  const payload = await response.json() as { success?: boolean; data?: { tasks?: PlanTaskSummary[] }; error?: string }
+  const payload = await readPayload<{ tasks?: PlanTaskSummary[] }>(response)
   if (!payload.success) throw new Error(payload.error || '计划任务服务返回失败')
   return (payload.data?.tasks || []).filter((task) => task.is_active !== false)
 }
