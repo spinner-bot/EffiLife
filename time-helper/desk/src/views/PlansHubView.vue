@@ -90,6 +90,7 @@ async function loadPlans() {
 }
 
 async function archiveSelectedPlan() {
+  if (isLoading.value) return
   if (!selectedPlan.value || !confirm(t('plans.archiveConfirm'))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
@@ -107,6 +108,7 @@ async function archiveSelectedPlan() {
 }
 
 async function restoreArchive(archive: PlanArchiveSummary) {
+  if (isLoading.value) return
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -125,6 +127,7 @@ async function openEvents() {
 }
 
 async function openPlan(plan: PlanSummary) {
+  if (isLoading.value) return
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -138,6 +141,7 @@ async function openPlan(plan: PlanSummary) {
 }
 
 async function createPlan() {
+  if (isLoading.value) return
   const name = planName.value.trim()
   if (!name || !planDate.value) return
   isLoading.value = true
@@ -156,6 +160,7 @@ async function createPlan() {
 }
 
 async function savePlanMeta() {
+  if (isLoading.value) return
   if (!selectedPlan.value || !planName.value.trim() || !planDate.value) return
   isLoading.value = true
   try {
@@ -178,6 +183,7 @@ function startMetaEdit() {
 }
 
 async function saveSection() {
+  if (isLoading.value) return
   if (!selectedPlan.value || !sectionName.value.trim()) return
   const planId = selectedPlan.value.id
   isLoading.value = true
@@ -195,6 +201,7 @@ async function saveSection() {
 }
 
 async function saveTask() {
+  if (isLoading.value) return
   if (!selectedPlan.value || !taskContent.value.trim()) return
   const planId = selectedPlan.value.id
   const minutes = Math.max(0, Number(taskMinutes.value) || 0)
@@ -221,6 +228,7 @@ async function saveTask() {
 }
 
 async function saveLog() {
+  if (isLoading.value) return
   if (!selectedPlan.value || !logContent.value.trim()) return
   isLoading.value = true
   errorMessage.value = ''
@@ -281,6 +289,7 @@ function cancelGroupEdit() {
 }
 
 async function saveGroup() {
+  if (isLoading.value) return
   if (!selectedPlan.value || groupSectionIndex.value === null || !groupTitle.value.trim()) return
   isLoading.value = true
   errorMessage.value = ''
@@ -300,6 +309,7 @@ async function saveGroup() {
 }
 
 async function deleteGroup(sectionIndex: number, groupKey: string) {
+  if (isLoading.value) return
   if (!selectedPlan.value || !confirm(t('plans.deleteGroupConfirm'))) return
   isLoading.value = true
   try {
@@ -330,6 +340,7 @@ function cancelTaskEdit() {
 }
 
 async function completeTask(taskId: string, displayTaskId = taskId) {
+  if (isLoading.value) return
   if (!selectedPlan.value) return
   const planId = selectedPlan.value.id
   isLoading.value = true
@@ -350,6 +361,7 @@ async function completeTask(taskId: string, displayTaskId = taskId) {
 }
 
 async function deleteTask(taskId: string) {
+  if (isLoading.value) return
   if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
   const planId = selectedPlan.value.id
   isLoading.value = true
