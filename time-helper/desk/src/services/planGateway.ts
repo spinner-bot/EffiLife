@@ -64,8 +64,16 @@ async function readPayload<T>(response: Response): Promise<ApiPayload<T>> {
   return payload
 }
 
+async function fetchPlan(path: string, options: RequestInit = {}): Promise<Response> {
+  try {
+    return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, options)
+  } catch {
+    throw new Error('计划服务不可用，请确认服务已启动')
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${PLAN_HELPER_ORIGIN}${path}`, {
+  const response = await fetchPlan(path, {
     ...options,
     headers: { Accept: 'application/json', ...(options.headers || {}) },
   })
@@ -75,7 +83,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSummary[]> {
-  const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/plans`, {
+  const response = await fetchPlan('/api/plans', {
     signal,
     headers: { Accept: 'application/json' },
   })
@@ -94,7 +102,7 @@ export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
 }
 
 export async function getPlanTasks(planId: string, signal?: AbortSignal): Promise<PlanTaskSummary[]> {
-  const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/plans/${encodeURIComponent(planId)}/tasks`, {
+  const response = await fetchPlan(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
     signal,
     headers: { Accept: 'application/json' },
   })
