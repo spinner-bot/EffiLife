@@ -433,7 +433,7 @@ onMounted(loadPlans)
             <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
             <strong>{{ plan.name }}</strong>
             <span>{{ formatPlanDate(plan.date) }}</span>
-            <small>{{ plan.total_tasks || 0 }} {{ t('tasks.completed') }}</small>
+            <small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small>
           </button>
         </section>
         <section class="archives-panel theme-card">
