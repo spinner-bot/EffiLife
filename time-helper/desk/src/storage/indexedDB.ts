@@ -1,7 +1,7 @@
 // IndexedDB 存储层 - 提供持久化存储，localStorage 作为降级方案
 
 const DB_NAME = 'efflife_db'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORAGE_PREFIX = 'efflife_'
 
 // 对象存储名称
@@ -20,6 +20,7 @@ export const STORE_NAMES = {
   WARNING_INBOX: 'warning_inbox',
   DAILY_TRIGGER: 'daily_trigger',
   CHECKIN: 'checkin',
+  PLAN_HELPER_SNAPSHOT: 'plan_helper_snapshot',
 } as const
 
 let dbInstance: IDBDatabase | null = null
@@ -106,6 +107,9 @@ export async function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_NAMES.CHECKIN)) {
         db.createObjectStore(STORE_NAMES.CHECKIN, { keyPath: 'key' })
+      }
+      if (!db.objectStoreNames.contains(STORE_NAMES.PLAN_HELPER_SNAPSHOT)) {
+        db.createObjectStore(STORE_NAMES.PLAN_HELPER_SNAPSHOT, { keyPath: 'key' })
       }
     }
   })

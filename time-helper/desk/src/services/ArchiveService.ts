@@ -150,7 +150,14 @@ async function requestPlanHelper(path: string, options: RequestInit = {}): Promi
 
 async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    return { available: false, plans: [], unavailableReason: getPlanRuntimeUnavailableReason() }
+    try {
+      const { get, STORE_NAMES } = await import('@/storage')
+      const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
+      if (Array.isArray(plans)) return { available: true, plans }
+    } catch {
+      // Fall through to the explicit unavailable result.
+    }
+    return { available: false, plans: [], unavailableReason: '移动端尚未导入事件计划快照' }
   }
   try {
     const response = await requestPlanHelper('/api/data/export', {
@@ -162,6 +169,12 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
       data?: { plans?: unknown[] }
     }
     if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error('Invalid plan-helper export')
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', payload.data.plans)
+    } catch {
+      // The HTTP export remains valid even if the optional cache is unavailable.
+    }
     return { available: true, plans: payload.data.plans }
   } catch {
     return { available: false, plans: [], unavailableReason: 'plan-helper 服务当前不可连接' }
@@ -552,7 +565,20 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     }
 
     const warnings: string[] = []
-    if (data.planHelper?.available && Array.isArray(data.planHelper.plans) && getPlanRuntime() !== 'mobile-unavailable') {
+    if (getPlanRuntime() === 'mobile-unavailable') {
+      try {
+        await idbSet(
+          STORE_NAMES.PLAN_HELPER_SNAPSHOT,
+          'plans',
+          data.planHelper?.available && Array.isArray(data.planHelper.plans) ? data.planHelper.plans : [],
+        )
+      } catch (error) {
+        warnings.push(`事件计划快照保存失败：${error instanceof Error ? error.message : '本地存储不可用'}`)
+      }
+      if (!data.planHelper?.available) {
+        warnings.push(`事件计划未恢复：${data.planHelper?.unavailableReason || '存档不包含事件计划快照'}`)
+      }
+    } else if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
         const response = await requestPlanHelper('/api/data/import', {
           method: 'POST',
@@ -577,7 +603,15 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 }
 
 async function clearPlanHelperData(): Promise<void> {
-  if (getPlanRuntime() === 'mobile-unavailable') return
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', [])
+    } catch {
+      // Local reset remains valid if IndexedDB is unavailable.
+    }
+    return
+  }
   try {
     await requestPlanHelper('/api/data/import', {
       method: 'POST',

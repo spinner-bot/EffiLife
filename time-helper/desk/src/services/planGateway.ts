@@ -45,6 +45,87 @@ export interface PlanArchiveSummary {
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
 
+type RawPlan = {
+  head?: { index?: number | string; name?: string; date?: [number, number, number] }
+  main?: Array<{ name?: string; info?: string; plan?: Array<Record<string, unknown> | null>; group?: Record<string, { title?: string; description?: string }> }>
+  log?: Array<{ index?: number; day?: number; plan?: string; time?: [number, number]; content?: string }>
+}
+type RawSection = NonNullable<RawPlan['main']>[number]
+
+async function getMobileRawPlans(): Promise<RawPlan[]> {
+  const { get, STORE_NAMES } = await import('@/storage')
+  const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
+  return Array.isArray(plans) ? plans.filter((plan): plan is RawPlan => Boolean(plan && typeof plan === 'object')) : []
+}
+
+function planLetter(index: number): string {
+  let value = index
+  let result = ''
+  do {
+    result = String.fromCharCode(65 + (value % 26)) + result
+    value = Math.floor(value / 26) - 1
+  } while (value >= 0)
+  return result
+}
+
+function activeRawTasks(section: RawSection) {
+  const rawTasks = Array.isArray(section.plan) ? section.plan : []
+  return rawTasks.flatMap((task, internalIndex) => {
+    if (internalIndex === 0 || !task || task.is_active === false) return []
+    return [{ task, internalIndex }]
+  })
+}
+
+function toMobilePlanSummary(raw: RawPlan, fallbackIndex: number): PlanSummary {
+  const sections = Array.isArray(raw.main) ? raw.main : []
+  const tasks = sections.flatMap(activeRawTasks)
+  const completed = tasks.filter(({ task }) => Boolean(task.finish)).length
+  const estimatedMinutes = tasks.reduce((total, { task }) => total + Math.max(0, Number(task.t_m || 0) * 6), 0)
+  const id = String(raw.head?.index ?? fallbackIndex)
+  return {
+    id,
+    name: String(raw.head?.name || `Plan ${id}`),
+    date: Array.isArray(raw.head?.date) ? raw.head.date : undefined,
+    total_tasks: tasks.length,
+    completed_tasks: completed,
+    progress_percentage: tasks.length ? (completed / tasks.length) * 100 : 0,
+    estimated_minutes: estimatedMinutes,
+  }
+}
+
+function findMobilePlan(plans: RawPlan[], planId: string): RawPlan | undefined {
+  return plans.find((plan, index) => String(plan.head?.index ?? index) === String(planId))
+}
+
+function toMobilePlanFull(raw: RawPlan, fallbackIndex: number): PlanFull {
+  const summary = toMobilePlanSummary(raw, fallbackIndex)
+  const sections = (Array.isArray(raw.main) ? raw.main : []).map((section, sectionIndex) => {
+    const letter = planLetter(sectionIndex)
+    const tasks = activeRawTasks(section).map(({ task, internalIndex }, displayIndex) => ({
+      display_id: `${letter}${displayIndex + 1}`,
+      internal_id: `${letter}${internalIndex}`,
+      internal_index: internalIndex,
+      content: String(task.content || ''),
+      time_minutes: Math.max(0, Number(task.t_m || 0) * 6),
+      is_active: true,
+      finish: task.finish as PlanTaskSummary['finish'],
+    }))
+    const groups = Object.fromEntries(Object.entries(section.group || {}).map(([key, group]) => [key, {
+      title: String(group?.title || ''),
+      description: String(group?.description || ''),
+    }]))
+    return { index: sectionIndex, letter, name: String(section.name || ''), info: String(section.info || ''), tasks, groups }
+  })
+  const logs = (Array.isArray(raw.log) ? raw.log : []).map((log, index) => ({
+    index: Number(log.index ?? index),
+    day: log.day,
+    plan: String(log.plan || 'base'),
+    time: (Array.isArray(log.time) && log.time.length >= 2 ? [Number(log.time[0]), Number(log.time[1])] : [99, 99]) as [number, number],
+    content: String(log.content || ''),
+  }))
+  return { ...summary, sections, logs }
+}
+
 interface ApiPayload<T> {
   success?: boolean
   data?: T
@@ -98,6 +179,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSummary[]> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plans = await getMobileRawPlans()
+    return plans.map((plan, index) => toMobilePlanSummary(plan, index))
+  }
   const response = await fetchPlan('/api/plans', {
     signal,
     headers: { Accept: 'application/json' },
@@ -112,11 +197,17 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
 }
 
 export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
+  if (getPlanRuntime() === 'mobile-unavailable') return []
   const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
   return data.archives || []
 }
 
 export async function getPlanTasks(planId: string, signal?: AbortSignal): Promise<PlanTaskSummary[]> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plans = await getMobileRawPlans()
+    const plan = findMobilePlan(plans, planId)
+    return plan ? toMobilePlanFull(plan, plans.indexOf(plan)).sections.flatMap((section) => section.tasks) : []
+  }
   const response = await fetchPlan(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
     signal,
     headers: { Accept: 'application/json' },
@@ -128,6 +219,12 @@ export async function getPlanTasks(planId: string, signal?: AbortSignal): Promis
 }
 
 export async function getPlanFull(planId: string): Promise<PlanFull> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plans = await getMobileRawPlans()
+    const plan = findMobilePlan(plans, planId)
+    if (!plan) throw new Error('移动端未找到该事件计划快照')
+    return toMobilePlanFull(plan, plans.indexOf(plan))
+  }
   return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}/full`)
 }
 
