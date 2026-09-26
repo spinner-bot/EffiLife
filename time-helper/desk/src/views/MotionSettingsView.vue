@@ -4,8 +4,10 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft, Gauge, Sparkles, Zap, RotateCcw, Check } from 'lucide-vue-next'
 import { MotionManager } from '@/motion'
 import type { MotionSettings } from '@/motion'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const settings = ref<MotionSettings>(MotionManager.getSettings())
 const isOptimizing = ref(false)
@@ -15,28 +17,28 @@ const recommendation = ref<MotionSettings | null>(null)
 
 // 帧率选项
 const fpsOptions = [
-  { value: 5, label: '5 FPS', description: '极低功耗' },
-  { value: 10, label: '10 FPS', description: '省电模式' },
-  { value: 15, label: '15 FPS', description: '平衡模式' },
-  { value: 30, label: '30 FPS', description: '流畅模式' }
+  { value: 5, label: '5 FPS', descriptionKey: 'settings.motion.fps.lowest' },
+  { value: 10, label: '10 FPS', descriptionKey: 'settings.motion.fps.powerSave' },
+  { value: 15, label: '15 FPS', descriptionKey: 'settings.motion.fps.balanced' },
+  { value: 30, label: '30 FPS', descriptionKey: 'settings.motion.fps.smooth' }
 ]
 
 // 粒子数量倍率选项
 const particleMultiplierOptions = [
-  { value: 0.5, label: '50%', description: '稀疏' },
-  { value: 1.0, label: '100%', description: '标准' },
-  { value: 1.5, label: '150%', description: '密集' },
-  { value: 2.0, label: '200%', description: '极密' }
+  { value: 0.5, label: '50%', descriptionKey: 'settings.motion.density.sparse' },
+  { value: 1.0, label: '100%', descriptionKey: 'settings.motion.density.standard' },
+  { value: 1.5, label: '150%', descriptionKey: 'settings.motion.density.dense' },
+  { value: 2.0, label: '200%', descriptionKey: 'settings.motion.density.veryDense' }
 ]
 
 // 动效速度选项
 const animationSpeedOptions = [
-  { value: 0.5, label: '0.5x', description: '慢速' },
-  { value: 0.75, label: '0.75x', description: '较慢' },
-  { value: 1.0, label: '1.0x', description: '标准' },
-  { value: 1.25, label: '1.25x', description: '较快' },
-  { value: 1.5, label: '1.5x', description: '快速' },
-  { value: 2.0, label: '2.0x', description: '极速' }
+  { value: 0.5, label: '0.5x', descriptionKey: 'settings.motion.speed.slow' },
+  { value: 0.75, label: '0.75x', descriptionKey: 'settings.motion.speed.ratherSlow' },
+  { value: 1.0, label: '1.0x', descriptionKey: 'settings.motion.speed.standard' },
+  { value: 1.25, label: '1.25x', descriptionKey: 'settings.motion.speed.ratherFast' },
+  { value: 1.5, label: '1.5x', descriptionKey: 'settings.motion.speed.fast' },
+  { value: 2.0, label: '2.0x', descriptionKey: 'settings.motion.speed.veryFast' }
 ]
 
 // 更新设置
@@ -59,7 +61,7 @@ async function runAutoOptimize() {
     showRecommendation.value = true
   } catch (e) {
     console.error('Auto optimize failed:', e)
-    alert('性能测试失败，请重试')
+    alert(t('settings.motion.testFailed'))
   } finally {
     isOptimizing.value = false
   }
@@ -71,13 +73,13 @@ function applyRecommendation() {
     MotionManager.applyRecommendation(recommendation.value)
     settings.value = MotionManager.getSettings()
     showRecommendation.value = false
-    alert('已应用推荐设置')
+    alert(t('settings.motion.applied'))
   }
 }
 
 // 重置为默认
 function resetToDefault() {
-  if (!confirm('确定恢复默认动效设置？')) return
+  if (!confirm(t('settings.motion.resetConfirm'))) return
   MotionManager.updateSettings({
     enabled: true,
     targetFps: 15,
@@ -94,12 +96,12 @@ function resetToDefault() {
 // 获取性能评级
 function getPerformanceRating(): { label: string; color: string } {
   const results = MotionManager.getBenchmarkResults()
-  if (!results) return { label: '未测试', color: 'var(--color-text-tertiary)' }
+  if (!results) return { label: t('settings.motion.rating.untested'), color: 'var(--color-text-tertiary)' }
 
-  if (results.score >= 80) return { label: '优秀', color: 'var(--color-progress-high)' }
-  if (results.score >= 50) return { label: '良好', color: 'var(--color-progress-good)' }
-  if (results.score >= 25) return { label: '一般', color: 'var(--color-progress-medium)' }
-  return { label: '较差', color: 'var(--color-progress-low)' }
+  if (results.score >= 80) return { label: t('settings.motion.rating.excellent'), color: 'var(--color-progress-high)' }
+  if (results.score >= 50) return { label: t('settings.motion.rating.good'), color: 'var(--color-progress-good)' }
+  if (results.score >= 25) return { label: t('settings.motion.rating.fair'), color: 'var(--color-progress-medium)' }
+  return { label: t('settings.motion.rating.poor'), color: 'var(--color-progress-low)' }
 }
 
 const performanceRating = computed(() => getPerformanceRating())
@@ -110,21 +112,21 @@ const performanceRating = computed(() => getPerformanceRating())
     <header class="header">
       <button class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
-        <span>返回设置</span>
+        <span>{{ t('settings.motion.back') }}</span>
       </button>
-      <h1>动效设置</h1>
+      <h1>{{ t('settings.motion.title') }}</h1>
     </header>
 
     <main class="main-content">
       <!-- 主开关 -->
       <section class="settings-section">
         <div class="section-header">
-          <h2>动效开关</h2>
+          <h2>{{ t('settings.motion.switches') }}</h2>
         </div>
         <label class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">启用动效</span>
-            <span class="toggle-desc">关闭后所有动画效果将停止</span>
+            <span class="toggle-label">{{ t('settings.motion.enabled') }}</span>
+            <span class="toggle-desc">{{ t('settings.motion.enabledDesc') }}</span>
           </div>
           <input
             type="checkbox"
@@ -137,7 +139,7 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 帧率设置 -->
       <section class="settings-section">
         <div class="section-header">
-          <h2>帧率</h2>
+          <h2>{{ t('settings.motion.fps.title') }}</h2>
           <Gauge :size="20" class="section-icon" />
         </div>
         <div class="option-grid">
@@ -149,7 +151,7 @@ const performanceRating = computed(() => getPerformanceRating())
             @click="updateSetting('targetFps', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
-            <span class="option-desc">{{ opt.description }}</span>
+            <span class="option-desc">{{ t(opt.descriptionKey) }}</span>
           </button>
         </div>
       </section>
@@ -157,14 +159,14 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 动画效果开关 -->
       <section class="settings-section">
         <div class="section-header">
-          <h2>动画效果</h2>
+          <h2>{{ t('settings.motion.effects') }}</h2>
           <Sparkles :size="20" class="section-icon" />
         </div>
 
         <label class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">主题画布</span>
-            <span class="toggle-desc">背景的动态效果（如水墨、极光等）</span>
+            <span class="toggle-label">{{ t('settings.motion.themeCanvas') }}</span>
+            <span class="toggle-desc">{{ t('settings.motion.themeCanvasDesc') }}</span>
           </div>
           <input
             type="checkbox"
@@ -175,8 +177,8 @@ const performanceRating = computed(() => getPerformanceRating())
 
         <label class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">粒子效果</span>
-            <span class="toggle-desc">樱花、萤火虫等粒子动画</span>
+            <span class="toggle-label">{{ t('settings.motion.particles') }}</span>
+            <span class="toggle-desc">{{ t('settings.motion.particlesDesc') }}</span>
           </div>
           <input
             type="checkbox"
@@ -187,8 +189,8 @@ const performanceRating = computed(() => getPerformanceRating())
 
         <label class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">过渡动画</span>
-            <span class="toggle-desc">页面切换、弹窗等过渡效果</span>
+            <span class="toggle-label">{{ t('settings.motion.transitions') }}</span>
+            <span class="toggle-desc">{{ t('settings.motion.transitionsDesc') }}</span>
           </div>
           <input
             type="checkbox"
@@ -201,7 +203,7 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 动效速度 -->
       <section class="settings-section">
         <div class="section-header">
-          <h2>动效速度</h2>
+          <h2>{{ t('settings.motion.speed.title') }}</h2>
         </div>
         <div class="option-grid speed-grid">
           <button
@@ -212,7 +214,7 @@ const performanceRating = computed(() => getPerformanceRating())
             @click="updateSetting('animationSpeed', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
-            <span class="option-desc">{{ opt.description }}</span>
+            <span class="option-desc">{{ t(opt.descriptionKey) }}</span>
           </button>
         </div>
       </section>
@@ -220,7 +222,7 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 粒子密度 -->
       <section class="settings-section" v-if="settings.particleEnabled">
         <div class="section-header">
-          <h2>粒子密度</h2>
+          <h2>{{ t('settings.motion.density.title') }}</h2>
         </div>
         <div class="option-grid">
           <button
@@ -231,7 +233,7 @@ const performanceRating = computed(() => getPerformanceRating())
             @click="updateSetting('particleCountMultiplier', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
-            <span class="option-desc">{{ opt.description }}</span>
+            <span class="option-desc">{{ t(opt.descriptionKey) }}</span>
           </button>
         </div>
       </section>
@@ -239,11 +241,11 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 自动优化 -->
       <section class="settings-section">
         <div class="section-header">
-          <h2>自动优化</h2>
+          <h2>{{ t('settings.motion.autoOptimize') }}</h2>
           <Zap :size="20" class="section-icon" />
         </div>
         <p class="section-desc">
-          测试当前设备的性能，自动选择最适合的动效设置。
+          {{ t('settings.motion.autoOptimizeDesc') }}
         </p>
 
         <div class="benchmark-area">
@@ -253,17 +255,17 @@ const performanceRating = computed(() => getPerformanceRating())
             @click="runAutoOptimize"
           >
             <RotateCcw :size="18" :class="{ spinning: isOptimizing }" />
-            <span>{{ isOptimizing ? '测试中...' : '开始性能测试' }}</span>
+            <span>{{ isOptimizing ? t('settings.motion.testing') : t('settings.motion.startTest') }}</span>
           </button>
 
           <!-- 测试结果 -->
           <div v-if="benchmarkResult" class="benchmark-result">
             <div class="result-row">
-              <span class="result-label">测试帧率</span>
+              <span class="result-label">{{ t('settings.motion.resultFps') }}</span>
               <span class="result-value">{{ benchmarkResult.fps }} FPS</span>
             </div>
             <div class="result-row">
-              <span class="result-label">性能评级</span>
+              <span class="result-label">{{ t('settings.motion.resultRating') }}</span>
               <span class="result-value" :style="{ color: performanceRating.color }">
                 {{ performanceRating.label }}
               </span>
@@ -281,14 +283,14 @@ const performanceRating = computed(() => getPerformanceRating())
 
           <!-- 推荐设置 -->
           <div v-if="showRecommendation && recommendation" class="recommendation">
-            <h4>推荐帧率</h4>
+            <h4>{{ t('settings.motion.recommendedFps') }}</h4>
             <div class="rec-details">
-              <span>建议设置为：<strong>{{ recommendation.targetFps }} FPS</strong></span>
-              <span>（仅调整帧率，不影响粒子密度等其他设置）</span>
+              <span>{{ t('settings.motion.recommendationPrefix') }}<strong>{{ recommendation.targetFps }} FPS</strong></span>
+              <span>{{ t('settings.motion.recommendationNote') }}</span>
             </div>
             <button class="btn primary" @click="applyRecommendation">
               <Check :size="16" />
-              <span>应用推荐</span>
+              <span>{{ t('settings.motion.apply') }}</span>
             </button>
           </div>
         </div>
@@ -297,7 +299,7 @@ const performanceRating = computed(() => getPerformanceRating())
       <!-- 重置 -->
       <section class="settings-section">
         <button class="btn secondary full" @click="resetToDefault">
-          恢复默认设置
+          {{ t('settings.motion.reset') }}
         </button>
       </section>
     </main>
