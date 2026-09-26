@@ -12,6 +12,7 @@ import {
   type UnifiedTodo,
 } from './todoService'
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
+import { getPlanRuntime, getPlanRuntimeUnavailableReason, isMobilePlatform } from './runtimeCapabilities'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -24,10 +25,6 @@ function isTauri(): boolean {
 }
 
 // 检测是否在移动端（Android/iOS）
-function isMobile(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
 // 获取下载路径设置
 function getDownloadPath(): string | null {
   return localStorage.getItem('efflife_download_path')
@@ -84,6 +81,7 @@ export interface ArchiveData {
   planHelper: {
     available: boolean
     plans: unknown[]
+    unavailableReason?: string
   }
 }
 
@@ -137,6 +135,9 @@ function writeJSON(key: string, data: unknown): void {
 }
 
 async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    return { available: false, plans: [], unavailableReason: getPlanRuntimeUnavailableReason() }
+  }
   try {
     const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/export`, {
       headers: { Accept: 'application/json' },
@@ -149,7 +150,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
     if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error('Invalid plan-helper export')
     return { available: true, plans: payload.data.plans }
   } catch {
-    return { available: false, plans: [] }
+    return { available: false, plans: [], unavailableReason: 'plan-helper 服务当前不可连接' }
   }
 }
 
@@ -225,7 +226,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const fileName = `efflife_archive_${dateStr}.efl`
 
   // 如果在 Tauri 桌面环境，使用原生对话框
-  if (isTauri() && !isMobile()) {
+  if (isTauri() && !isMobilePlatform()) {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog')
       const { writeFile } = await import('@tauri-apps/plugin-fs')
@@ -290,7 +291,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 // 在 Tauri 桌面环境下打开文件对话框导入
 export async function importArchiveWithDialog(): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   // 移动端使用文件选择器，不使用此函数
-  if (!isTauri() || isMobile()) {
+  if (!isTauri() || isMobilePlatform()) {
     return { success: false, message: '请使用文件选择器导入' }
   }
 
@@ -537,7 +538,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     }
 
     const warnings: string[] = []
-    if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
+    if (data.planHelper?.available && Array.isArray(data.planHelper.plans) && getPlanRuntime() !== 'mobile-unavailable') {
       try {
         const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
           method: 'POST',
@@ -550,7 +551,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         warnings.push(`事件计划恢复失败：${error instanceof Error ? error.message : '计划服务不可用'}`)
       }
     } else if (data.planHelper && !data.planHelper.available) {
-      warnings.push('存档生成时 plan-helper 不可用，未包含事件计划快照')
+      warnings.push(`事件计划未恢复：${data.planHelper.unavailableReason || 'plan-helper 当前不可用'}`)
+    } else if (data.planHelper?.available && getPlanRuntime() === 'mobile-unavailable') {
+      warnings.push(`事件计划未恢复：${getPlanRuntimeUnavailableReason()}`)
     }
 
   return {
@@ -560,6 +563,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 }
 
 async function clearPlanHelperData(): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') return
   try {
     await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
       method: 'POST',
