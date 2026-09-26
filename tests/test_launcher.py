@@ -96,3 +96,34 @@ def test_launcher_stops_unhealthy_main_service_instead_of_waiting_forever(monkey
 
     assert terminated == [process]
     assert waited == []
+
+
+def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkeypatch):
+    terminated = []
+    opened = []
+
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [])
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: True)
+    monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
+    monkeypatch.setattr(launcher.time, "sleep", lambda _seconds: (_ for _ in ()).throw(KeyboardInterrupt()))
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
+
+    class UnexpectedPopen:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("the launcher must not start a duplicate frontend")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
+
+    launcher.run_module("test", {
+        "test": {
+            "name": "test",
+            "available": True,
+            "cmd": ["test"],
+            "cwd": launcher.BASE_DIR,
+            "url": "http://127.0.0.1:1420",
+            "setup": None,
+        },
+    })
+
+    assert opened == ["http://127.0.0.1:1420"]
+    assert terminated == []

@@ -235,6 +235,22 @@ def run_module(choice, modules):
     if companion_processes is None:
         return
 
+    # A separately started frontend may already occupy the configured port.
+    # Reuse it instead of launching a second strict-port dev server that exits
+    # immediately and is then reported as a startup failure.
+    if module.get("url") and service_is_ready(module["url"]):
+        print(f"使用已运行的主服务: {module['url']}")
+        try:
+            webbrowser.open(module["url"])
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n已停止")
+        finally:
+            for companion_process in companion_processes:
+                terminate_process(companion_process)
+        return
+
     try:
         process = subprocess.Popen(
             module["cmd"],
