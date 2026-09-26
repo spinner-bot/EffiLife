@@ -10,6 +10,7 @@ import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoService } from '@/services/todoService'
 import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -23,6 +24,7 @@ let refreshTimer: number | null = null
 const activeTodoCount = ref(0)
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
+const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
 async function refreshTodoSummary() {
   try {
@@ -331,7 +333,7 @@ onUnmounted(() => {
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
-          <span v-else class="event-overview-muted">{{ t('home.eventPlansUnavailable') }}</span>
+          <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
         </button>
         </div>
       </section>
