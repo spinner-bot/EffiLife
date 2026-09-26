@@ -156,7 +156,15 @@ fn save_config(config: Config) -> bool {
 fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     use tauri_plugin_shell::ShellExt;
 
+    // Plan Helper preserves its legacy on-disk layout: the runtime root owns
+    // both `plan/` and `data/system/registry/`. Tauri's shared data helper
+    // already points at `<app-data>/EffiLife/data`, so pass its parent root to
+    // avoid producing an accidental `<app-data>/data/data` hierarchy.
     let data_dir = get_data_dir();
+    let plan_runtime_root = data_dir
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| data_dir.clone());
     let command = app
         .shell()
         .sidecar("efflife-plan-helper")?
@@ -166,7 +174,7 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::
             "--port",
             "8765",
             "--data-dir",
-            data_dir.to_string_lossy().as_ref(),
+            plan_runtime_root.to_string_lossy().as_ref(),
         ]);
     let (mut events, child) = command.spawn()?;
 

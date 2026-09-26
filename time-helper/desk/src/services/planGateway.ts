@@ -65,11 +65,22 @@ async function readPayload<T>(response: Response): Promise<ApiPayload<T>> {
 }
 
 async function fetchPlan(path: string, options: RequestInit = {}): Promise<Response> {
-  try {
-    return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, options)
-  } catch {
-    throw new Error('计划服务不可用，请确认服务已启动')
+  const retryDelays = [150, 300, 600, 1000, 1000]
+  for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+    try {
+      return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, options)
+    } catch (error) {
+      if (options.signal?.aborted) {
+        throw error
+      }
+      if (attempt === retryDelays.length) {
+        throw new Error('计划服务不可用，请确认服务已启动')
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]))
+    }
   }
+
+  throw new Error('计划服务不可用，请确认服务已启动')
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
