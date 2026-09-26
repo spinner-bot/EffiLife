@@ -7,8 +7,10 @@ import { CheckinSystem } from '@/data'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import type { RealTimeStat, TimeRecord } from '@/types'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth() + 1)
@@ -184,7 +186,10 @@ function onDayClick(day: DayMeta) {
 }
 
 // 星期标题
-const weekDays = ['一', '二', '三', '四', '五', '六', '日']
+const weekDays = computed(() => [
+  t('calendar.weekday.mon'), t('calendar.weekday.tue'), t('calendar.weekday.wed'),
+  t('calendar.weekday.thu'), t('calendar.weekday.fri'), t('calendar.weekday.sat'), t('calendar.weekday.sun'),
+])
 
 // 月份切换动画方向
 const slideDirection = ref<'left' | 'right'>('right')
@@ -287,9 +292,9 @@ onMounted(() => {
     <header class="header">
       <button class="back-btn" @click="router.push('/')">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>{{ t('calendar.back') }}</span>
       </button>
-      <h1>日历</h1>
+      <h1>{{ t('calendar.title') }}</h1>
     </header>
 
     <main class="main-content">
@@ -297,15 +302,15 @@ onMounted(() => {
       <div class="month-overview" v-if="monthStats.daysWithRecords > 0">
         <div class="overview-stat">
           <span class="overview-value">{{ monthStats.daysWithRecords }}</span>
-          <span class="overview-label">有记录</span>
+          <span class="overview-label">{{ t('calendar.withRecords') }}</span>
         </div>
         <div class="overview-stat">
           <span class="overview-value checkin-color">{{ monthStats.daysWithCheckin }}</span>
-          <span class="overview-label">已打卡</span>
+          <span class="overview-label">{{ t('calendar.checkedIn') }}</span>
         </div>
         <div class="overview-stat">
           <span class="overview-value">{{ monthStats.avgProgress }}%</span>
-          <span class="overview-label">平均完成</span>
+          <span class="overview-label">{{ t('calendar.averageProgress') }}</span>
         </div>
       </div>
 
@@ -313,9 +318,9 @@ onMounted(() => {
       <template v-if="!isLoading && monthStats.daysWithRecords === 0">
         <EmptyState
           :icon="CalendarDays"
-          title="本月暂无记录"
-          description="切换月份查看历史数据，或开始记录今天的时间"
-          action-text="去记录"
+          :title="t('calendar.emptyTitle')"
+          :description="t('calendar.emptyDescription')"
+          :action-text="t('calendar.goRecord')"
           action-route="/plan"
         />
       </template>
@@ -326,10 +331,10 @@ onMounted(() => {
         <div class="section-header-row">
           <div class="section-title-row">
             <BarChart3 :size="16" class="section-icon" />
-            <h3 class="section-subtitle">年度活跃</h3>
+            <h3 class="section-subtitle">{{ t('calendar.yearActivity') }}</h3>
           </div>
           <button class="toggle-heatmap-btn" @click="showHeatmap = !showHeatmap">
-            {{ showHeatmap ? '收起' : '展开' }}
+            {{ showHeatmap ? t('calendar.collapse') : t('calendar.expand') }}
           </button>
         </div>
         <div v-if="isLoadingHeatmap" class="loading-bar">
@@ -347,24 +352,24 @@ onMounted(() => {
 
       <!-- 导航栏 -->
       <div class="nav-bar">
-        <button v-if="showQuickNav" class="nav-btn" @click="prevYear" title="上一年">
+        <button v-if="showQuickNav" class="nav-btn" @click="prevYear" :title="t('calendar.prevYear')">
           <ChevronsLeft :size="16" />
         </button>
-        <button class="nav-btn" @click="prevMonth" title="上个月">
+        <button class="nav-btn" @click="prevMonth" :title="t('calendar.prevMonth')">
           <ChevronLeft :size="16" />
         </button>
-        <div class="current-month">{{ currentYear }}年{{ currentMonth }}月</div>
+        <div class="current-month">{{ currentYear }}{{ t('calendar.yearSuffix') }}{{ currentMonth }}{{ t('calendar.monthSuffix') }}</div>
         <button
           v-if="!isCurrentMonth()"
           class="today-btn"
           @click="goToday"
         >
-          返回今天
+          {{ t('calendar.today') }}
         </button>
-        <button class="nav-btn" @click="nextMonth" title="下个月">
+        <button class="nav-btn" @click="nextMonth" :title="t('calendar.nextMonth')">
           <ChevronRight :size="16" />
         </button>
-        <button v-if="showQuickNav" class="nav-btn" @click="nextYear" title="下一年">
+        <button v-if="showQuickNav" class="nav-btn" @click="nextYear" :title="t('calendar.nextYear')">
           <ChevronsRight :size="16" />
         </button>
       </div>
@@ -408,7 +413,7 @@ onMounted(() => {
               ></div>
             </div>
             <!-- 打卡标记 -->
-            <div class="day-checkin-mark" v-if="day.hasCheckin" title="已打卡">
+            <div class="day-checkin-mark" v-if="day.hasCheckin" :title="t('calendar.checkedIn')">
               <Flame :size="10" />
             </div>
           </div>
@@ -439,7 +444,7 @@ onMounted(() => {
           <div class="legend-dot legend-checkin">
             <Flame :size="8" />
           </div>
-          <span>已打卡</span>
+          <span>{{ t('calendar.checkedIn') }}</span>
         </div>
       </div>
 
@@ -447,7 +452,7 @@ onMounted(() => {
       <div class="options">
         <label class="checkbox-label">
           <input type="checkbox" v-model="showQuickNav" />
-          <span>快速翻页</span>
+          <span>{{ t('calendar.quickNavigation') }}</span>
         </label>
       </div>
       </template>
@@ -462,12 +467,12 @@ onMounted(() => {
               <div class="popup-date-info">
                 <h3 class="popup-date">{{ popupDateStr }}</h3>
                 <span class="popup-checkin-badge" v-if="popupHasCheckin">
-                  <Flame :size="12" /> 已打卡
+                  <Flame :size="12" /> {{ t('calendar.checkedIn') }}
                 </span>
               </div>
               <div class="popup-header-actions">
-                <button class="popup-detail-btn" @click="goToDayDetail" title="查看完整详情">
-                  详情
+                <button class="popup-detail-btn" @click="goToDayDetail" :title="t('calendar.viewDetails')">
+                  {{ t('calendar.details') }}
                 </button>
                 <button class="popup-close-btn" @click="closeDayPopup">
                   <X :size="18" />
@@ -516,15 +521,15 @@ onMounted(() => {
               </div>
 
               <div v-else class="popup-no-plan">
-                <p>无有效计划</p>
-                <p class="hint">总记录时长：{{ hoursToHm(popupStat.total_used_hours) }}</p>
+                <p>{{ t('calendar.noPlan') }}</p>
+                <p class="hint">{{ t('calendar.totalDuration') }}：{{ hoursToHm(popupStat.total_used_hours) }}</p>
               </div>
 
               <!-- 记录摘要 -->
               <div class="popup-records-summary" v-if="popupRecords.length > 0">
                 <div class="popup-records-header">
                   <Clock :size="14" />
-                  <span>{{ popupRecords.length }} 条记录</span>
+                  <span>{{ popupRecords.length }} {{ t('calendar.recordCount') }}</span>
                 </div>
                 <div class="popup-record-list">
                   <div
@@ -537,7 +542,7 @@ onMounted(() => {
                     <span class="popup-record-dur">{{ hoursToHm(record.duration) }}</span>
                   </div>
                   <div v-if="popupRecords.length > 5" class="popup-more">
-                    还有 {{ popupRecords.length - 5 }} 条记录...
+                    {{ t('calendar.moreRecordsPrefix') }} {{ popupRecords.length - 5 }} {{ t('calendar.moreRecordsSuffix') }}
                   </div>
                 </div>
               </div>
