@@ -61,7 +61,7 @@ async function openEmailClient() {
     } catch {
       // 最后 fallback: 复制到剪贴板
       await copyEmail()
-      alert('无法打开邮件客户端，邮箱地址已复制到剪贴板')
+      alert(t('settings.feedback.emailCopied'))
     }
   }
 }
@@ -72,7 +72,7 @@ async function copyEmail() {
     copySuccess.value = true
     setTimeout(() => { copySuccess.value = false }, 2000)
   } catch (e) {
-    alert('复制失败，请手动复制邮箱地址')
+    alert(t('settings.feedback.copyFailed'))
   }
 }
 
@@ -98,7 +98,7 @@ function navigateTo(view: ViewType) {
 // 返回上一级
 async function goBack() {
   if (currentView.value === 'theme' && themeDirty.value) {
-    const shouldSave = confirm('主题已发生变化，是否保存当前主题？')
+    const shouldSave = confirm(t('settings.theme.unsavedConfirm'))
     if (shouldSave) await saveTheme()
     else await discardThemeChanges()
   }
@@ -125,7 +125,7 @@ async function saveCustomSettings() {
     show_ampm: showAmPm.value
   }
   await appStore.saveConfig(newConfig)
-  alert('设置已保存')
+  alert(t('settings.saved'))
 }
 
 function addThreshold() {
@@ -379,11 +379,11 @@ const dataStats = ref({
 
 async function handleReset(type: ResetType) {
   const messages: Record<ResetType, string> = {
-    all: '确定清除所有数据？包括配置、计划、记录、设置等。此操作不可恢复！',
-    records: '确定清除所有时间记录和打卡数据？此操作不可恢复！',
-    plans: '确定清除所有计划和日程规则？此操作不可恢复！',
-    config: '确定重置所有设置为默认值？',
-    settings: '确定重置音频和事件设置？',
+    all: t('settings.reset.confirmAll'),
+    records: t('settings.reset.confirmRecords'),
+    plans: t('settings.reset.confirmPlans'),
+    config: t('settings.reset.confirmConfig'),
+    settings: t('settings.reset.confirmSettings'),
   }
 
   if (!confirm(messages[type])) return
@@ -399,13 +399,13 @@ async function handleExportArchive() {
     const result = await exportArchive()
     if (result.success) {
       if (result.path) {
-          alert(`存档已保存到：\n${result.path}${result.warning ? `\n\n提示：${result.warning}` : ''}`)
+          alert(`${t('settings.archive.savedTo')}\n${result.path}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`)
       } else {
-          alert(`存档已下载！${result.warning ? `\n\n提示：${result.warning}` : ''}`)
+          alert(`${t('settings.archive.downloaded')}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`)
       }
     }
   } catch (e) {
-    alert('导出失败：' + (e as Error).message)
+    alert(t('settings.archive.exportFailed') + (e as Error).message)
   }
 }
 
@@ -416,7 +416,7 @@ async function handleImportArchive() {
     const result = await importArchiveWithDialog()
     if (result.cancelled) return
     if (result.success) {
-      if (confirm(result.message + '\n\n需要刷新页面以应用更改，是否立即刷新？')) {
+      if (confirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
         window.location.reload()
       }
     } else {
@@ -438,7 +438,7 @@ async function onFileSelected(event: Event) {
   // 重置 input 以便可以再次选择同一文件
   input.value = ''
 
-  if (!confirm('导入存档将覆盖当前所有数据，确定继续？')) return
+  if (!confirm(t('settings.archive.importConfirm'))) return
 
   const result = await importArchive(file)
   alert(result.message)
@@ -469,22 +469,22 @@ async function loadDataStatus() {
 }
 
 async function handleRestoreBackup(backup: BackupData) {
-  if (!confirm(`确定要从 ${new Date(backup.timestamp).toLocaleString('zh-CN')} 的备份恢复数据吗？\n这将覆盖当前数据。`)) {
+  if (!confirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString()}${t('settings.restore.confirmSuffix')}`)) {
     return
   }
 
   try {
     const result = await restoreFromSpecificBackup(backup)
     if (result.success) {
-      alert(result.message + '\n\n需要刷新页面以应用更改，是否立即刷新？')
-      if (confirm('是否立即刷新页面？')) {
+      alert(result.message + '\n\n' + t('settings.archive.reloadConfirm'))
+      if (confirm(t('settings.archive.reloadNow'))) {
         window.location.reload()
       }
     } else {
       alert(result.message)
     }
   } catch (e) {
-    alert('恢复失败：' + (e as Error).message)
+    alert(t('settings.restore.failed') + (e as Error).message)
   }
 }
 
@@ -498,9 +498,9 @@ async function handleEmergencyExport() {
     a.download = `efflife_emergency_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-    alert('紧急备份已下载！')
+    alert(t('settings.restore.emergencyDownloaded'))
   } catch (e) {
-    alert('导出失败：' + (e as Error).message)
+    alert(t('settings.archive.exportFailed') + (e as Error).message)
   }
 }
 
@@ -533,7 +533,7 @@ onMounted(async () => {
     if (status.localStorageEmpty && status.indexedDBEmpty) {
       // 数据都为空，检查是否有备份
       if (status.hasBackups) {
-        if (confirm('检测到数据为空，但发现备份文件。是否要恢复到设置页面查看备份？')) {
+        if (confirm(t('settings.restore.emptyWithBackups'))) {
           navigateTo('restore')
         }
       }
@@ -549,9 +549,9 @@ onMounted(async () => {
     <header class="header">
       <button class="back-btn" @click="goBack">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>{{ t('settings.back') }}</span>
       </button>
-      <h1>设置</h1>
+      <h1>{{ t('settings.title') }}</h1>
     </header>
 
     <main class="main-content">
@@ -565,35 +565,35 @@ onMounted(async () => {
         </div>
         <div class="settings-list">
           <button class="settings-item" @click="navigateTo('custom')">
-            <span>自定义</span>
+            <span>{{ t('settings.custom') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('theme')">
-            <span>主题</span>
+            <span>{{ t('settings.theme.title') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="router.push('/audio-settings')">
-            <span>声音</span>
+            <span>{{ t('settings.audio') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="router.push('/motion-settings')">
-            <span>动效</span>
+            <span>{{ t('settings.motion') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="router.push('/event-manager')">
-            <span>事件管理</span>
+            <span>{{ t('settings.events') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('archive')">
-            <span>存档管理</span>
+            <span>{{ t('settings.archive.title') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('restore')">
-            <span>数据恢复</span>
+            <span>{{ t('settings.restore.title') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('more')">
-            <span>更多设置</span>
+            <span>{{ t('settings.more') }}</span>
             <ChevronRight :size="16" />
           </button>
         </div>
@@ -608,19 +608,19 @@ onMounted(async () => {
 
       <!-- 自定义设置 -->
       <template v-else-if="currentView === 'custom'">
-        <h2>自定义设置</h2>
+        <h2>{{ t('settings.customTitle') }}</h2>
 
         <div class="form-section">
-          <label>标签超限阈值</label>
+          <label>{{ t('settings.threshold') }}</label>
           <div class="threshold-control">
             <button class="threshold-btn" @click="subThreshold">-</button>
-            <span class="threshold-value">当前阈值：{{ overtimeThreshold }}%</span>
+            <span class="threshold-value">{{ t('settings.currentThreshold') }}：{{ overtimeThreshold }}%</span>
             <button class="threshold-btn" @click="addThreshold">+</button>
           </div>
         </div>
 
         <div class="form-section">
-          <label>时间显示</label>
+          <label>{{ t('settings.timeDisplay') }}</label>
           <div class="checkbox-list">
             <label><input type="checkbox" v-model="showSeconds" /><span>显示秒</span></label>
             <label><input type="checkbox" v-model="use24h" /><span>24小时制</span></label>
@@ -629,14 +629,14 @@ onMounted(async () => {
         </div>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="goBack">返回</button>
-          <button class="btn primary" @click="saveCustomSettings">保存</button>
+          <button class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
+          <button class="btn primary" @click="saveCustomSettings">{{ t('settings.save') }}</button>
         </div>
       </template>
 
       <!-- 主题设置 -->
       <template v-else-if="currentView === 'theme'">
-        <h2>主题设置</h2>
+        <h2>{{ t('settings.theme.title') }}</h2>
 
         <div class="form-section">
           <label>{{ t('theme.category.basic') }}</label>
