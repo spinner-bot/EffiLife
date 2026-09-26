@@ -26,9 +26,11 @@ import {
   updateEventPlan,
 } from '@/services/planGateway'
 import { completeLinkedTodos } from '@/services/workspaceSync'
+import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
 const router = useRouter()
 const { t } = useI18n()
+const isReadOnlyPlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const view = ref<'hub' | 'events' | 'detail'>('hub')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
@@ -398,7 +400,7 @@ onMounted(loadPlans)
         <p class="plans-eyebrow">{{ t('plans.center') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
       </div>
-      <button v-if="view === 'events'" class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
+      <button v-if="view === 'events' && !isReadOnlyPlanRuntime" class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
     </header>
 
     <main class="plans-content">
@@ -426,7 +428,7 @@ onMounted(loadPlans)
           <FolderPlus :size="34" />
           <strong>{{ t('plans.empty') }}</strong>
           <span>{{ t('plans.emptyHint') }}</span>
-          <button class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
+          <button v-if="!isReadOnlyPlanRuntime" class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
         </section>
         <section v-else class="event-plan-grid">
           <button v-for="plan in plans" :key="plan.id" class="event-plan-card theme-card" @click="openPlan(plan)">
@@ -441,21 +443,25 @@ onMounted(loadPlans)
           <p v-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
           <div v-for="archive in archives" :key="archive.file" class="archive-row">
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
-            <button class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
+            <button v-if="!isReadOnlyPlanRuntime" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
           </div>
         </section>
       </template>
 
       <template v-else-if="selectedPlan">
         <div v-if="errorMessage" class="plans-error">{{ errorMessage }}</div>
+        <div v-if="isReadOnlyPlanRuntime" class="plans-readonly-note">
+          <strong>{{ t('plans.mobileReadOnlyTitle') }}</strong>
+          <span>{{ t('plans.mobileReadOnlyDescription') }}</span>
+        </div>
         <div class="detail-toolbar">
           <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
-          <div class="detail-actions">
+          <div v-if="!isReadOnlyPlanRuntime" class="detail-actions">
             <button class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
             <button class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>
-        <section v-if="editingMeta" class="meta-editor theme-card">
+        <section v-if="editingMeta && !isReadOnlyPlanRuntime" class="meta-editor theme-card">
           <label>{{ t('plans.name') }}<input v-model="planName" /></label>
           <label>{{ t('plans.date') }}<input v-model="planDate" type="date" /></label>
           <div><button class="plans-secondary" @click="editingMeta = false">{{ t('plans.cancel') }}</button><button class="plans-primary" @click="savePlanMeta">{{ t('plans.save') }}</button></div>
@@ -465,7 +471,7 @@ onMounted(loadPlans)
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
           <div><span>{{ t('plans.completed') }}</span><strong>{{ selectedPlan.sections.reduce((n, section) => n + section.tasks.filter((task) => task.finish).length, 0) }}</strong></div>
         </section>
-        <section class="log-editor theme-card">
+        <section v-if="!isReadOnlyPlanRuntime" class="log-editor theme-card">
           <div class="log-editor-heading"><div><strong>{{ t('plans.recordProgress') }}</strong><small>{{ t('plans.recordProgressHint') }}</small></div></div>
           <label>{{ t('plans.logTask') }}
             <select v-model="logTaskId">
@@ -486,20 +492,20 @@ onMounted(loadPlans)
             <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
-        <section class="section-editor theme-card">
+        <section v-if="!isReadOnlyPlanRuntime" class="section-editor theme-card">
           <input v-model="sectionName" :placeholder="t('plans.sectionName')" />
           <input v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
           <button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
         </section>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
-          <div v-if="taskSectionIndex === section.index || editingTaskSectionIndex === section.index" class="task-editor">
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="!isReadOnlyPlanRuntime" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <div v-if="!isReadOnlyPlanRuntime && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
             <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
           </div>
-          <div v-if="groupSectionIndex === section.index" class="group-editor">
+          <div v-if="!isReadOnlyPlanRuntime && groupSectionIndex === section.index" class="group-editor">
             <label>{{ t('plans.groupTitle') }}<input v-model="groupTitle" autofocus /></label>
             <label>{{ t('plans.groupDescription') }}<input v-model="groupDescription" /></label>
             <label>{{ t('plans.groupStart') }}<select v-model.number="groupStart"><option v-for="task in section.tasks" :key="`start-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
@@ -509,19 +515,19 @@ onMounted(loadPlans)
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
-            <button class="task-complete" :disabled="!!task.finish || isLoading" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
+            <button class="task-complete" :disabled="!!task.finish || isLoading || isReadOnlyPlanRuntime" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
-            <button class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+            <button v-if="!isReadOnlyPlanRuntime" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
+            <button v-if="!isReadOnlyPlanRuntime" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
+            <button v-if="!isReadOnlyPlanRuntime" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
               <span class="group-range">{{ group.key }}</span>
               <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
-              <button class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
-              <button class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
+              <button v-if="!isReadOnlyPlanRuntime" class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
+              <button v-if="!isReadOnlyPlanRuntime" class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
             </div>
           </div>
         </section>
@@ -564,6 +570,8 @@ onMounted(loadPlans)
 .plans-empty { display: grid; place-items: center; gap: 10px; min-height: 230px; border: 1px dashed var(--color-border); border-radius: 17px; color: var(--color-text-tertiary); text-align: center; }
 .plans-empty strong { color: var(--color-text-secondary); }
 .plans-error { margin-bottom: 14px; color: var(--color-error); font-size: 13px; }
+.plans-readonly-note { display: grid; gap: 4px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--color-primary); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; line-height: 1.5; }
+.plans-readonly-note strong { color: var(--color-text-primary); }
 .detail-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .detail-actions { display: flex; gap: 8px; }
 .meta-editor, .section-editor { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
