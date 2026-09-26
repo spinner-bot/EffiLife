@@ -496,7 +496,6 @@ onMounted(loadPlans)
           <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <div v-if="taskSectionIndex === section.index || editingTaskSectionIndex === section.index" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
-            <label>{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
             <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
             <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
           </div>
