@@ -10,6 +10,7 @@ import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDa
 import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
+import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
 import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
@@ -85,7 +86,7 @@ const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'legacy-help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
 const currentView = ref<ViewType>('main')
 // 导航历史栈（用于返回上一级）
 const viewHistory = ref<ViewType[]>(['main'])
@@ -857,6 +858,10 @@ onMounted(async () => {
 
       <!-- 帮助 -->
       <template v-else-if="currentView === 'help'">
+        <HelpCenterPanel @back="goBack" />
+      </template>
+
+      <template v-else-if="currentView === 'legacy-help'">
         <h2>帮助中心</h2>
 
         <!-- 快速入门 -->
