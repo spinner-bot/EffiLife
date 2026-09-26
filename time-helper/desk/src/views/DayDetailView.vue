@@ -5,10 +5,12 @@ import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
 import { ArrowLeft, Trash2, Check, X } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
+const { t } = useI18n()
 
 const dateStr = computed(() => route.params.date as string)
 const plans = computed(() => appStore.plans)
@@ -43,7 +45,7 @@ function getProgressColor(progress: number): string {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!confirm('确定删除这条记录？')) return
+  if (!confirm(t('dayDetail.deleteConfirm'))) return
   await DataService.deleteRecord(index, dateStr.value)
   await loadData()
 }
@@ -68,24 +70,24 @@ onMounted(loadData)
     <header class="header">
       <button class="back-btn" @click="router.push('/calendar')">
         <ArrowLeft :size="16" />
-        <span>返回日历</span>
+        <span>{{ t('dayDetail.back') }}</span>
       </button>
-      <h1>{{ dateStr }} 详情</h1>
+      <h1>{{ dateStr }} {{ t('dayDetail.titleSuffix') }}</h1>
     </header>
 
     <main class="main-content">
       <!-- 计划信息 -->
       <section class="info-card">
         <div class="info-header">
-          <h2>日计划</h2>
-          <button class="change-btn" @click="openPlanSelector">切换</button>
+          <h2>{{ t('dayDetail.plan') }}</h2>
+          <button class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
         </div>
         <p class="plan-name">{{ dayPlanName }}（{{ dayPlanType }}）</p>
 
         <!-- 统计信息 -->
         <div class="stats" v-if="stat">
           <div class="progress-row">
-            <span class="progress-label">总完成度：</span>
+            <span class="progress-label">{{ t('dayDetail.progress') }}：</span>
             <span class="progress-value" :style="{ color: getProgressColor(stat.progress) }">
               {{ stat.progress }}%
             </span>
@@ -103,15 +105,15 @@ onMounted(loadData)
           </div>
 
           <div class="no-plan" v-else>
-            <p>无有效计划</p>
-            <p class="hint">总记录时长：{{ hoursToHm(stat.total_used_hours) }}</p>
+            <p>{{ t('dayDetail.noPlan') }}</p>
+            <p class="hint">{{ t('dayDetail.totalDuration') }}：{{ hoursToHm(stat.total_used_hours) }}</p>
           </div>
         </div>
       </section>
 
       <!-- 记录列表 -->
       <section class="records-section">
-        <h2>时间记录</h2>
+        <h2>{{ t('dayDetail.records') }}</h2>
         <div class="records-list" v-if="records.length > 0">
           <div
             v-for="(record, index) in records"
@@ -130,7 +132,7 @@ onMounted(loadData)
           </div>
         </div>
         <div class="empty-state" v-else>
-          <p>暂无记录</p>
+          <p>{{ t('dayDetail.empty') }}</p>
         </div>
       </section>
     </main>
@@ -141,12 +143,12 @@ onMounted(loadData)
         <div v-if="showPlanSelector" class="modal-overlay" @click.self="showPlanSelector = false">
           <div class="modal">
             <div class="modal-header">
-              <h3>切换日计划</h3>
+              <h3>{{ t('dayDetail.switchPlan') }}</h3>
               <button class="close-btn" @click="showPlanSelector = false">
                 <X :size="20" />
               </button>
             </div>
-            <p class="modal-desc">当前计划：{{ dayPlanName }}</p>
+            <p class="modal-desc">{{ t('dayDetail.currentPlan') }}：{{ dayPlanName }}</p>
             <div class="plan-list">
               <button
                 v-for="(plan, name) in plans"
@@ -162,7 +164,7 @@ onMounted(loadData)
                 <Check v-if="name === dayPlanName" :size="18" class="check-icon" />
               </button>
             </div>
-            <button class="btn secondary full" @click="showPlanSelector = false">取消</button>
+            <button class="btn secondary full" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
           </div>
         </div>
       </Transition>
