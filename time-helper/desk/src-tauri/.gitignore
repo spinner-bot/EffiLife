@@ -8,3 +8,6 @@ gen/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Locally generated Tauri sidecar binaries
+binaries/

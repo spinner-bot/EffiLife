@@ -152,6 +152,33 @@ fn save_config(config: Config) -> bool {
     }
 }
 
+#[cfg(not(debug_assertions))]
+fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    use tauri_plugin_shell::ShellExt;
+
+    let data_dir = get_data_dir();
+    let command = app
+        .shell()
+        .sidecar("efflife-plan-helper")?
+        .args([
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8765",
+            "--data-dir",
+            data_dir.to_string_lossy().as_ref(),
+        ]);
+    let (mut events, child) = command.spawn()?;
+
+    // Keep the child handle alive for the lifetime of the sidecar and drain
+    // its event channel so its stdout/stderr pipes cannot block the service.
+    tauri::async_runtime::spawn(async move {
+        let _child = child;
+        while events.recv().await.is_some() {}
+    });
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // 设置崩溃日志处理器
@@ -161,6 +188,11 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(|app| {
+            #[cfg(not(debug_assertions))]
+            start_plan_helper_sidecar(app.handle())?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_today_date,
             load_config,

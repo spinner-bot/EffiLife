@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
+    "build:sidecar": "python ../../scripts/build_plan_helper_sidecar.py",
     "preview": "vite preview",
     "tauri": "tauri"
   },
