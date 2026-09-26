@@ -5,9 +5,11 @@ import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const appStore = useAppStore()
+const { t } = useI18n()
 
 const records = computed(() => appStore.todayRecords)
 const todayPlan = computed(() => appStore.todayPlan)
@@ -109,13 +111,13 @@ async function saveRecord() {
 async function saveRecordInternal() {
   // 验证内容
   if (!formContent.value.trim()) {
-    alert('请填写内容')
+    alert(t('records.validation.content'))
     return
   }
 
   // 验证标签
   if (!formTag.value.trim()) {
-    alert('请选择标签')
+    alert(t('records.validation.tag'))
     return
   }
 
@@ -131,12 +133,12 @@ async function saveRecordInternal() {
 
     // 验证小时范围
     if (sh < 0 || sh > 23 || eh < 0 || eh > 23) {
-      alert('小时必须在 0-23 之间')
+      alert(t('records.validation.hour'))
       return
     }
     // 验证分钟范围
     if (sm < 0 || sm > 59 || em < 0 || em > 59) {
-      alert('分钟必须在 0-59 之间')
+      alert(t('records.validation.minute'))
       return
     }
 
@@ -147,7 +149,7 @@ async function saveRecordInternal() {
 
     // 验证结束时间必须大于开始时间
     if (endMinutes <= startMinutes) {
-      alert('结束时间必须晚于开始时间')
+      alert(t('records.validation.end'))
       return
     }
   } else {
@@ -159,31 +161,31 @@ async function saveRecordInternal() {
 
     // 验证时长
     if (dh === 0 && dm === 0) {
-      alert('时长不能为 0')
+      alert(t('records.validation.durationZero'))
       return
     }
     if (dh < 0 || dm < 0) {
-      alert('时长不能为负数')
+      alert(t('records.validation.durationNegative'))
       return
     }
     if (dm > 59) {
-      alert('分钟必须在 0-59 之间')
+      alert(t('records.validation.minute'))
       return
     }
     // 验证时长不超过 24 小时
     const totalMinutes = dh * 60 + dm
     if (totalMinutes > 24 * 60) {
-      alert('时长不能超过 24 小时')
+      alert(t('records.validation.durationMax'))
       return
     }
 
     // 验证参考时间
     if (refH < 0 || refH > 23) {
-      alert('小时必须在 0-23 之间')
+      alert(t('records.validation.hour'))
       return
     }
     if (refM < 0 || refM > 59) {
-      alert('分钟必须在 0-59 之间')
+      alert(t('records.validation.minute'))
       return
     }
 
@@ -212,7 +214,7 @@ async function saveRecordInternal() {
   // 检查冲突
   const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
   if (conflict) {
-    alert('时间冲突：' + conflict)
+    alert(t('records.validation.conflict') + conflict)
     return
   }
 
@@ -239,7 +241,7 @@ async function saveRecordInternal() {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!confirm('确定删除这条记录？')) return
+  if (!confirm(t('records.deleteConfirm'))) return
   await appStore.deleteRecord(index)
 }
 
@@ -253,12 +255,12 @@ onMounted(() => {
     <header class="header">
       <button class="back-btn" @click="router.push('/')">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>{{ t('records.back') }}</span>
       </button>
-      <h1>记录管理</h1>
+      <h1>{{ t('records.title') }}</h1>
       <button class="add-btn" @click="openAddForm">
         <Plus :size="16" />
-        <span>新增</span>
+        <span>{{ t('records.add') }}</span>
       </button>
     </header>
 
@@ -277,10 +279,10 @@ onMounted(() => {
           </div>
           <div class="record-content">{{ record.content }}</div>
           <div class="record-actions">
-            <button class="icon-btn" @click="openEditForm(index)" title="编辑">
+            <button class="icon-btn" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
             </button>
-            <button class="icon-btn danger" @click="deleteRecord(index)" title="删除">
+            <button class="icon-btn danger" @click="deleteRecord(index)" :title="t('records.delete')">
               <Trash2 :size="14" />
             </button>
           </div>
@@ -289,8 +291,8 @@ onMounted(() => {
 
       <!-- 空状态 -->
       <div class="empty-state" v-else>
-        <p>暂无记录</p>
-        <p class="hint">点击"新增"按钮开始记录时间</p>
+        <p>{{ t('records.empty') }}</p>
+        <p class="hint">{{ t('records.emptyHint') }}</p>
       </div>
     </main>
 
@@ -298,7 +300,7 @@ onMounted(() => {
     <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
       <div class="modal" @keydown.esc="showForm = false">
         <div class="modal-header">
-          <h2>{{ isEditing ? '编辑记录' : '新增记录' }}</h2>
+          <h2>{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
           <button class="close-btn" @click="showForm = false">
             <X :size="20" />
           </button>
@@ -311,26 +313,26 @@ onMounted(() => {
               :class="['mode-btn', { active: formMode === 'time' }]"
               @click="formMode = 'time'"
             >
-              开始 + 结束
+              {{ t('records.modeTime') }}
             </button>
             <button
               :class="['mode-btn', { active: formMode === 'duration' }]"
               @click="formMode = 'duration'"
             >
-              时长 + 单点
+              {{ t('records.modeDuration') }}
             </button>
           </div>
 
           <!-- 时间模式 -->
           <div class="form-section" v-if="formMode === 'time'">
             <div class="time-input-row">
-              <label>开始：</label>
+              <label>{{ t('records.start') }}：</label>
               <input type="number" v-model="formStart.h" min="0" max="23" class="time-input" />
               <span>:</span>
               <input type="number" v-model="formStart.m" min="0" max="59" class="time-input" />
             </div>
             <div class="time-input-row">
-              <label>结束：</label>
+              <label>{{ t('records.end') }}：</label>
               <input type="number" v-model="formEnd.h" min="0" max="23" class="time-input" />
               <span>:</span>
               <input type="number" v-model="formEnd.m" min="0" max="59" class="time-input" />
@@ -340,14 +342,14 @@ onMounted(() => {
           <!-- 时长模式 -->
           <div class="form-section" v-else>
             <div class="time-input-row">
-              <label>时长：</label>
+              <label>{{ t('records.duration') }}：</label>
               <input type="number" v-model="formDuration.h" min="0" class="time-input small" />
-              <span>时</span>
+              <span>{{ t('records.hours') }}</span>
               <input type="number" v-model="formDuration.m" min="0" max="59" class="time-input small" />
-              <span>分</span>
+              <span>{{ t('records.minutes') }}</span>
             </div>
             <div class="time-input-row">
-              <label>参考时间：</label>
+              <label>{{ t('records.referenceTime') }}：</label>
               <input type="number" v-model="formDurationTime.h" min="0" max="23" class="time-input" />
               <span>:</span>
               <input type="number" v-model="formDurationTime.m" min="0" max="59" class="time-input" />
@@ -355,29 +357,29 @@ onMounted(() => {
             <div class="radio-group">
               <label>
                 <input type="radio" v-model="formDurationRef" value="start" />
-                <span>以上为开始时间</span>
+                <span>{{ t('records.referenceStart') }}</span>
               </label>
               <label>
                 <input type="radio" v-model="formDurationRef" value="end" />
-                <span>以上为结束时间</span>
+                <span>{{ t('records.referenceEnd') }}</span>
               </label>
             </div>
           </div>
 
           <!-- 内容 -->
           <div class="form-section">
-            <label>内容：</label>
+            <label>{{ t('records.content') }}：</label>
             <input
               type="text"
               v-model="formContent"
-              placeholder="请输入内容"
+              :placeholder="t('records.contentPlaceholder')"
               class="text-input"
             />
           </div>
 
           <!-- 标签 -->
           <div class="form-section">
-            <label>类别：</label>
+            <label>{{ t('records.category') }}：</label>
             <select v-model="formTag" class="select-input">
               <option v-for="tag in availableTags" :key="tag" :value="tag">{{ tag }}</option>
             </select>
@@ -385,10 +387,10 @@ onMounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button class="btn secondary" @click="showForm = false">取消</button>
+          <button class="btn secondary" @click="showForm = false">{{ t('records.cancel') }}</button>
           <button class="btn primary" :disabled="isSaving" @click="saveRecord">
             <Check :size="16" />
-            <span>保存</span>
+            <span>{{ t('records.save') }}</span>
           </button>
         </div>
       </div>
