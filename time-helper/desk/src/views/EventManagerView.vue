@@ -5,24 +5,26 @@ import { ArrowLeft, Bell, Clock, Inbox, Check, Trash2 } from 'lucide-vue-next'
 import { EventSystem } from '@/audio'
 import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const eventSettings = ref(EventSystem.getSettings())
 
 // 基础事件
-const baseEventTypes: Array<{ type: EventType; name: string; description: string }> = [
-  { type: 'plan_complete_100', name: '计划完美完成', description: '当天计划完成度达到100%' },
-  { type: 'plan_complete_90', name: '计划即将完成', description: '当天计划完成度达到90%' },
-  { type: 'plan_complete_50', name: '半程完成', description: '当天计划完成度达到50%' },
-  { type: 'record_added', name: '记录添加', description: '添加时间记录时' },
-  { type: 'plan_changed', name: '计划切换', description: '切换日计划时' },
-  { type: 'achievement_unlocked', name: '成就解锁', description: '解锁新成就时' },
-  { type: 'checkin_complete', name: '打卡完成', description: '成功打卡时' },
-  { type: 'streak_milestone', name: '连续打卡里程碑', description: '达到7/14/30/60/90/180/365天' },
-  { type: 'idle_reminder', name: '空闲提醒', description: '长时间未操作时' },
-  { type: 'weekly_summary', name: '周报摘要', description: '每周汇总数据' },
-  { type: 'daily_first_record', name: '每日首条记录', description: '当天第一条记录添加时' }
+const baseEventTypes: Array<{ type: EventType; nameKey: string; descriptionKey: string }> = [
+  { type: 'plan_complete_100', nameKey: 'settings.events.planComplete100', descriptionKey: 'settings.events.planComplete100Desc' },
+  { type: 'plan_complete_90', nameKey: 'settings.events.planComplete90', descriptionKey: 'settings.events.planComplete90Desc' },
+  { type: 'plan_complete_50', nameKey: 'settings.events.planComplete50', descriptionKey: 'settings.events.planComplete50Desc' },
+  { type: 'record_added', nameKey: 'settings.events.recordAdded', descriptionKey: 'settings.events.recordAddedDesc' },
+  { type: 'plan_changed', nameKey: 'settings.events.planChanged', descriptionKey: 'settings.events.planChangedDesc' },
+  { type: 'achievement_unlocked', nameKey: 'settings.events.achievement', descriptionKey: 'settings.events.achievementDesc' },
+  { type: 'checkin_complete', nameKey: 'settings.events.checkin', descriptionKey: 'settings.events.checkinDesc' },
+  { type: 'streak_milestone', nameKey: 'settings.events.streak', descriptionKey: 'settings.events.streakDesc' },
+  { type: 'idle_reminder', nameKey: 'settings.events.idle', descriptionKey: 'settings.events.idleDesc' },
+  { type: 'weekly_summary', nameKey: 'settings.events.weekly', descriptionKey: 'settings.events.weeklyDesc' },
+  { type: 'daily_first_record', nameKey: 'settings.events.dailyFirst', descriptionKey: 'settings.events.dailyFirstDesc' }
 ]
 
 // 收件箱
@@ -100,12 +102,12 @@ const editingRuleId = ref<string | null>(null)
 const newRule = ref({ hour: 12, minute: 0, threshold: 50, enabled: true })
 
 // 自动清空时限选项
-const autoCleanOptions: Array<{ value: 1 | 3 | 7 | 30 | -1; label: string }> = [
-  { value: 1, label: '24小时' },
-  { value: 3, label: '72小时' },
-  { value: 7, label: '7天' },
-  { value: 30, label: '30天' },
-  { value: -1, label: '永不' }
+const autoCleanOptions: Array<{ value: 1 | 3 | 7 | 30 | -1; labelKey: string }> = [
+  { value: 1, labelKey: 'settings.events.clean24h' },
+  { value: 3, labelKey: 'settings.events.clean72h' },
+  { value: 7, labelKey: 'settings.events.clean7d' },
+  { value: 30, labelKey: 'settings.events.clean30d' },
+  { value: -1, labelKey: 'settings.events.cleanNever' }
 ]
 
 function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
@@ -129,13 +131,13 @@ function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
   }
 
   // 生成确认信息
-  let confirmMsg = `将已读事件自动清空时间修改为"${autoCleanOptions.find(o => o.value === days)?.label}"？`
+  let confirmMsg = `${t('settings.events.cleanConfirmPrefix')}${t(autoCleanOptions.find(o => o.value === days)?.labelKey || '')}${t('settings.events.cleanConfirmSuffix')}`
 
   if (willDelete) {
-    confirmMsg += `\n\n⚠️ 注意：这会导致 ${willDeleteCount} 个已读事件被立即删除，且无法恢复！`
+    confirmMsg += `\n\n${t('settings.events.cleanWarning', { count: willDeleteCount })}`
   } else if (days !== -1 && currentDays !== -1 && days < currentDays) {
     // 新时限更短，但当前没有符合条件的事件
-    confirmMsg += `\n\n当前没有符合新时限的已读事件，设置后将立即生效。`
+    confirmMsg += `\n\n${t('settings.events.cleanNoMatch')}`
   }
 
   if (!confirm(confirmMsg)) return
@@ -208,7 +210,7 @@ function deleteEntry(entryId: string) {
 }
 
 function clearRead() {
-  if (!confirm('确定清空所有已读事件记录？此操作不可恢复。')) return
+  if (!confirm(t('settings.events.clearConfirm'))) return
   EventSystem.clearReadInbox()
 }
 
@@ -221,12 +223,12 @@ function handleCheckinFromInbox(entry: InboxEntry) {
 
   if (result !== null) {
     // 打卡成功，显示成功提示
-    alert(`补打卡成功！\n日期：${entry.checkinDate}\n计划：${entry.checkinPlanName}\n连续 ${result} 天 🔥`)
+    alert(`${t('settings.events.checkinSuccess')}\n${t('settings.events.date')}${entry.checkinDate}\n${t('settings.events.plan')}${entry.checkinPlanName}\n${t('settings.events.streakCount', { count: result })} 🔥`)
 
     // 删除这个收件箱条目
     EventSystem.removeCheckinReminder(entry.id)
   } else {
-    alert('打卡失败，可能已经打过卡或日期无效')
+    alert(t('settings.events.checkinFailed'))
   }
 }
 
@@ -281,17 +283,17 @@ function startEditRule(rule: WarningRule) {
 function saveRule() {
   // 验证小时
   if (newRule.value.hour < 0 || newRule.value.hour > 23) {
-    alert('小时必须在 0-23 之间')
+    alert(t('settings.events.hourValidation'))
     return
   }
   // 验证分钟
   if (newRule.value.minute < 0 || newRule.value.minute > 59) {
-    alert('分钟必须在 0-59 之间')
+    alert(t('settings.events.minuteValidation'))
     return
   }
   // 验证阈值
   if (newRule.value.threshold < 0 || newRule.value.threshold > 100) {
-    alert('阈值必须在 0-100 之间')
+    alert(t('settings.events.thresholdValidation'))
     return
   }
 
@@ -310,7 +312,7 @@ function cancelRule() {
 }
 
 function deleteRule(id: string) {
-  if (!confirm('确定删除这条预警规则？')) return
+  if (!confirm(t('settings.events.deleteRuleConfirm'))) return
   EventSystem.removeWarningRule(id)
   eventSettings.value = EventSystem.getSettings()
 }
@@ -335,25 +337,25 @@ function testWarning(rule: WarningRule) {
     <header class="header">
       <button class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
-        <span>返回设置</span>
+        <span>{{ t('settings.events.back') }}</span>
       </button>
-      <h1>事件管理</h1>
+      <h1>{{ t('settings.events.title') }}</h1>
     </header>
 
     <main class="main-content">
       <div class="tab-bar">
         <button class="tab-btn" :class="{ active: currentView === 'inbox' }" @click="currentView = 'inbox'">
           <Inbox :size="18" />
-          <span>收件箱</span>
+          <span>{{ t('settings.events.inbox') }}</span>
           <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
         </button>
         <button class="tab-btn" :class="{ active: currentView === 'events' }" @click="currentView = 'events'">
           <Bell :size="18" />
-          <span>事件</span>
+          <span>{{ t('settings.events.eventsTab') }}</span>
         </button>
         <button class="tab-btn" :class="{ active: currentView === 'warnings' }" @click="currentView = 'warnings'">
           <Clock :size="18" />
-          <span>预警</span>
+          <span>{{ t('settings.events.warningsTab') }}</span>
         </button>
       </div>
 
@@ -361,18 +363,18 @@ function testWarning(rule: WarningRule) {
       <template v-if="currentView === 'inbox'">
         <section class="section-card">
           <div class="section-header">
-            <h2>事件历史</h2>
+            <h2>{{ t('settings.events.history') }}</h2>
             <div class="header-actions">
               <span v-if="inbox.length > 0" class="inbox-stats">
-                已读：{{ readCount }}/{{ totalCount }}
+                {{ t('settings.events.readCount') }}：{{ readCount }}/{{ totalCount }}
               </span>
               <button v-if="unreadCount > 0" class="text-btn" @click="markAllAsRead">
                 <Check :size="14" />
-                全部已读
+                {{ t('settings.events.markAllRead') }}
               </button>
               <button v-if="readCount > 0" class="text-btn danger" @click="clearRead">
                 <Trash2 :size="14" />
-                清空已读
+                {{ t('settings.events.clearRead') }}
               </button>
             </div>
           </div>
@@ -384,7 +386,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'all' }"
               @click="setFilter('all')"
             >
-              全部
+              {{ t('settings.events.filterAll') }}
               <span class="filter-count">{{ filterCounts.all }}</span>
             </button>
             <button
@@ -392,7 +394,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'achievement' }"
               @click="setFilter('achievement')"
             >
-              🏆 成就
+              🏆 {{ t('settings.events.filterAchievement') }}
               <span class="filter-count">{{ filterCounts.achievement }}</span>
             </button>
             <button
@@ -400,7 +402,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'event' }"
               @click="setFilter('event')"
             >
-              📋 事件
+              📋 {{ t('settings.events.filterEvent') }}
               <span class="filter-count">{{ filterCounts.event }}</span>
             </button>
             <button
@@ -408,16 +410,16 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'reminder' }"
               @click="setFilter('reminder')"
             >
-              🔔 提醒
+              🔔 {{ t('settings.events.filterReminder') }}
               <span class="filter-count">{{ filterCounts.reminder }}</span>
             </button>
           </div>
 
           <div v-if="filteredInbox.length === 0" class="empty-state">
             <Inbox :size="48" class="empty-icon" />
-            <p v-if="inbox.length === 0">暂无事件记录</p>
-            <p v-else>该分类下暂无事件</p>
-            <p class="hint" v-if="inbox.length === 0">触发的事件会显示在这里</p>
+            <p v-if="inbox.length === 0">{{ t('settings.events.empty') }}</p>
+            <p v-else>{{ t('settings.events.emptyFilter') }}</p>
+            <p class="hint" v-if="inbox.length === 0">{{ t('settings.events.emptyHint') }}</p>
           </div>
 
           <div v-else class="inbox-list">
@@ -440,7 +442,7 @@ function testWarning(rule: WarningRule) {
                 <div class="inbox-meta">
                   <span class="inbox-time">{{ formatTriggerTime(entry) }}</span>
                   <span v-if="entry.scheduledTime" class="inbox-scheduled">
-                    预定 {{ entry.scheduledTime }}
+                    {{ t('settings.events.scheduled') }} {{ entry.scheduledTime }}
                   </span>
                 </div>
               </div>
@@ -449,12 +451,12 @@ function testWarning(rule: WarningRule) {
                 v-if="entry.checkinPlanName && entry.checkinDate"
                 class="checkin-btn"
                 @click.stop="handleCheckinFromInbox(entry)"
-                title="补打卡"
+                :title="t('settings.events.makeUpCheckin')"
               >
                 <Check :size="14" />
-                <span>打卡</span>
+                <span>{{ t('settings.events.checkin') }}</span>
               </button>
-              <button class="delete-btn" @click.stop="deleteEntry(entry.id)" title="删除">
+              <button class="delete-btn" @click.stop="deleteEntry(entry.id)" :title="t('settings.events.delete')">
                 <Trash2 :size="14" />
               </button>
             </div>
@@ -462,7 +464,7 @@ function testWarning(rule: WarningRule) {
 
           <!-- 自动清空设置 -->
           <div class="auto-clean-setting" v-if="inbox.length > 0">
-            <span class="setting-label">已读事件自动清空：</span>
+            <span class="setting-label">{{ t('settings.events.autoClean') }}：</span>
             <div class="option-pills">
               <button
                 v-for="opt in autoCleanOptions"
@@ -471,7 +473,7 @@ function testWarning(rule: WarningRule) {
                 :class="{ active: eventSettings.autoCleanDays === opt.value }"
                 @click="setAutoCleanDays(opt.value)"
               >
-                {{ opt.label }}
+                {{ t(opt.labelKey) }}
               </button>
             </div>
           </div>
@@ -482,23 +484,23 @@ function testWarning(rule: WarningRule) {
       <template v-else-if="currentView === 'events'">
         <section class="section-card">
           <div class="section-header">
-            <h2>事件通知</h2>
+            <h2>{{ t('settings.events.notifications') }}</h2>
           </div>
           <p class="section-desc">
-            配置哪些事件触发时显示弹窗并播放音效。所有事件都会记录在收件箱中。
+            {{ t('settings.events.notificationsDesc') }}
           </p>
 
           <div class="event-list">
             <div v-for="event in baseEventTypes" :key="event.type" class="event-item">
               <div class="event-info">
-                <span class="event-name">{{ event.name }}</span>
-                <span class="event-desc">{{ event.description }}</span>
+                <span class="event-name">{{ t(event.nameKey) }}</span>
+                <span class="event-desc">{{ t(event.descriptionKey) }}</span>
               </div>
               <div class="event-controls">
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="eventSettings.enabled[event.type]" @change="toggleEvent(event.type)" />
                 </label>
-                <button class="test-btn" @click="testEvent(event.type)" title="测试">
+                <button class="test-btn" @click="testEvent(event.type)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
               </div>
@@ -511,14 +513,14 @@ function testWarning(rule: WarningRule) {
       <template v-else-if="currentView === 'warnings'">
         <section class="section-card">
           <div class="section-header">
-            <h2>进度预警</h2>
+            <h2>{{ t('settings.events.progressWarning') }}</h2>
             <label class="toggle-inline">
               <input type="checkbox" :checked="eventSettings.enabled.progress_warning" @change="toggleEvent('progress_warning')" />
-              <span>启用</span>
+              <span>{{ t('settings.events.enabled') }}</span>
             </label>
           </div>
           <p class="section-desc">
-            到达指定时间后，若完成度低于阈值则发出预警。软件期间关闭，重新打开后也会补发遗漏的预警。
+            {{ t('settings.events.warningDesc') }}
           </p>
 
           <div class="warning-list">
@@ -534,17 +536,17 @@ function testWarning(rule: WarningRule) {
                   <span class="time-text">{{ formatTime(rule) }}</span>
                 </div>
                 <div class="warning-detail">
-                  完成度低于 <strong>{{ rule.threshold }}%</strong> 时预警
+                  {{ t('settings.events.thresholdPrefix') }} <strong>{{ rule.threshold }}%</strong> {{ t('settings.events.thresholdSuffix') }}
                 </div>
               </div>
               <div class="warning-actions">
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule)" />
                 </label>
-                <button class="test-btn" @click="testWarning(rule)" title="测试">
+                <button class="test-btn" @click="testWarning(rule)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
-                <button class="test-btn danger" @click="deleteRule(rule.id)" title="删除">
+                <button class="test-btn danger" @click="deleteRule(rule.id)" :title="t('settings.events.delete')">
                   <Trash2 :size="14" />
                 </button>
               </div>
@@ -552,7 +554,7 @@ function testWarning(rule: WarningRule) {
 
             <button class="add-rule-btn" @click="startAddRule">
               <span class="plus">+</span>
-              <span>添加预警规则</span>
+              <span>{{ t('settings.events.addRule') }}</span>
             </button>
           </div>
         </section>
@@ -560,35 +562,35 @@ function testWarning(rule: WarningRule) {
         <!-- 规则编辑弹窗 -->
         <div v-if="showRuleForm" class="modal-overlay" @click.self="cancelRule">
           <div class="modal">
-            <h3>{{ editingRuleId ? '编辑预警规则' : '添加预警规则' }}</h3>
+            <h3>{{ editingRuleId ? t('settings.events.editRule') : t('settings.events.addRule') }}</h3>
 
             <div class="form-row">
-              <label>触发时间</label>
+              <label>{{ t('settings.events.triggerTime') }}</label>
               <div class="time-picker">
                 <div class="time-unit">
-                  <label>时</label>
+                  <label>{{ t('settings.events.hour') }}</label>
                   <input type="number" v-model.number="newRule.hour" min="0" max="23" />
                 </div>
                 <span class="time-sep">:</span>
                 <div class="time-unit">
-                  <label>分</label>
+                  <label>{{ t('settings.events.minute') }}</label>
                   <input type="number" v-model.number="newRule.minute" min="0" max="59" step="5" />
                 </div>
               </div>
             </div>
 
             <div class="form-row">
-              <label>完成度阈值</label>
+              <label>{{ t('settings.events.completionThreshold') }}</label>
               <div class="threshold-picker">
                 <input type="range" v-model.number="newRule.threshold" min="0" max="100" step="5" />
                 <span class="threshold-value">{{ newRule.threshold }}%</span>
               </div>
-              <p class="form-hint">当时间到达设定时刻，若完成度低于此值则发出预警</p>
+              <p class="form-hint">{{ t('settings.events.thresholdHint') }}</p>
             </div>
 
             <div class="modal-actions">
-              <button class="btn secondary" @click="cancelRule">取消</button>
-              <button class="btn primary" @click="saveRule">保存</button>
+              <button class="btn secondary" @click="cancelRule">{{ t('settings.cancel') }}</button>
+              <button class="btn primary" @click="saveRule">{{ t('settings.save') }}</button>
             </div>
           </div>
         </div>
