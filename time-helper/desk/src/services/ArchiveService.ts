@@ -18,6 +18,7 @@ import { getPlanRuntime, getPlanRuntimeUnavailableReason, isMobilePlatform } fro
 const ARCHIVE_VERSION = '2.1'
 const ARCHIVE_FORMAT = 'effilife.bundle'
 const ARCHIVE_FORMAT_VERSION = '1.0.0'
+const PLAN_HELPER_REQUEST_TIMEOUT_MS = 4000
 
 // 检测是否在 Tauri 环境
 function isTauri(): boolean {
@@ -134,12 +135,25 @@ function writeJSON(key: string, data: unknown): void {
   localStorage.setItem(key, JSON.stringify(data))
 }
 
+async function requestPlanHelper(path: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), PLAN_HELPER_REQUEST_TIMEOUT_MS)
+  try {
+    return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, {
+      ...options,
+      signal: controller.signal,
+    })
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
 async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     return { available: false, plans: [], unavailableReason: getPlanRuntimeUnavailableReason() }
   }
   try {
-    const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/export`, {
+    const response = await requestPlanHelper('/api/data/export', {
       headers: { Accept: 'application/json' },
     })
     if (!response.ok) throw new Error(`plan-helper responded with ${response.status}`)
@@ -540,7 +554,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     const warnings: string[] = []
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans) && getPlanRuntime() !== 'mobile-unavailable') {
       try {
-        const response = await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
+        const response = await requestPlanHelper('/api/data/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify({ plans: data.planHelper.plans, replace: true }),
@@ -565,7 +579,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 async function clearPlanHelperData(): Promise<void> {
   if (getPlanRuntime() === 'mobile-unavailable') return
   try {
-    await fetch(`${PLAN_HELPER_ORIGIN}/api/data/import`, {
+    await requestPlanHelper('/api/data/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plans: [], replace: true }),
