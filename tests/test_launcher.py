@@ -33,6 +33,17 @@ def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
 
 
+def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
+    monkeypatch.setenv("EFFILIFE_STARTUP_TIMEOUT", "90")
+    assert launcher.startup_timeout() == 90
+
+    monkeypatch.setenv("EFFILIFE_STARTUP_TIMEOUT", "1")
+    assert launcher.startup_timeout() == 5
+
+    monkeypatch.setenv("EFFILIFE_STARTUP_TIMEOUT", "not-a-number")
+    assert launcher.startup_timeout() == 30
+
+
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
 

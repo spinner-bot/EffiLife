@@ -22,6 +22,13 @@ CUSTOM_NODE_DIR = Path(os.environ.get("EFFILIFE_NODE_DIR", "F:/dev-tools/node"))
 
 def find_npm():
     """Find npm executable, checking custom location first"""
+    # npm.cmd is only useful when the matching Node runtime is available.
+    # A stale npm shim on PATH otherwise makes the launcher select dev mode
+    # and fail later with a less actionable error.
+    node_available = bool(find_node())
+    if not node_available:
+        return None
+
     # Check custom F drive location first
     if os.name == "nt":
         custom_npm = CUSTOM_NODE_DIR / "npm.cmd"
@@ -66,7 +73,17 @@ def node_environment():
 
 def dependencies_ready(cwd):
     """Avoid running npm install on every launch."""
-    return (Path(cwd) / "node_modules").is_dir()
+    module_dir = Path(cwd) / "node_modules"
+    return module_dir.is_dir() and (module_dir / "vite").is_dir()
+
+
+def startup_timeout(default=30):
+    """Return a bounded startup timeout, configurable for slow machines."""
+    raw = os.environ.get("EFFILIFE_STARTUP_TIMEOUT", str(default))
+    try:
+        return max(5, min(180, int(raw)))
+    except ValueError:
+        return default
 
 
 def get_time_helper_cmd():
@@ -356,8 +373,9 @@ def start_companions(module, env):
     return managed
 
 
-def wait_for_service(process, url, timeout=30):
+def wait_for_service(process, url, timeout=None):
     """Wait for an HTTP service instead of trusting a particular log format."""
+    timeout = startup_timeout() if timeout is None else timeout
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if process.poll() is not None:
