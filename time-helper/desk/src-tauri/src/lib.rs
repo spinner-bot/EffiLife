@@ -152,7 +152,7 @@ fn save_config(config: Config) -> bool {
     }
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(all(not(debug_assertions), desktop))]
 fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     use tauri_plugin_shell::ShellExt;
 
@@ -197,7 +197,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            #[cfg(not(debug_assertions))]
+            #[cfg(all(not(debug_assertions), desktop))]
             start_plan_helper_sidecar(app.handle())?;
             Ok(())
         })
