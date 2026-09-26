@@ -306,16 +306,20 @@ async function completeTodo(todo: UnifiedTodo) {
   if (todo.status === 'completed' || completingTodoId.value === todo.id) return
   completingTodoId.value = todo.id
   try {
-    const updated = await TodoService.complete(todo.id)
-    const index = todos.value.findIndex((item) => item.id === todo.id)
-    if (index >= 0) todos.value[index] = updated
+    // Complete the source plan task first. Without a transaction spanning
+    // IndexedDB and plan-helper, this prevents a failed plan sync from
+    // silently leaving the local todo in a completed state.
     if (todo.related_plan_id && todo.related_plan_task_id) {
       try {
         await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
       } catch {
         errorMessage.value = t('tasks.planSyncFailed')
+        return
       }
     }
+    const updated = await TodoService.complete(todo.id)
+    const index = todos.value.findIndex((item) => item.id === todo.id)
+    if (index >= 0) todos.value[index] = updated
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
   } finally {
