@@ -4,20 +4,22 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft, Volume2, Music, Plus, Trash2, Play } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import type { SoundType, AudioSettings } from '@/audio'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const audioSettings = ref<AudioSettings>(AudioManager.getSettings())
 
-const soundTypes: Array<{ type: SoundType; name: string; description: string }> = [
-  { type: 'click', name: '点击音效', description: '按钮点击时播放' },
-  { type: 'hover', name: '悬停音效', description: '鼠标悬停时播放' },
-  { type: 'toggle', name: '开关音效', description: '切换开关时播放' },
-  { type: 'success', name: '成功音效', description: '操作成功时播放' },
-  { type: 'error', name: '错误音效', description: '操作失败时播放' },
-  { type: 'notification', name: '通知音效', description: '收到通知时播放' },
-  { type: 'achievement', name: '成就音效', description: '达成成就时播放' },
-  { type: 'warning', name: '警告音效', description: '警告提示时播放' }
+const soundTypes: Array<{ type: SoundType; nameKey: string; descriptionKey: string }> = [
+  { type: 'click', nameKey: 'settings.audio.sound.click', descriptionKey: 'settings.audio.sound.clickDesc' },
+  { type: 'hover', nameKey: 'settings.audio.sound.hover', descriptionKey: 'settings.audio.sound.hoverDesc' },
+  { type: 'toggle', nameKey: 'settings.audio.sound.toggle', descriptionKey: 'settings.audio.sound.toggleDesc' },
+  { type: 'success', nameKey: 'settings.audio.sound.success', descriptionKey: 'settings.audio.sound.successDesc' },
+  { type: 'error', nameKey: 'settings.audio.sound.error', descriptionKey: 'settings.audio.sound.errorDesc' },
+  { type: 'notification', nameKey: 'settings.audio.sound.notification', descriptionKey: 'settings.audio.sound.notificationDesc' },
+  { type: 'achievement', nameKey: 'settings.audio.sound.achievement', descriptionKey: 'settings.audio.sound.achievementDesc' },
+  { type: 'warning', nameKey: 'settings.audio.sound.warning', descriptionKey: 'settings.audio.sound.warningDesc' }
 ]
 
 const allBgm = computed(() => AudioManager.getAllBgm())
@@ -75,9 +77,9 @@ const currentTab = ref<SettingTab>('audio')
     <header class="header">
       <button class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
-        <span>返回设置</span>
+        <span>{{ t('settings.audio.back') }}</span>
       </button>
-      <h1>声音设置</h1>
+      <h1>{{ t('settings.audio.title') }}</h1>
     </header>
 
     <main class="main-content">
@@ -85,7 +87,7 @@ const currentTab = ref<SettingTab>('audio')
       <div class="tab-bar">
         <button class="tab-btn active">
           <Volume2 :size="18" />
-          <span>音效</span>
+          <span>{{ t('settings.audio.sfx') }}</span>
         </button>
       </div>
 
@@ -93,25 +95,25 @@ const currentTab = ref<SettingTab>('audio')
       <template v-if="currentTab === 'audio'">
         <section class="settings-section">
           <div class="section-header">
-            <h2>总开关</h2>
+            <h2>{{ t('settings.audio.master') }}</h2>
           </div>
           <label class="toggle-row">
-            <span>启用声音</span>
+            <span>{{ t('settings.audio.enabled') }}</span>
             <input type="checkbox" :checked="audioSettings.enabled" @change="updateAudioSetting('enabled', ($event.target as HTMLInputElement).checked)" />
           </label>
         </section>
 
         <section class="settings-section">
           <div class="section-header">
-            <h2>音效</h2>
+            <h2>{{ t('settings.audio.sfx') }}</h2>
             <label class="toggle-inline">
               <input type="checkbox" :checked="audioSettings.sfxEnabled" @change="updateAudioSetting('sfxEnabled', ($event.target as HTMLInputElement).checked)" />
-              <span>启用</span>
+              <span>{{ t('settings.audio.enabled') }}</span>
             </label>
           </div>
 
           <div class="volume-row">
-            <span>主音量</span>
+            <span>{{ t('settings.audio.masterVolume') }}</span>
             <input type="range" min="0" max="100" :value="audioSettings.sfxVolume" @input="updateAudioSetting('sfxVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.sfxVolume }}%</span>
           </div>
@@ -119,8 +121,8 @@ const currentTab = ref<SettingTab>('audio')
           <div class="sfx-list">
             <div v-for="sfx in soundTypes" :key="sfx.type" class="sfx-item">
               <div class="sfx-info">
-                <span class="sfx-name">{{ sfx.name }}</span>
-                <span class="sfx-desc">{{ sfx.description }}</span>
+                <span class="sfx-name">{{ t(sfx.nameKey) }}</span>
+                <span class="sfx-desc">{{ t(sfx.descriptionKey) }}</span>
               </div>
               <div class="sfx-controls">
                 <input type="range" min="0" max="100" :value="audioSettings.sfxVolumes[sfx.type]" @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))" />
@@ -132,21 +134,21 @@ const currentTab = ref<SettingTab>('audio')
 
         <section class="settings-section">
           <div class="section-header">
-            <h2>背景音乐</h2>
+            <h2>{{ t('settings.audio.bgm') }}</h2>
             <label class="toggle-inline">
               <input type="checkbox" :checked="audioSettings.bgmEnabled" @change="updateAudioSetting('bgmEnabled', ($event.target as HTMLInputElement).checked)" />
-              <span>启用</span>
+              <span>{{ t('settings.audio.enabled') }}</span>
             </label>
           </div>
 
           <div class="volume-row">
-            <span>音量</span>
+            <span>{{ t('settings.audio.volume') }}</span>
             <input type="range" min="0" max="100" :value="audioSettings.bgmVolume" @input="updateAudioSetting('bgmVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.bgmVolume }}%</span>
           </div>
 
           <div class="bgm-list">
-            <div class="bgm-section-title">内置音乐</div>
+            <div class="bgm-section-title">{{ t('settings.audio.builtIn') }}</div>
             <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ bgm.name }}</span>
@@ -154,7 +156,7 @@ const currentTab = ref<SettingTab>('audio')
             </button>
 
             <div class="bgm-section-title">
-              自定义音乐
+              {{ t('settings.audio.custom') }}
               <button class="add-bgm-btn" @click="addCustomBgm"><Plus :size="14" /></button>
             </div>
             <button v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
@@ -163,7 +165,7 @@ const currentTab = ref<SettingTab>('audio')
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
               <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
             </button>
-            <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">点击 + 添加本地音乐文件</div>
+            <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">{{ t('settings.audio.addHint') }}</div>
           </div>
         </section>
       </template>
