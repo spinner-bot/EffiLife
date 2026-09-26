@@ -549,8 +549,6 @@ watch(selectedPlanId, (planId) => {
       <section class="task-create theme-card">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
         <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
-        <label class="task-field-label" for="new-task-priority-rank">{{ t('tasks.priorityRank') }}</label>
-        <input id="new-task-priority-rank" v-model.number="priorityRank" class="task-number-input" type="number" min="0" step="1" />
         <label class="task-check-label"><input v-model="urgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
         <label class="task-check-label"><input v-model="important" type="checkbox" /> {{ t('tasks.important') }}</label>
         <label class="task-field-label" for="new-task-estimated-time">{{ t('tasks.estimatedTime') }}</label>
@@ -660,8 +658,6 @@ watch(selectedPlanId, (planId) => {
           <div v-if="editingId === todo.id" class="task-edit-form">
             <label :for="`edit-title-${todo.id}`">{{ t('tasks.editContent') }}</label>
             <input :id="`edit-title-${todo.id}`" v-model="editingTitle" class="task-edit-input" @keyup.enter="saveEdit(todo)" />
-            <label :for="`edit-priority-${todo.id}`">{{ t('tasks.priorityRank') }}</label>
-            <input :id="`edit-priority-${todo.id}`" v-model.number="editingPriorityRank" class="task-edit-select" type="number" min="0" step="1" />
             <label class="task-edit-check"><input v-model="editingUrgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
             <label class="task-edit-check"><input v-model="editingImportant" type="checkbox" /> {{ t('tasks.important') }}</label>
             <label :for="`edit-estimated-time-${todo.id}`">{{ t('tasks.estimatedTime') }}</label>
