@@ -50,5 +50,4 @@ jobs:
           name: EffiLife-windows-installer
           path: |
             time-helper/desk/src-tauri/target/release/bundle/nsis/*.exe
-            time-helper/desk/src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
