@@ -132,6 +132,23 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Accept, Content-Type")
 
+    @staticmethod
+    def _persist_mutation(response):
+        """Persist successful API mutations before reporting success to clients."""
+        if not getattr(response, "success", False):
+            return response
+        try:
+            Path("data/system/registry").mkdir(parents=True, exist_ok=True)
+            persisted = api.save_registry()
+            if not persisted.success:
+                return api.error_response(
+                    f"计划保存失败：{persisted.error or '未知错误'}",
+                    code=500,
+                )
+        except Exception as error:
+            return api.error_response(f"计划保存失败：{error}", code=500)
+        return response
+
     def _handle_api_get(self, path, query_string):
         params = dict(urllib.parse.parse_qsl(query_string))
 
@@ -261,7 +278,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
         else:
             resp = api.error_response("Unknown API endpoint", code=404)
 
-        self._send_json(resp)
+        self._send_json(self._persist_mutation(resp))
 
     def _handle_api_put(self, path, data):
         parts = path.split("/")
@@ -277,7 +294,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             resp = api.update_task(parts[3], parts[5], data.get("content"), data.get("time_minutes"))
         else:
             resp = api.error_response("Unknown API endpoint", code=404)
-        self._send_json(resp)
+        self._send_json(self._persist_mutation(resp))
 
     def _handle_api_delete(self, path):
         parts = path.split("/")
@@ -292,15 +309,25 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             resp = api.delete_plan(plan_id)
         else:
             resp = api.error_response("Unknown API endpoint", code=404)
-        self._send_json(resp)
+        self._send_json(self._persist_mutation(resp))
 
     def log_message(self, format, *args):
         """Custom log format."""
         sys.stderr.write(f"[{datetime.now().strftime('%H:%M:%S')}] {format % args}\n")
 
 
-def run_server(host="127.0.0.1", port=8765):
-    """Start the web server."""
+def run_server(host="127.0.0.1", port=8765, data_dir=None):
+    """Start the web server, optionally rooted at an application data directory."""
+    if data_dir:
+        runtime_dir = Path(data_dir).expanduser().resolve()
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(runtime_dir)
+    Path("data/system/registry").mkdir(parents=True, exist_ok=True)
+    registry_file = Path("data/system/registry/registry.json")
+    if registry_file.exists():
+        loaded = api.load_registry()
+        if not loaded.success:
+            print(f"Warning: failed to load plan registry: {loaded.error}", file=sys.stderr)
     server = HTTPServer((host, port), PlanHelperHandler)
     print(f"""
 ╔══════════════════════════════════════════════╗
@@ -323,6 +350,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="plan-helper Web UI Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8765, help="Port to listen on")
+    parser.add_argument("--data-dir", default=None, help="Application data root")
     args = parser.parse_args()
 
-    run_server(args.host, args.port)
+    run_server(args.host, args.port, args.data_dir)
