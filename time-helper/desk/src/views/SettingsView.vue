@@ -11,6 +11,7 @@ import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEme
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import { useI18n } from '@/i18n'
+import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -79,6 +80,7 @@ async function copyEmail() {
 const router = useRouter()
 const appStore = useAppStore()
 const { t } = useI18n()
+const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
 const config = computed(() => appStore.config)
 
@@ -984,27 +986,32 @@ onMounted(async () => {
 
       <!-- 存档管理 -->
       <template v-else-if="currentView === 'archive'">
-        <h2>存档管理</h2>
+        <h2>{{ t('settings.archive.title') }}</h2>
+
+        <div v-if="isMobilePlanRuntime" class="archive-capability-note">
+          <strong>{{ t('settings.archive.mobilePlanTitle') }}</strong>
+          <p>{{ t('settings.archive.mobilePlanDescription') }}</p>
+        </div>
 
         <!-- 数据统计 -->
         <div class="data-stats">
-          <h3>当前数据</h3>
+          <h3>{{ t('settings.archive.currentData') }}</h3>
           <div class="stats-grid">
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.recordDays }}</span>
-              <span class="stat-label">天记录</span>
+              <span class="stat-label">{{ t('settings.archive.recordDays') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.totalRecords }}</span>
-              <span class="stat-label">条记录</span>
+              <span class="stat-label">{{ t('settings.archive.totalRecords') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.hasCheckin ? '✓' : '—' }}</span>
-              <span class="stat-label">打卡数据</span>
+              <span class="stat-label">{{ t('settings.archive.checkinData') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.hasPlans ? '✓' : '—' }}</span>
-              <span class="stat-label">计划数据</span>
+              <span class="stat-label">{{ t('settings.archive.planData') }}</span>
             </div>
           </div>
         </div>
@@ -1012,10 +1019,10 @@ onMounted(async () => {
         <!-- 操作按钮 -->
         <div class="archive-actions">
           <button class="btn primary full" @click="handleExportArchive">
-            导出存档 (.efl)
+            {{ t('settings.archive.export') }}
           </button>
           <button class="btn primary full" @click="handleImportArchive">
-            导入存档 (.efl)
+            {{ t('settings.archive.import') }}
           </button>
         </div>
 
@@ -1029,8 +1036,7 @@ onMounted(async () => {
         />
 
         <p class="archive-hint">
-          存档文件为 .efl 格式，包含所有数据（配置、计划、记录、设置等）。<br>
-          可用于备份或在设备间迁移数据。
+          {{ t('settings.archive.hint') }}
         </p>
 
         <button class="btn secondary full" @click="goBack">返回</button>
@@ -1673,6 +1679,21 @@ h2 {
   padding: var(--spacing-md);
   background: var(--color-bg-secondary);
   border-radius: var(--radius-md);
+}
+
+.archive-capability-note {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.archive-capability-note p {
+  margin: var(--spacing-xs) 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 /* 数据恢复页面样式 */
