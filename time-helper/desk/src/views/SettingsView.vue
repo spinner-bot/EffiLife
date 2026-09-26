@@ -7,10 +7,11 @@ import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThe
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
 import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
-import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData } from '@/storage'
+import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData, type DataStatus } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
+import RecoveryPanel from '@/components/RecoveryPanel.vue'
 import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
@@ -86,7 +87,7 @@ const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'legacy-help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'legacy-help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore' | 'legacy-recovery'
 const currentView = ref<ViewType>('main')
 // 导航历史栈（用于返回上一级）
 const viewHistory = ref<ViewType[]>(['main'])
@@ -454,12 +455,7 @@ async function onFileSelected(event: Event) {
 
 // ============ 数据恢复 ============
 const backupsList = ref<BackupData[]>([])
-const dataStatus = ref<{
-  localStorageEmpty: boolean
-  indexedDBEmpty: boolean
-  hasBackups: boolean
-  backupCount: number
-} | null>(null)
+const dataStatus = ref<DataStatus | null>(null)
 
 async function loadDataStatus() {
   try {
@@ -1049,6 +1045,10 @@ onMounted(async () => {
 
       <!-- 数据恢复 -->
       <template v-else-if="currentView === 'restore'">
+        <RecoveryPanel :data-status="dataStatus" :backups="backupsList" @back="goBack" @restore="handleRestoreBackup" @emergency-export="handleEmergencyExport" />
+      </template>
+
+      <template v-else-if="currentView === 'legacy-recovery'">
         <h2>数据恢复</h2>
 
         <!-- 数据状态 -->
