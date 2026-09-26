@@ -6,9 +6,11 @@ import { CheckinSystem, checkinState } from '@/data'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const appStore = useAppStore()
+const { t } = useI18n()
 
 const checkinData = computed(() => CheckinSystem.getData())
 const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
@@ -69,16 +71,16 @@ function doCheckin() {
 }
 
 // 获取打卡等级
-function getLevel(total: number): { title: string; emoji: string } {
-  if (total >= 365) return { title: '年度达人', emoji: '👑' }
-  if (total >= 180) return { title: '半年之星', emoji: '🌟' }
-  if (total >= 90) return { title: '季度精英', emoji: '💎' }
-  if (total >= 60) return { title: '两月勇士', emoji: '🏅' }
-  if (total >= 30) return { title: '月度先锋', emoji: '🥇' }
-  if (total >= 14) return { title: '两周达人', emoji: '🥈' }
-  if (total >= 7) return { title: '一周坚持', emoji: '🥉' }
-  if (total >= 3) return { title: '起步新秀', emoji: '🌱' }
-  return { title: '初始阶段', emoji: '🎯' }
+function getLevel(total: number): { titleKey: string; emoji: string } {
+  if (total >= 365) return { titleKey: 'checkin.level.year', emoji: '👑' }
+  if (total >= 180) return { titleKey: 'checkin.level.halfYear', emoji: '🌟' }
+  if (total >= 90) return { titleKey: 'checkin.level.quarter', emoji: '💎' }
+  if (total >= 60) return { titleKey: 'checkin.level.twoMonths', emoji: '🏅' }
+  if (total >= 30) return { titleKey: 'checkin.level.month', emoji: '🥇' }
+  if (total >= 14) return { titleKey: 'checkin.level.twoWeeks', emoji: '🥈' }
+  if (total >= 7) return { titleKey: 'checkin.level.week', emoji: '🥉' }
+  if (total >= 3) return { titleKey: 'checkin.level.start', emoji: '🌱' }
+  return { titleKey: 'checkin.level.initial', emoji: '🎯' }
 }
 
 // 最近打卡记录
@@ -94,7 +96,10 @@ function formatDate(dateStr: string): string {
 }
 
 function formatWeekday(dateStr: string): string {
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+  const weekdays = [
+    t('checkin.weekday.sun'), t('checkin.weekday.mon'), t('checkin.weekday.tue'),
+    t('checkin.weekday.wed'), t('checkin.weekday.thu'), t('checkin.weekday.fri'), t('checkin.weekday.sat'),
+  ]
   const d = new Date(dateStr)
   return `周${weekdays[d.getDay()]}`
 }
@@ -124,7 +129,10 @@ const last7Days = computed(() => {
     const dateStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
     const hasCheckin = checkinData.value.records.some(r => r.date === dateStr)
     const isToday = i === 0
-    const weekday = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()]
+    const weekday = [
+      t('checkin.weekday.sun'), t('checkin.weekday.mon'), t('checkin.weekday.tue'),
+      t('checkin.weekday.wed'), t('checkin.weekday.thu'), t('checkin.weekday.fri'), t('checkin.weekday.sat'),
+    ][d.getDay()]
     days.push({ dateStr, hasCheckin, isToday, weekday, label: d.getDate().toString() })
   }
   return days
@@ -136,9 +144,9 @@ const last7Days = computed(() => {
     <header class="header">
       <button class="back-btn" @click="router.push('/')">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>{{ t('checkin.back') }}</span>
       </button>
-      <h1>打卡</h1>
+      <h1>{{ t('checkin.title') }}</h1>
     </header>
 
     <main class="main-content">
@@ -149,13 +157,13 @@ const last7Days = computed(() => {
           <div class="status-card">
             <div class="status-icon" v-if="canCheckinToday">🎯</div>
             <div class="status-icon waiting" v-else>⏳</div>
-            <h2 class="status-title" v-if="canCheckinToday">今日计划已完成！</h2>
-            <h2 class="status-title" v-else>今日计划尚未完成</h2>
+            <h2 class="status-title" v-if="canCheckinToday">{{ t('checkin.readyTitle') }}</h2>
+            <h2 class="status-title" v-else>{{ t('checkin.notReadyTitle') }}</h2>
             <p class="status-desc" v-if="canCheckinToday">
-              「{{ planName }}」计划已100%达成，快来打卡吧
+              {{ t('checkin.readyDescPrefix') }}「{{ planName }}」{{ t('checkin.readyDescSuffix') }}
             </p>
             <p class="status-desc" v-else>
-              完成今天的计划后，可以回来打卡
+              {{ t('checkin.notReadyDesc') }}
             </p>
             <button
               v-if="canCheckinToday"
@@ -163,14 +171,14 @@ const last7Days = computed(() => {
               @click="doCheckin"
             >
               <span class="btn-icon">👆</span>
-              <span>点击打卡</span>
+              <span>{{ t('checkin.click') }}</span>
             </button>
             <button
               v-else
               class="checkin-btn disabled"
               disabled
             >
-              <span>完成计划后可打卡</span>
+              <span>{{ t('checkin.completeFirst') }}</span>
             </button>
           </div>
         </template>
@@ -181,9 +189,9 @@ const last7Days = computed(() => {
             <div class="anim-streak">
               <Flame :size="48" class="big-flame" />
               <div class="anim-number">{{ displayStreak }}</div>
-              <div class="anim-unit">天</div>
+              <div class="anim-unit">{{ t('checkin.days') }}</div>
             </div>
-            <p class="anim-desc">打卡中...</p>
+            <p class="anim-desc">{{ t('checkin.inProgress') }}</p>
             <!-- 粒子爆发 -->
             <div v-if="showBurst" class="burst-particles">
               <span v-for="i in 12" :key="i" class="particle" :style="{ '--i': i }"></span>
@@ -199,12 +207,12 @@ const last7Days = computed(() => {
                 <Check :size="32" />
               </div>
             </div>
-            <h2 class="checked-title">今日已打卡</h2>
+            <h2 class="checked-title">{{ t('checkin.checkedTitle') }}</h2>
             <div class="checked-streak">
               <Flame :size="20" class="flame-sm" />
-              <span>连续 <strong>{{ phase === 'done' ? displayStreak : currentStreak }}</strong> 天</span>
+              <span>{{ t('checkin.streakPrefix') }} <strong>{{ phase === 'done' ? displayStreak : currentStreak }}</strong> {{ t('checkin.days') }}</span>
             </div>
-            <p class="checked-desc" v-if="phase === 'done'">太棒了！继续保持！</p>
+            <p class="checked-desc" v-if="phase === 'done'">{{ t('checkin.great') }}</p>
             <div v-if="showBurst" class="burst-particles">
               <span v-for="i in 12" :key="i" class="particle" :style="{ '--i': i }"></span>
             </div>
@@ -218,37 +226,37 @@ const last7Days = computed(() => {
           <Flame :size="24" class="stat-icon streak" />
           <div class="stat-info">
             <span class="stat-value">{{ currentStreak }}</span>
-            <span class="stat-label">连续打卡</span>
+            <span class="stat-label">{{ t('checkin.currentStreak') }}</span>
           </div>
         </div>
         <div class="stat-card">
           <Trophy :size="24" class="stat-icon record" />
           <div class="stat-info">
             <span class="stat-value">{{ longestStreak }}</span>
-            <span class="stat-label">最长连续</span>
+            <span class="stat-label">{{ t('checkin.longestStreak') }}</span>
           </div>
         </div>
         <div class="stat-card">
           <Calendar :size="24" class="stat-icon total" />
           <div class="stat-info">
             <span class="stat-value">{{ totalCheckins }}</span>
-            <span class="stat-label">累计打卡</span>
+            <span class="stat-label">{{ t('checkin.total') }}</span>
           </div>
         </div>
         <div class="stat-card">
           <TrendingUp :size="24" class="stat-icon level" />
           <div class="stat-info">
             <span class="stat-value level-value">
-              {{ getLevel(totalCheckins).emoji }} {{ getLevel(totalCheckins).title }}
+              {{ getLevel(totalCheckins).emoji }} {{ t(getLevel(totalCheckins).titleKey) }}
             </span>
-            <span class="stat-label">当前等级</span>
+            <span class="stat-label">{{ t('checkin.levelLabel') }}</span>
           </div>
         </div>
       </section>
 
       <!-- 最近7天连续可视化 -->
       <section class="week-visualizer">
-        <h3 class="section-title">最近 7 天</h3>
+        <h3 class="section-title">{{ t('checkin.recent7') }}</h3>
         <div class="week-dots">
           <div
             v-for="day in last7Days"
@@ -269,7 +277,7 @@ const last7Days = computed(() => {
         <div class="section-header-row">
           <div class="section-title-row">
             <BarChart3 :size="16" class="section-icon" />
-            <h3 class="section-title">打卡日历</h3>
+            <h3 class="section-title">{{ t('checkin.calendar') }}</h3>
           </div>
         </div>
         <ContributionHeatmap
@@ -283,7 +291,7 @@ const last7Days = computed(() => {
 
       <!-- 最近打卡记录 -->
       <section class="history-section">
-        <h3 class="section-title">打卡历史</h3>
+        <h3 class="section-title">{{ t('checkin.history') }}</h3>
         <div class="history-list" v-if="recentRecords.length > 0">
           <div
             v-for="record in recentRecords"
@@ -302,8 +310,8 @@ const last7Days = computed(() => {
           </div>
         </div>
         <div class="empty-state" v-else>
-          <p>暂无打卡记录</p>
-          <p class="hint">完成今天的计划后来打卡吧</p>
+          <p>{{ t('checkin.empty') }}</p>
+          <p class="hint">{{ t('checkin.emptyHint') }}</p>
         </div>
       </section>
     </main>
