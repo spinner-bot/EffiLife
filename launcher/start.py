@@ -207,7 +207,7 @@ def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def show_menu(modules):
+def _legacy_show_menu(modules):
     clear()
     print("=" * 50)
     print("  EffLife 效率工具集 - 统一启动器")
@@ -422,7 +422,7 @@ def wait_for_service(process, url, timeout=None):
     return False
 
 
-def main():
+def _legacy_main():
     if "--unified" in sys.argv:
         run_module("1", build_modules())
         return
