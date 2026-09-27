@@ -79,13 +79,14 @@ function close() {
     cancelAnimationFrame(animationTimer)
   }
   const wasDone = phase.value === 'done'
+  const completedStreak = targetStreak.value
   phase.value = 'ready'
   displayStreak.value = 0
   targetStreak.value = 0
   showBurst.value = false
   emit('close')
   if (wasDone) {
-    emit('checkin', targetStreak.value)
+    emit('checkin', completedStreak)
   }
 }
 
