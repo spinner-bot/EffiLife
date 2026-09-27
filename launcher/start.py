@@ -174,6 +174,19 @@ def build_modules():
         },
     }
 
+    # Keep the primary menu metadata ASCII-safe for legacy Windows code pages.
+    labels = {
+        "1": ("EffiLife unified workspace", "Plans, tasks, time records, and themes"),
+        "2": ("plan-helper (compatibility)", "Legacy plan editor for migration and debugging"),
+        "3": ("to-dos (compatibility CLI)", "Legacy task command line interface"),
+        "4": ("to-dos (compatibility Web)", "Legacy task Web interface"),
+        "5": ("Integration tests", "Run cross-module integration checks"),
+        "6": ("Performance baseline", "Run performance checks"),
+    }
+    for key, (name, desc) in labels.items():
+        modules[key]["name"] = name
+        modules[key]["desc"] = desc
+
     node_available = bool(find_node() or find_npm())
 
     # Mark modules that aren't available
@@ -208,6 +221,22 @@ def show_menu(modules):
         print()
 
     print("  [0] 退出")
+    print()
+
+
+def show_menu(modules):
+    """Render a code-page-safe menu for direct terminal use."""
+    clear()
+    print("=" * 50)
+    print("  EffiLife - Unified Launcher")
+    print("=" * 50)
+    print()
+    for key, module in modules.items():
+        status = "" if module["available"] else " [unavailable]"
+        print(f"  [{key}] {module['name']}{status}")
+        print(f"      {module['desc']}")
+        print()
+    print("  [0] Exit")
     print()
 
 
@@ -406,6 +435,24 @@ def main():
             return
         run_module(choice, modules)
         input("\n按 Enter 继续...")
+
+
+def main():
+    """Launch unified mode or the interactive compatibility menu."""
+    modules = build_modules()
+    if "--unified" in sys.argv:
+        run_module("1", modules)
+        return
+    while True:
+        show_menu(modules)
+        try:
+            choice = input("Select [0-6]: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExit.")
+            return
+        run_module(choice, modules)
+        if choice != "0":
+            input("\nPress Enter to continue...")
 
 
 if __name__ == "__main__":
