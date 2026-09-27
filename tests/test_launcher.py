@@ -96,3 +96,20 @@ def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkey
     launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
     assert opened == ["http://127.0.0.1:1420"]
     assert terminated == []
+
+
+def test_launcher_exits_when_reused_frontend_stops(monkeypatch):
+    checks = iter([True, False])
+    opened = []
+
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [])
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: next(checks))
+    monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
+
+    class UnexpectedPopen:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("the launcher must not start a duplicate frontend")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
+    launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
+    assert opened == ["http://127.0.0.1:1420"]
