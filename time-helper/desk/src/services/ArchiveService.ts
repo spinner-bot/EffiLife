@@ -477,12 +477,54 @@ function normalizeImportedCategories(raw: unknown, todos: UnifiedTodo[]): TodoCa
   return result
 }
 
+interface ArchiveRuntimeSnapshot {
+  localStorage: Record<string, string>
+  stores: Record<string, unknown[]>
+}
+
+async function captureArchiveRuntimeSnapshot(): Promise<ArchiveRuntimeSnapshot> {
+  const { getRawAll, STORE_NAMES } = await import('@/storage')
+  const localStorageSnapshot: Record<string, string> = {}
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i)
+    if (key) {
+      localStorageSnapshot[key] = localStorage.getItem(key) || ''
+    }
+  }
+
+  const stores: Record<string, unknown[]> = {}
+  for (const storeName of Object.values(STORE_NAMES)) {
+    stores[storeName] = await getRawAll<unknown>(storeName)
+  }
+  return { localStorage: localStorageSnapshot, stores }
+}
+
+async function restoreArchiveRuntimeSnapshot(snapshot: ArchiveRuntimeSnapshot): Promise<void> {
+  const { clear: idbClear, putRaw, STORE_NAMES } = await import('@/storage')
+  for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+    const key = localStorage.key(i)
+    if (key) localStorage.removeItem(key)
+  }
+  for (const [key, value] of Object.entries(snapshot.localStorage)) {
+    localStorage.setItem(key, value)
+  }
+
+  for (const storeName of Object.values(STORE_NAMES)) {
+    await idbClear(storeName)
+    for (const entry of snapshot.stores[storeName] || []) {
+      await putRaw(storeName, entry)
+    }
+  }
+}
+
 async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
     const data = await parseArchiveData(zip)
+    const runtimeSnapshot = await captureArchiveRuntimeSnapshot()
 
     // 导入存储模块
     const { set: idbSet, putRaw, STORE_NAMES, clear: idbClear } = await import('@/storage')
 
+    try {
     // 恢复数据（同时写入 localStorage 和 IndexedDB）
     if (data.config) {
       writeJSON(STORAGE_KEYS.CONFIG, data.config)
@@ -596,10 +638,18 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       warnings.push(`事件计划未恢复：${getPlanRuntimeUnavailableReason()}`)
     }
 
-  return {
-    success: true,
-    message: warnings.length ? `存档已导入，但有提示：${warnings.join('；')}` : '存档导入成功',
-  }
+    return {
+      success: true,
+      message: warnings.length ? `存档已导入，但有提示：${warnings.join('；')}` : '存档导入成功',
+    }
+    } catch (error) {
+      try {
+        await restoreArchiveRuntimeSnapshot(runtimeSnapshot)
+      } catch (rollbackError) {
+        throw new Error(`存档写入失败，且回滚失败：${error instanceof Error ? error.message : String(error)}；${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`)
+      }
+      throw new Error(`存档写入失败，已恢复导入前数据：${error instanceof Error ? error.message : String(error)}`)
+    }
 }
 
 async function clearPlanHelperData(): Promise<void> {
