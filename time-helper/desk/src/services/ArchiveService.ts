@@ -677,13 +677,17 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 }
 
 async function clearPlanHelperData(): Promise<void> {
+  // The cache is part of the unified plan dataset. Clear it before contacting
+  // the companion service so a stopped service cannot leave stale plans that
+  // reappear through the export fallback later.
+  try {
+    const { set, STORE_NAMES } = await import('@/storage')
+    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', [])
+  } catch {
+    // Continue with the service reset attempt when local storage is unavailable.
+  }
+
   if (getPlanRuntime() === 'mobile-unavailable') {
-    try {
-      const { set, STORE_NAMES } = await import('@/storage')
-      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', [])
-    } catch {
-      // Local reset remains valid if IndexedDB is unavailable.
-    }
     return
   }
   try {
