@@ -138,13 +138,38 @@ def import_bundle(
                 raise FileExistsError(f"Dataset already exists: {target}")
 
     staging_dir = Path(tempfile.mkdtemp(prefix=".effilife-import-", dir=target_dir))
+    backup_dir: Path | None = None
+    backups: dict[str, Path] = {}
+    installed: list[str] = []
     try:
         for name, value in datasets.items():
             (staging_dir / f"{name}.json").write_bytes(_json_bytes(value))
+
+        if overwrite:
+            existing = [name for name, target in targets.items() if target.exists()]
+            if existing:
+                backup_dir = Path(tempfile.mkdtemp(prefix=".effilife-import-backup-", dir=target_dir))
+                for name in existing:
+                    backup_path = backup_dir / f"{name}.json"
+                    os.replace(targets[name], backup_path)
+                    backups[name] = backup_path
+
         written: dict[str, Path] = {}
         for name, target in targets.items():
             os.replace(staging_dir / f"{name}.json", target)
+            installed.append(name)
             written[name] = target
         return written
+    except Exception:
+        # Restore the destination to its exact pre-import state.  A target
+        # without an old backup was newly installed by this attempt.
+        for name in installed:
+            targets[name].unlink(missing_ok=True)
+        for name, backup_path in backups.items():
+            if backup_path.exists():
+                os.replace(backup_path, targets[name])
+        raise
     finally:
         shutil.rmtree(staging_dir, ignore_errors=True)
+        if backup_dir is not None:
+            shutil.rmtree(backup_dir, ignore_errors=True)

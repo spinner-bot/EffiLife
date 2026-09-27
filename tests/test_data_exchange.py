@@ -1,5 +1,6 @@
 import json
 import zipfile
+from unittest.mock import patch
 
 import pytest
 
@@ -84,4 +85,32 @@ def test_bundle_import_overwrite_uses_staging_and_cleans_up(tmp_path):
 
     assert json.loads((destination / "first.json").read_text(encoding="utf-8")) == {"value": 1}
     assert json.loads((destination / "second.json").read_text(encoding="utf-8")) == {"value": 2}
+    assert not any(path.name.startswith(".effilife-import-") for path in destination.iterdir())
+
+
+def test_bundle_import_rolls_back_when_install_fails(tmp_path):
+    bundle = tmp_path / "effilife.efl"
+    export_bundle(bundle, {"first": {"value": "new-1"}, "second": {"value": "new-2"}})
+    destination = tmp_path / "imported"
+    destination.mkdir()
+    (destination / "first.json").write_text("old-1", encoding="utf-8")
+    (destination / "second.json").write_text("old-2", encoding="utf-8")
+
+    original_replace = __import__("common.data_exchange", fromlist=["os"]).os.replace
+    calls = {"count": 0}
+
+    def fail_on_second_install(source, target):
+        source_path = str(source)
+        if ".effilife-import-backup-" not in source_path and source_path.startswith(str(destination / ".effilife-import-")) and str(target).startswith(str(destination)):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                raise OSError("simulated install failure")
+        return original_replace(source, target)
+
+    with patch("common.data_exchange.os.replace", side_effect=fail_on_second_install):
+        with pytest.raises(OSError, match="simulated install failure"):
+            import_bundle(bundle, destination, overwrite=True)
+
+    assert (destination / "first.json").read_text(encoding="utf-8") == "old-1"
+    assert (destination / "second.json").read_text(encoding="utf-8") == "old-2"
     assert not any(path.name.startswith(".effilife-import-") for path in destination.iterdir())
