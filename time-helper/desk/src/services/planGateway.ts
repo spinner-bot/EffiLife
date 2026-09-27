@@ -1,6 +1,7 @@
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, getPlanRuntimeUnavailableReason } from './runtimeCapabilities'
 import { syncPendingPlanHelperReset } from './planReset'
+import { translate } from '@/i18n'
 
 export interface PlanSummary {
   id: string
@@ -110,7 +111,7 @@ async function saveMobileRawPlans(plans: RawPlan[]): Promise<void> {
 async function mutateMobilePlan(planId: string, mutate: (plan: RawPlan) => void): Promise<RawPlan> {
   const plans = cloneMobilePlans(await getMobileRawPlans())
   const plan = findMobilePlan(plans, planId)
-  if (!plan) throw new Error('移动端未找到该事件计划快照')
+  if (!plan) throw new Error(translate('plans.mobileSnapshotMissing'))
   mutate(plan)
   await saveMobileRawPlans(plans)
   return plan
@@ -186,10 +187,10 @@ async function readPayload<T>(response: Response): Promise<ApiPayload<T>> {
   try {
     payload = raw ? JSON.parse(raw) as ApiPayload<T> : {}
   } catch {
-    throw new Error(response.ok ? '计划服务返回无效响应' : `计划服务响应异常（${response.status}）`)
+    throw new Error(response.ok ? translate('plans.serviceInvalidResponse') : translate('plans.serviceError', { status: response.status }))
   }
   if (!response.ok || !payload.success) {
-    throw new Error(payload.error || `计划服务响应异常（${response.status}）`)
+    throw new Error(payload.error || translate('plans.serviceError', { status: response.status }))
   }
   return payload
 }
@@ -208,13 +209,13 @@ async function fetchPlan(path: string, options: RequestInit = {}): Promise<Respo
         throw error
       }
       if (attempt === retryDelays.length) {
-        throw new Error('计划服务不可用，请确认服务已启动')
+        throw new Error(translate('plans.serviceUnavailable'))
       }
       await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]))
     }
   }
 
-  throw new Error('计划服务不可用，请确认服务已启动')
+  throw new Error(translate('plans.serviceUnavailable'))
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -223,7 +224,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { Accept: 'application/json', ...(options.headers || {}) },
   })
   const payload = await readPayload<T>(response)
-  if (!response.ok || !payload.success) throw new Error(payload.error || `计划服务响应异常（${response.status}）`)
+  if (!response.ok || !payload.success) throw new Error(payload.error || translate('plans.serviceError', { status: response.status }))
   return payload.data as T
 }
 
@@ -236,9 +237,9 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
     signal,
     headers: { Accept: 'application/json' },
   })
-  if (!response.ok) throw new Error(`计划服务响应异常（${response.status}）`)
+  if (!response.ok) throw new Error(translate('plans.serviceError', { status: response.status }))
   const payload = await readPayload<{ plans?: PlanSummary[] }>(response)
-  if (!payload.success) throw new Error(payload.error || '计划服务返回失败')
+  if (!payload.success) throw new Error(payload.error || translate('plans.serviceFailed'))
   return (payload.data?.plans || []).map((plan) => ({
     ...plan,
     id: String(plan.id),
@@ -261,9 +262,9 @@ export async function getPlanTasks(planId: string, signal?: AbortSignal): Promis
     signal,
     headers: { Accept: 'application/json' },
   })
-  if (!response.ok) throw new Error(`计划任务服务响应异常（${response.status}）`)
+  if (!response.ok) throw new Error(translate('plans.taskServiceError', { status: response.status }))
   const payload = await readPayload<{ tasks?: PlanTaskSummary[] }>(response)
-  if (!payload.success) throw new Error(payload.error || '计划任务服务返回失败')
+  if (!payload.success) throw new Error(payload.error || translate('plans.taskServiceFailed'))
   return (payload.data?.tasks || []).filter((task) => task.is_active !== false)
 }
 
@@ -271,7 +272,7 @@ export async function getPlanFull(planId: string): Promise<PlanFull> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     const plans = await getMobileRawPlans()
     const plan = findMobilePlan(plans, planId)
-    if (!plan) throw new Error('移动端未找到该事件计划快照')
+    if (!plan) throw new Error(translate('plans.mobileSnapshotMissing'))
     return toMobilePlanFull(plan, plans.indexOf(plan))
   }
   return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}/full`)
@@ -338,7 +339,7 @@ export async function addPlanGroup(planId: string, sectionIndex: number, title: 
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const section = plan.main?.[sectionIndex]
-      if (!section) throw new Error('移动端未找到目标分组')
+      if (!section) throw new Error(translate('plans.sectionMissing'))
       if (!section.group) section.group = {}
       section.group[`${startIndex}_${endIndex}`] = { title, description }
     })
@@ -355,7 +356,7 @@ export async function updatePlanGroup(planId: string, sectionIndex: number, grou
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const group = plan.main?.[sectionIndex]?.group?.[groupKey]
-      if (!group) throw new Error('移动端未找到目标任务组')
+      if (!group) throw new Error(translate('plans.groupMissing'))
       group.title = title
       group.description = description
     })
@@ -382,7 +383,7 @@ export async function addPlanTask(planId: string, sectionIndex: number, content:
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const section = plan.main?.[sectionIndex]
-      if (!section) throw new Error('移动端未找到目标分组')
+      if (!section) throw new Error(translate('plans.sectionMissing'))
       if (!Array.isArray(section.plan)) section.plan = [null]
       section.plan.push({ is_active: true, content, t_m: mobileTaskUnit(timeMinutes) })
     })
@@ -399,7 +400,7 @@ export async function updatePlanTask(planId: string, taskId: string, content: st
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const location = mobileTaskLocation(plan, taskId)
-      if (!location) throw new Error('移动端未找到目标任务')
+      if (!location) throw new Error(translate('plans.taskMissing'))
       location.task.content = content
       location.task.t_m = mobileTaskUnit(timeMinutes)
     })
@@ -416,7 +417,7 @@ export async function completePlanTask(planId: string, taskId: string): Promise<
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const location = mobileTaskLocation(plan, taskId)
-      if (!location) throw new Error('移动端未找到目标任务')
+    if (!location) throw new Error(translate('plans.taskMissing'))
       const current = mobileCurrentTime()
       location.task.finish = current
     })
@@ -433,7 +434,7 @@ export async function deletePlanTask(planId: string, taskId: string): Promise<vo
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
       const location = mobileTaskLocation(plan, taskId)
-      if (!location) throw new Error('移动端未找到目标任务')
+    if (!location) throw new Error(translate('plans.taskMissing'))
       location.task.is_active = false
     })
     return

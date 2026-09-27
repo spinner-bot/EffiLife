@@ -1,5 +1,7 @@
 /** Runtime capabilities shared by gateway and archive services. */
 
+import { translate } from '@/i18n'
+
 export type PlanRuntime = 'desktop-sidecar' | 'browser-service' | 'mobile-unavailable'
 
 export function isMobilePlatform(): boolean {
@@ -19,5 +21,5 @@ export function getPlanRuntime(): PlanRuntime {
 }
 
 export function getPlanRuntimeUnavailableReason(): string {
-  return '移动端暂未接入兼容原始 plan 模型的本地计划服务'
+  return translate('plans.mobileRuntimeUnavailable')
 }
