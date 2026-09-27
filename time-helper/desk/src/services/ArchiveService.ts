@@ -138,6 +138,20 @@ function writeJSON(key: string, data: unknown): void {
   localStorage.setItem(key, JSON.stringify(data))
 }
 
+// Core data is written to IndexedDB first by DataService. Keep localStorage
+// only as a compatibility fallback so an archive reflects the same state that
+// the unified workspace loads at runtime.
+async function readCoreJSON<T>(localKey: string, storeName: string, storeKey: string): Promise<T | null> {
+  try {
+    const { get } = await import('@/storage')
+    const stored = await get<T>(storeName, storeKey)
+    if (stored !== null && stored !== undefined) return stored
+  } catch {
+    // Fall back to the legacy mirror when IndexedDB is unavailable.
+  }
+  return readJSON<T>(localKey)
+}
+
 async function requestPlanHelper(path: string, options: RequestInit = {}): Promise<Response> {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), PLAN_HELPER_REQUEST_TIMEOUT_MS)
@@ -215,10 +229,10 @@ async function collectAllData(): Promise<ArchiveData> {
   return {
     version: ARCHIVE_VERSION,
     exportDate: new Date().toISOString(),
-    config: readJSON(STORAGE_KEYS.CONFIG),
-    plans: readJSON(STORAGE_KEYS.PLANS),
-    scheduleRules: readJSON(STORAGE_KEYS.SCHEDULE_RULES),
-    manualPlans: readJSON(STORAGE_KEYS.MANUAL_PLANS),
+    config: await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config'),
+    plans: await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans'),
+    scheduleRules: await readCoreJSON(STORAGE_KEYS.SCHEDULE_RULES, STORE_NAMES.SCHEDULE_RULES, 'rules'),
+    manualPlans: await readCoreJSON(STORAGE_KEYS.MANUAL_PLANS, STORE_NAMES.MANUAL_PLANS, 'all'),
     audioSettings: readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
     eventSettings: readJSON(STORAGE_KEYS.EVENT_SETTINGS),
     eventInbox: readJSON(STORAGE_KEYS.EVENT_INBOX),
