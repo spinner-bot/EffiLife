@@ -108,19 +108,23 @@ function getLocalStorageRecords(): Record<string, unknown[]> {
 
 // IndexedDB is the primary archive source; localStorage remains a compatibility fallback.
 async function getAllRecords(): Promise<Record<string, unknown[]>> {
-  const records = getLocalStorageRecords()
+  const legacyRecords = getLocalStorageRecords()
   try {
     const { getRawAll, STORE_NAMES } = await import('@/storage')
     const entries = await getRawAll<{ key?: string; value?: unknown }>(STORE_NAMES.RECORDS)
+    const indexedDBRecords: Record<string, unknown[]> = {}
     for (const entry of entries) {
       if (typeof entry.key === 'string' && Array.isArray(entry.value)) {
-        records[entry.key] = entry.value
+        indexedDBRecords[entry.key] = entry.value
       }
     }
+    // IndexedDB is authoritative once it has readable records. Do not merge
+    // stale localStorage dates back into the primary dataset.
+    if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords
   } catch {
-    // IndexedDB unavailable: retain the legacy localStorage snapshot.
+    // IndexedDB unavailable: use the legacy localStorage snapshot.
   }
-  return records
+  return legacyRecords
 }
 
 // 从 localStorage 读取 JSON

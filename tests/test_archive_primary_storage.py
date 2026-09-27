@@ -26,3 +26,11 @@ def test_archive_stats_read_primary_values_from_indexeddb():
     assert "hasAudioSettings: !!readJSON(STORAGE_KEYS.AUDIO_SETTINGS)" in stats
     assert "hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS)" in stats
     assert "hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN)" in stats
+
+
+def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    records = source.split("async function getAllRecords", 1)[1]
+
+    assert "const indexedDBRecords: Record<string, unknown[]> = {}" in records
+    assert "if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords" in records
