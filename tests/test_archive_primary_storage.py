@@ -12,7 +12,7 @@ def test_archive_collects_core_data_from_indexeddb_before_legacy_mirror():
     assert "async function readCoreJSON" in source
     assert "await get<T>(storeName, storeKey)" in source
     collect = source.split("async function collectAllData", 1)[1].split("export async function exportArchive", 1)[0]
-    for key in ("config", "plans", "scheduleRules", "manualPlans"):
+    for key in ("config", "plans", "scheduleRules", "manualPlans", "audioSettings", "eventSettings", "eventInbox", "warningInbox", "dailyTrigger", "checkin"):
         assert re.search(rf"{key}: await readCoreJSON", collect)
 
 

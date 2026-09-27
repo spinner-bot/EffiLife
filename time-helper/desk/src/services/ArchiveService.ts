@@ -53,10 +53,10 @@ const STORAGE_KEYS = {
   EVENT_SETTINGS: 'efflife_event_settings',
   EVENT_INBOX: 'efflife_event_inbox',
   WARNING_INBOX: 'efflife_warning_inbox',
-  DAILY_TRIGGER: 'efflife_daily_trigger',
+  DAILY_TRIGGER: 'efflife_daily_triggers',
 
   // 打卡系统
-  CHECKIN: 'efflife_checkin',
+  CHECKIN: 'efflife_checkin_data',
 
   // 引导状态
   GUIDE_COMPLETED: 'efflife_guide_completed',
@@ -237,12 +237,12 @@ async function collectAllData(): Promise<ArchiveData> {
     plans: await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans'),
     scheduleRules: await readCoreJSON(STORAGE_KEYS.SCHEDULE_RULES, STORE_NAMES.SCHEDULE_RULES, 'rules'),
     manualPlans: await readCoreJSON(STORAGE_KEYS.MANUAL_PLANS, STORE_NAMES.MANUAL_PLANS, 'all'),
-    audioSettings: readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
-    eventSettings: readJSON(STORAGE_KEYS.EVENT_SETTINGS),
-    eventInbox: readJSON(STORAGE_KEYS.EVENT_INBOX),
-    warningInbox: readJSON(STORAGE_KEYS.WARNING_INBOX),
-    dailyTrigger: readJSON(STORAGE_KEYS.DAILY_TRIGGER),
-    checkin: readJSON(STORAGE_KEYS.CHECKIN),
+    audioSettings: await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings'),
+    eventSettings: await readCoreJSON(STORAGE_KEYS.EVENT_SETTINGS, STORE_NAMES.EVENT_SETTINGS, 'settings'),
+    eventInbox: await readCoreJSON(STORAGE_KEYS.EVENT_INBOX, STORE_NAMES.EVENT_INBOX, 'inbox'),
+    warningInbox: await readCoreJSON(STORAGE_KEYS.WARNING_INBOX, STORE_NAMES.WARNING_INBOX, 'inbox'),
+    dailyTrigger: await readCoreJSON(STORAGE_KEYS.DAILY_TRIGGER, STORE_NAMES.DAILY_TRIGGER, 'trigger'),
+    checkin: await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data'),
     locale: localStorage.getItem('effilife_locale') || 'zh-CN',
     records: await getAllRecords(),
     todos,
