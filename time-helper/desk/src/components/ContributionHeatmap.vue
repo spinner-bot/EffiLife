@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from '@/i18n'
 
 /**
  * GitHub 风格贡献热力图
@@ -34,6 +35,8 @@ const props = withDefaults(defineProps<{
   cellGap: 3,
   title: ''
 })
+
+const { t, locale } = useI18n()
 
 // 计算热力图单元格
 const cells = computed(() => {
@@ -101,7 +104,6 @@ const weekColumns = computed(() => {
 // 月份标签
 const monthLabels = computed(() => {
   const labels: { text: string; weekIndex: number }[] = []
-  const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
   let lastMonth = -1
 
   for (let i = 0; i < weekColumns.value.length; i++) {
@@ -109,7 +111,10 @@ const monthLabels = computed(() => {
     const d = new Date(firstDay.date)
     const month = d.getMonth()
     if (month !== lastMonth) {
-      labels.push({ text: monthNames[month], weekIndex: i })
+      labels.push({
+        text: new Intl.DateTimeFormat(locale.value, { month: 'short' }).format(d),
+        weekIndex: i,
+      })
       lastMonth = month
     }
   }
@@ -184,7 +189,15 @@ const stats = computed(() => {
   return { total, maxVal, currentStreak, longestStreak }
 })
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+const weekDays = computed(() => [
+  t('calendar.weekday.sun'),
+  t('calendar.weekday.mon'),
+  t('calendar.weekday.tue'),
+  t('calendar.weekday.wed'),
+  t('calendar.weekday.thu'),
+  t('calendar.weekday.fri'),
+  t('calendar.weekday.sat'),
+])
 
 function formatDate(d: Date): string {
   return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
@@ -207,7 +220,7 @@ defineEmits<{
     <div class="heatmap-header" v-if="title">
       <h3 class="heatmap-title">{{ title }}</h3>
       <div class="heatmap-stats">
-        <span class="heatmap-stat">活跃 <strong>{{ stats.total }}</strong> 天</span>
+        <span class="heatmap-stat">{{ t('heatmap.activeDays', { count: stats.total }) }}</span>
       </div>
     </div>
 
@@ -262,7 +275,7 @@ defineEmits<{
 
     <!-- 图例 -->
     <div class="heatmap-legend">
-      <span class="legend-label">少</span>
+      <span class="legend-label">{{ t('heatmap.less') }}</span>
       <div
         v-for="level in legendLevels"
         :key="level"
@@ -273,7 +286,7 @@ defineEmits<{
           backgroundColor: getCellColor({ date: '', value: level, label: '', isFuture: false, isToday: false })
         }"
       ></div>
-      <span class="legend-label">多</span>
+      <span class="legend-label">{{ t('heatmap.more') }}</span>
     </div>
   </div>
 </template>
