@@ -128,6 +128,13 @@ async function openEvents() {
   await loadPlans()
 }
 
+function openCreatePlan() {
+  planName.value = ''
+  planDate.value = toDateInput(new Date())
+  errorMessage.value = ''
+  showCreate.value = true
+}
+
 async function openPlan(plan: PlanSummary) {
   if (isLoading.value) return
   isLoading.value = true
@@ -400,7 +407,7 @@ onMounted(loadPlans)
         <p class="plans-eyebrow">{{ t('plans.center') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
       </div>
-      <button v-if="view === 'events' && !isReadOnlyPlanRuntime" class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
+      <button v-if="view === 'events' && !isReadOnlyPlanRuntime" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
     </header>
 
     <main class="plans-content">
@@ -428,7 +435,7 @@ onMounted(loadPlans)
           <FolderPlus :size="34" />
           <strong>{{ t('plans.empty') }}</strong>
           <span>{{ t('plans.emptyHint') }}</span>
-          <button v-if="!isReadOnlyPlanRuntime" class="plans-primary" @click="showCreate = true"><Plus :size="16" /> {{ t('plans.create') }}</button>
+          <button v-if="!isReadOnlyPlanRuntime" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
         </section>
         <section v-else class="event-plan-grid">
           <button v-for="plan in plans" :key="plan.id" class="event-plan-card theme-card" @click="openPlan(plan)">
