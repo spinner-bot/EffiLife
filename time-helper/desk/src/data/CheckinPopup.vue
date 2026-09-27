@@ -3,7 +3,7 @@ import { ref, computed, onUnmounted } from 'vue'
 import { CheckinSystem } from './CheckinSystem'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
-import { X, Flame } from 'lucide-vue-next'
+import { X, Flame, Target, MousePointerClick } from 'lucide-vue-next'
 
 const props = defineProps<{
   show: boolean
@@ -107,7 +107,7 @@ onUnmounted(() => {
             <!-- 准备阶段 -->
             <template v-if="phase === 'ready'">
               <div class="ready-content">
-                <div class="ready-icon">🎯</div>
+                <div class="ready-icon"><Target :size="40" /></div>
                 <h2 class="ready-title">今日计划已完成！</h2>
                 <p class="ready-desc">「{{ planName }}」计划100%达成</p>
                 <div class="streak-preview" v-if="currentStreak > 0">
@@ -115,7 +115,7 @@ onUnmounted(() => {
                   <span>当前连续 <strong>{{ currentStreak }}</strong> 天</span>
                 </div>
                 <button class="checkin-btn" @click="doCheckin">
-                  <span class="btn-icon">👆</span>
+                  <span class="btn-icon"><MousePointerClick :size="18" /></span>
                   <span class="btn-text">点击打卡</span>
                 </button>
               </div>

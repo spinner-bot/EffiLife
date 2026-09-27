@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
-import { ArrowLeft, Trash2, Check, X } from 'lucide-vue-next'
+import { ArrowLeft, Trash2, Check, X, Circle, CheckCircle2 } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
 import { useI18n } from '@/i18n'
 
@@ -99,7 +99,7 @@ onMounted(loadData)
               :key="tag"
               class="stat-item"
             >
-              <span class="stat-tag">{{ tag === stat.bg_tag ? '🟢' : '🔹' }} {{ tag }}</span>
+              <span class="stat-tag"><CheckCircle2 v-if="tag === stat.bg_tag" :size="14" /><Circle v-else :size="14" /> {{ tag }}</span>
               <span class="stat-value">{{ hoursToHm(stat.stat[tag] || 0) }} / {{ hoursToHm(target) }}</span>
             </div>
           </div>

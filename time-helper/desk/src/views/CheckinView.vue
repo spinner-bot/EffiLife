@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Flame, Calendar, Trophy, TrendingUp, Check, BarChart3 } from 'lucide-vue-next'
+import { ArrowLeft, Flame, Calendar, Trophy, TrendingUp, Check, BarChart3, Target, Hourglass, MousePointerClick, Crown, Sparkles, Gem, Medal, Sprout, type LucideIcon } from 'lucide-vue-next'
 import { CheckinSystem, checkinState } from '@/data'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
@@ -71,16 +71,16 @@ function doCheckin() {
 }
 
 // 获取打卡等级
-function getLevel(total: number): { titleKey: string; emoji: string } {
-  if (total >= 365) return { titleKey: 'checkin.level.year', emoji: '👑' }
-  if (total >= 180) return { titleKey: 'checkin.level.halfYear', emoji: '🌟' }
-  if (total >= 90) return { titleKey: 'checkin.level.quarter', emoji: '💎' }
-  if (total >= 60) return { titleKey: 'checkin.level.twoMonths', emoji: '🏅' }
-  if (total >= 30) return { titleKey: 'checkin.level.month', emoji: '🥇' }
-  if (total >= 14) return { titleKey: 'checkin.level.twoWeeks', emoji: '🥈' }
-  if (total >= 7) return { titleKey: 'checkin.level.week', emoji: '🥉' }
-  if (total >= 3) return { titleKey: 'checkin.level.start', emoji: '🌱' }
-  return { titleKey: 'checkin.level.initial', emoji: '🎯' }
+function getLevel(total: number): { titleKey: string; icon: LucideIcon } {
+  if (total >= 365) return { titleKey: 'checkin.level.year', icon: Crown }
+  if (total >= 180) return { titleKey: 'checkin.level.halfYear', icon: Sparkles }
+  if (total >= 90) return { titleKey: 'checkin.level.quarter', icon: Gem }
+  if (total >= 60) return { titleKey: 'checkin.level.twoMonths', icon: Medal }
+  if (total >= 30) return { titleKey: 'checkin.level.month', icon: Trophy }
+  if (total >= 14) return { titleKey: 'checkin.level.twoWeeks', icon: Medal }
+  if (total >= 7) return { titleKey: 'checkin.level.week', icon: Flame }
+  if (total >= 3) return { titleKey: 'checkin.level.start', icon: Sprout }
+  return { titleKey: 'checkin.level.initial', icon: Target }
 }
 
 // 最近打卡记录
@@ -155,8 +155,8 @@ const last7Days = computed(() => {
         <!-- 未打卡状态 -->
         <template v-if="!hasCheckedInToday && phase === 'idle'">
           <div class="status-card">
-            <div class="status-icon" v-if="canCheckinToday">🎯</div>
-            <div class="status-icon waiting" v-else>⏳</div>
+            <div class="status-icon" v-if="canCheckinToday"><Target :size="32" /></div>
+            <div class="status-icon waiting" v-else><Hourglass :size="32" /></div>
             <h2 class="status-title" v-if="canCheckinToday">{{ t('checkin.readyTitle') }}</h2>
             <h2 class="status-title" v-else>{{ t('checkin.notReadyTitle') }}</h2>
             <p class="status-desc" v-if="canCheckinToday">
@@ -170,7 +170,7 @@ const last7Days = computed(() => {
               class="checkin-btn"
               @click="doCheckin"
             >
-              <span class="btn-icon">👆</span>
+              <span class="btn-icon"><MousePointerClick :size="18" /></span>
               <span>{{ t('checkin.click') }}</span>
             </button>
             <button
@@ -247,7 +247,7 @@ const last7Days = computed(() => {
           <TrendingUp :size="24" class="stat-icon level" />
           <div class="stat-info">
             <span class="stat-value level-value">
-              {{ getLevel(totalCheckins).emoji }} {{ t(getLevel(totalCheckins).titleKey) }}
+              <component :is="getLevel(totalCheckins).icon" :size="18" /> {{ t(getLevel(totalCheckins).titleKey) }}
             </span>
             <span class="stat-label">{{ t('checkin.levelLabel') }}</span>
           </div>

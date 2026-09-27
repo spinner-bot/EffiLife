@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
+import { ArrowLeft, ChevronRight, Mail, Copy, BarChart3, CalendarDays, Target, Flame, BellRing, Music2, Palette, HardDrive } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
@@ -940,42 +940,42 @@ onMounted(async () => {
           <h3>功能概览</h3>
           <div class="feature-grid">
             <div class="feature-item">
-              <span class="feature-icon">📊</span>
+              <span class="feature-icon"><BarChart3 :size="22" /></span>
               <strong>时间统计</strong>
               <p>实时追踪各类别时间分配</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">📅</span>
+              <span class="feature-icon"><CalendarDays :size="22" /></span>
               <strong>日历视图</strong>
               <p>直观查看历史记录和完成度</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">🎯</span>
+              <span class="feature-icon"><Target :size="22" /></span>
               <strong>计划管理</strong>
               <p>自定义日计划，灵活配置</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">🔥</span>
+              <span class="feature-icon"><Flame :size="22" /></span>
               <strong>打卡系统</strong>
               <p>记录连续完成天数，激励坚持</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">⚠️</span>
+              <span class="feature-icon"><BellRing :size="22" /></span>
               <strong>进度预警</strong>
               <p>多时段提醒，防止落后计划</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">🎵</span>
+              <span class="feature-icon"><Music2 :size="22" /></span>
               <strong>环境音效</strong>
               <p>9种背景音乐，专注工作</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">🎨</span>
+              <span class="feature-icon"><Palette :size="22" /></span>
               <strong>主题切换</strong>
               <p>12种主题风格，个性定制</p>
             </div>
             <div class="feature-item">
-              <span class="feature-icon">💾</span>
+              <span class="feature-icon"><HardDrive :size="22" /></span>
               <strong>数据备份</strong>
               <p>导出导入，数据永不丢失</p>
             </div>

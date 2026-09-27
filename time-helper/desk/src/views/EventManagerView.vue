@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Bell, Clock, Inbox, Check, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Bell, BellRing, CalendarClock, Clock, Inbox, Check, Trash2, Trophy } from 'lucide-vue-next'
 import { EventSystem } from '@/audio'
 import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
@@ -383,7 +383,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'achievement' }"
               @click="setFilter('achievement')"
             >
-              🏆 {{ t('settings.events.filterAchievement') }}
+              <Trophy :size="14" /> {{ t('settings.events.filterAchievement') }}
               <span class="filter-count">{{ filterCounts.achievement }}</span>
             </button>
             <button
@@ -391,7 +391,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'event' }"
               @click="setFilter('event')"
             >
-              📋 {{ t('settings.events.filterEvent') }}
+              <CalendarClock :size="14" /> {{ t('settings.events.filterEvent') }}
               <span class="filter-count">{{ filterCounts.event }}</span>
             </button>
             <button
@@ -399,7 +399,7 @@ function testWarning(rule: WarningRule) {
               :class="{ active: inboxFilter === 'reminder' }"
               @click="setFilter('reminder')"
             >
-              🔔 {{ t('settings.events.filterReminder') }}
+              <BellRing :size="14" /> {{ t('settings.events.filterReminder') }}
               <span class="filter-count">{{ filterCounts.reminder }}</span>
             </button>
           </div>
