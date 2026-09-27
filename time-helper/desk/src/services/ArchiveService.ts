@@ -83,6 +83,7 @@ export interface ArchiveData {
     available: boolean
     plans: unknown[]
     unavailableReason?: string
+    stale?: boolean
   }
 }
 
@@ -148,6 +149,16 @@ async function requestPlanHelper(path: string, options: RequestInit = {}): Promi
   }
 }
 
+async function readCachedPlanHelperData(): Promise<unknown[] | null> {
+  try {
+    const { get, STORE_NAMES } = await import('@/storage')
+    const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
+    return Array.isArray(plans) ? plans : null
+  } catch {
+    return null
+  }
+}
+
 async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     try {
@@ -182,6 +193,19 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
 }
 
 // 收集所有数据
+async function collectPlanHelperDataWithCache(): Promise<ArchiveData['planHelper']> {
+  const live = await collectPlanHelperData()
+  if (live.available || getPlanRuntime() === 'mobile-unavailable') return live
+  const cachedPlans = await readCachedPlanHelperData()
+  if (!cachedPlans) return live
+  return {
+    available: true,
+    plans: cachedPlans,
+    stale: true,
+    unavailableReason: live.unavailableReason || 'plan-helper service unavailable; using the last local snapshot',
+  }
+}
+
 async function collectAllData(): Promise<ArchiveData> {
   const { getRawAll, STORE_NAMES } = await import('@/storage')
   const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
@@ -203,7 +227,7 @@ async function collectAllData(): Promise<ArchiveData> {
     todos,
     categories: await TodoCategoryService.ensureDefaults(todos),
     todoSettings: await TodoSettingsService.get(),
-    planHelper: await collectPlanHelperData(),
+    planHelper: await collectPlanHelperDataWithCache(),
   }
 }
 
@@ -281,7 +305,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
       return {
         success: true,
         path: filePath,
-        warning: data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+        warning: data.planHelper.stale
+          ? data.planHelper.unavailableReason
+          : data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
       }
     } catch (e) {
       // Tauri API 失败，回退到浏览器下载
@@ -294,7 +320,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   saveAs(blob, fileName)
   return {
     success: true,
-    warning: data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+    warning: data.planHelper.stale
+      ? data.planHelper.unavailableReason
+      : data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
   }
 }
 
