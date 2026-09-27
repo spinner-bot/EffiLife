@@ -87,8 +87,8 @@ onMounted(async () => {
     // 自动补打卡成功，通知用户
     EventSystem.triggerEvent(
       'achievement_unlocked',
-      '自动补打卡',
-      `已为您补打昨天的卡，连续 ${autoCheckinResult.streak} 天！`
+      t('settings.events.runtime.autoCheckinTitle'),
+      t('settings.events.runtime.autoCheckinMessage', { count: autoCheckinResult.streak ?? 0 })
     )
   } else if (autoCheckinResult.result === 'streak-broken') {
     // 连续天数已断，但昨天有完成的计划，添加到收件箱让用户手动补打

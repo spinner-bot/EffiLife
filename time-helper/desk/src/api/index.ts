@@ -7,6 +7,7 @@ import { EventSystem } from '@/audio'
 import type { Config, Plans, ScheduleRule, TimeRecord, RealTimeStat, DayPlanInfo } from '@/types'
 import type { CheckinData, CheckinRecord } from '@/data'
 import type { EventSettings, WarningRule, InboxEntry } from '@/audio'
+import { translate } from '@/i18n'
 
 // ============================================================
 // 通用响应类型
@@ -340,8 +341,8 @@ export const CheckinApi = {
         // 触发打卡完成事件
         EventSystem.triggerEvent(
           'checkin_complete',
-          '打卡成功！',
-          `连续打卡 ${result} 天 🔥`,
+          translate('settings.events.checkin'),
+          translate('settings.events.runtime.checkinMessage', { count: result }),
           { streak: result }
         )
       }

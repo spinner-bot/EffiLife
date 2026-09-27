@@ -295,7 +295,16 @@ function formatTime(rule: WarningRule): string {
 
 function testWarning(rule: WarningRule) {
   const timeStr = formatTime(rule)
-  EventSystem.triggerEvent('progress_warning', '进度预警', `已是${timeStr}，完成度仅${rule.threshold - 10}%（目标${rule.threshold}%）`)
+  EventSystem.triggerEvent(
+    'progress_warning',
+    t('settings.events.progressWarning'),
+    t('settings.events.runtime.progressWarning', {
+      time: timeStr,
+      planName: t('settings.events.currentPlan'),
+      progress: rule.threshold - 10,
+      threshold: rule.threshold,
+    }),
+  )
 }
 </script>
 
