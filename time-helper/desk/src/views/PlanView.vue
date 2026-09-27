@@ -218,19 +218,19 @@ async function savePlan() {
   const valid = planValidation.validate({ planName: name })
   if (!valid) return
   const items = editingPlanItems.value.filter(item => item.name.trim())
-  if (items.length === 0) { alert('请至少添加一个时间类别'); return }
+  if (items.length === 0) { alert(t('legacyPlan.validationCategoryRequired')); return }
   for (const item of items) {
-    if (item.hours < 0) { alert(`「${item.name}」的时长不能为负数`); return }
-    if (item.hours > 24) { alert(`「${item.name}」的时长不能超过 24 小时`); return }
+    if (item.hours < 0) { alert(t('legacyPlan.validationHoursNegative', { name: item.name })); return }
+    if (item.hours > 24) { alert(t('legacyPlan.validationHoursMax', { name: item.name })); return }
   }
   if (editingPlanType.value === '切分制') {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
     if (Math.abs(total - 24) > 0.01) {
-      if (confirm(`总和 ${total}h ≠ 24h，是否自动平衡？`)) {
+      if (confirm(t('legacyPlan.balanceConfirm', { total }))) {
         editingPlanItems.value = autoBalance(items, 24)
       } else { return }
     }
-    if (!editingPlanBgTag.value) { alert('切分制必须选择背景类别'); return }
+    if (!editingPlanBgTag.value) { alert(t('legacyPlan.backgroundRequired')); return }
   }
   const newPlans = { ...plans.value }
   newPlans[name] = {
@@ -243,7 +243,7 @@ async function savePlan() {
   manageView.value = 'plans'
 }
 async function deletePlan(name: string) {
-  if (!confirm(`确定删除计划"${name}"？`)) return
+  if (!confirm(t('legacyPlan.deletePlanConfirm', { name }))) return
   const newPlans = { ...plans.value }
   delete newPlans[name]
   await appStore.savePlans(newPlans)
@@ -280,16 +280,16 @@ function openEditRule(index: number) {
   manageView.value = 'editRule'
 }
 async function saveRule() {
-  if (!editingRulePlan.value) { alert('请选择关联计划'); return }
-  if (editingRuleType.value === 'default') { alert('默认规则不可编辑'); return }
+  if (!editingRulePlan.value) { alert(t('legacyPlan.relatedPlanRequired')); return }
+  if (editingRuleType.value === 'default') { alert(t('legacyPlan.defaultRuleImmutable')); return }
 
   // 对于 week 类型，从 selectedWeekDays 构建 value
   if (editingRuleType.value === 'week') {
-    if (selectedWeekDays.value.size === 0) { alert('请至少选择一个星期几'); return }
+    if (selectedWeekDays.value.size === 0) { alert(t('legacyPlan.weekRequired')); return }
     editingRuleValue.value = Array.from(selectedWeekDays.value).sort().join(',')
   }
 
-  if (!editingRuleValue.value) { alert('请设置规则参数'); return }
+  if (!editingRuleValue.value) { alert(t('legacyPlan.ruleValueRequired')); return }
   const newRule: ScheduleRule = {
     rule_type: editingRuleType.value,
     value: editingRuleValue.value,
@@ -305,7 +305,7 @@ async function saveRule() {
   manageView.value = 'rules'
 }
 async function deleteRule(index: number) {
-  if (!confirm('确定删除此规则？')) return
+  if (!confirm(t('legacyPlan.deleteRuleConfirm'))) return
   const newRules = [...scheduleRules.value]
   newRules.splice(index, 1)
   await appStore.saveScheduleRules(newRules)
@@ -320,7 +320,7 @@ async function moveRuleUp(index: number) {
 async function changeTodayPlan(planName: string) {
   if (planName === todayPlan.value.name) return
   await appStore.changeTodayPlan(planName)
-  alert(`今日计划已切换为：${planName}`)
+  alert(t('legacyPlan.switchedPlan', { name: planName }))
 }
 
 const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -448,10 +448,10 @@ onMounted(() => {
                   <div class="pv-record-meta">{{ hoursToHm(record.duration) }}</div>
                 </div>
                 <div class="pv-record-actions">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" title="编辑">
+                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" title="删除">
+                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -463,8 +463,8 @@ onMounted(() => {
           <EmptyState
             v-else
             :icon="ClipboardList"
-            title="暂无记录"
-            description="点击上方「新增」按钮开始记录你的时间"
+              :title="t('legacyPlan.emptyRecords')"
+              :description="t('legacyPlan.emptyRecordsHint')"
             @action="AudioManager.playSound('click'); openAddForm()"
           />
 
@@ -532,7 +532,7 @@ onMounted(() => {
                        · {{ plan.items.reduce((s, i) => s + i.hours, 0).toFixed(1) }}h
                     </template>
                     <template v-else-if="plan.bg_tag">
-                       · 背景：{{ plan.bg_tag }}
+                  · {{ t('legacyPlan.backgroundPrefix') }}{{ plan.bg_tag }}
                     </template>
                   </div>
                 </div>
@@ -566,7 +566,7 @@ onMounted(() => {
                 v-model="editingPlanName"
                 class="pv-text-input"
                 :class="{ 'has-error': planFormErrors.planName }"
-                placeholder="输入计划名称"
+                :placeholder="t('legacyPlan.planNamePlaceholder')"
                 @blur="validatePlanField('planName', editingPlanName)"
               />
               <p v-if="planFormErrors.planName" class="pv-field-error">{{ planFormErrors.planName }}</p>
@@ -630,31 +630,31 @@ onMounted(() => {
               <div v-for="(rule, index) in scheduleRules" :key="index" class="pv-rule-card">
                 <div class="pv-rule-info">
                   <template v-if="rule.rule_type === 'week'">
-                    <span class="pv-rule-type-badge">周</span>
-                    星期 {{ rule.value.split(',').map(v => weekDays[parseInt(v) - 1]).join('、') }} → <strong>{{ rule.plan_name }}</strong>
+                    <span class="pv-rule-type-badge">{{ t('legacyPlan.week') }}</span>
+                    {{ t('legacyPlan.weekLabel') }} {{ rule.value.split(',').map(v => weekDays[parseInt(v) - 1]).join('、') }} → <strong>{{ rule.plan_name }}</strong>
                   </template>
                   <template v-else-if="rule.rule_type === 'month'">
-                    <span class="pv-rule-type-badge">月</span>
-                    {{ rule.value.split(',').map(v => v + '月').join('、') }} → <strong>{{ rule.plan_name }}</strong>
+                    <span class="pv-rule-type-badge">{{ t('legacyPlan.month') }}</span>
+                    {{ rule.value.split(',').map(v => v + t('legacyPlan.monthLabel')).join('、') }} → <strong>{{ rule.plan_name }}</strong>
                   </template>
                   <template v-else-if="rule.rule_type === 'year'">
-                    <span class="pv-rule-type-badge">年</span>
-                    每年 {{ rule.value }} → <strong>{{ rule.plan_name }}</strong>
+                    <span class="pv-rule-type-badge">{{ t('legacyPlan.year') }}</span>
+                    {{ t('legacyPlan.yearLabel') }} {{ rule.value }} → <strong>{{ rule.plan_name }}</strong>
                   </template>
                   <template v-else-if="rule.rule_type === 'month_week'">
-                    <span class="pv-rule-type-badge">月周</span>
-                    每月第{{ rule.value.split('-')[0] }}个{{ weekDays[parseInt(rule.value.split('-')[1]) - 1] }} → <strong>{{ rule.plan_name }}</strong>
+                    <span class="pv-rule-type-badge">{{ t('legacyPlan.monthWeek') }}</span>
+                    {{ t('legacyPlan.monthWeekLabel') }}{{ rule.value.split('-')[0] }}{{ t('legacyPlan.monthWeekSuffix') }}{{ weekDays[parseInt(rule.value.split('-')[1]) - 1] }} → <strong>{{ rule.plan_name }}</strong>
                   </template>
                   <template v-else>
-                    <span class="pv-rule-type-badge default">默认</span>
-                    默认兜底 → <strong>{{ rule.plan_name }}</strong>
+                    <span class="pv-rule-type-badge default">{{ t('legacyPlan.defaultRule') }}</span>
+                    {{ t('legacyPlan.defaultRule') }} → <strong>{{ rule.plan_name }}</strong>
                   </template>
                 </div>
                 <div class="pv-rule-actions" v-if="rule.rule_type !== 'default'">
                   <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" title="上移">↑</button>
+                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" :title="t('legacyPlan.moveUp')">↑</button>
                   <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
@@ -698,17 +698,17 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'month'">
-              <label>月份（逗号分隔，如 1,3,5）</label>
+              <label>{{ t('legacyPlan.monthHint') }}</label>
               <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="1,3,5" />
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'year'">
-              <label>日期（MM-DD 格式）</label>
+              <label>{{ t('legacyPlan.dateHint') }}</label>
               <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="01-01" />
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'month_week'">
-              <label>第几个-星期几（如 2-3 表示第二个周三）</label>
+              <label>{{ t('legacyPlan.monthWeekHint') }}</label>
               <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="2-3" />
             </div>
 
@@ -801,9 +801,9 @@ onMounted(() => {
               <label>{{ t('legacyPlan.duration') }}</label>
               <div class="pv-time-row">
                 <input type="number" v-model="formDuration.h" min="0" class="pv-num-input sm" />
-                <span class="pv-time-unit">时</span>
+                <span class="pv-time-unit">{{ t('legacyPlan.hourUnit') }}</span>
                 <input type="number" v-model="formDuration.m" min="0" max="59" class="pv-num-input sm" />
-                <span class="pv-time-unit">分</span>
+                <span class="pv-time-unit">{{ t('legacyPlan.minuteUnit') }}</span>
               </div>
             </div>
             <div class="pv-form-group" v-if="formMode === 'duration'">
@@ -815,7 +815,7 @@ onMounted(() => {
               </div>
             </div>
             <div class="pv-form-group" v-if="formMode === 'duration'">
-              <label>参考类型</label>
+              <label>{{ t('legacyPlan.referenceType') }}</label>
               <div class="pv-radio-group">
                 <label><input type="radio" v-model="formDurationRef" value="start" /><span>{{ t('legacyPlan.referenceStart') }}</span></label>
                 <label><input type="radio" v-model="formDurationRef" value="end" /><span>{{ t('legacyPlan.referenceEnd') }}</span></label>
