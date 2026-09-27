@@ -434,6 +434,16 @@ export const DataService = {
     }
   },
 
+  async deleteRecordById(id: string, day?: string): Promise<void> {
+    const targetDay = day || getTodayDate()
+    const records = await this.loadRecords(targetDay)
+    const nextRecords = records.filter((record) => record.id !== id)
+    if (nextRecords.length === records.length) return
+    await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
+    localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(nextRecords))
+    triggerBackup('records', { date: targetDay, records: nextRecords })
+  },
+
   async updateRecord(index: number, record: TimeRecord, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
     const records = await this.loadRecords(targetDay)

@@ -434,7 +434,7 @@ async function trackTodoTime(todo: UnifiedTodo) {
     startDate.setSeconds(0, 0)
     let cursor = startDate
     let remaining = minutes
-    const recordIds: string[] = []
+    const recordRefs: Array<{ id: string; day: string }> = []
 
     while (remaining > 0) {
       const nextMidnight = new Date(cursor)
@@ -446,22 +446,36 @@ async function trackTodoTime(todo: UnifiedTodo) {
         ? nextMidnight
         : new Date(cursor.getTime() + chunk * 60 * 1000)
       const recordId = makeTimeRecordId()
-      recordIds.push(recordId)
+      const recordDay = formatLocalDate(cursor)
+      recordRefs.push({ id: recordId, day: recordDay })
       await DataService.saveRecord({
         id: recordId,
         todo_id: todo.id,
-        date: formatLocalDate(cursor),
+        date: recordDay,
         start: formatClock(cursor),
         end: endsAtMidnight ? '24:00' : formatClock(endDate),
         duration: chunk / 60,
         content: todo.title,
         tag: todo.category || 'default',
-      }, formatLocalDate(cursor))
+      }, recordDay)
       remaining -= chunk
       cursor = endDate
     }
 
-    replaceTodo(await TodoService.trackTime(todo.id, minutes, recordIds))
+    try {
+      replaceTodo(await TodoService.trackTime(todo.id, minutes, recordRefs.map((record) => record.id)))
+    } catch (error) {
+      const rollbackErrors: unknown[] = []
+      for (const record of recordRefs) {
+        try {
+          await DataService.deleteRecordById(record.id, record.day)
+        } catch (rollbackError) {
+          rollbackErrors.push(rollbackError)
+        }
+      }
+      if (rollbackErrors.length > 0) throw new Error(t('tasks.error.trackTimeRollback'))
+      throw error
+    }
     trackedMinutes.value = 25
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')
