@@ -5,6 +5,8 @@ export interface GuideStep {
   id: string
   title: string
   description: string
+  titleKey?: string
+  descriptionKey?: string
   target?: string  // CSS 选择器，指向要高亮的元素
   actionRequired?: boolean  // 是否需要用户操作才能继续
   actionType?: 'click' | 'navigate' | 'input' | 'wait'
@@ -292,6 +294,19 @@ export const MAIN_GUIDE: GuideConfig = {
     }
   ]
 }
+
+// The original guide described the pre-integration navigation (tabs, calendar
+// and legacy management selectors). Keep its data above for migration history,
+// but run the current onboarding against the unified application shell.
+MAIN_GUIDE.name = 'guide.name'
+MAIN_GUIDE.steps = [
+  { id: 'welcome', title: '', description: '', titleKey: 'guide.welcomeTitle', descriptionKey: 'guide.welcomeDescription', isDemo: true },
+  { id: 'plans', title: '', description: '', titleKey: 'guide.plansTitle', descriptionKey: 'guide.plansDescription', target: '.global-nav-link:nth-child(2)', actionRequired: true, actionType: 'click', actionTarget: '.global-nav-link:nth-child(2)', autoAdvance: true },
+  { id: 'tasks', title: '', description: '', titleKey: 'guide.tasksTitle', descriptionKey: 'guide.tasksDescription', target: '.global-nav-link:nth-child(3)', actionRequired: true, actionType: 'click', actionTarget: '.global-nav-link:nth-child(3)', autoAdvance: true },
+  { id: 'records', title: '', description: '', titleKey: 'guide.recordsTitle', descriptionKey: 'guide.recordsDescription', target: '.global-nav-link:nth-child(4)', actionRequired: true, actionType: 'click', actionTarget: '.global-nav-link:nth-child(4)', autoAdvance: true },
+  { id: 'settings', title: '', description: '', titleKey: 'guide.settingsTitle', descriptionKey: 'guide.settingsDescription', target: '.global-nav-link:nth-child(5)', actionRequired: true, actionType: 'click', actionTarget: '.global-nav-link:nth-child(5)', autoAdvance: true },
+  { id: 'complete', title: '', description: '', titleKey: 'guide.completeTitle', descriptionKey: 'guide.completeDescription', isDemo: true },
+]
 
 class GuideManagerClass {
   private backup: DataBackup | null = null

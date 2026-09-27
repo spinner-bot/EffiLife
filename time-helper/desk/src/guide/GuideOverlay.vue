@@ -2,10 +2,20 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { GuideManager, guideState } from './GuideManager'
 import { X, MousePointer } from 'lucide-vue-next'
+import { useI18n } from '@/i18n'
 
 const currentStep = computed(() => GuideManager.getCurrentStep())
 const progress = computed(() => GuideManager.getProgress())
 const isActive = computed(() => guideState.isActive)
+const { t } = useI18n()
+const currentTitle = computed(() => {
+  const step = currentStep.value
+  return step?.titleKey ? t(step.titleKey) : step?.title || ''
+})
+const currentDescription = computed(() => {
+  const step = currentStep.value
+  return step?.descriptionKey ? t(step.descriptionKey) : step?.description || ''
+})
 
 const targetRect = ref<DOMRect | null>(null)
 let targetElement: Element | null = null
@@ -142,7 +152,7 @@ function startActionValidation() {
 }
 
 function skipGuide() {
-  if (confirm('确定跳过引导？')) {
+  if (confirm(t('guide.skipConfirm'))) {
     GuideManager.skipGuide()
   }
 }
@@ -155,13 +165,13 @@ function getActionHint(): string {
   const step = currentStep.value
   if (!step) return ''
   if (!step.actionRequired) {
-    return '点击空白处继续'
+    return t('guide.clickToContinue')
   }
   // 操作已完成，显示继续按钮
   if (guideState.canProceed) {
-    return '✓ 已完成'
+    return t('guide.completed')
   }
-  return '点击高亮区域'
+  return t('guide.clickHighlight')
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -234,25 +244,25 @@ const tooltipStyle = computed(() => ({
         <div class="guide-tooltip" :style="tooltipStyle">
           <div class="tooltip-header">
             <span class="progress-badge">{{ progress.current }}/{{ progress.total }}</span>
-            <h3 class="tooltip-title">{{ currentStep.title }}</h3>
+            <h3 class="tooltip-title">{{ currentTitle }}</h3>
             <button class="close-btn" @click="skipGuide">
               <X :size="14" />
             </button>
           </div>
-          <p class="tooltip-desc">{{ currentStep.description }}</p>
+          <p class="tooltip-desc">{{ currentDescription }}</p>
           <div class="tooltip-hint" :class="{ action: currentStep.actionRequired, done: guideState.canProceed }">
             <span>{{ getActionHint() }}</span>
             <span v-if="currentStep.actionRequired && !guideState.canProceed && !currentStep.skippable" class="waiting-dots">
               <span></span><span></span><span></span>
             </span>
             <button v-if="currentStep.skippable && currentStep.actionRequired && !guideState.canProceed" class="skip-step-btn" @click="GuideManager.skipStep()">
-              跳过此步 →
+              {{ t('guide.skipStep') }} →
             </button>
             <button v-else-if="guideState.canProceed && !currentStep.autoAdvance && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
-              继续 →
+              {{ t('guide.next') }} →
             </button>
             <button v-else-if="guideState.canProceed && !currentStep.autoAdvance" class="next-btn finish" @click="finishGuide">
-              开始使用 ✨
+              {{ t('guide.startUsing') }} ✨
             </button>
           </div>
         </div>
