@@ -13,6 +13,7 @@ import {
 } from './todoService'
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
+import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -171,6 +172,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
     return { available: false, plans: [], unavailableReason: '移动端尚未导入事件计划快照' }
   }
   try {
+    await syncPendingPlanHelperReset()
     const response = await requestPlanHelper('/api/data/export', {
       headers: { Accept: 'application/json' },
     })
@@ -688,16 +690,19 @@ async function clearPlanHelperData(): Promise<void> {
   }
 
   if (getPlanRuntime() === 'mobile-unavailable') {
+    clearPlanHelperResetPending()
     return
   }
+  markPlanHelperResetPending()
   try {
     await requestPlanHelper('/api/data/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plans: [], replace: true }),
     })
+    clearPlanHelperResetPending()
   } catch {
-    // plan-helper may not be running; local reset remains valid.
+    // Keep the tombstone so the next normal request retries the server reset.
   }
 }
 

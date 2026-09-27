@@ -1,5 +1,6 @@
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, getPlanRuntimeUnavailableReason } from './runtimeCapabilities'
+import { syncPendingPlanHelperReset } from './planReset'
 
 export interface PlanSummary {
   id: string
@@ -197,6 +198,7 @@ async function fetchPlan(path: string, options: RequestInit = {}): Promise<Respo
   if (getPlanRuntime() === 'mobile-unavailable') {
     throw new Error(getPlanRuntimeUnavailableReason())
   }
+  await syncPendingPlanHelperReset()
   const retryDelays = [150, 300, 600, 1000, 1000]
   for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
     try {
