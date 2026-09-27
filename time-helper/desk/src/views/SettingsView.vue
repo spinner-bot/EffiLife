@@ -982,7 +982,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 存档管理 -->
@@ -1049,41 +1049,41 @@ onMounted(async () => {
       </template>
 
       <template v-else-if="currentView === 'legacy-recovery'">
-        <h2>数据恢复</h2>
+        <h2>{{ t('settings.legacyRecovery.title') }}</h2>
 
         <!-- 数据状态 -->
         <div class="data-stats">
-          <h3>数据状态</h3>
+          <h3>{{ t('settings.legacyRecovery.statusTitle') }}</h3>
           <div v-if="dataStatus" class="stats-grid">
             <div class="stat-item">
-              <span class="stat-value">{{ dataStatus.localStorageEmpty ? '空' : '有' }}</span>
+              <span class="stat-value">{{ dataStatus.localStorageEmpty ? t('settings.restore.empty') : t('settings.restore.available') }}</span>
               <span class="stat-label">localStorage</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value">{{ dataStatus.indexedDBEmpty ? '空' : '有' }}</span>
+              <span class="stat-value">{{ dataStatus.indexedDBEmpty ? t('settings.restore.empty') : t('settings.restore.available') }}</span>
               <span class="stat-label">IndexedDB</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStatus.backupCount }}</span>
-              <span class="stat-label">可用备份</span>
+              <span class="stat-label">{{ t('settings.legacyRecovery.availableBackups') }}</span>
             </div>
           </div>
         </div>
 
         <!-- 紧急操作 -->
         <div class="reset-section">
-          <h3>紧急操作</h3>
+          <h3>{{ t('settings.legacyRecovery.emergencyTitle') }}</h3>
           <button class="btn secondary full" @click="handleEmergencyExport">
-            导出紧急备份
+            {{ t('settings.legacyRecovery.emergencyAction') }}
           </button>
           <p class="archive-hint">
-            将当前所有数据导出为 JSON 文件，用于紧急恢复。
+            {{ t('settings.legacyRecovery.emergencyDescription') }}
           </p>
         </div>
 
         <!-- 备份列表 -->
         <div class="reset-section" v-if="backupsList.length > 0">
-          <h3>可用备份 ({{ backupsList.length }})</h3>
+          <h3>{{ t('settings.legacyRecovery.availableBackups') }} ({{ backupsList.length }})</h3>
           <div class="backup-list">
             <div
               v-for="backup in backupsList"
@@ -1095,42 +1095,42 @@ onMounted(async () => {
                 <span class="backup-time">{{ new Date(backup.timestamp).toLocaleString('zh-CN') }}</span>
               </div>
               <button class="btn primary" @click="handleRestoreBackup(backup)">
-                恢复
+                {{ t('settings.legacyRecovery.restore') }}
               </button>
             </div>
           </div>
         </div>
 
         <div class="reset-section" v-else>
-          <h3>无可用备份</h3>
+          <h3>{{ t('settings.legacyRecovery.noBackups') }}</h3>
           <p class="archive-hint">
-            暂无备份文件。建议定期导出存档以保护数据安全。<br>
-            数据变更时会自动创建备份（最多保留10个）。
+            {{ t('settings.legacyRecovery.noBackups') }}<br>
+            {{ t('settings.legacyRecovery.autoBackupHint') }}
           </p>
         </div>
 
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 恢复 -->
       <template v-else-if="currentView === 'reset'">
-        <h2>恢复设置</h2>
-        <p class="reset-warning">⚠️ 以下操作不可恢复，建议先导出存档备份</p>
+        <h2>{{ t('settings.reset.title') }}</h2>
+        <p class="reset-warning">⚠️ {{ t('settings.reset.warning') }}</p>
 
         <div class="reset-section">
-          <h3>数据清除</h3>
-          <button class="btn danger full" @click="handleReset('all')">清除所有数据</button>
-          <button class="btn secondary full" @click="handleReset('records')">清除时间记录</button>
-          <button class="btn secondary full" @click="handleReset('plans')">清除计划数据</button>
+          <h3>{{ t('settings.reset.dataClearTitle') }}</h3>
+          <button class="btn danger full" @click="handleReset('all')">{{ t('settings.reset.all') }}</button>
+          <button class="btn secondary full" @click="handleReset('records')">{{ t('settings.reset.records') }}</button>
+          <button class="btn secondary full" @click="handleReset('plans')">{{ t('settings.reset.plans') }}</button>
         </div>
 
         <div class="reset-section">
-          <h3>设置重置</h3>
-          <button class="btn secondary full" @click="handleReset('config')">重置应用设置</button>
-          <button class="btn secondary full" @click="handleReset('settings')">重置音频/事件设置</button>
+          <h3>{{ t('settings.reset.settingsTitle') }}</h3>
+          <button class="btn secondary full" @click="handleReset('config')">{{ t('settings.reset.config') }}</button>
+          <button class="btn secondary full" @click="handleReset('settings')">{{ t('settings.reset.audioEvents') }}</button>
         </div>
 
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 反馈 -->
