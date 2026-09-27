@@ -436,33 +436,33 @@ async function trackTodoTime(todo: UnifiedTodo) {
     let remaining = minutes
     const recordRefs: Array<{ id: string; day: string }> = []
 
-    while (remaining > 0) {
-      const nextMidnight = new Date(cursor)
-      nextMidnight.setHours(24, 0, 0, 0)
-      const minutesUntilMidnight = Math.max(1, Math.round((nextMidnight.getTime() - cursor.getTime()) / 60000))
-      const chunk = Math.min(remaining, minutesUntilMidnight)
-      const endsAtMidnight = chunk === minutesUntilMidnight
-      const endDate = endsAtMidnight
-        ? nextMidnight
-        : new Date(cursor.getTime() + chunk * 60 * 1000)
-      const recordId = makeTimeRecordId()
-      const recordDay = formatLocalDate(cursor)
-      recordRefs.push({ id: recordId, day: recordDay })
-      await DataService.saveRecord({
-        id: recordId,
-        todo_id: todo.id,
-        date: recordDay,
-        start: formatClock(cursor),
-        end: endsAtMidnight ? '24:00' : formatClock(endDate),
-        duration: chunk / 60,
-        content: todo.title,
-        tag: todo.category || 'default',
-      }, recordDay)
-      remaining -= chunk
-      cursor = endDate
-    }
-
     try {
+      while (remaining > 0) {
+        const nextMidnight = new Date(cursor)
+        nextMidnight.setHours(24, 0, 0, 0)
+        const minutesUntilMidnight = Math.max(1, Math.round((nextMidnight.getTime() - cursor.getTime()) / 60000))
+        const chunk = Math.min(remaining, minutesUntilMidnight)
+        const endsAtMidnight = chunk === minutesUntilMidnight
+        const endDate = endsAtMidnight
+          ? nextMidnight
+          : new Date(cursor.getTime() + chunk * 60 * 1000)
+        const recordId = makeTimeRecordId()
+        const recordDay = formatLocalDate(cursor)
+        recordRefs.push({ id: recordId, day: recordDay })
+        await DataService.saveRecord({
+          id: recordId,
+          todo_id: todo.id,
+          date: recordDay,
+          start: formatClock(cursor),
+          end: endsAtMidnight ? '24:00' : formatClock(endDate),
+          duration: chunk / 60,
+          content: todo.title,
+          tag: todo.category || 'default',
+        }, recordDay)
+        remaining -= chunk
+        cursor = endDate
+      }
+
       replaceTodo(await TodoService.trackTime(todo.id, minutes, recordRefs.map((record) => record.id)))
     } catch (error) {
       const rollbackErrors: unknown[] = []
