@@ -1135,67 +1135,67 @@ onMounted(async () => {
 
       <!-- 反馈 -->
       <template v-else-if="currentView === 'feedback'">
-        <h2>反馈</h2>
+        <h2>{{ t('settings.feedback.title') }}</h2>
         <div class="feedback-content">
           <p class="feedback-desc">
-            如果您在使用过程中遇到任何问题，或有改进建议，欢迎通过以下方式联系我们：
+            {{ t('settings.feedback.description') }}
           </p>
 
           <div class="email-section">
             <div class="email-row">
               <Mail :size="20" class="email-icon" />
               <span class="email-address">{{ FEEDBACK_EMAIL }}</span>
-              <button class="copy-btn" @click="copyEmail" :title="copySuccess ? '已复制' : '复制邮箱'">
+              <button class="copy-btn" @click="copyEmail" :title="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')">
                 <Copy :size="16" />
-                <span v-if="copySuccess">已复制</span>
+                <span v-if="copySuccess">{{ t('settings.feedback.copied') }}</span>
               </button>
             </div>
           </div>
 
           <button class="btn primary full email-btn" @click="openEmailClient">
             <Mail :size="18" />
-            <span>发送邮件</span>
+            <span>{{ t('settings.feedback.sendEmail') }}</span>
           </button>
 
           <div class="feedback-tips">
-            <h3>反馈内容建议</h3>
+            <h3>{{ t('settings.feedback.tipsTitle') }}</h3>
             <ul>
-              <li>遇到的问题或 Bug</li>
-              <li>功能改进建议</li>
-              <li>使用体验反馈</li>
-              <li>新功能需求</li>
+              <li>{{ t('settings.feedback.problem') }}</li>
+              <li>{{ t('settings.feedback.featureImprovement') }}</li>
+              <li>{{ t('settings.feedback.experience') }}</li>
+              <li>{{ t('settings.feedback.newFeature') }}</li>
             </ul>
           </div>
         </div>
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 更多设置 -->
       <template v-else-if="currentView === 'more'">
-        <h2>更多设置</h2>
+        <h2>{{ t('settings.more') }}</h2>
         <div class="settings-list">
           <button class="settings-item" @click="navigateTo('version-info')">
-            <span>版本信息</span>
+            <span>{{ t('settings.more.version') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('feedback')">
-            <span>反馈</span>
+            <span>{{ t('settings.more.feedback') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="startGuide">
-            <span>使用引导</span>
+            <span>{{ t('settings.more.guide') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('help')">
-            <span>帮助</span>
+            <span>{{ t('settings.more.help') }}</span>
             <ChevronRight :size="16" />
           </button>
           <button class="settings-item" @click="navigateTo('reset')">
-            <span>恢复</span>
+            <span>{{ t('settings.more.reset') }}</span>
             <ChevronRight :size="16" />
           </button>
         </div>
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 版本信息 -->
