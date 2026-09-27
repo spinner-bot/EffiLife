@@ -3,6 +3,10 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use tauri::Manager;
+
+#[cfg(all(not(debug_assertions), desktop))]
+use tauri_plugin_shell::process::CommandChild;
 
 // 崩溃日志处理器
 fn setup_panic_handler() {
@@ -96,6 +100,9 @@ pub struct AppState {
     pub data_dir: PathBuf,
 }
 
+#[cfg(all(not(debug_assertions), desktop))]
+struct PlanHelperSidecarState(Mutex<Option<CommandChild>>);
+
 // 获取数据目录
 fn get_data_dir() -> PathBuf {
     let mut path = dirs::data_local_dir()
@@ -153,7 +160,7 @@ fn save_config(config: Config) -> bool {
 }
 
 #[cfg(all(not(debug_assertions), desktop))]
-fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box<dyn std::error::Error>> {
     use tauri_plugin_shell::ShellExt;
 
     // Plan Helper preserves its legacy on-disk layout: the runtime root owns
@@ -181,10 +188,9 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<(), Box<dyn std::
     // Keep the child handle alive for the lifetime of the sidecar and drain
     // its event channel so its stdout/stderr pipes cannot block the service.
     tauri::async_runtime::spawn(async move {
-        let _child = child;
         while events.recv().await.is_some() {}
     });
-    Ok(())
+    Ok(child)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -198,7 +204,10 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             #[cfg(all(not(debug_assertions), desktop))]
-            start_plan_helper_sidecar(app.handle())?;
+            {
+                let child = start_plan_helper_sidecar(app.handle())?;
+                app.manage(PlanHelperSidecarState(Mutex::new(Some(child))));
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -206,6 +215,17 @@ pub fn run() {
             load_config,
             save_config,
         ])
-        .run(tauri::generate_context!())
+        .run(tauri::generate_context!(), |app_handle, event| {
+            #[cfg(all(not(debug_assertions), desktop))]
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                if let Some(state) = app_handle.try_state::<PlanHelperSidecarState>() {
+                    if let Ok(mut child) = state.0.lock() {
+                        if let Some(child) = child.take() {
+                            let _ = child.kill();
+                        }
+                    }
+                }
+            }
+        })
         .expect("error while running tauri application");
 }

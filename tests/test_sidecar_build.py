@@ -37,3 +37,11 @@ def test_tauri_release_declares_sidecar_and_build_hook():
     assert config["bundle"]["externalBin"] == ["binaries/efflife-plan-helper"]
     assert "build:sidecar" in config["build"]["beforeBuildCommand"]
     assert "build:sidecar" in package["scripts"]
+
+
+def test_release_sidecar_is_killed_when_tauri_exits():
+    source = (ROOT / "time-helper/desk/src-tauri/src/lib.rs").read_text(encoding="utf-8")
+
+    assert "PlanHelperSidecarState" in source
+    assert "RunEvent::ExitRequested" in source
+    assert "child.kill()" in source
