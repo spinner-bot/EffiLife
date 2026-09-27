@@ -14,6 +14,8 @@ launcher\\start.bat
 python launcher/start.py --unified
 ```
 
+> 当前 launcher 脚本仅用于开发、测试、迁移与回归验证。正式版本使用 Tauri 安装包启动，不要求用户单独安装 Python 或手动运行 plan-helper。
+
 统一工作台由 `time-helper/desk` 提供应用壳和主题系统，融合以下能力：
 
 - 计划中心：事件计划、分组与嵌套任务组、任务编辑、进展记录和归档恢复
