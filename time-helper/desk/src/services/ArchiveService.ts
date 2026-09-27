@@ -170,7 +170,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
     } catch {
       // Fall through to the explicit unavailable result.
     }
-    return { available: false, plans: [], unavailableReason: '移动端尚未导入事件计划快照' }
+    return { available: false, plans: [], unavailableReason: translate('settings.archive.mobilePlanSnapshotMissing') }
   }
   try {
     await syncPendingPlanHelperReset()
@@ -191,7 +191,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
     }
     return { available: true, plans: payload.data.plans }
   } catch {
-    return { available: false, plans: [], unavailableReason: 'plan-helper 服务当前不可连接' }
+    return { available: false, plans: [], unavailableReason: translate('settings.archive.planServiceUnavailable') }
   }
 }
 
@@ -205,7 +205,7 @@ async function collectPlanHelperDataWithCache(): Promise<ArchiveData['planHelper
     available: true,
     plans: cachedPlans,
     stale: true,
-    unavailableReason: live.unavailableReason || 'plan-helper service unavailable; using the last local snapshot',
+    unavailableReason: live.unavailableReason || translate('settings.archive.usingCachedPlanSnapshot'),
   }
 }
 
@@ -642,12 +642,12 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       try {
         await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
       } catch (error) {
-        warnings.push(`事件计划本地快照保存失败：${error instanceof Error ? error.message : '本地存储不可用'}`)
+        warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
       }
     }
     if (getPlanRuntime() === 'mobile-unavailable') {
       if (!data.planHelper?.available) {
-        warnings.push(`事件计划未恢复：${data.planHelper?.unavailableReason || '存档不包含事件计划快照'}`)
+        warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planSnapshotMissing') }))
       }
     } else if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
@@ -659,15 +659,17 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         const payload = await response.json() as { success?: boolean; error?: string }
         if (!response.ok || !payload.success) throw new Error(payload.error || `HTTP ${response.status}`)
       } catch (error) {
-        warnings.push(`事件计划恢复失败：${error instanceof Error ? error.message : '计划服务不可用'}`)
+        warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
       }
     } else if (data.planHelper && !data.planHelper.available) {
-      warnings.push(`事件计划未恢复：${data.planHelper.unavailableReason || 'plan-helper 当前不可用'}`)
+      warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper.unavailableReason || translate('settings.archive.planServiceUnavailable') }))
     }
 
     return {
       success: true,
-      message: warnings.length ? `存档已导入，但有提示：${warnings.join('；')}` : '存档导入成功',
+      message: warnings.length
+        ? translate('settings.archive.importedWithWarnings', { warnings: warnings.join('；') })
+        : translate('settings.archive.importSuccess'),
     }
     } catch (error) {
       try {
