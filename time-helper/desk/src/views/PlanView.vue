@@ -15,9 +15,11 @@ import {
 import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
 import EmptyState from '@/components/EmptyState.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
 const appStore = useAppStore()
+const { t } = useI18n()
 
 // ============ Records 相关状态 ============
 const records = computed(() => appStore.todayRecords)
@@ -85,11 +87,11 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
     const r = records.value[i]
     if (planType === '切分制') {
       if (isTimeOverlap(start, end, r.start, r.end)) {
-        return `与 [${r.tag}] ${r.start}-${r.end} 冲突`
+        return `${t('legacyPlan.conflict')}[${r.tag}] ${r.start}-${r.end}`
       }
     } else {
       if (r.tag === tag && isTimeOverlap(start, end, r.start, r.end)) {
-        return `与 [${r.tag}] ${r.start}-${r.end} 冲突`
+        return `${t('legacyPlan.conflict')}[${r.tag}] ${r.start}-${r.end}`
       }
     }
   }
@@ -112,25 +114,25 @@ async function saveRecord() {
     const sm = parseInt(String(formStart.value.m)) || 0
     const eh = parseInt(String(formEnd.value.h)) || 0
     const em = parseInt(String(formEnd.value.m)) || 0
-    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) { alert('小时必须在 0-23 之间'); return }
-    if (sm < 0 || sm > 59 || em < 0 || em > 59) { alert('分钟必须在 0-59 之间'); return }
+    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) { alert(t('legacyPlan.validationHour')); return }
+    if (sm < 0 || sm > 59 || em < 0 || em > 59) { alert(t('legacyPlan.validationMinute')); return }
     start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
     end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
     startMinutes = sh * 60 + sm
     endMinutes = eh * 60 + em
-    if (endMinutes <= startMinutes) { alert('结束时间必须晚于开始时间'); return }
+    if (endMinutes <= startMinutes) { alert(t('legacyPlan.validationEnd')); return }
   } else {
     const dh = parseInt(formDuration.value.h) || 0
     const dm = parseInt(formDuration.value.m) || 0
     const refH = parseInt(formDurationTime.value.h) || 0
     const refM = parseInt(formDurationTime.value.m) || 0
-    if (dh === 0 && dm === 0) { alert('时长不能为 0'); return }
-    if (dh < 0 || dm < 0) { alert('时长不能为负数'); return }
-    if (dm > 59) { alert('分钟必须在 0-59 之间'); return }
+    if (dh === 0 && dm === 0) { alert(t('legacyPlan.validationDurationZero')); return }
+    if (dh < 0 || dm < 0) { alert(t('legacyPlan.validationDurationNegative')); return }
+    if (dm > 59) { alert(t('legacyPlan.validationMinute')); return }
     const totalMinutes = dh * 60 + dm
-    if (totalMinutes > 24 * 60) { alert('时长不能超过 24 小时'); return }
-    if (refH < 0 || refH > 23) { alert('小时必须在 0-23 之间'); return }
-    if (refM < 0 || refM > 59) { alert('分钟必须在 0-59 之间'); return }
+    if (totalMinutes > 24 * 60) { alert(t('legacyPlan.validationDurationMax')); return }
+    if (refH < 0 || refH > 23) { alert(t('legacyPlan.validationHour')); return }
+    if (refM < 0 || refM > 59) { alert(t('legacyPlan.validationMinute')); return }
     const durationHours = dh + dm / 60
     const refMinutes = refH * 60 + refM
     if (formDurationRef.value === 'start') {
@@ -153,7 +155,7 @@ async function saveRecord() {
   }
 
   const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
-  if (conflict) { alert('时间冲突：' + conflict); return }
+  if (conflict) { alert(conflict); return }
 
   const duration = (endMinutes - startMinutes) / 60
   const record: TimeRecord = {
@@ -171,7 +173,7 @@ async function saveRecord() {
 }
 
 async function deleteRecord(index: number) {
-  if (!confirm('确定删除这条记录？')) return
+  if (!confirm(t('legacyPlan.deleteRecordConfirm'))) return
   await appStore.deleteRecord(index)
 }
 
@@ -401,12 +403,12 @@ onMounted(() => {
       </button>
       <div class="pv-header-title">
         <Clock :size="18" />
-        <span>计划工作台</span>
+        <span>{{ t('legacyPlan.title') }}</span>
       </div>
       <div class="pv-header-actions">
         <button class="pv-add-btn" @click="AudioManager.playSound('click'); openAddForm()">
           <Plus :size="16" />
-          <span>新增</span>
+          <span>{{ t('legacyPlan.add') }}</span>
         </button>
       </div>
     </header>
@@ -419,12 +421,12 @@ onMounted(() => {
           <!-- 今日概览卡片 -->
           <div class="pv-summary-card">
             <div class="pv-summary-left">
-              <span class="pv-summary-label">今日已记录</span>
+              <span class="pv-summary-label">{{ t('legacyPlan.todayRecorded') }}</span>
               <span class="pv-summary-value">{{ hoursToHm(todayTotalHours) }}</span>
             </div>
             <div class="pv-summary-right">
               <span class="pv-summary-plan">{{ todayPlan.name }}</span>
-              <span class="pv-summary-count">{{ records.length }} 条记录</span>
+              <span class="pv-summary-count">{{ records.length }} {{ t('legacyPlan.recordsCount') }}</span>
             </div>
           </div>
 
@@ -470,7 +472,7 @@ onMounted(() => {
           <section class="pv-management-summary">
             <div class="pv-plan-hero">
               <div class="pv-plan-hero-header">
-                <span class="pv-plan-hero-label">今日计划</span>
+                <span class="pv-plan-hero-label">{{ t('legacyPlan.todayPlan') }}</span>
                 <span class="pv-plan-hero-badge">{{ todayPlan.type }}</span>
               </div>
               <h2 class="pv-plan-hero-name">{{ todayPlan.name }}</h2>
@@ -485,17 +487,17 @@ onMounted(() => {
             <div class="pv-action-cards">
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openPlanList()">
                 <div class="pv-action-icon" style="--icon-bg: rgba(99,102,241,0.12); --icon-color: #6366f1;"><FolderKanban :size="22" /></div>
-                <div class="pv-action-text"><span class="pv-action-title">日计划管理</span><span class="pv-action-desc">创建、编辑计划模板</span></div>
+                <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.planManagement') }}</span><span class="pv-action-desc">{{ t('legacyPlan.planManagementDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openRuleList()">
                 <div class="pv-action-icon" style="--icon-bg: rgba(34,197,94,0.12); --icon-color: #22c55e;"><Calendar :size="22" /></div>
-                <div class="pv-action-text"><span class="pv-action-title">日程规则</span><span class="pv-action-desc">自动分配每日计划</span></div>
+                <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.scheduleRules') }}</span><span class="pv-action-desc">{{ t('legacyPlan.scheduleRulesDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
               <button class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
                 <div class="pv-action-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #f59e0b;"><RefreshCw :size="22" /></div>
-                <div class="pv-action-text"><span class="pv-action-title">临时变更</span><span class="pv-action-desc">快速切换今日计划</span></div>
+                <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.temporaryChange') }}</span><span class="pv-action-desc">{{ t('legacyPlan.temporaryChangeDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
             </div>
@@ -511,12 +513,12 @@ onMounted(() => {
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
-                <span>返回</span>
+                <span>{{ t('legacyPlan.back') }}</span>
               </button>
-              <h2>日计划管理</h2>
+              <h2>{{ t('legacyPlan.plans') }}</h2>
               <button class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreatePlan()">
                 <Plus :size="14" />
-                <span>创建</span>
+                <span>{{ t('legacyPlan.create') }}</span>
               </button>
             </div>
             <div class="pv-plan-list">
@@ -535,10 +537,10 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="pv-plan-actions">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" title="编辑">
+                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" title="删除">
+                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -551,14 +553,14 @@ onMounted(() => {
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'plans'">
                 <ArrowLeft :size="14" />
-                <span>返回</span>
+                <span>{{ t('legacyPlan.back') }}</span>
               </button>
-              <h2>{{ editingPlanName ? '编辑计划' : '创建计划' }}</h2>
+              <h2>{{ editingPlanName ? t('legacyPlan.editPlan') : t('legacyPlan.createPlan') }}</h2>
               <div></div>
             </div>
 
             <div class="pv-form-group">
-              <label>计划名称</label>
+              <label>{{ t('legacyPlan.planName') }}</label>
               <input
                 type="text"
                 v-model="editingPlanName"
@@ -571,26 +573,26 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-group">
-              <label>计划类型</label>
+              <label>{{ t('legacyPlan.planType') }}</label>
               <div class="pv-type-toggle">
-                <button :class="{ active: editingPlanType === '切分制' }" @click="editingPlanType = '切分制'">切分制</button>
-                <button :class="{ active: editingPlanType === '分配制' }" @click="editingPlanType = '分配制'">分配制</button>
+                <button :class="{ active: editingPlanType === '切分制' }" @click="editingPlanType = '切分制'">{{ t('legacyPlan.split') }}</button>
+                <button :class="{ active: editingPlanType === '分配制' }" @click="editingPlanType = '分配制'">{{ t('legacyPlan.allocate') }}</button>
               </div>
             </div>
 
             <div class="pv-form-group">
-              <label>时间类别</label>
+              <label>{{ t('legacyPlan.categories') }}</label>
               <div class="pv-items">
                 <div v-for="(item, index) in editingPlanItems" :key="index" class="pv-item-row">
-                  <input type="text" v-model="item.name" placeholder="类别名称" class="pv-text-input flex-1" />
-                  <input type="number" v-model="item.hours" placeholder="时长" class="pv-num-input" step="0.5" />
+                  <input type="text" v-model="item.name" :placeholder="t('legacyPlan.categoryName')" class="pv-text-input flex-1" />
+                  <input type="number" v-model="item.hours" :placeholder="t('legacyPlan.hours')" class="pv-num-input" step="0.5" />
                   <span class="pv-unit">h</span>
                   <button
                     v-if="editingPlanType === '切分制'"
                     class="pv-bg-toggle"
                     :class="{ active: editingPlanBgTag === item.name }"
                     @click="editingPlanBgTag = item.name"
-                  >背景</button>
+                  >{{ t('legacyPlan.background') }}</button>
                   <button class="pv-icon-btn sm" @click="removePlanItem(index)">
                     <X :size="12" />
                   </button>
@@ -598,15 +600,15 @@ onMounted(() => {
               </div>
               <button class="pv-secondary-btn" @click="addPlanItem()">
                 <Plus :size="14" />
-                <span>添加类别</span>
+                <span>{{ t('legacyPlan.addCategory') }}</span>
               </button>
             </div>
 
             <div class="pv-form-footer">
-              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'plans'">取消</button>
+              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'plans'">{{ t('legacyPlan.cancel') }}</button>
               <button class="pv-primary-btn" @click="AudioManager.playSound('click'); savePlan()">
                 <Check :size="14" />
-                <span>保存</span>
+                <span>{{ t('legacyPlan.save') }}</span>
               </button>
             </div>
           </template>
@@ -616,12 +618,12 @@ onMounted(() => {
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
-                <span>返回</span>
+                <span>{{ t('legacyPlan.back') }}</span>
               </button>
-              <h2>日程规则</h2>
+              <h2>{{ t('legacyPlan.rules') }}</h2>
               <button class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreateRule()">
                 <Plus :size="14" />
-                <span>添加</span>
+                <span>{{ t('legacyPlan.addRule') }}</span>
               </button>
             </div>
             <div class="pv-rule-list">
@@ -649,11 +651,11 @@ onMounted(() => {
                   </template>
                 </div>
                 <div class="pv-rule-actions" v-if="rule.rule_type !== 'default'">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" title="编辑">
+                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
                   <button class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" title="上移">↑</button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" title="删除">
+                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -666,24 +668,24 @@ onMounted(() => {
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'rules'">
                 <ArrowLeft :size="14" />
-                <span>返回</span>
+                <span>{{ t('legacyPlan.back') }}</span>
               </button>
-              <h2>{{ editingRuleIndex === -1 ? '添加规则' : '编辑规则' }}</h2>
+              <h2>{{ editingRuleIndex === -1 ? t('legacyPlan.addRule') : t('legacyPlan.edit') }}</h2>
               <div></div>
             </div>
 
             <div class="pv-form-group">
-              <label>规则类型</label>
+              <label>{{ t('legacyPlan.rules') }}</label>
               <div class="pv-type-toggle wrap">
-                <button :class="{ active: editingRuleType === 'week' }" @click="editingRuleType = 'week'">按星期</button>
-                <button :class="{ active: editingRuleType === 'month' }" @click="editingRuleType = 'month'">按月份</button>
-                <button :class="{ active: editingRuleType === 'year' }" @click="editingRuleType = 'year'">按年度</button>
-                <button :class="{ active: editingRuleType === 'month_week' }" @click="editingRuleType = 'month_week'">按月周几</button>
+                <button :class="{ active: editingRuleType === 'week' }" @click="editingRuleType = 'week'">{{ t('legacyPlan.week') }}</button>
+                <button :class="{ active: editingRuleType === 'month' }" @click="editingRuleType = 'month'">{{ t('legacyPlan.month') }}</button>
+                <button :class="{ active: editingRuleType === 'year' }" @click="editingRuleType = 'year'">{{ t('legacyPlan.year') }}</button>
+                <button :class="{ active: editingRuleType === 'month_week' }" @click="editingRuleType = 'month_week'">{{ t('legacyPlan.monthWeek') }}</button>
               </div>
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'week'">
-              <label>选择星期</label>
+              <label>{{ t('legacyPlan.selectWeek') }}</label>
               <div class="pv-week-picker">
                 <button
                   v-for="day in weekDays"
@@ -711,17 +713,17 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-group">
-              <label>关联计划</label>
+              <label>{{ t('legacyPlan.relatedPlan') }}</label>
               <select v-model="editingRulePlan" class="pv-select">
                 <option v-for="name in Object.keys(plans)" :key="name" :value="name">{{ name }}</option>
               </select>
             </div>
 
             <div class="pv-form-footer">
-              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'rules'">取消</button>
+              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'rules'">{{ t('legacyPlan.cancel') }}</button>
               <button class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRule()">
                 <Check :size="14" />
-                <span>保存</span>
+                <span>{{ t('legacyPlan.save') }}</span>
               </button>
             </div>
           </template>
@@ -731,14 +733,14 @@ onMounted(() => {
             <div class="pv-sub-header">
               <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
-                <span>返回</span>
+                <span>{{ t('legacyPlan.back') }}</span>
               </button>
-              <h2>临时变更</h2>
+              <h2>{{ t('legacyPlan.tempPlan') }}</h2>
               <div></div>
             </div>
 
             <div class="pv-current-info">
-              <span>当前今日计划</span>
+                <span>{{ t('legacyPlan.currentTodayPlan') }}</span>
               <strong>{{ todayPlan.name }}</strong>
             </div>
 
@@ -766,7 +768,7 @@ onMounted(() => {
       <div v-if="showRecordForm" class="pv-modal-overlay" @click.self="showRecordForm = false">
         <div class="pv-modal">
           <div class="pv-modal-header">
-            <h3>{{ isEditing ? '编辑记录' : '新增记录' }}</h3>
+            <h3>{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
             <button class="pv-modal-close" @click="showRecordForm = false">
               <X :size="18" />
             </button>
@@ -774,12 +776,12 @@ onMounted(() => {
           <div class="pv-modal-body">
             <!-- 输入模式切换 -->
             <div class="pv-mode-toggle">
-              <button :class="{ active: formMode === 'time' }" @click="formMode = 'time'">开始 + 结束</button>
-              <button :class="{ active: formMode === 'duration' }" @click="formMode = 'duration'">时长 + 单点</button>
+              <button :class="{ active: formMode === 'time' }" @click="formMode = 'time'">{{ t('legacyPlan.startEnd') }}</button>
+              <button :class="{ active: formMode === 'duration' }" @click="formMode = 'duration'">{{ t('legacyPlan.durationPoint') }}</button>
             </div>
 
             <div class="pv-form-group" v-if="formMode === 'time'">
-              <label>开始时间</label>
+              <label>{{ t('legacyPlan.start') }}</label>
               <div class="pv-time-row">
                 <input type="number" v-model="formStart.h" min="0" max="23" class="pv-num-input" />
                 <span class="pv-time-sep">:</span>
@@ -787,7 +789,7 @@ onMounted(() => {
               </div>
             </div>
             <div class="pv-form-group" v-if="formMode === 'time'">
-              <label>结束时间</label>
+              <label>{{ t('legacyPlan.end') }}</label>
               <div class="pv-time-row">
                 <input type="number" v-model="formEnd.h" min="0" max="23" class="pv-num-input" />
                 <span class="pv-time-sep">:</span>
@@ -796,7 +798,7 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-group" v-if="formMode === 'duration'">
-              <label>时长</label>
+              <label>{{ t('legacyPlan.duration') }}</label>
               <div class="pv-time-row">
                 <input type="number" v-model="formDuration.h" min="0" class="pv-num-input sm" />
                 <span class="pv-time-unit">时</span>
@@ -805,7 +807,7 @@ onMounted(() => {
               </div>
             </div>
             <div class="pv-form-group" v-if="formMode === 'duration'">
-              <label>参考时间</label>
+              <label>{{ t('legacyPlan.referenceTime') }}</label>
               <div class="pv-time-row">
                 <input type="number" v-model="formDurationTime.h" min="0" max="23" class="pv-num-input" />
                 <span class="pv-time-sep">:</span>
@@ -815,17 +817,17 @@ onMounted(() => {
             <div class="pv-form-group" v-if="formMode === 'duration'">
               <label>参考类型</label>
               <div class="pv-radio-group">
-                <label><input type="radio" v-model="formDurationRef" value="start" /><span>以上为开始时间</span></label>
-                <label><input type="radio" v-model="formDurationRef" value="end" /><span>以上为结束时间</span></label>
+                <label><input type="radio" v-model="formDurationRef" value="start" /><span>{{ t('legacyPlan.referenceStart') }}</span></label>
+                <label><input type="radio" v-model="formDurationRef" value="end" /><span>{{ t('legacyPlan.referenceEnd') }}</span></label>
               </div>
             </div>
 
             <div class="pv-form-group">
-              <label>内容</label>
+              <label>{{ t('legacyPlan.content') }}</label>
               <input
                 type="text"
                 v-model="formContent"
-                placeholder="请输入内容"
+                :placeholder="t('legacyPlan.contentPlaceholder')"
                 class="pv-text-input"
                 :class="{ 'has-error': recordFormErrors.content }"
                 @blur="validateRecordField('content', formContent)"
@@ -834,7 +836,7 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-group">
-              <label>类别</label>
+              <label>{{ t('legacyPlan.category') }}</label>
               <select
                 v-model="formTag"
                 class="pv-select"
@@ -847,10 +849,10 @@ onMounted(() => {
             </div>
           </div>
           <div class="pv-modal-footer">
-            <button class="pv-secondary-btn" @click="showRecordForm = false">取消</button>
+            <button class="pv-secondary-btn" @click="showRecordForm = false">{{ t('legacyPlan.cancel') }}</button>
             <button class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
-              <span>保存</span>
+              <span>{{ t('legacyPlan.save') }}</span>
             </button>
           </div>
         </div>
