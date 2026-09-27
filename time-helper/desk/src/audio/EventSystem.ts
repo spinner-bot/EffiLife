@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { AudioManager } from './AudioManager'
 import type { SoundType } from './AudioManager'
+import { translate } from '@/i18n'
 
 // 事件类型
 export type EventType =
@@ -505,15 +506,15 @@ class EventSystemClass {
     if (progress >= 100) {
       this.triggerEvent(
         'plan_complete_100',
-        '完美达成！',
-        `今天「${planName}」计划已100%完成，太棒了！`,
+        translate('settings.events.planComplete100'),
+        translate('settings.events.runtime.planComplete100', { planName }),
         { progress, planName }
       )
     } else if (progress >= 90) {
       this.triggerEvent(
         'plan_complete_90',
-        '即将达成！',
-        `今天「${planName}」计划已完成${progress}%，加油！`,
+        translate('settings.events.planComplete90'),
+        translate('settings.events.runtime.planComplete90', { planName, progress }),
         { progress, planName }
       )
     }
@@ -527,8 +528,8 @@ class EventSystemClass {
     if (progress >= 50 && progress < 90) {
       this.triggerEvent(
         'plan_complete_50',
-        '半程完成！',
-        `「${planName}」计划已完成${progress}%，继续加油！`,
+        translate('settings.events.planComplete50'),
+        translate('settings.events.runtime.planComplete50', { planName, progress }),
         { progress, planName }
       )
     }
@@ -540,19 +541,10 @@ class EventSystemClass {
     if (!this.settings.value.enabled.streak_milestone) return
     const milestones = [7, 14, 30, 60, 90, 180, 365]
     if (milestones.includes(streak)) {
-      const titles: Record<number, string> = {
-        7: '一周坚持！',
-        14: '两周达人！',
-        30: '月度先锋！',
-        60: '两月勇士！',
-        90: '季度精英！',
-        180: '半年之星！',
-        365: '年度传说！'
-      }
       this.triggerEvent(
         'streak_milestone',
-        titles[streak] || `连续${streak}天！`,
-        `连续打卡${streak}天，这是一个了不起的里程碑！🔥`,
+        translate('settings.events.runtime.streakTitle', { count: streak }),
+        translate('settings.events.runtime.streakMessage', { count: streak }),
         { streak }
       )
     }
@@ -564,8 +556,8 @@ class EventSystemClass {
     if (!this.settings.value.enabled.idle_reminder) return
     this.triggerEvent(
       'idle_reminder',
-      '休息一下？',
-      `你已经${minutesIdle}分钟没有操作了，记得记录时间哦`,
+      translate('settings.events.runtime.idleTitle'),
+      translate('settings.events.runtime.idleMessage', { minutes: minutesIdle }),
       { minutesIdle }
     )
   }
@@ -582,8 +574,13 @@ class EventSystemClass {
     if (!this.settings.value.enabled.weekly_summary) return
     this.triggerEvent(
       'weekly_summary',
-      '本周摘要',
-      `记录${data.totalRecords}条，共${data.totalHours.toFixed(1)}小时，平均完成${data.avgProgress}%，打卡${data.checkinDays}天`,
+      translate('settings.events.weekly'),
+      translate('settings.events.runtime.weeklyMessage', {
+        records: data.totalRecords,
+        hours: data.totalHours.toFixed(1),
+        progress: data.avgProgress,
+        checkins: data.checkinDays,
+      }),
       data
     )
   }
@@ -594,8 +591,8 @@ class EventSystemClass {
     if (!this.settings.value.enabled.daily_first_record) return
     this.triggerEvent(
       'daily_first_record',
-      '新的一天',
-      `今天的第一条记录已开始，「${planName}」加油！`,
+      translate('settings.events.dailyFirst'),
+      translate('settings.events.runtime.dailyFirstMessage', { planName }),
       { planName }
     )
   }
@@ -652,8 +649,13 @@ class EventSystemClass {
       // 弹出预警弹窗
       this.triggerEvent(
         'progress_warning',
-        '进度预警',
-        `已是${scheduledTime}，「${planName}」完成度仅${progress}%（目标${rule.threshold}%）`,
+        translate('settings.events.progressWarning'),
+        translate('settings.events.runtime.progressWarning', {
+          time: scheduledTime,
+          planName,
+          progress,
+          threshold: rule.threshold,
+        }),
         { ruleId: rule.id, progress, threshold: rule.threshold, scheduledTime, recordId: record.id }
       )
     }
