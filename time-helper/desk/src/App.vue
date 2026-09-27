@@ -73,7 +73,7 @@ function onCheckinClose() {
 }
 
 onMounted(async () => {
-  await AudioManager.whenReady()
+  await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady()])
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
   applyTheme()

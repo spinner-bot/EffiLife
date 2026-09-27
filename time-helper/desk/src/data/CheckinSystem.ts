@@ -41,9 +41,13 @@ const DEFAULT_DATA: CheckinData = {
 
 class CheckinSystemClass {
   private data = ref<CheckinData>({ ...DEFAULT_DATA })
+  private dataRevision = 0
+  private hasLegacyData = false
+  private ready: Promise<void>
 
   constructor() {
     this.load()
+    this.ready = this.hydrate()
   }
 
   // ========= 持久化 =========
@@ -52,6 +56,7 @@ class CheckinSystemClass {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
+        this.hasLegacyData = true
         this.data.value = { ...DEFAULT_DATA, ...JSON.parse(saved) }
       }
       this.syncState()
@@ -60,13 +65,46 @@ class CheckinSystemClass {
     }
   }
 
+  private async hydrate(): Promise<void> {
+    const revisionAtStart = this.dataRevision
+    try {
+      const { get, set, STORE_NAMES } = await import('@/storage')
+      const stored = await get<CheckinData>(STORE_NAMES.CHECKIN, 'data')
+      if (stored && this.dataRevision === revisionAtStart) {
+        this.data.value = { ...DEFAULT_DATA, ...stored }
+        this.syncState()
+      } else if (!stored && (this.hasLegacyData || this.dataRevision > revisionAtStart)) {
+        await set(STORE_NAMES.CHECKIN, 'data', this.data.value)
+      } else if (this.dataRevision !== revisionAtStart) {
+        await set(STORE_NAMES.CHECKIN, 'data', this.data.value)
+      }
+    } catch (e) {
+      console.warn('Failed to hydrate checkin data:', e)
+    }
+  }
+
+  async whenReady(): Promise<void> {
+    await this.ready
+  }
+
   private save() {
+    this.dataRevision += 1
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data.value))
       // 更新全局响应式状态
       this.syncState()
     } catch (e) {
       console.warn('Failed to save checkin data:', e)
+    }
+    void this.persist()
+  }
+
+  private async persist(): Promise<void> {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.CHECKIN, 'data', this.data.value)
+    } catch (e) {
+      console.warn('Failed to persist checkin data:', e)
     }
   }
 

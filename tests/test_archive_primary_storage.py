@@ -20,11 +20,10 @@ def test_archive_stats_read_primary_values_from_indexeddb():
     source = ARCHIVE.read_text(encoding="utf-8")
     stats = source.split("export async function getDataStats", 1)[1]
 
-    for store_key in ("CONFIG", "PLANS", "AUDIO_SETTINGS"):
+    for store_key in ("CONFIG", "PLANS", "AUDIO_SETTINGS", "CHECKIN"):
         assert f"readCoreJSON" in stats
         assert f"STORE_NAMES.{store_key}" in stats
     assert "hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS)" in stats
-    assert "hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN)" in stats
 
 
 def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():

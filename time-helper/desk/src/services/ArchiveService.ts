@@ -836,10 +836,10 @@ export async function getDataStats(): Promise<{
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: cachedEventPlans?.length || 0,
-    // Event and check-in services still write localStorage first; audio settings
-    // have an IndexedDB primary with a compatibility mirror.
+    // Event settings still write localStorage first; audio and check-in data
+    // have an IndexedDB primary with compatibility mirrors.
     hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
     hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS),
-    hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN),
+    hasCheckin: !!(await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data')),
   }
 }
