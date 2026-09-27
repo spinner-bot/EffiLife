@@ -14,3 +14,12 @@ def test_archive_collects_core_data_from_indexeddb_before_legacy_mirror():
     collect = source.split("async function collectAllData", 1)[1].split("export async function exportArchive", 1)[0]
     for key in ("config", "plans", "scheduleRules", "manualPlans"):
         assert re.search(rf"{key}: await readCoreJSON", collect)
+
+
+def test_archive_stats_read_primary_values_from_indexeddb():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    stats = source.split("export async function getDataStats", 1)[1]
+
+    for store_key in ("CONFIG", "PLANS", "AUDIO_SETTINGS", "EVENT_SETTINGS", "CHECKIN"):
+        assert f"readCoreJSON" in stats
+        assert f"STORE_NAMES.{store_key}" in stats

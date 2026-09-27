@@ -824,15 +824,16 @@ export async function getDataStats(): Promise<{
     totalRecords += dateRecords.length
   }
   const cachedEventPlans = await readCachedPlanHelperData()
+  const { STORE_NAMES } = await import('@/storage')
 
   return {
     recordDays: Object.keys(records).length,
     totalRecords,
-    hasConfig: !!readJSON(STORAGE_KEYS.CONFIG),
-    hasPlans: !!readJSON(STORAGE_KEYS.PLANS),
+    hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
+    hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: cachedEventPlans?.length || 0,
-    hasAudioSettings: !!readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
-    hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS),
-    hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN),
+    hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
+    hasEventSettings: !!(await readCoreJSON(STORAGE_KEYS.EVENT_SETTINGS, STORE_NAMES.EVENT_SETTINGS, 'settings')),
+    hasCheckin: !!(await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data')),
   }
 }
