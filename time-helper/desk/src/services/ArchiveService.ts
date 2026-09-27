@@ -635,6 +635,13 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     }
 
     const warnings: string[] = []
+    if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
+      try {
+        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
+      } catch (error) {
+        warnings.push(`事件计划本地快照保存失败：${error instanceof Error ? error.message : '本地存储不可用'}`)
+      }
+    }
     if (getPlanRuntime() === 'mobile-unavailable') {
       try {
         await idbSet(
