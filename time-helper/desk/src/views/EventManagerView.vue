@@ -28,6 +28,22 @@ const baseEventTypes: Array<{ type: EventType; nameKey: string; descriptionKey: 
   { type: 'daily_first_record', nameKey: 'settings.events.dailyFirst', descriptionKey: 'settings.events.dailyFirstDesc' }
 ]
 
+const testEventMessages: Record<string, { titleKey: string; descriptionKey: string }> = {
+  plan_complete_100: { titleKey: 'settings.events.planComplete100', descriptionKey: 'settings.events.testPlanComplete100' },
+  plan_complete_90: { titleKey: 'settings.events.planComplete90', descriptionKey: 'settings.events.testPlanComplete90' },
+  plan_complete_50: { titleKey: 'settings.events.planComplete50', descriptionKey: 'settings.events.testPlanComplete50' },
+  progress_warning: { titleKey: 'settings.events.progressWarning', descriptionKey: 'settings.events.testProgressWarning' },
+  record_added: { titleKey: 'settings.events.recordAdded', descriptionKey: 'settings.events.testRecordAdded' },
+  record_deleted: { titleKey: 'settings.events.recordDeleted', descriptionKey: 'settings.events.testRecordDeleted' },
+  plan_changed: { titleKey: 'settings.events.planChanged', descriptionKey: 'settings.events.testPlanChanged' },
+  achievement_unlocked: { titleKey: 'settings.events.achievement', descriptionKey: 'settings.events.testAchievement' },
+  checkin_complete: { titleKey: 'settings.events.checkin', descriptionKey: 'settings.events.testCheckin' },
+  streak_milestone: { titleKey: 'settings.events.streak', descriptionKey: 'settings.events.testStreak' },
+  idle_reminder: { titleKey: 'settings.events.idle', descriptionKey: 'settings.events.testIdle' },
+  weekly_summary: { titleKey: 'settings.events.weekly', descriptionKey: 'settings.events.testWeekly' },
+  daily_first_record: { titleKey: 'settings.events.dailyFirst', descriptionKey: 'settings.events.testDailyFirst' },
+}
+
 // 收件箱
 const inbox = computed(() => EventSystem.getEventInbox())
 const unreadCount = computed(() => EventSystem.getUnreadCount())
@@ -154,47 +170,9 @@ function toggleEvent(type: EventType | string) {
 }
 
 function testEvent(type: EventType) {
-  switch (type) {
-    case 'plan_complete_100':
-      EventSystem.triggerEvent('plan_complete_100', '完美达成！', '今天的计划已100%完成！')
-      break
-    case 'plan_complete_90':
-      EventSystem.triggerEvent('plan_complete_90', '即将达成！', '计划已完成90%，加油！')
-      break
-    case 'plan_complete_50':
-      EventSystem.triggerEvent('plan_complete_50', '半程完成！', '计划已完成50%，继续加油！')
-      break
-    case 'progress_warning':
-      EventSystem.triggerEvent('progress_warning', '进度预警', '已是18:00，完成度仅30%（目标50%）')
-      break
-    case 'record_added':
-      EventSystem.triggerEvent('record_added', '记录已添加', '新的时间记录已保存')
-      break
-    case 'record_deleted':
-      EventSystem.triggerEvent('record_deleted', '记录已删除', '一条时间记录已被删除')
-      break
-    case 'plan_changed':
-      EventSystem.triggerEvent('plan_changed', '计划已切换', '已切换到新的日计划')
-      break
-    case 'achievement_unlocked':
-      EventSystem.triggerEvent('achievement_unlocked', '成就解锁！', '恭喜你达成新成就！')
-      break
-    case 'checkin_complete':
-      EventSystem.triggerEvent('checkin_complete', '打卡成功！', '连续打卡 7 天 🔥')
-      break
-    case 'streak_milestone':
-      EventSystem.triggerEvent('streak_milestone', '一周坚持！', '连续打卡7天，这是一个了不起的里程碑！🔥')
-      break
-    case 'idle_reminder':
-      EventSystem.triggerEvent('idle_reminder', '休息一下？', '你已经30分钟没有操作了，记得记录时间哦')
-      break
-    case 'weekly_summary':
-      EventSystem.triggerEvent('weekly_summary', '本周摘要', '记录25条，共38.5小时，平均完成85%，打卡6天')
-      break
-    case 'daily_first_record':
-      EventSystem.triggerEvent('daily_first_record', '新的一天', '今天的第一条记录已开始，「工作日」加油！')
-      break
-  }
+  const message = testEventMessages[type]
+  if (!message) return
+  EventSystem.triggerEvent(type, t(message.titleKey), t(message.descriptionKey))
 }
 
 // ========= 收件箱 =========
