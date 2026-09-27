@@ -42,5 +42,7 @@ def test_desktop_workflow_installs_sidecar_builder_before_tauri():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
 
     sidecar_dependency_step = workflow.index("python -m pip install pyinstaller")
+    test_step = workflow.index("python -m pytest -q")
     tauri_step = workflow.index("npm run tauri build")
     assert sidecar_dependency_step < tauri_step
+    assert sidecar_dependency_step < test_step < tauri_step

@@ -60,7 +60,10 @@ jobs:
         run: npm ci
 
       - name: Install sidecar builder
-        run: python -m pip install pyinstaller
+        run: python -m pip install pyinstaller pytest
+
+      - name: Run integration and release contract tests
+        run: python -m pytest -q
 
       - name: Build and package installer
         working-directory: time-helper/desk
