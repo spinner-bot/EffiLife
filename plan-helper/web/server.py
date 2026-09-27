@@ -152,7 +152,9 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
     def _handle_api_get(self, path, query_string):
         params = dict(urllib.parse.parse_qsl(query_string))
 
-        if path == "/api/data/export":
+        if path == "/api/health":
+            resp = api.success_response({"service": "plan-helper", "status": "ok"})
+        elif path == "/api/data/export":
             resp = api.export_registry()
         elif path == "/api/plans":
             resp = api.list_plans()

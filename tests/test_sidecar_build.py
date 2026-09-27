@@ -45,3 +45,14 @@ def test_release_sidecar_is_killed_when_tauri_exits():
     assert "PlanHelperSidecarState" in source
     assert "RunEvent::ExitRequested" in source
     assert "child.kill()" in source
+
+
+def test_release_sidecar_must_pass_health_check_before_app_startup():
+    source = (ROOT / "time-helper/desk/src-tauri/src/lib.rs").read_text(encoding="utf-8")
+    server = (ROOT / "plan-helper/web/server.py").read_text(encoding="utf-8")
+
+    assert "plan_helper_is_ready" in source
+    assert 'GET /api/health HTTP/1.1' in source
+    assert 'response.contains("plan-helper")' in source
+    assert 'path == "/api/health"' in server
+    assert "plan-helper sidecar did not pass its health check" in source

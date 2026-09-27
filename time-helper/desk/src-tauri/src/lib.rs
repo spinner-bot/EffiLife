@@ -1,8 +1,16 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
+#[cfg(all(not(debug_assertions), desktop))]
+use std::io::Read;
+#[cfg(all(not(debug_assertions), desktop))]
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::sync::Mutex;
+#[cfg(all(not(debug_assertions), desktop))]
+use std::thread;
+#[cfg(all(not(debug_assertions), desktop))]
+use std::time::Duration;
 use tauri::Manager;
 
 #[cfg(all(not(debug_assertions), desktop))]
@@ -160,6 +168,32 @@ fn save_config(config: Config) -> bool {
 }
 
 #[cfg(all(not(debug_assertions), desktop))]
+fn plan_helper_is_ready() -> bool {
+    let address: SocketAddr = match "127.0.0.1:8765".parse() {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+
+    for _ in 0..120 {
+        if let Ok(mut stream) = TcpStream::connect_timeout(&address, Duration::from_millis(150)) {
+            let _ = stream.set_read_timeout(Some(Duration::from_millis(300)));
+            let request = b"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
+            if stream.write_all(request).is_ok() {
+                let mut response = String::new();
+                if stream.read_to_string(&mut response).is_ok()
+                    && response.starts_with("HTTP/1.1 200")
+                    && response.contains("plan-helper")
+                {
+                    return true;
+                }
+            }
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    false
+}
+
+#[cfg(all(not(debug_assertions), desktop))]
 fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box<dyn std::error::Error>> {
     use tauri_plugin_shell::ShellExt;
 
@@ -183,13 +217,18 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box
             "--data-dir",
             plan_runtime_root.to_string_lossy().as_ref(),
         ]);
-    let (mut events, child) = command.spawn()?;
+    let (mut events, mut child) = command.spawn()?;
 
     // Keep the child handle alive for the lifetime of the sidecar and drain
     // its event channel so its stdout/stderr pipes cannot block the service.
     tauri::async_runtime::spawn(async move {
         while events.recv().await.is_some() {}
     });
+
+    if !plan_helper_is_ready() {
+        let _ = child.kill();
+        return Err("plan-helper sidecar did not pass its health check".into());
+    }
     Ok(child)
 }
 
