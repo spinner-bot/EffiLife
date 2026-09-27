@@ -14,6 +14,7 @@ import {
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
+import { translate } from '@/i18n'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -285,9 +286,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
       const { writeFile } = await import('@tauri-apps/plugin-fs')
 
       const filePath = await save({
-        title: '导出存档',
+        title: translate('settings.archive.exportDialogTitle'),
         defaultPath: getDownloadPath() || fileName,
-        filters: [{ name: '效率时钟存档', extensions: ['efl'] }]
+        filters: [{ name: translate('settings.archive.fileType'), extensions: ['efl'] }]
       })
 
       if (!filePath) {
@@ -309,7 +310,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
         path: filePath,
         warning: data.planHelper.stale
           ? data.planHelper.unavailableReason
-          : data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+          : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
       }
     } catch (e) {
       // Tauri API 失败，回退到浏览器下载
@@ -324,7 +325,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
     success: true,
     warning: data.planHelper.stale
       ? data.planHelper.unavailableReason
-      : data.planHelper.available ? undefined : 'plan-helper 当前不可用，存档未包含事件计划快照',
+      : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
   }
 }
 
@@ -333,7 +334,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
   try {
     // 检查文件扩展名
     if (!file.name.endsWith('.efl')) {
-      return { success: false, message: '请选择 .efl 格式的存档文件' }
+      return { success: false, message: translate('settings.archive.invalidFile') }
     }
 
     // 读取 zip 文件
@@ -357,8 +358,8 @@ export async function importArchiveWithDialog(): Promise<{ success: boolean; mes
     const { readFile } = await import('@tauri-apps/plugin-fs')
 
     const filePath = await open({
-      title: '导入存档',
-      filters: [{ name: '效率时钟存档', extensions: ['efl'] }],
+      title: translate('settings.archive.importDialogTitle'),
+      filters: [{ name: translate('settings.archive.fileType'), extensions: ['efl'] }],
       multiple: false,
       directory: false
     })
