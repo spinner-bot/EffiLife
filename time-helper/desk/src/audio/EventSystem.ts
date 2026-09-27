@@ -116,11 +116,23 @@ class EventSystemClass {
   private activeEvents = ref<AppEvent[]>([])
   private warningInbox = ref<WarningRecord[]>([])
   private eventInbox = ref<InboxEntry[]>([])
+  private dailyTriggers: { date: string; triggers: string[] } | null = null
+  private settingsRevision = 0
+  private warningRevision = 0
+  private eventRevision = 0
+  private dailyRevision = 0
+  private hasLegacySettings = false
+  private hasLegacyWarningInbox = false
+  private hasLegacyEventInbox = false
+  private hasLegacyDailyTriggers = false
+  private ready: Promise<void>
 
   constructor() {
     this.loadSettings()
     this.loadWarningInbox()
     this.loadEventInbox()
+    this.loadDailyTriggers()
+    this.ready = this.hydrate()
   }
 
   // ========= 设置持久化 =========
@@ -129,25 +141,94 @@ class EventSystemClass {
     try {
       const saved = localStorage.getItem('efflife_event_settings')
       if (saved) {
+        this.hasLegacySettings = true
         const parsed = JSON.parse(saved)
-        this.settings.value = {
-          ...DEFAULT_EVENT_SETTINGS,
-          ...parsed,
-          warningRules: parsed.warningRules && parsed.warningRules.length > 0
-            ? parsed.warningRules
-            : DEFAULT_WARNING_RULES.map(r => ({ ...r }))
-        }
+        this.applySettings(parsed)
       }
     } catch (e) {
       console.warn('Failed to load event settings:', e)
     }
   }
 
+  private applySettings(parsed: Partial<EventSettings>) {
+    this.settings.value = {
+      ...DEFAULT_EVENT_SETTINGS,
+      ...parsed,
+      warningRules: parsed.warningRules && parsed.warningRules.length > 0
+        ? parsed.warningRules
+        : DEFAULT_WARNING_RULES.map(r => ({ ...r }))
+    }
+  }
+
+  private async hydrate(): Promise<void> {
+    const revisions = {
+      settings: this.settingsRevision,
+      warning: this.warningRevision,
+      event: this.eventRevision,
+      daily: this.dailyRevision,
+    }
+    try {
+      const { get, set, STORE_NAMES } = await import('@/storage')
+      const storedSettings = await get<Partial<EventSettings>>(STORE_NAMES.EVENT_SETTINGS, 'settings')
+      if (storedSettings && this.settingsRevision === revisions.settings) {
+        this.applySettings(storedSettings)
+      } else if (!storedSettings && this.hasLegacySettings) {
+        await set(STORE_NAMES.EVENT_SETTINGS, 'settings', this.settings.value)
+      } else if (this.settingsRevision !== revisions.settings) {
+        await set(STORE_NAMES.EVENT_SETTINGS, 'settings', this.settings.value)
+      }
+
+      const storedWarnings = await get<WarningRecord[]>(STORE_NAMES.WARNING_INBOX, 'inbox')
+      if (Array.isArray(storedWarnings) && this.warningRevision === revisions.warning) {
+        this.warningInbox.value = storedWarnings
+      } else if (!storedWarnings && this.hasLegacyWarningInbox) {
+        await set(STORE_NAMES.WARNING_INBOX, 'inbox', this.warningInbox.value)
+      } else if (this.warningRevision !== revisions.warning) {
+        await set(STORE_NAMES.WARNING_INBOX, 'inbox', this.warningInbox.value)
+      }
+
+      const storedEvents = await get<InboxEntry[]>(STORE_NAMES.EVENT_INBOX, 'inbox')
+      if (Array.isArray(storedEvents) && this.eventRevision === revisions.event) {
+        this.eventInbox.value = storedEvents
+      } else if (!storedEvents && this.hasLegacyEventInbox) {
+        await set(STORE_NAMES.EVENT_INBOX, 'inbox', this.eventInbox.value)
+      } else if (this.eventRevision !== revisions.event) {
+        await set(STORE_NAMES.EVENT_INBOX, 'inbox', this.eventInbox.value)
+      }
+
+      const storedDaily = await get<{ date: string; triggers: string[] }>(STORE_NAMES.DAILY_TRIGGER, 'trigger')
+      if (storedDaily && this.dailyRevision === revisions.daily) {
+        this.dailyTriggers = storedDaily
+      } else if (!storedDaily && this.hasLegacyDailyTriggers && this.dailyTriggers) {
+        await set(STORE_NAMES.DAILY_TRIGGER, 'trigger', this.dailyTriggers)
+      } else if (this.dailyRevision !== revisions.daily && this.dailyTriggers) {
+        await set(STORE_NAMES.DAILY_TRIGGER, 'trigger', this.dailyTriggers)
+      }
+    } catch (e) {
+      console.warn('Failed to hydrate event data:', e)
+    }
+  }
+
+  async whenReady(): Promise<void> {
+    await this.ready
+  }
+
   saveSettings() {
+    this.settingsRevision += 1
     try {
       localStorage.setItem('efflife_event_settings', JSON.stringify(this.settings.value))
     } catch (e) {
       console.warn('Failed to save event settings:', e)
+    }
+    void this.persistSettings()
+  }
+
+  private async persistSettings(): Promise<void> {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.EVENT_SETTINGS, 'settings', this.settings.value)
+    } catch (e) {
+      console.warn('Failed to persist event settings:', e)
     }
   }
 
@@ -192,6 +273,7 @@ class EventSystemClass {
     try {
       const saved = localStorage.getItem(WARNING_INBOX_KEY)
       if (saved) {
+        this.hasLegacyWarningInbox = true
         this.warningInbox.value = JSON.parse(saved)
       }
     } catch (e) {
@@ -200,10 +282,21 @@ class EventSystemClass {
   }
 
   private saveWarningInbox() {
+    this.warningRevision += 1
     try {
       localStorage.setItem(WARNING_INBOX_KEY, JSON.stringify(this.warningInbox.value))
     } catch (e) {
       console.warn('Failed to save warning inbox:', e)
+    }
+    void this.persistWarningInbox()
+  }
+
+  private async persistWarningInbox(): Promise<void> {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.WARNING_INBOX, 'inbox', this.warningInbox.value)
+    } catch (e) {
+      console.warn('Failed to persist warning inbox:', e)
     }
   }
 
@@ -225,6 +318,7 @@ class EventSystemClass {
     try {
       const saved = localStorage.getItem(EVENT_INBOX_KEY)
       if (saved) {
+        this.hasLegacyEventInbox = true
         this.eventInbox.value = JSON.parse(saved)
       }
     } catch (e) {
@@ -233,10 +327,21 @@ class EventSystemClass {
   }
 
   private saveEventInbox() {
+    this.eventRevision += 1
     try {
       localStorage.setItem(EVENT_INBOX_KEY, JSON.stringify(this.eventInbox.value))
     } catch (e) {
       console.warn('Failed to save event inbox:', e)
+    }
+    void this.persistEventInbox()
+  }
+
+  private async persistEventInbox(): Promise<void> {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.EVENT_INBOX, 'inbox', this.eventInbox.value)
+    } catch (e) {
+      console.warn('Failed to persist event inbox:', e)
     }
   }
 
@@ -355,16 +460,8 @@ class EventSystemClass {
   // ========= 每日触发记录（避免同一天同一事件重复） =========
 
   private getDailyTriggers(): Set<string> {
-    try {
-      const saved = localStorage.getItem(DAILY_TRIGGER_KEY)
-      if (saved) {
-        const data = JSON.parse(saved)
-        if (data.date === this.getTodayStr()) {
-          return new Set(data.triggers || [])
-        }
-      }
-    } catch (e) {
-      // ignore
+    if (this.dailyTriggers?.date === this.getTodayStr()) {
+      return new Set(this.dailyTriggers.triggers)
     }
     return new Set()
   }
@@ -372,10 +469,38 @@ class EventSystemClass {
   private markDailyTriggered(key: string) {
     const triggers = this.getDailyTriggers()
     triggers.add(key)
-    localStorage.setItem(DAILY_TRIGGER_KEY, JSON.stringify({
+    this.dailyTriggers = {
       date: this.getTodayStr(),
       triggers: Array.from(triggers)
-    }))
+    }
+    this.dailyRevision += 1
+    localStorage.setItem(DAILY_TRIGGER_KEY, JSON.stringify(this.dailyTriggers))
+    void this.persistDailyTriggers()
+  }
+
+  private loadDailyTriggers() {
+    try {
+      const saved = localStorage.getItem(DAILY_TRIGGER_KEY)
+      if (saved) {
+        this.hasLegacyDailyTriggers = true
+        const data = JSON.parse(saved)
+        if (data && typeof data.date === 'string' && Array.isArray(data.triggers)) {
+          this.dailyTriggers = { date: data.date, triggers: data.triggers }
+        }
+      }
+    } catch {
+      // Ignore a malformed legacy trigger marker.
+    }
+  }
+
+  private async persistDailyTriggers(): Promise<void> {
+    if (!this.dailyTriggers) return
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.DAILY_TRIGGER, 'trigger', this.dailyTriggers)
+    } catch (e) {
+      console.warn('Failed to persist daily triggers:', e)
+    }
   }
 
   private isDailyTriggered(key: string): boolean {
