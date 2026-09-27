@@ -1,4 +1,5 @@
 import { deleteRaw, get, getRawAll, putRaw, set, STORE_NAMES } from '@/storage'
+import { translate } from '@/i18n'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 export type TodoPriority = 'urgent-important' | 'important' | 'urgent' | 'normal'
@@ -215,7 +216,7 @@ export const TodoCategoryService = {
       id: makeCategoryId(),
       created_at: new Date().toISOString(),
     })
-    if (!category) throw new Error('分类名称和颜色不能为空')
+    if (!category) throw new Error(translate('tasks.error.categoryInvalid'))
     await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
     return category
   },
@@ -223,15 +224,15 @@ export const TodoCategoryService = {
   async update(id: string, patch: Partial<Pick<TodoCategory, 'name' | 'color' | 'icon' | 'ascii_icon' | 'pinned' | 'difficulty'>>): Promise<TodoCategory> {
     const categories = await this.list()
     const current = categories.find((category) => category.id === id)
-    if (!current) throw new Error('分类不存在')
+    if (!current) throw new Error(translate('tasks.error.categoryMissing'))
     const next = normalizeImportedCategory({ ...current, ...patch })
-    if (!next) throw new Error('分类名称和颜色不能为空')
+    if (!next) throw new Error(translate('tasks.error.categoryInvalid'))
     await putRaw(STORE_NAMES.TODO_CATEGORIES, next)
     return next
   },
 
   async remove(id: string): Promise<void> {
-    if (id === 'default') throw new Error('默认分类不能删除')
+    if (id === 'default') throw new Error(translate('tasks.error.defaultCategory'))
     await deleteRaw(STORE_NAMES.TODO_CATEGORIES, id)
   },
 }
@@ -310,7 +311,7 @@ export const TodoService = {
 
   async create(input: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Promise<UnifiedTodo> {
     const todo = normalize(input)
-    if (!todo.title) throw new Error('任务标题不能为空')
+    if (!todo.title) throw new Error(translate('tasks.error.titleRequired'))
     await putRaw(STORE_NAMES.TODOS, todo)
     return todo
   },
@@ -318,7 +319,7 @@ export const TodoService = {
   async update(id: string, patch: Partial<UnifiedTodo>): Promise<UnifiedTodo> {
     const todos = await this.list()
     const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error('任务不存在')
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     const next = normalize({ ...current, ...patch, id: current.id, created_at: current.created_at, title: patch.title ?? current.title })
     await putRaw(STORE_NAMES.TODOS, next)
     return next
@@ -330,10 +331,10 @@ export const TodoService = {
 
   async addSubtask(id: string, title: string): Promise<UnifiedTodo> {
     const cleanTitle = title.trim()
-    if (!cleanTitle) throw new Error('子任务标题不能为空')
+    if (!cleanTitle) throw new Error(translate('tasks.error.subtaskTitleRequired'))
     const todos = await this.list()
     const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error('任务不存在')
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     return this.update(id, {
       subtasks: [...current.subtasks, { id: makeSubtaskId(), title: cleanTitle, completed: false }],
     })
@@ -342,7 +343,7 @@ export const TodoService = {
   async toggleSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
     const todos = await this.list()
     const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error('任务不存在')
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     let found = false
     const subtasks = current.subtasks.map((subtask) => {
       if (subtask.id !== subtaskId) return subtask
@@ -350,16 +351,16 @@ export const TodoService = {
       const completed = !subtask.completed
       return { ...subtask, completed, completed_at: completed ? now() : undefined }
     })
-    if (!found) throw new Error('子任务不存在')
+    if (!found) throw new Error(translate('tasks.error.subtaskMissing'))
     return this.update(id, { subtasks })
   },
 
   async removeSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
     const todos = await this.list()
     const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error('任务不存在')
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     const subtasks = current.subtasks.filter((subtask) => subtask.id !== subtaskId)
-    if (subtasks.length === current.subtasks.length) throw new Error('子任务不存在')
+    if (subtasks.length === current.subtasks.length) throw new Error(translate('tasks.error.subtaskMissing'))
     return this.update(id, { subtasks })
   },
 
@@ -370,9 +371,9 @@ export const TodoService = {
   async trackTime(id: string, minutes: number, timeRecordId?: string | string[]): Promise<UnifiedTodo> {
     const todos = await this.list()
     const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error('任务不存在')
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
-      throw new Error('记录时长必须是 1 到 1440 分钟之间的整数')
+      throw new Error(translate('tasks.error.invalidMinutes'))
     }
     const recordIds = Array.isArray(timeRecordId)
       ? timeRecordId.filter(Boolean)
