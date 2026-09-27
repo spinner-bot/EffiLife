@@ -12,7 +12,7 @@ import {
   type UnifiedTodo,
 } from './todoService'
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
-import { getPlanRuntime, getPlanRuntimeUnavailableReason, isMobilePlatform } from './runtimeCapabilities'
+import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -643,15 +643,6 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       }
     }
     if (getPlanRuntime() === 'mobile-unavailable') {
-      try {
-        await idbSet(
-          STORE_NAMES.PLAN_HELPER_SNAPSHOT,
-          'plans',
-          data.planHelper?.available && Array.isArray(data.planHelper.plans) ? data.planHelper.plans : [],
-        )
-      } catch (error) {
-        warnings.push(`事件计划快照保存失败：${error instanceof Error ? error.message : '本地存储不可用'}`)
-      }
       if (!data.planHelper?.available) {
         warnings.push(`事件计划未恢复：${data.planHelper?.unavailableReason || '存档不包含事件计划快照'}`)
       }
@@ -669,8 +660,6 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       }
     } else if (data.planHelper && !data.planHelper.available) {
       warnings.push(`事件计划未恢复：${data.planHelper.unavailableReason || 'plan-helper 当前不可用'}`)
-    } else if (data.planHelper?.available && getPlanRuntime() === 'mobile-unavailable') {
-      warnings.push(`事件计划未恢复：${getPlanRuntimeUnavailableReason()}`)
     }
 
     return {
