@@ -737,9 +737,9 @@ onMounted(async () => {
             </div>
             <div class="preset-buttons">
               <span>预设方案：</span>
-              <button class="btn small" @click="applySolidPreset('default')">默认</button>
-              <button class="btn small" @click="applySolidPreset('dark')">深色</button>
-              <button class="btn small" @click="applySolidPreset('light')">浅色</button>
+              <button class="btn small" @click="applySolidPreset('default')">{{ t('settings.theme.preset.default') }}</button>
+              <button class="btn small" @click="applySolidPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
+              <button class="btn small" @click="applySolidPreset('light')">{{ t('settings.theme.preset.light') }}</button>
             </div>
           </div>
         </template>
@@ -773,10 +773,10 @@ onMounted(async () => {
             </div>
             <div class="preset-buttons">
               <span>预设方案：</span>
-              <button class="btn small" @click="applyGradientPreset('purple')">紫色</button>
-              <button class="btn small" @click="applyGradientPreset('blue')">蓝色</button>
-              <button class="btn small" @click="applyGradientPreset('sunset')">日落</button>
-              <button class="btn small" @click="applyGradientPreset('forest')">森林</button>
+              <button class="btn small" @click="applyGradientPreset('purple')">{{ t('settings.theme.preset.purple') }}</button>
+              <button class="btn small" @click="applyGradientPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
+              <button class="btn small" @click="applyGradientPreset('sunset')">{{ t('settings.theme.preset.sunset') }}</button>
+              <button class="btn small" @click="applyGradientPreset('forest')">{{ t('settings.theme.preset.forest') }}</button>
             </div>
           </div>
         </template>
@@ -804,9 +804,9 @@ onMounted(async () => {
             </div>
             <div class="preset-buttons">
               <span>预设方案：</span>
-              <button class="btn small" @click="applyGlassPreset('dark')">深色</button>
-              <button class="btn small" @click="applyGlassPreset('light')">浅色</button>
-              <button class="btn small" @click="applyGlassPreset('blue')">蓝色</button>
+              <button class="btn small" @click="applyGlassPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
+              <button class="btn small" @click="applyGlassPreset('light')">{{ t('settings.theme.preset.light') }}</button>
+              <button class="btn small" @click="applyGlassPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
             </div>
           </div>
         </template>
@@ -839,10 +839,10 @@ onMounted(async () => {
             </div>
             <div class="preset-buttons">
               <span>预设方案：</span>
-              <button class="btn small" @click="applyNeonPreset('green')">绿色</button>
-              <button class="btn small" @click="applyNeonPreset('pink')">粉色</button>
-              <button class="btn small" @click="applyNeonPreset('cyan')">青色</button>
-              <button class="btn small" @click="applyNeonPreset('rainbow')">彩虹</button>
+              <button class="btn small" @click="applyNeonPreset('green')">{{ t('settings.theme.preset.green') }}</button>
+              <button class="btn small" @click="applyNeonPreset('pink')">{{ t('settings.theme.preset.pink') }}</button>
+              <button class="btn small" @click="applyNeonPreset('cyan')">{{ t('settings.theme.preset.cyan') }}</button>
+              <button class="btn small" @click="applyNeonPreset('rainbow')">{{ t('settings.theme.preset.rainbow') }}</button>
             </div>
           </div>
         </template>
