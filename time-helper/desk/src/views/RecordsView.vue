@@ -86,11 +86,11 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
 
     if (planType === '切分制') {
       if (isTimeOverlap(start, end, r.start, r.end)) {
-        return `与 [${r.tag}] ${r.start}-${r.end} 冲突`
+        return t('records.validation.conflictWith', { tag: r.tag, start: r.start, end: r.end })
       }
     } else {
       if (r.tag === tag && isTimeOverlap(start, end, r.start, r.end)) {
-        return `与 [${r.tag}] ${r.start}-${r.end} 冲突`
+        return t('records.validation.conflictWith', { tag: r.tag, start: r.start, end: r.end })
       }
     }
   }

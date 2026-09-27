@@ -389,7 +389,7 @@ function isSelectedWeekDay(day: string): boolean {
               <button class="icon-btn" @click="openEditRule(index)" :title="t('management.edit')">
                 <Pencil :size="14" />
               </button>
-              <button class="icon-btn" @click="moveRuleUp(index)" title="上移">↑</button>
+              <button class="icon-btn" @click="moveRuleUp(index)" :title="t('management.moveUp')">↑</button>
               <button class="icon-btn danger" @click="deleteRule(index)" :title="t('management.delete')">
                 <Trash2 :size="14" />
               </button>
