@@ -791,6 +791,7 @@ export async function getDataStats(): Promise<{
   totalRecords: number
   hasConfig: boolean
   hasPlans: boolean
+  eventPlanCount: number
   hasAudioSettings: boolean
   hasEventSettings: boolean
   hasCheckin: boolean
@@ -800,12 +801,14 @@ export async function getDataStats(): Promise<{
   for (const dateRecords of Object.values(records)) {
     totalRecords += dateRecords.length
   }
+  const cachedEventPlans = await readCachedPlanHelperData()
 
   return {
     recordDays: Object.keys(records).length,
     totalRecords,
     hasConfig: !!readJSON(STORAGE_KEYS.CONFIG),
     hasPlans: !!readJSON(STORAGE_KEYS.PLANS),
+    eventPlanCount: cachedEventPlans?.length || 0,
     hasAudioSettings: !!readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
     hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS),
     hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN),

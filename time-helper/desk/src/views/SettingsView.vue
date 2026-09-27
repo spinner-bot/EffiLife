@@ -376,6 +376,7 @@ const dataStats = ref({
   totalRecords: 0,
   hasConfig: false,
   hasPlans: false,
+  eventPlanCount: 0,
   hasAudioSettings: false,
   hasEventSettings: false,
   hasCheckin: false,
@@ -1013,6 +1014,10 @@ onMounted(async () => {
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.hasPlans ? '✓' : '—' }}</span>
               <span class="stat-label">{{ t('settings.archive.planData') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.eventPlanCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.eventPlanSnapshots') }}</span>
             </div>
           </div>
         </div>
