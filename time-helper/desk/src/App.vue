@@ -22,6 +22,7 @@ const showCheckinPopup = ref(false)
 const checkinPlanName = ref('')
 // 是否已为今天的100%展示过打卡弹窗
 const hasPromptedCheckin = ref(false)
+const runtimeReady = ref(false)
 
 // 应用主题到 CSS 变量
 function applyTheme() {
@@ -77,6 +78,7 @@ onMounted(async () => {
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
   applyTheme()
+  runtimeReady.value = true
 
   // 启动背景音乐
   AudioManager.startBgm()
@@ -126,11 +128,12 @@ watch(() => appStore.todayStat, () => {
 </script>
 
 <template>
-  <div class="app-container">
+  <div class="app-container" :aria-busy="!runtimeReady">
     <!-- 主题背景画布 -->
     <ThemeCanvas :theme="appStore.config.theme" />
 
     <!-- 主内容 -->
+    <template v-if="runtimeReady">
     <div class="app-content">
       <header class="global-nav theme-card" aria-label="EffiLife">
         <RouterLink class="global-brand" to="/" aria-label="EffiLife home">
@@ -175,6 +178,12 @@ watch(() => appStore.todayStat, () => {
 
     <!-- 引导覆盖层 -->
     <GuideOverlay />
+    </template>
+
+    <div v-else class="app-startup" role="status" aria-live="polite">
+      <span class="app-startup-mark">E</span>
+      <span>{{ t('app.starting') }}</span>
+    </div>
   </div>
 </template>
 
@@ -193,6 +202,9 @@ watch(() => appStore.todayStat, () => {
   min-height: 100vh;
   padding-top: 64px;
 }
+
+.app-startup { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 13px; transition: opacity .2s ease, transform .2s ease; }
+.app-startup-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: var(--color-button-text); background: var(--color-primary); font-size: 18px; font-weight: 700; box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0,0,0,.08)); }
 
 .global-nav {
   position: fixed;
@@ -220,6 +232,8 @@ watch(() => appStore.todayStat, () => {
 .global-nav-links { display: flex; align-items: center; gap: 3px; }
 .global-nav-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 10px; color: var(--color-text-tertiary); font-size: 12px; transition: color .2s, background-color .2s; }
 .global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
+
+@media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
 
 /* 全局主题效果 */
 .theme-card {

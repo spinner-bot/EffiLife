@@ -1761,6 +1761,7 @@ export const currentLocale = ref<Locale>(readLocale())
 const navigationFallbacks: Record<Locale, Record<string, string>> = {
   'zh-CN': {
     'nav.primary': '\u4e3b\u5bfc\u822a\u680f',
+    'app.starting': '\u6b63\u5728\u51c6\u5907\u5de5\u4f5c\u53f0\u2026',
     'nav.home': '\u9996\u9875',
     'nav.plans': '\u8ba1\u5212\u4e2d\u5fc3',
     'nav.records': '\u65f6\u95f4\u8bb0\u5f55',
@@ -1769,6 +1770,7 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
   },
   'en-US': {
     'nav.primary': 'Primary navigation',
+    'app.starting': 'Preparing workspace…',
     'nav.home': 'Today',
     'nav.plans': 'Plans',
     'nav.records': 'Time',
