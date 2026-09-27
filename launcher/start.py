@@ -137,6 +137,7 @@ def build_modules():
                 "cmd": [sys.executable, "web/server.py"],
                 "cwd": BASE_DIR / "plan-helper",
                 "url": "http://127.0.0.1:8765",
+                "health_url": "http://127.0.0.1:8765/api/health",
             }],
         },
         "2": {
@@ -358,7 +359,12 @@ def service_is_ready(url):
     """Check whether a local companion service is already running."""
     try:
         with urlopen(url, timeout=1) as response:
-            return response.status < 500
+            if response.status >= 500:
+                return False
+            if url.rstrip("/").endswith("/api/health"):
+                body = response.read(8192).decode("utf-8", errors="replace")
+                return "plan-helper" in body and '"status"' in body
+            return True
     except (OSError, URLError):
         return False
 
@@ -391,7 +397,8 @@ def start_companions(module, env):
     """Start only companion services not already provided by the user."""
     managed = []
     for companion in module.get("companions", []):
-        if companion.get("url") and service_is_ready(companion["url"]):
+        health_url = companion.get("health_url", companion.get("url"))
+        if health_url and service_is_ready(health_url):
             print(f"使用已运行的 {companion['name']}: {companion['url']}")
             continue
 
@@ -417,7 +424,7 @@ def start_companions(module, env):
             return None
         output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
         output_thread.start()
-        if companion.get("url") and not wait_for_service(process, companion["url"]):
+        if health_url and not wait_for_service(process, health_url):
             terminate_process(process)
             for started in managed:
                 terminate_process(started)
@@ -434,12 +441,9 @@ def wait_for_service(process, url, timeout=None):
         if process.poll() is not None:
             print(f"\n❌ 服务提前退出，退出码: {process.returncode}")
             return False
-        try:
-            with urlopen(url, timeout=1) as response:
-                if response.status < 500:
-                    return True
-        except (OSError, URLError):
-            time.sleep(0.25)
+        if service_is_ready(url):
+            return True
+        time.sleep(0.25)
     print(f"\n⚠️ 服务在 {timeout} 秒内未响应，请手动打开: {url}")
     return False
 

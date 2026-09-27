@@ -20,12 +20,39 @@ def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     assert modules["1"]["url"] == "http://127.0.0.1:1420"
     assert modules["1"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1420", "--strictPort"]
     assert modules["1"]["companions"][0]["name"] == "plan-helper API"
+    assert modules["1"]["companions"][0]["health_url"].endswith("/api/health")
 
 
 def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     modules = launcher.build_modules()
     assert modules["4"]["url"] == "http://127.0.0.1:1421"
     assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
+
+
+def test_health_probe_requires_plan_helper_identity(monkeypatch):
+    class Response:
+        status = 200
+
+        def __init__(self, body):
+            self.body = body
+
+        def read(self, _limit):
+            return self.body.encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    responses = iter([
+        Response('{"success":true,"data":{"service":"other","status":"ok"}}'),
+        Response('{"success":true,"data":{"service":"plan-helper","status":"ok"}}'),
+    ])
+    monkeypatch.setattr(launcher, "urlopen", lambda _url, timeout: next(responses))
+    health_url = "http://127.0.0.1:8765/api/health"
+    assert launcher.service_is_ready(health_url) is False
+    assert launcher.service_is_ready(health_url) is True
 
 
 def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
