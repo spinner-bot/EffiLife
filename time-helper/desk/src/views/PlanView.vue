@@ -707,17 +707,17 @@ onMounted(() => {
 
             <div class="pv-form-group" v-if="editingRuleType === 'month'">
               <label>{{ t('legacyPlan.monthHint') }}</label>
-              <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="1,3,5" />
+              <input type="text" v-model="editingRuleValue" class="pv-text-input" :placeholder="t('legacyPlan.monthPlaceholder')" />
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'year'">
               <label>{{ t('legacyPlan.dateHint') }}</label>
-              <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="01-01" />
+              <input type="text" v-model="editingRuleValue" class="pv-text-input" :placeholder="t('legacyPlan.datePlaceholder')" />
             </div>
 
             <div class="pv-form-group" v-if="editingRuleType === 'month_week'">
               <label>{{ t('legacyPlan.monthWeekHint') }}</label>
-              <input type="text" v-model="editingRuleValue" class="pv-text-input" placeholder="2-3" />
+              <input type="text" v-model="editingRuleValue" class="pv-text-input" :placeholder="t('legacyPlan.monthWeekPlaceholder')" />
             </div>
 
             <div class="pv-form-group">
