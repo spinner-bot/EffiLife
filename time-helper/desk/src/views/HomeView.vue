@@ -11,6 +11,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { TodoService } from '@/services/todoService'
 import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -211,7 +212,7 @@ onUnmounted(() => {
               :class="{ unread: !entry.read }"
               @click="markInboxRead(entry.id)"
             >
-              <span class="inbox-panel-icon">{{ entry.icon || '🔔' }}</span>
+              <span class="inbox-panel-icon"><component :is="getNotificationIcon(entry.type)" :size="16" :stroke-width="2" /></span>
               <div class="inbox-panel-content">
                 <div class="inbox-panel-title-row">
                   <span class="inbox-panel-item-title">{{ entry.title }}</span>

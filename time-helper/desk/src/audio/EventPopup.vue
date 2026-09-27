@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { EventSystem } from './EventSystem'
 import { X } from 'lucide-vue-next'
 import type { AppEvent } from './EventSystem'
+import { getNotificationIcon } from '@/services/notificationIcons'
 
 const events = computed(() => EventSystem.getActiveEvents())
 
@@ -35,7 +36,7 @@ function getEventStyle(event: AppEvent) {
           :class="getEventStyle(event)"
         >
           <div class="popup-icon">
-            {{ event.icon || '🔔' }}
+            <component :is="getNotificationIcon(event.type)" :size="20" :stroke-width="2" />
           </div>
           <div class="popup-content">
             <h3 class="popup-title">{{ event.title }}</h3>

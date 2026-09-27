@@ -6,6 +6,7 @@ import { EventSystem } from '@/audio'
 import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
 import { useI18n } from '@/i18n'
+import { getNotificationIcon } from '@/services/notificationIcons'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -241,18 +242,6 @@ function formatTriggerTime(entry: InboxEntry): string {
   return `${month}-${day} ${hour}:${minute}`
 }
 
-function getEventIcon(type: EventType): string {
-  switch (type) {
-    case 'plan_complete_100': return '🎉'
-    case 'plan_complete_90': return '⭐'
-    case 'progress_warning': return '⚠️'
-    case 'record_added': return '📝'
-    case 'plan_changed': return '🔄'
-    case 'achievement_unlocked': return '🏆'
-    default: return '🔔'
-  }
-}
-
 function getEventStyle(type: EventType): string {
   switch (type) {
     case 'plan_complete_100':
@@ -431,7 +420,7 @@ function testWarning(rule: WarningRule) {
               @click="markAsRead(entry)"
             >
               <div class="inbox-icon">
-                {{ entry.icon || getEventIcon(entry.type) }}
+                <component :is="getNotificationIcon(entry.type)" :size="18" :stroke-width="2" />
               </div>
               <div class="inbox-body">
                 <div class="inbox-title">
