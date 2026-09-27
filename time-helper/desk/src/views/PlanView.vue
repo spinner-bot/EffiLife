@@ -481,7 +481,28 @@ onMounted(() => {
             <div class="pv-plan-hero">
               <div class="pv-plan-hero-header">
                 <span class="pv-plan-hero-label">{{ t('legacyPlan.todayPlan') }}</span>
-                <span class="pv-plan-hero-badge">{{ todayPlan.type }}</span>
+                <div class="pv-plan-hero-tools">
+                  <span class="pv-plan-hero-badge">{{ todayPlan.type }}</span>
+                  <button class="pv-inline-btn" @click="AudioManager.playSound('click'); openEditPlan(todayPlan.name)" :title="t('legacyPlan.edit')">
+                    <Pencil :size="14" />
+                    <span>{{ t('legacyPlan.edit') }}</span>
+                  </button>
+                </div>
+              </div>
+              <div class="pv-plan-selector-row">
+                <label class="pv-plan-selector-label" for="today-plan-select">{{ t('legacyPlan.currentTodayPlan') }}</label>
+                <select
+                  id="today-plan-select"
+                  class="pv-plan-selector"
+                  :value="todayPlan.name"
+                  @change="changeTodayPlan(($event.target as HTMLSelectElement).value)"
+                >
+                  <option v-for="(plan, name) in plans" :key="name" :value="name">{{ name }} · {{ plan.plan_type }}</option>
+                </select>
+                <button class="pv-inline-btn pv-inline-btn-primary" @click="AudioManager.playSound('click'); openCreatePlan()">
+                  <Plus :size="14" />
+                  <span>{{ t('legacyPlan.create') }}</span>
+                </button>
               </div>
               <h2 class="pv-plan-hero-name">{{ todayPlan.name }}</h2>
               <div class="pv-plan-hero-items" v-if="plans[todayPlan.name]">
@@ -1156,6 +1177,58 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-sm);
+}
+.pv-plan-hero-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+.pv-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+}
+.pv-inline-btn:hover,
+.pv-inline-btn:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  outline: none;
+}
+.pv-inline-btn-primary {
+  border-color: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+.pv-plan-selector-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+.pv-plan-selector-label {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.pv-plan-selector {
+  min-width: 0;
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+}
+.pv-plan-selector:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 .pv-plan-hero-label {
   font-size: 0.75rem;
