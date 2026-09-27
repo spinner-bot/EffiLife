@@ -97,6 +97,53 @@ function findMobilePlan(plans: RawPlan[], planId: string): RawPlan | undefined {
   return plans.find((plan, index) => String(plan.head?.index ?? index) === String(planId))
 }
 
+function cloneMobilePlans(plans: RawPlan[]): RawPlan[] {
+  return JSON.parse(JSON.stringify(plans)) as RawPlan[]
+}
+
+async function saveMobileRawPlans(plans: RawPlan[]): Promise<void> {
+  const { set, STORE_NAMES } = await import('@/storage')
+  await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+}
+
+async function mutateMobilePlan(planId: string, mutate: (plan: RawPlan) => void): Promise<RawPlan> {
+  const plans = cloneMobilePlans(await getMobileRawPlans())
+  const plan = findMobilePlan(plans, planId)
+  if (!plan) throw new Error('移动端未找到该事件计划快照')
+  mutate(plan)
+  await saveMobileRawPlans(plans)
+  return plan
+}
+
+function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSection; task: Record<string, unknown> } | undefined {
+  const sections = Array.isArray(plan.main) ? plan.main : []
+  const normalizedId = String(taskId)
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
+    const section = sections[sectionIndex]
+    const letter = planLetter(sectionIndex)
+    const rawTasks = Array.isArray(section.plan) ? section.plan : []
+    let displayIndex = 0
+    for (let internalIndex = 1; internalIndex < rawTasks.length; internalIndex += 1) {
+      const task = rawTasks[internalIndex]
+      if (!task || task.is_active === false) continue
+      displayIndex += 1
+      if (normalizedId === `${letter}${internalIndex}` || normalizedId === `${letter}${displayIndex}`) {
+        return { section, task }
+      }
+    }
+  }
+  return undefined
+}
+
+function mobileTaskUnit(minutes: number): number {
+  return Math.max(0, Math.round(Math.max(0, Number(minutes) || 0) / 6))
+}
+
+function mobileCurrentTime(): { day: number; time: [number, number] } {
+  const now = new Date()
+  return { day: now.getDate(), time: [now.getHours(), now.getMinutes()] }
+}
+
 function toMobilePlanFull(raw: RawPlan, fallbackIndex: number): PlanFull {
   const summary = toMobilePlanSummary(raw, fallbackIndex)
   const sections = (Array.isArray(raw.main) ? raw.main : []).map((section, sectionIndex) => {
@@ -229,6 +276,14 @@ export async function getPlanFull(planId: string): Promise<PlanFull> {
 }
 
 export async function createEventPlan(name: string, date: [number, number, number]): Promise<PlanSummary> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plans = cloneMobilePlans(await getMobileRawPlans())
+    const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+    const plan: RawPlan = { head: { index: nextId, name, date }, main: [], log: [] }
+    plans.push(plan)
+    await saveMobileRawPlans(plans)
+    return toMobilePlanSummary(plan, plans.length - 1)
+  }
   return request<PlanSummary>('/api/plans', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -237,6 +292,12 @@ export async function createEventPlan(name: string, date: [number, number, numbe
 }
 
 export async function updateEventPlan(planId: string, name: string, date: [number, number, number]): Promise<PlanFull> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plan = await mutateMobilePlan(planId, (raw) => {
+      raw.head = { ...(raw.head || {}), index: raw.head?.index ?? Number(planId), name, date }
+    })
+    return toMobilePlanFull(plan, Number(planId) || 0)
+  }
   return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -257,6 +318,13 @@ export async function restorePlanArchive(file: string): Promise<void> {
 }
 
 export async function addPlanSection(planId: string, name: string, info = ''): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      if (!Array.isArray(plan.main)) plan.main = []
+      plan.main.push({ name, info, plan: [null], group: {} })
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/sections`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -265,6 +333,15 @@ export async function addPlanSection(planId: string, name: string, info = ''): P
 }
 
 export async function addPlanGroup(planId: string, sectionIndex: number, title: string, description: string, startIndex: number, endIndex: number): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const section = plan.main?.[sectionIndex]
+      if (!section) throw new Error('移动端未找到目标分组')
+      if (!section.group) section.group = {}
+      section.group[`${startIndex}_${endIndex}`] = { title, description }
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -273,6 +350,15 @@ export async function addPlanGroup(planId: string, sectionIndex: number, title: 
 }
 
 export async function updatePlanGroup(planId: string, sectionIndex: number, groupKey: string, title: string, description: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const group = plan.main?.[sectionIndex]?.group?.[groupKey]
+      if (!group) throw new Error('移动端未找到目标任务组')
+      group.title = title
+      group.description = description
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups/${encodeURIComponent(groupKey)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -281,10 +367,25 @@ export async function updatePlanGroup(planId: string, sectionIndex: number, grou
 }
 
 export async function deletePlanGroup(planId: string, sectionIndex: number, groupKey: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      if (plan.main?.[sectionIndex]?.group) delete plan.main[sectionIndex].group[groupKey]
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}/groups/${encodeURIComponent(groupKey)}`, { method: 'DELETE' })
 }
 
 export async function addPlanTask(planId: string, sectionIndex: number, content: string, timeMinutes: number): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const section = plan.main?.[sectionIndex]
+      if (!section) throw new Error('移动端未找到目标分组')
+      if (!Array.isArray(section.plan)) section.plan = [null]
+      section.plan.push({ is_active: true, content, t_m: mobileTaskUnit(timeMinutes) })
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -293,6 +394,15 @@ export async function addPlanTask(planId: string, sectionIndex: number, content:
 }
 
 export async function updatePlanTask(planId: string, taskId: string, content: string, timeMinutes: number): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const location = mobileTaskLocation(plan, taskId)
+      if (!location) throw new Error('移动端未找到目标任务')
+      location.task.content = content
+      location.task.t_m = mobileTaskUnit(timeMinutes)
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -301,6 +411,15 @@ export async function updatePlanTask(planId: string, taskId: string, content: st
 }
 
 export async function completePlanTask(planId: string, taskId: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const location = mobileTaskLocation(plan, taskId)
+      if (!location) throw new Error('移动端未找到目标任务')
+      const current = mobileCurrentTime()
+      location.task.finish = current
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/complete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -309,12 +428,28 @@ export async function completePlanTask(planId: string, taskId: string): Promise<
 }
 
 export async function deletePlanTask(planId: string, taskId: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const location = mobileTaskLocation(plan, taskId)
+      if (!location) throw new Error('移动端未找到目标任务')
+      location.task.is_active = false
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/tasks/${encodeURIComponent(taskId)}`, {
     method: 'DELETE',
   })
 }
 
 export async function addPlanLog(planId: string, day: number, taskId: string, content: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      if (!Array.isArray(plan.log)) plan.log = []
+      const current = mobileCurrentTime()
+      plan.log.push({ index: plan.log.length, day, plan: taskId || 'base', time: current.time, content })
+    })
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
