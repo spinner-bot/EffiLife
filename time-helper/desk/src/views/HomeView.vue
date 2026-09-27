@@ -993,8 +993,9 @@ onUnmounted(() => {
 }
 
 .nav-btn:hover {
-  background: var(--color-bg-tertiary);
-  border-color: var(--color-border-hover);
+  background: var(--color-bg-secondary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
   transform: translateY(-2px);
 }
 
