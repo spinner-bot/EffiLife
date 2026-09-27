@@ -323,15 +323,23 @@ async function changeTodayPlan(planName: string) {
   alert(t('legacyPlan.switchedPlan', { name: planName }))
 }
 
-const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const weekDays = computed(() => [
+  t('legacyPlan.weekday.mon'),
+  t('legacyPlan.weekday.tue'),
+  t('legacyPlan.weekday.wed'),
+  t('legacyPlan.weekday.thu'),
+  t('legacyPlan.weekday.fri'),
+  t('legacyPlan.weekday.sat'),
+  t('legacyPlan.weekday.sun'),
+])
 const selectedWeekDays = ref<Set<string>>(new Set())
 function toggleWeekDay(day: string) {
-  const num = (weekDays.indexOf(day) + 1).toString()
+  const num = (weekDays.value.indexOf(day) + 1).toString()
   if (selectedWeekDays.value.has(num)) selectedWeekDays.value.delete(num)
   else selectedWeekDays.value.add(num)
 }
 function isSelectedWeekDay(day: string): boolean {
-  const num = (weekDays.indexOf(day) + 1).toString()
+  const num = (weekDays.value.indexOf(day) + 1).toString()
   return selectedWeekDays.value.has(num)
 }
 
@@ -366,15 +374,15 @@ function getPlanItemColor(itemName: string): string {
 
 // 记录表单验证规则
 const recordValidation = useFormValidation({
-  content: { required: '请填写内容', min: 1 },
-  tag: { required: '请选择标签' },
+  content: { required: t('legacyPlan.contentRequired'), min: 1 },
+  tag: { required: t('legacyPlan.categoryRequired') },
 })
 
 const recordFormErrors = recordValidation.errors
 
 // 计划表单验证规则
 const planValidation = useFormValidation({
-  planName: { required: '请输入计划名称', min: 1 },
+  planName: { required: t('legacyPlan.planNameRequired'), min: 1 },
 })
 
 const planFormErrors = planValidation.errors
