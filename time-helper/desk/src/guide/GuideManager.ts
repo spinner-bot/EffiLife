@@ -397,7 +397,6 @@ class GuideManagerClass {
   // 开始引导
   startGuide(guide: GuideConfig = MAIN_GUIDE) {
     // 备份数据
-    this.backupData()
 
     guideState.currentGuide = guide
     guideState.currentStepIndex = 0
@@ -447,7 +446,6 @@ class GuideManagerClass {
   // 结束引导
   endGuide() {
     // 还原数据
-    this.restoreData()
 
     guideState.isActive = false
     guideState.currentGuide = null
@@ -459,7 +457,6 @@ class GuideManagerClass {
 
   // 跳过引导
   skipGuide() {
-    this.restoreData()
     this.endGuide()
   }
 

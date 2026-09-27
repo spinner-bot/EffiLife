@@ -18,6 +18,9 @@ def test_onboarding_targets_unified_navigation():
     assert ".global-nav-link:nth-child(5)" in current_steps
     assert ".pv-tab" not in current_steps
     assert ".nav-btn" not in current_steps
+    assert "actionType: 'input'" not in current_steps
+    assert "this.backupData()" not in source
+    assert "this.restoreData()" not in source
 
 
 def test_onboarding_copy_is_localized_in_both_catalogs():
@@ -29,4 +32,3 @@ def test_onboarding_copy_is_localized_in_both_catalogs():
 
     for key in keys:
         assert re.search(rf"'{re.escape(key)}':", catalog), f"missing guide i18n key: {key}"
-
