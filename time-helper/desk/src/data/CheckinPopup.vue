@@ -4,6 +4,7 @@ import { CheckinSystem } from './CheckinSystem'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { X, Flame, Target, MousePointerClick } from 'lucide-vue-next'
+import { useI18n } from '@/i18n'
 
 const props = defineProps<{
   show: boolean
@@ -23,6 +24,7 @@ const showBurst = ref(false)
 let animationTimer: number | null = null
 
 const currentStreak = computed(() => CheckinSystem.getCurrentStreak())
+const { t } = useI18n()
 
 // 执行打卡
 function doCheckin() {
@@ -108,15 +110,15 @@ onUnmounted(() => {
             <template v-if="phase === 'ready'">
               <div class="ready-content">
                 <div class="ready-icon"><Target :size="40" /></div>
-                <h2 class="ready-title">今日计划已完成！</h2>
-                <p class="ready-desc">「{{ planName }}」计划100%达成</p>
+                <h2 class="ready-title">{{ t('checkin.popup.readyTitle') }}</h2>
+                <p class="ready-desc">{{ t('checkin.popup.readyDesc', { plan: planName }) }}</p>
                 <div class="streak-preview" v-if="currentStreak > 0">
                   <Flame :size="20" class="flame-icon" />
-                  <span>当前连续 <strong>{{ currentStreak }}</strong> 天</span>
+                  <span>{{ t('checkin.popup.currentStreak') }} <strong>{{ currentStreak }}</strong> {{ t('checkin.days') }}</span>
                 </div>
                 <button class="checkin-btn" @click="doCheckin">
                   <span class="btn-icon"><MousePointerClick :size="18" /></span>
-                  <span class="btn-text">点击打卡</span>
+                  <span class="btn-text">{{ t('checkin.popup.action') }}</span>
                 </button>
               </div>
             </template>
@@ -130,13 +132,13 @@ onUnmounted(() => {
                   <div class="streak-unit">天</div>
                 </div>
                 <h2 class="anim-title">
-                  {{ phase === 'done' ? '打卡成功！' : '打卡中...' }}
+                  {{ phase === 'done' ? t('checkin.popup.successTitle') : t('checkin.popup.inProgressTitle') }}
                 </h2>
                 <p class="anim-desc" v-if="phase === 'done'">
-                  已连续打卡 {{ displayStreak }} 天，继续保持！
+                  {{ t('checkin.popup.successDesc', { streak: displayStreak }) }}
                 </p>
                 <p class="anim-desc" v-else>
-                  累计 +1
+                  {{ t('checkin.popup.increment') }}
                 </p>
                 <!-- 粒子爆发 -->
                 <div v-if="showBurst" class="burst-particles">
