@@ -9,6 +9,7 @@ I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 def test_task_center_does_not_hardcode_time_unit_or_category_aria_label():
     source = TASKS.read_text(encoding="utf-8")
     assert "{{ t('tasks.minutesShort') }}" in source
+    assert "{{ todo.time_spent }} min" not in source
     assert 'aria-label="category name"' not in source
 
 
