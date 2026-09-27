@@ -76,9 +76,12 @@ class AudioManagerClass {
   private bgmAudio: HTMLAudioElement | null = null
   private musicGenerator: MusicGenerator | null = null
   private currentBgmId = ref('')
+  private settingsRevision = 0
+  private ready: Promise<void>
 
   constructor() {
     this.loadSettings()
+    this.ready = this.hydrateSettings()
   }
 
   private getAudioContext(): AudioContext {
@@ -101,12 +104,44 @@ class AudioManagerClass {
     }
   }
 
+  private async hydrateSettings(): Promise<void> {
+    const revisionAtStart = this.settingsRevision
+    try {
+      const { get, set, STORE_NAMES } = await import('@/storage')
+      const stored = await get<Partial<AudioSettings>>(STORE_NAMES.AUDIO_SETTINGS, 'settings')
+      if (stored && this.settingsRevision === revisionAtStart) {
+        this.settings.value = { ...DEFAULT_AUDIO_SETTINGS, ...stored }
+      } else if (!stored && this.settingsRevision === revisionAtStart) {
+        await set(STORE_NAMES.AUDIO_SETTINGS, 'settings', this.settings.value)
+      } else if (this.settingsRevision !== revisionAtStart) {
+        await set(STORE_NAMES.AUDIO_SETTINGS, 'settings', this.settings.value)
+      }
+    } catch (e) {
+      console.warn('Failed to hydrate audio settings:', e)
+    }
+  }
+
+  async whenReady(): Promise<void> {
+    await this.ready
+  }
+
   // 保存设置
   saveSettings() {
+    this.settingsRevision += 1
     try {
       localStorage.setItem('efflife_audio_settings', JSON.stringify(this.settings.value))
     } catch (e) {
       console.warn('Failed to save audio settings:', e)
+    }
+    void this.persistSettings()
+  }
+
+  private async persistSettings(): Promise<void> {
+    try {
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.AUDIO_SETTINGS, 'settings', this.settings.value)
+    } catch (e) {
+      console.warn('Failed to persist audio settings:', e)
     }
   }
 

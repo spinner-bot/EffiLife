@@ -73,6 +73,7 @@ function onCheckinClose() {
 }
 
 onMounted(async () => {
+  await AudioManager.whenReady()
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
   applyTheme()

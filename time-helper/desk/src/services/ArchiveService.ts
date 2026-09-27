@@ -836,9 +836,9 @@ export async function getDataStats(): Promise<{
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: cachedEventPlans?.length || 0,
-    // These modules still write localStorage first; keep their statistics aligned
-    // with the runtime until their services are migrated as a separate change.
-    hasAudioSettings: !!readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
+    // Event and check-in services still write localStorage first; audio settings
+    // have an IndexedDB primary with a compatibility mirror.
+    hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
     hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS),
     hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN),
   }
