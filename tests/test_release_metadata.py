@@ -38,9 +38,9 @@ def test_desktop_workflow_covers_all_release_platforms():
         assert artifact in workflow
 
 
-def test_desktop_workflow_builds_the_plan_helper_sidecar_before_tauri():
+def test_desktop_workflow_installs_sidecar_builder_before_tauri():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
 
-    sidecar_step = workflow.index("python scripts/build_plan_helper_sidecar.py")
+    sidecar_dependency_step = workflow.index("python -m pip install pyinstaller")
     tauri_step = workflow.index("npm run tauri build")
-    assert sidecar_step < tauri_step
+    assert sidecar_dependency_step < tauri_step
