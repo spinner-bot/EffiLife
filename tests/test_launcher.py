@@ -37,6 +37,14 @@ def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
     assert launcher.startup_timeout() == 30
 
 
+def test_launcher_groups_owned_processes_for_shutdown():
+    options = launcher.process_group_options()
+    if launcher.os.name == "nt":
+        assert "creationflags" in options
+    else:
+        assert options == {"start_new_session": True}
+
+
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
     assert "python3 launcher/start.py --unified" in script

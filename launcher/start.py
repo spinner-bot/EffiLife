@@ -71,6 +71,13 @@ def node_environment():
     return env
 
 
+def process_group_options():
+    """Keep launcher-owned child processes together for reliable shutdown."""
+    if os.name == "nt":
+        return {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    return {"start_new_session": True}
+
+
 def dependencies_ready(cwd):
     """Avoid running npm install on every launch."""
     module_dir = Path(cwd) / "node_modules"
@@ -305,6 +312,7 @@ def run_module(choice, modules):
             cwd=module["cwd"],
             shell=False,
             env=env,
+            **process_group_options(),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -358,7 +366,20 @@ def service_is_ready(url):
 def terminate_process(process):
     """Stop a process started by the launcher without affecting external services."""
     if process.poll() is None:
-        process.terminate()
+        # npm.cmd is a shim: terminating only its PID can leave the spawned
+        # node/vite process listening on port 1420.  The PID is launcher-owned,
+        # so taskkill's /T scope is limited to that process tree.
+        if os.name == "nt" and getattr(process, "pid", None):
+            result = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            if result.returncode != 0 and process.poll() is None:
+                process.terminate()
+        else:
+            process.terminate()
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
@@ -381,6 +402,7 @@ def start_companions(module, env):
                 cwd=companion["cwd"],
                 shell=False,
                 env=env,
+                **process_group_options(),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
