@@ -618,7 +618,7 @@ watch(selectedPlanId, (planId) => {
           <button type="button" class="task-edit-cancel" @click="showCategoryManager = false">{{ t('tasks.cancel') }}</button>
         </div>
         <form class="category-create" @submit.prevent="createCategory">
-          <input v-model="categoryName" :placeholder="t('tasks.categoryName')" aria-label="category name" />
+          <input v-model="categoryName" :placeholder="t('tasks.categoryName')" :aria-label="t('tasks.categoryName')" />
           <input v-model="categoryColor" type="color" :aria-label="t('tasks.categoryColor')" />
           <label>{{ t('tasks.categoryDifficulty') }} <input v-model.number="categoryDifficulty" type="number" min="0" max="10" /></label>
           <CategoryIconPicker v-model="categoryIcon" v-model:model-color="categoryColor" v-model:model-ascii="categoryAsciiIcon" />
@@ -734,7 +734,7 @@ watch(selectedPlanId, (planId) => {
             <form class="time-track-form" @submit.prevent="trackTodoTime(todo)">
               <label :for="`track-time-${todo.id}`">{{ t('tasks.trackTime') }}</label>
               <input :id="`track-time-${todo.id}`" v-model.number="trackedMinutes" type="number" min="1" max="1440" step="1" />
-              <span>min</span>
+              <span>{{ t('tasks.minutesShort') }}</span>
               <button type="submit" :disabled="trackingTodoId === todo.id">{{ trackingTodoId === todo.id ? t('tasks.saving') : t('tasks.recordTime') }}</button>
             </form>
             <form class="subtask-add-form" @submit.prevent="addSubtask(todo)">
