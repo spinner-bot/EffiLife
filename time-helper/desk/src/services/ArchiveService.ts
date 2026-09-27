@@ -832,8 +832,10 @@ export async function getDataStats(): Promise<{
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: cachedEventPlans?.length || 0,
-    hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
-    hasEventSettings: !!(await readCoreJSON(STORAGE_KEYS.EVENT_SETTINGS, STORE_NAMES.EVENT_SETTINGS, 'settings')),
-    hasCheckin: !!(await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data')),
+    // These modules still write localStorage first; keep their statistics aligned
+    // with the runtime until their services are migrated as a separate change.
+    hasAudioSettings: !!readJSON(STORAGE_KEYS.AUDIO_SETTINGS),
+    hasEventSettings: !!readJSON(STORAGE_KEYS.EVENT_SETTINGS),
+    hasCheckin: !!readJSON(STORAGE_KEYS.CHECKIN),
   }
 }
