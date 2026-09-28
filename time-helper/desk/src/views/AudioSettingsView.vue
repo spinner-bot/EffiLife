@@ -23,6 +23,23 @@ const soundTypes: Array<{ type: SoundType; nameKey: string; descriptionKey: stri
 ]
 
 const allBgm = computed(() => AudioManager.getAllBgm())
+const builtInBgmNameKeys: Record<string, string> = {
+  ambient: 'settings.audio.bgmName.ambient',
+  piano: 'settings.audio.bgmName.piano',
+  night: 'settings.audio.bgmName.night',
+  rain: 'settings.audio.bgmName.rain',
+  ocean: 'settings.audio.bgmName.ocean',
+  forest: 'settings.audio.bgmName.forest',
+  cafe: 'settings.audio.bgmName.cafe',
+  campfire: 'settings.audio.bgmName.campfire',
+  jazz: 'settings.audio.bgmName.jazz',
+  none: 'settings.audio.bgmName.none',
+}
+
+function displayBgmName(bgm: { id: string; name: string; custom?: boolean }): string {
+  const key = builtInBgmNameKeys[bgm.id]
+  return key ? t(key) : bgm.name
+}
 
 // ========= 音效操作 =========
 
@@ -151,7 +168,7 @@ const currentTab = ref<SettingTab>('audio')
             <div class="bgm-section-title">{{ t('settings.audio.builtIn') }}</div>
             <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
-              <span>{{ bgm.name }}</span>
+              <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
             </button>
 
@@ -161,7 +178,7 @@ const currentTab = ref<SettingTab>('audio')
             </div>
             <button v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
-              <span>{{ bgm.name }}</span>
+              <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
               <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
             </button>
