@@ -217,7 +217,7 @@ watch(() => appStore.todayStat, () => {
           <span class="global-brand-mark">E</span>
           <span>EffiLife</span>
         </RouterLink>
-        <nav class="global-nav-links" :aria-label="t('nav.primary')">
+        <nav class="global-nav-links desktop-nav-links" :aria-label="t('nav.primary')">
           <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }">
             <Home :size="16" /> <span>{{ t('nav.home') }}</span>
           </RouterLink>
@@ -238,6 +238,23 @@ watch(() => appStore.todayStat, () => {
           <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
       </header>
+      <nav class="mobile-bottom-nav theme-card" :aria-label="t('nav.primary')">
+        <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }">
+          <Home :size="19" /> <span>{{ t('nav.home') }}</span>
+        </RouterLink>
+        <RouterLink class="mobile-bottom-nav-link" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+          <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
+        </RouterLink>
+        <RouterLink class="mobile-bottom-nav-link" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+          <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
+        </RouterLink>
+        <RouterLink class="mobile-bottom-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+          <Clock3 :size="19" /> <span>{{ t('nav.records') }}</span>
+        </RouterLink>
+        <RouterLink class="mobile-bottom-nav-link" to="/settings" :class="{ active: route.path.startsWith('/settings') }">
+          <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
+        </RouterLink>
+      </nav>
       <RouterView v-slot="{ Component }">
         <Transition name="page-fade" mode="out-in">
           <component :is="Component" />
@@ -330,6 +347,7 @@ watch(() => appStore.todayStat, () => {
 .global-nav-links { display: flex; align-items: center; gap: 3px; }
 .global-nav-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 10px; color: var(--color-text-tertiary); font-size: 12px; transition: color .2s, background-color .2s; }
 .global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
+.mobile-bottom-nav { display: none; }
 .global-search-trigger { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 9px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
 .global-search-trigger:hover { color: var(--color-text-primary); border-color: var(--color-border-hover); }
 .global-search-trigger kbd { border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 4px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 10px; }
@@ -367,13 +385,37 @@ watch(() => appStore.todayStat, () => {
 }
 
 @media (max-width: 680px) {
-  .app-content { padding-top: 58px; }
+  .app-content { padding-top: 58px; padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   .global-nav { top: 8px; width: calc(100% - 16px); gap: 8px; }
   .global-brand > span:last-child { display: none; }
-  .global-nav-links { flex: 1; justify-content: space-between; }
-  .global-nav-link { flex: 1; justify-content: center; padding: 8px 5px; }
-  .global-nav-link span { display: none; }
+  .desktop-nav-links { display: none; }
   .global-search-trigger span, .global-search-trigger kbd { display: none; }
   .global-search-trigger { margin-left: 0; padding: 8px; }
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 10;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 8%);
+  }
+  .mobile-bottom-nav-link {
+    display: grid;
+    min-height: 54px;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    border-radius: 11px;
+    color: var(--color-text-tertiary);
+    font-size: 10px;
+    text-decoration: none;
+  }
+  .mobile-bottom-nav-link.active { color: var(--color-primary); background: var(--color-primary-muted); font-weight: 650; }
 }
 </style>
