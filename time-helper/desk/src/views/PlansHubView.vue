@@ -96,7 +96,7 @@ async function refreshPlanTodoLinks(planId?: string): Promise<void> {
     const todos = await TodoService.list()
     linkedTodoTaskIds.value = new Set(
       todos
-        .filter((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id)
+        .filter((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
         .map((todo) => String(todo.related_plan_task_id)),
     )
   } catch {
