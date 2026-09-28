@@ -225,6 +225,7 @@ const availableThemes = [
   { type: 'ink' as ThemeType, name: '水墨', description: '中国水墨画风格，动态墨点晕染', category: '艺术' },
   { type: 'vintage' as ThemeType, name: '画报', description: '复古画报风格，装饰花纹边框', category: '艺术' },
   { type: 'cyberpunk' as ThemeType, name: '赛博朋克', description: '未来科技风，网格扫描线效果', category: '科技' },
+  { type: 'tech' as ThemeType, name: '科技', description: '低饱和科技工作台，蓝色网格与柔和光晕', category: '科技' },
   { type: 'pixel' as ThemeType, name: '像素', description: '复古像素风格，星星月亮', category: '艺术' },
   { type: 'aurora' as ThemeType, name: '极光', description: '北极光效果，流动彩光', category: '自然' },
   { type: 'sakura' as ThemeType, name: '樱花', description: '日式樱花风格，飘落花瓣', category: '自然' },

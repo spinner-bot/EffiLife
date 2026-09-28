@@ -211,6 +211,49 @@ const themePresets: Record<string, () => ThemeStyle> = {
     }
   }),
 
+  // ============ 科技主题（低饱和工作台风格）============
+  tech: () => ({
+    bgColor: '#101827',
+    bgGradient: 'linear-gradient(180deg, #101827 0%, #172554 100%)',
+    textColor: '#e2e8f0',
+    textSecondary: '#94a3b8',
+    textTertiary: '#64748b',
+    borderColor: 'rgba(96, 165, 250, 0.24)',
+    buttonBg: 'rgba(96, 165, 250, 0.14)',
+    buttonText: '#dbeafe',
+    accentColor: '#60a5fa',
+    cardBg: 'rgba(15, 23, 42, 0.72)',
+    backdropFilter: 'blur(8px)',
+    boxShadow: '0 10px 32px rgba(2, 6, 23, 0.28)',
+    renderCanvas: (ctx, w, h, time) => {
+      ctx.save()
+      ctx.globalAlpha = 0.14
+      ctx.strokeStyle = '#60a5fa'
+      ctx.lineWidth = 0.5
+      const gridSize = 48
+      const offset = (time * 0.012) % gridSize
+      for (let x = -gridSize; x < w + gridSize; x += gridSize) {
+        ctx.beginPath()
+        ctx.moveTo(x + offset, 0)
+        ctx.lineTo(x + offset, h)
+        ctx.stroke()
+      }
+      for (let y = -gridSize; y < h + gridSize; y += gridSize) {
+        ctx.beginPath()
+        ctx.moveTo(0, y + offset)
+        ctx.lineTo(w, y + offset)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 0.08
+      const glow = ctx.createRadialGradient(w * 0.72, h * 0.18, 0, w * 0.72, h * 0.18, w * 0.5)
+      glow.addColorStop(0, '#60a5fa')
+      glow.addColorStop(1, 'rgba(96, 165, 250, 0)')
+      ctx.fillStyle = glow
+      ctx.fillRect(0, 0, w, h)
+      ctx.restore()
+    }
+  }),
+
   // ============ 像素风格 ============
   pixel: () => ({
     bgColor: '#1a1c2c',
