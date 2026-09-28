@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -32,13 +32,15 @@ import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTas
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
+const DailyPlanView = defineAsyncComponent(() => import('@/views/PlanView.vue'))
+
 const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
 const canArchivePlan = !isMobilePlanRuntime
-const view = ref<'hub' | 'events' | 'detail'>('hub')
+const view = ref<'hub' | 'events' | 'detail' | 'time'>(route.query.mode === 'time' ? 'time' : 'hub')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
 const selectedPlan = ref<PlanFull | null>(null)
@@ -148,6 +150,11 @@ function openCreatePlan() {
   planDate.value = toDateInput(new Date())
   errorMessage.value = ''
   showCreate.value = true
+}
+
+function openTimePlan() {
+  view.value = 'time'
+  router.replace({ path: '/plans', query: { mode: 'time' } })
 }
 
 async function openPlan(plan: PlanSummary) {
@@ -551,7 +558,7 @@ onMounted(async () => {
 
 <template>
   <div class="plans-hub">
-    <header class="plans-header">
+    <header v-if="view !== 'time'" class="plans-header">
       <button class="plans-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('plans.back')">
         <ArrowLeft :size="18" />
       </button>
@@ -563,9 +570,11 @@ onMounted(async () => {
     </header>
 
     <main class="plans-content">
-      <template v-if="view === 'hub'">
+      <DailyPlanView v-if="view === 'time'" />
+
+      <template v-else-if="view === 'hub'">
         <section class="plan-domain-grid">
-          <button class="domain-card theme-card" @click="router.push('/plan')">
+          <button class="domain-card theme-card" @click="openTimePlan">
             <Clock3 :size="28" />
             <strong>{{ t('plans.time') }}</strong>
             <span>{{ t('plans.timeDescription') }}</span>

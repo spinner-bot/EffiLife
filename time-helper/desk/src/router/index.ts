@@ -17,7 +17,7 @@ const router = createRouter({
     {
       path: '/plan',
       name: 'plan',
-      component: () => import('@/views/PlanView.vue'),
+      redirect: { path: '/plans', query: { mode: 'time' } },
     },
     {
       path: '/tasks',

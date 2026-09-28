@@ -415,7 +415,7 @@ onMounted(() => {
   <div class="plan-view">
     <!-- 顶部导航栏 -->
     <header class="pv-header">
-      <button class="pv-back" @click="AudioManager.playSound('click'); router.push('/')">
+      <button class="pv-back" @click="AudioManager.playSound('click'); router.push('/plans')">
         <ArrowLeft :size="18" />
       </button>
       <div class="pv-header-title">

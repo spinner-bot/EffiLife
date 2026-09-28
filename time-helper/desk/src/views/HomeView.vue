@@ -284,7 +284,7 @@ onUnmounted(() => {
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
         <div class="overview-grid">
-        <div class="stats-card" @click="router.push('/plan')">
+        <div class="stats-card" @click="router.push({ path: '/plans', query: { mode: 'time' } })">
           <div class="stats-header-row">
             <h2 class="stats-title">{{ t('home.todayProgress') }}</h2>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
