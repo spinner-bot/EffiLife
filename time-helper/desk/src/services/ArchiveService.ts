@@ -351,7 +351,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 export async function importArchive(file: File): Promise<{ success: boolean; message: string }> {
   try {
     // 检查文件扩展名
-    if (!file.name.endsWith('.efl')) {
+    if (!file.name.toLocaleLowerCase().endsWith('.efl')) {
       return { success: false, message: translate('settings.archive.invalidFile') }
     }
 

@@ -14,6 +14,11 @@ def test_tauri_import_confirms_after_reading_archive_before_processing():
     assert source.index("if (confirmImport && !confirmImport())") < source.index("return await processArchiveData(zip)", source.index("if (confirmImport && !confirmImport())"))
 
 
+def test_archive_import_accepts_case_insensitive_efl_extension():
+    source = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
+    assert "file.name.toLocaleLowerCase().endsWith('.efl')" in source
+
+
 def test_settings_passes_the_existing_overwrite_confirmation_to_tauri_import():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "importArchiveWithDialog(() => confirm(t('settings.archive.importConfirm')))" in source
