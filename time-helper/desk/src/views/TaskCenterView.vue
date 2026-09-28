@@ -740,6 +740,8 @@ watch(selectedPlanId, (planId) => {
       <section class="task-create theme-card">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
         <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
+        <details class="task-create-advanced">
+          <summary>{{ t('tasks.advancedOptions') }}</summary>
         <label class="task-field-label task-description-label" for="new-task-description">{{ t('tasks.description') }}</label>
         <textarea id="new-task-description" v-model="description" class="task-description-input" :placeholder="t('tasks.descriptionPlaceholder')" rows="1" />
         <label class="task-field-label" for="new-task-tags">{{ t('tasks.tags') }}</label>
@@ -772,6 +774,7 @@ watch(selectedPlanId, (planId) => {
           <option value="">{{ t('tasks.noTask') }}</option>
           <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
+        </details>
         <button class="task-add" :disabled="creatingTodo || !title.trim()" @click="AudioManager.playSound('click'); addTodo()">
           <Plus :size="17" /> {{ t('tasks.add') }}
         </button>
@@ -1015,7 +1018,13 @@ watch(selectedPlanId, (planId) => {
 .task-counts { display: flex; gap: 8px; margin-left: auto; color: var(--color-text-secondary); font-size: 13px; }
 .task-counts span { padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-bg-secondary); }
 .task-content { max-width: 980px; margin: 0 auto; padding: 8px 28px 48px; }
-.task-create { display: flex; align-items: center; gap: 10px; padding: 13px; border: 1px solid var(--color-border); border-radius: 16px; }
+.task-create { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 13px; border: 1px solid var(--color-border); border-radius: 16px; }
+.task-create-advanced { flex: 1 1 100%; min-width: 0; order: 3; border-top: 1px solid var(--color-border); }
+.task-create-advanced summary { padding: 10px 0 2px; color: var(--color-text-secondary); cursor: pointer; font-size: 12px; user-select: none; }
+.task-create-advanced[open] { display: grid; grid-template-columns: minmax(86px, auto) minmax(150px, 1fr) minmax(86px, auto) minmax(150px, 1fr); align-items: center; gap: 9px 10px; padding-top: 2px; }
+.task-create-advanced[open] summary { grid-column: 1 / -1; }
+.task-create-advanced[open] .task-description-label { align-self: start; padding-top: 8px; }
+.task-create-advanced[open] .task-description-input { min-width: 0; }
 .task-field-label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
 .task-input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--color-text-primary); background: transparent; font-size: 15px; }
 .task-description-label { align-self: flex-start; padding-top: 8px; }
@@ -1032,7 +1041,7 @@ watch(selectedPlanId, (planId) => {
 .focus-hint { color: var(--color-text-tertiary); font-size: 11px; }
 .task-estimate-input { width: 70px; }
 .task-check-label { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
-.task-add { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; padding: 0 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
+.task-add { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 0; border-radius: 10px; padding: 8px 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
 .task-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 2px 12px; }
 .task-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-tabs button { border: 0; border-radius: 7px; padding: 7px 13px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
@@ -1137,5 +1146,5 @@ watch(selectedPlanId, (planId) => {
 .category-swatch { width: 10px; height: 10px; border-radius: 50%; }
 .category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
-@media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } .task-item-actions { flex-basis: 100%; justify-content: flex-end; margin-left: 36px; } }
+@media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-create-advanced[open] { grid-template-columns: 1fr; } .task-create-advanced[open] .task-description-label { padding-top: 0; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } .task-item-actions { flex-basis: 100%; justify-content: flex-end; margin-left: 36px; } }
 </style>
