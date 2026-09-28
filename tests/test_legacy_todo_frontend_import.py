@@ -15,6 +15,13 @@ def test_frontend_has_non_destructive_legacy_todo_migration():
     assert "TodoCategoryService.ensureDefaults" in source
 
 
+def test_todo_normalizer_rejects_malformed_cross_module_references():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "candidate.related_plan_id !== undefined" in source
+    assert "candidate.related_plan_task_id !== undefined" in source
+    assert "candidate.related_time_record_ids.some((id) => typeof id !== 'string')" in source
+
+
 def test_settings_exposes_legacy_todo_json_file_input():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "importLegacyTodoPayload" in source

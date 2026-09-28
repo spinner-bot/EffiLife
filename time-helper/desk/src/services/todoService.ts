@@ -154,6 +154,12 @@ export function normalizeImportedTodo(value: unknown): UnifiedTodo | null {
   const candidate = value as Partial<UnifiedTodo>
   if (typeof candidate.title !== 'string' || !candidate.title.trim()) return null
   if (candidate.id !== undefined && typeof candidate.id !== 'string') return null
+  if (candidate.related_plan_id !== undefined && typeof candidate.related_plan_id !== 'string') return null
+  if (candidate.related_plan_task_id !== undefined && typeof candidate.related_plan_task_id !== 'string') return null
+  if (candidate.related_time_record_ids !== undefined && (
+    !Array.isArray(candidate.related_time_record_ids)
+    || candidate.related_time_record_ids.some((id) => typeof id !== 'string')
+  )) return null
   return normalize(candidate as Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>)
 }
 
