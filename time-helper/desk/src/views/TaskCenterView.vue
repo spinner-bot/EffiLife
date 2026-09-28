@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronDown, ChevronUp, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { DataService } from '@/services/dataService'
 import {
@@ -500,6 +500,16 @@ async function toggleTodoPinned(todo: UnifiedTodo) {
   }
 }
 
+async function adjustTodoRank(todo: UnifiedTodo, delta: number) {
+  const nextRank = Math.max(0, Math.trunc(Number(todo.priority_rank) || 0) + delta)
+  if (nextRank === (todo.priority_rank ?? 0)) return
+  try {
+    replaceTodo(await TodoService.update(todo.id, { priority_rank: nextRank }))
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+  }
+}
+
 function replaceTodo(updated: UnifiedTodo) {
   const index = todos.value.findIndex((item) => item.id === updated.id)
   if (index >= 0) todos.value[index] = updated
@@ -748,8 +758,6 @@ watch(selectedPlanId, (planId) => {
         <input id="new-task-tags" v-model="tagsInput" class="task-tags-input" :placeholder="t('tasks.tagsPlaceholder')" />
         <label class="task-field-label" for="new-task-start-time">{{ t('tasks.startTime') }}</label>
         <input id="new-task-start-time" v-model="startTime" class="task-date-input task-start-time-input" type="datetime-local" />
-        <label class="task-field-label" for="new-task-priority-rank">{{ t('tasks.priorityRank') }}</label>
-        <input id="new-task-priority-rank" v-model.number="priorityRank" class="task-number-input" type="number" min="0" step="1" />
         <label class="task-check-label"><input v-model="urgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
         <label class="task-check-label"><input v-model="important" type="checkbox" /> {{ t('tasks.important') }}</label>
         <label class="task-field-label" for="new-task-estimated-time">{{ t('tasks.estimatedTime') }}</label>
@@ -916,8 +924,6 @@ watch(selectedPlanId, (planId) => {
             <input :id="`edit-tags-${todo.id}`" v-model="editingTagsInput" class="task-edit-select" :placeholder="t('tasks.tagsPlaceholder')" />
             <label :for="`edit-start-time-${todo.id}`">{{ t('tasks.startTime') }}</label>
             <input :id="`edit-start-time-${todo.id}`" v-model="editingStartTime" class="task-edit-select task-start-time-edit" type="datetime-local" />
-            <label :for="`edit-priority-rank-${todo.id}`">{{ t('tasks.priorityRank') }}</label>
-            <input :id="`edit-priority-rank-${todo.id}`" v-model.number="editingPriorityRank" class="task-edit-select" type="number" min="0" step="1" />
             <label class="task-edit-check"><input v-model="editingUrgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
             <label class="task-edit-check"><input v-model="editingImportant" type="checkbox" /> {{ t('tasks.important') }}</label>
             <label :for="`edit-estimated-time-${todo.id}`">{{ t('tasks.estimatedTime') }}</label>
@@ -967,6 +973,11 @@ watch(selectedPlanId, (planId) => {
             <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</button>
           </div>
           <div v-if="editingId !== todo.id" class="task-item-actions">
+            <div class="task-rank-control" :title="t('tasks.priorityRank')">
+              <button type="button" :aria-label="t('tasks.increaseRank')" @click="adjustTodoRank(todo, 1)"><ChevronUp :size="13" /></button>
+              <span>{{ todo.priority_rank ?? 0 }}</span>
+              <button type="button" :aria-label="t('tasks.decreaseRank')" :disabled="!todo.priority_rank" @click="adjustTodoRank(todo, -1)"><ChevronDown :size="13" /></button>
+            </div>
             <span class="task-score" :class="{ expired: scoreFor(todo).expired }" :title="t('tasks.priorityScore')">{{ scoreFor(todo).display }}</span>
             <button class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
               <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
@@ -1076,7 +1087,12 @@ watch(selectedPlanId, (planId) => {
 .task-title-row { display: flex; align-items: center; gap: 9px; }
 .task-title-row h2 { overflow: hidden; margin: 0; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .completed .task-title-row h2 { text-decoration: line-through; }
-.task-score { min-width: 42px; margin-left: auto; padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.task-rank-control { display: inline-flex; align-items: center; gap: 2px; min-width: 42px; color: var(--color-text-tertiary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.task-rank-control button { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 5px; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-rank-control button:hover:not(:disabled), .task-rank-control button:focus-visible { color: var(--color-primary); background: var(--color-primary-muted); outline: 0; }
+.task-rank-control button:disabled { opacity: .35; cursor: not-allowed; }
+.task-rank-control span { min-width: 12px; text-align: center; }
+.task-score { min-width: 42px; padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .task-score.expired { color: var(--color-text-tertiary); background: var(--color-bg-secondary); }
 .task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }

@@ -1970,6 +1970,8 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
   'zh-CN': {
     'nav.primary': '\u4e3b\u5bfc\u822a\u680f',
     'tasks.advancedOptions': '\u66f4\u591a\u8bbe\u7f6e',
+    'tasks.increaseRank': '\u63d0\u9ad8\u6392\u4f4d',
+    'tasks.decreaseRank': '\u964d\u4f4e\u6392\u4f4d',
     'app.startupFailed': '\u5de5\u4f5c\u53f0\u542f\u52a8\u5931\u8d25',
     'app.startupFailedDescription': '\u672c\u5730\u6570\u636e\u6216\u6a21\u5757\u521d\u59cb\u5316\u672a\u5b8c\u6210\uff0c\u8bf7\u91cd\u8bd5\u3002',
     'app.retryStartup': '\u91cd\u8bd5\u542f\u52a8',
@@ -1989,6 +1991,8 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
   'en-US': {
     'nav.primary': 'Primary navigation',
     'tasks.advancedOptions': 'More options',
+    'tasks.increaseRank': 'Increase rank',
+    'tasks.decreaseRank': 'Decrease rank',
     'app.startupFailed': 'Workspace startup failed',
     'app.startupFailedDescription': 'Local data or module initialization did not finish. Try again.',
     'app.retryStartup': 'Retry startup',
