@@ -62,6 +62,13 @@ def test_release_workflow_runs_desktop_toolchain_preflight():
     assert workflow.index("check_build_environment.py --target desktop") < workflow.index("npm run tauri build")
 
 
+def test_release_workflow_builds_todos_compatibility_ui():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "to-dos/ui/package-lock.json" in workflow
+    assert "working-directory: to-dos/ui" in workflow
+    assert "run: npm run build" in workflow
+
+
 def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
     import json
     import subprocess

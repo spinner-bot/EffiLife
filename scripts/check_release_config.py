@@ -33,6 +33,8 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow has no Python contract-test step")
     if "scripts/check_build_environment.py --target desktop" not in workflow:
         errors.append("release workflow has no desktop toolchain preflight step")
+    if "to-dos/ui/package-lock.json" not in workflow or "working-directory: to-dos/ui" not in workflow or "run: npm run build" not in workflow:
+        errors.append("release workflow has no to-dos compatibility UI build job")
     if "scripts/generate_checksums.py" not in workflow:
         errors.append("release workflow has no installer checksum step")
     if "npm run tauri build -- --bundles ${{ matrix.bundle }}" not in workflow:
