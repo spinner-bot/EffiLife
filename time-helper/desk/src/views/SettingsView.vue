@@ -43,8 +43,8 @@ function isMobileDevice(): boolean {
 }
 
 async function openEmailClient() {
-  const subject = encodeURIComponent('浪兮效率时钟 - 用户反馈')
-  const body = encodeURIComponent('请在此描述您的问题或建议：\n\n---\n应用版本：0.1.0\n')
+  const subject = encodeURIComponent(t('settings.feedback.emailSubject'))
+  const body = encodeURIComponent(t('settings.feedback.emailBody', { version: appVersion }))
   const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
 
   // 移动端直接使用 window.location
