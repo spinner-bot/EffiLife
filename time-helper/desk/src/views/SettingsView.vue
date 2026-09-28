@@ -463,13 +463,17 @@ async function onFileSelected(event: Event) {
 
 // ============ 数据恢复 ============
 function formatArchivePreview(preview: ArchivePreview): string {
-  return t('settings.archive.importPreview', {
+  const summary = t('settings.archive.importPreview', {
     plans: preview.planCount,
     todos: preview.todoCount,
     records: preview.recordCount,
     categories: preview.categoryCount,
     repairs: preview.repairedLinkCount,
   })
+  const integrity = preview.integrity === 'verified'
+    ? t('settings.archive.integrityVerified')
+    : t('settings.archive.integrityLegacy')
+  return `${summary}\n${integrity}`
 }
 
 function openLegacyTodoImport() {

@@ -98,6 +98,7 @@ export interface ArchiveData {
     unavailableReason?: string
     stale?: boolean
   }
+  archiveIntegrity?: 'verified' | 'legacy'
 }
 
 export interface ArchivePreview {
@@ -107,6 +108,7 @@ export interface ArchivePreview {
   recordCount: number
   categoryCount: number
   repairedLinkCount: number
+  integrity: 'verified' | 'legacy'
 }
 
 function summarizeArchive(data: ArchiveData): ArchivePreview {
@@ -117,6 +119,7 @@ function summarizeArchive(data: ArchiveData): ArchivePreview {
     recordCount: Object.values(data.records).reduce((total, records) => total + records.length, 0),
     categoryCount: data.categories.length,
     repairedLinkCount: (data.importRepairs?.todoRecordLinks || 0) + (data.importRepairs?.todoPlanTaskLinks || 0),
+    integrity: data.archiveIntegrity || 'legacy',
   }
 }
 
@@ -452,7 +455,8 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     } catch {
       throw new Error('存档 manifest.json 无效')
     }
-    if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets)) {
+    const hasChecksums = !!manifest.dataset_sha256 && manifest.datasets?.every((name) => typeof manifest.dataset_sha256?.[name] === 'string')
+    if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets) || (manifest.dataset_sha256 && !hasChecksums)) {
       throw new Error('不支持的 .efl 存档协议')
     }
 
@@ -512,6 +516,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
       importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
+      archiveIntegrity: hasChecksums ? 'verified' : 'legacy',
     }
   }
 
@@ -537,6 +542,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
     ...legacy,
+    archiveIntegrity: 'legacy',
     records,
     locale: legacy.locale || 'zh-CN',
     todos: repairedPlanLinks.todos,

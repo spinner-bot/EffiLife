@@ -28,3 +28,12 @@ def test_archive_manifest_contains_dataset_checksums_and_import_verifies_them():
     assert "manifest.dataset_sha256?.[name]" in source
     assert "settings.archive.datasetChecksumMismatch" in source
     assert "'settings.archive.datasetChecksumMismatch'" in I18N.read_text(encoding="utf-8")
+
+
+def test_archive_preview_exposes_integrity_status_to_confirmation():
+    source = SERVICE.read_text(encoding="utf-8")
+    settings = SETTINGS.read_text(encoding="utf-8")
+    assert "integrity: 'verified' | 'legacy'" in source
+    assert "archiveIntegrity: hasChecksums ? 'verified' : 'legacy'" in source
+    assert "preview.integrity === 'verified'" in settings
+    assert "settings.archive.integrityLegacy" in settings
