@@ -1013,6 +1013,14 @@ export async function resetData(type: ResetType): Promise<void> {
   }
 
   // 刷新页面以应用更改
+  const changeSource = type === 'all'
+    ? 'archive'
+    : type === 'records'
+      ? 'records'
+      : type === 'plans'
+        ? 'plans'
+        : 'settings'
+  notifyWorkspaceChanged(changeSource)
   window.location.reload()
 }
 
