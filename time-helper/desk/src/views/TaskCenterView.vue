@@ -124,6 +124,9 @@ const visibleTodos = computed(() => {
     ? source.filter((todo) => todo.category === categoryFilter.value)
     : source
   return [...filtered].sort((left, right) => {
+    if (Boolean(right.pinned) !== Boolean(left.pinned)) {
+      return Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))
+    }
     const scoreDelta = scoreFor(right).score - scoreFor(left).score
     if (scoreDelta !== 0) return scoreDelta
     return right.updated_at.localeCompare(left.updated_at)
@@ -454,6 +457,14 @@ async function removeTodo(todo: UnifiedTodo) {
     todos.value = todos.value.filter((item) => item.id !== todo.id)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+  }
+}
+
+async function toggleTodoPinned(todo: UnifiedTodo) {
+  try {
+    replaceTodo(await TodoService.update(todo.id, { pinned: !todo.pinned }))
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
   }
 }
 
@@ -897,6 +908,7 @@ watch(selectedPlanId, (planId) => {
             <button class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
               <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
             </button>
+            <button class="task-pin" :class="{ active: todo.pinned }" :aria-label="todo.pinned ? t('tasks.unpinTodo') : t('tasks.pinTodo')" @click="toggleTodoPinned(todo)"><Pin :size="16" /></button>
             <button class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
             <button class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           </div>
@@ -1004,6 +1016,8 @@ watch(selectedPlanId, (planId) => {
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-pin { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
+.task-pin.active, .task-pin:hover { color: var(--color-primary); }
 .task-details-toggle { display: inline-flex; align-items: center; gap: 4px; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; font-size: 12px; }
 .task-details-toggle svg { transition: transform .2s; }
 .task-details-toggle.expanded svg { transform: rotate(180deg); }
