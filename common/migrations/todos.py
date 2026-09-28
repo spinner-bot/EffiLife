@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from ..api_gateway.adapters import TodoAdapter
+from ..api_gateway.adapters import CategoryAdapter, TodoAdapter
 
 
 class TodoMigrationError(ValueError):
@@ -51,6 +51,7 @@ def migrate_legacy_todos(
     """
     raw_todos, source_version, categories = _parse_source(source)
     migrated: list[dict[str, Any]] = []
+    migrated_categories: list[dict[str, Any]] = []
     errors: list[str] = []
 
     for index, raw in enumerate(raw_todos):
@@ -68,12 +69,27 @@ def migrate_legacy_todos(
         except (TypeError, ValueError, KeyError) as exc:
             errors.append(f"第 {index} 项无效: {exc}")
 
+    for index, raw in enumerate(categories):
+        if not isinstance(raw, Mapping):
+            errors.append(f"分类第 {index} 项不是对象")
+            continue
+        if not str(raw.get("id", "")).strip():
+            errors.append(f"分类第 {index} 项缺少 id")
+            continue
+        if not str(raw.get("name", "")).strip():
+            errors.append(f"分类第 {index} 项缺少 name")
+            continue
+        try:
+            migrated_categories.append(CategoryAdapter.to_unified_category(dict(raw)).to_dict())
+        except (TypeError, ValueError, KeyError) as exc:
+            errors.append(f"分类第 {index} 项无效: {exc}")
+
     if errors and strict:
         raise TodoMigrationError(errors)
 
     return {
         "todos": migrated,
-        "categories": categories,
+        "categories": migrated_categories,
         "source_version": source_version,
         "warnings": errors,
     }

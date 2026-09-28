@@ -1,3 +1,5 @@
+import pytest
+
 from common.api_gateway.adapters import PlanAdapter
 
 
@@ -86,11 +88,13 @@ def test_legacy_todo_migration_accepts_wrapped_and_raw_payloads():
     from common.migrations.todos import migrate_legacy_todos
 
     todo = {"id": "TODO-1", "title": "迁移任务", "subtasks": [{"id": "SUB-1", "title": "子项"}]}
-    wrapped = migrate_legacy_todos({"version": "0.3.0", "todos": [todo], "categories": [{"id": "work"}]})
+    wrapped = migrate_legacy_todos({"version": "0.3.0", "todos": [todo], "categories": [{"id": "work", "name": "工作"}]})
     raw = migrate_legacy_todos([todo])
 
     assert wrapped["source_version"] == "0.3.0"
-    assert wrapped["categories"] == [{"id": "work"}]
+    assert wrapped["categories"][0]["id"] == "work"
+    assert wrapped["categories"][0]["name"] == "工作"
+    assert wrapped["categories"][0]["module"] == "to-dos"
     assert wrapped["todos"][0]["subtasks"] == todo["subtasks"]
     assert raw["source_version"] is None
 
@@ -109,6 +113,17 @@ def test_legacy_todo_migration_strict_and_lenient_errors():
     result = migrate_legacy_todos(invalid, strict=False)
     assert len(result["todos"]) == 1
     assert len(result["warnings"]) == 1
+
+
+def test_legacy_todo_migration_rejects_invalid_categories_consistently():
+    from common.migrations.todos import TodoMigrationError, migrate_legacy_todos
+
+    with pytest.raises(TodoMigrationError, match="分类第 0 项缺少 name"):
+        migrate_legacy_todos({"todos": [], "categories": [{"id": "work"}]})
+
+    result = migrate_legacy_todos({"todos": [], "categories": [{"id": "work"}]}, strict=False)
+    assert result["categories"] == []
+    assert result["warnings"] == ["分类第 0 项缺少 name"]
 
 
 def test_time_adapter_accepts_unified_frontend_record_fields():
