@@ -224,16 +224,16 @@ export function formatWeekDisplay(weekSet: Set<string>): string {
 // ============ 日期工具 ============
 
 export function getTodayDate(): string {
-  const now = new Date()
-  return now.toISOString().split('T')[0]
+  return formatDate(new Date())
 }
 
 export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0]
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 export function addDays(dateStr: string, days: number): string {
-  const date = new Date(dateStr)
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   date.setDate(date.getDate() + days)
   return formatDate(date)
 }

@@ -1,7 +1,7 @@
 // time-helper API 层
 // 提供清晰的接口规范，便于未来与 plan-helper、to-dos 等模块互通
 
-import { DataService, hoursToHm, getTodayDate } from '@/services/dataService'
+import { DataService, hoursToHm, getTodayDate, formatDate, addDays } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import { EventSystem } from '@/audio'
 import type { Config, Plans, ScheduleRule, TimeRecord, RealTimeStat, DayPlanInfo } from '@/types'
@@ -241,7 +241,7 @@ export const RecordApi = {
       const current = new Date(start)
 
       while (current <= end) {
-        const dateStr = current.toISOString().split('T')[0]
+        const dateStr = formatDate(current)
         const records = await DataService.loadRecords(dateStr)
         if (records.length > 0) {
           result[dateStr] = records
@@ -281,7 +281,7 @@ export const RecordApi = {
       const current = new Date(start)
 
       while (current <= end) {
-        const dateStr = current.toISOString().split('T')[0]
+        const dateStr = formatDate(current)
         const stat = await DataService.calcRealTimeStat(dateStr)
         dates.push(dateStr)
         progress.push(stat.progress)
@@ -548,8 +548,8 @@ export const AnalyticsApi = {
       const end = new Date(start)
       end.setDate(end.getDate() + 6)
 
-      const startStr = start.toISOString().split('T')[0]
-      const endStr = end.toISOString().split('T')[0]
+      const startStr = formatDate(start)
+      const endStr = formatDate(end)
 
       let totalRecords = 0
       let totalHours = 0
@@ -560,7 +560,7 @@ export const AnalyticsApi = {
 
       const current = new Date(start)
       while (current <= end) {
-        const dateStr = current.toISOString().split('T')[0]
+        const dateStr = formatDate(current)
         const stat = await DataService.calcRealTimeStat(dateStr)
         const records = await DataService.loadRecords(dateStr)
 
@@ -685,9 +685,7 @@ export const UtilsApi = {
 
   /** 日期加减 */
   addDays(dateStr: string, days: number): string {
-    const date = new Date(dateStr)
-    date.setDate(date.getDate() + days)
-    return date.toISOString().split('T')[0]
+    return addDays(dateStr, days)
   },
 
   /** 格式化时间范围 */
