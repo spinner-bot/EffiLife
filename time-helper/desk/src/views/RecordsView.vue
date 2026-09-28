@@ -239,6 +239,7 @@ async function saveRecordInternal() {
   } else {
     await appStore.addRecord(record)
   }
+  notifyToast(t('records.saved'), 'success')
 
   showForm.value = false
   resetForm()
