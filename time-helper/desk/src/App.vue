@@ -16,9 +16,20 @@ import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/w
 
 const appStore = useAppStore()
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const themeVariables = computed(() => getThemeCssVariables(appStore.config.theme))
+
+const pageTitle = computed(() => {
+  const path = route.path
+  if (path === '/') return t('nav.home')
+  if (path.startsWith('/plans') || path === '/plan') return t('nav.plans')
+  if (path.startsWith('/tasks')) return t('nav.tasks')
+  if (path.startsWith('/records') || path.startsWith('/day')) return t('nav.records')
+  if (path.startsWith('/calendar')) return t('nav.calendar')
+  if (path.startsWith('/checkin')) return t('nav.checkin')
+  return t('nav.settings')
+})
 
 // 打卡弹窗状态
 const showCheckinPopup = ref(false)
@@ -156,6 +167,10 @@ onBeforeUnmount(() => {
 })
 
 watch(() => appStore.config, applyTheme, { deep: true })
+
+watch([() => route.path, locale], () => {
+  document.title = `${pageTitle.value} · EffiLife`
+}, { immediate: true })
 
 // 监听统计数据变化，检查事件
 watch(() => appStore.todayStat, () => {
