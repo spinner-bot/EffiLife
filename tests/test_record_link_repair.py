@@ -18,6 +18,8 @@ def test_app_runs_link_repair_after_storage_migration():
     assert "repairTodoTimeRecordLinks" in source
     assert "await TodoService.migrateLegacyLocalStorage()" in source
     assert "await repairTodoTimeRecordLinks()" in source
+    assert "Link repair is recoverable maintenance" in source
+    assert "console.warn('Failed to repair todo/time-record links during startup:'" in source
 
 
 def test_startup_repairs_only_provably_stale_plan_task_links():

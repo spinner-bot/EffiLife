@@ -113,7 +113,12 @@ onMounted(async () => {
     await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
     await appStore.init()
     await TodoService.migrateLegacyLocalStorage()
-    await repairTodoTimeRecordLinks()
+    try {
+      await repairTodoTimeRecordLinks()
+    } catch (error) {
+      // Link repair is recoverable maintenance; it must not block the workspace.
+      console.warn('Failed to repair todo/time-record links during startup:', error)
+    }
   } catch (error) {
     console.error('Failed to initialize EffiLife workspace:', error)
     startupErrorMessage.value = error instanceof Error ? error.message : String(error)
