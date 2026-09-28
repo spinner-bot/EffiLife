@@ -1,4 +1,6 @@
-# EffLife - 浪兮效率工具集
+<img src="assets/hero.svg" alt="EffiLife — Unified Personal Time Management" width="100%">
+
+# EffiLife · 浪兮效率工具集
 
 一站式个人效率管理工具集，涵盖时间记录、计划管理与任务追踪三大场景。
 

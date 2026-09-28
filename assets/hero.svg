@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440"
+     role="img" aria-labelledby="heroTitle heroDesc">
+  <title id="heroTitle">EffiLife — Unified Personal Time Management</title>
+  <desc id="heroDesc">EffiLife 的深色动画封面：左侧为统一个人时间管理工作台的产品定位，右侧以时间环、任务卡片和进度流线表现记录、计划与待办的融合。</desc>
+
+  <style>
+    :root {
+      --bg-0: #080d1c;
+      --bg-1: #101936;
+      --bg-2: #0b1225;
+      --line: #ffffff1c;
+      --text: #f2f6ff;
+      --muted: #9aa8c9;
+      --mint: #79f2d0;
+      --blue: #82b8ff;
+      --violet: #a98bff;
+      --mint-soft: #b7ffeb;
+      --glow-a: #237f8c;
+      --glow-b: #5945a9;
+      --ease: cubic-bezier(.22,.8,.25,1);
+      --dur-short: 6s;
+      --dur-mid: 16s;
+      --dur-long: 26s;
+      --flow: 15s;
+    }
+
+    text { font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; fill: var(--mint); }
+    .wordmark { font-size: 64px; font-weight: 800; letter-spacing: -.045em; fill: url(#wordGrad); }
+    .subtitle { font-size: 17px; fill: var(--muted); }
+    .chip-text { font-size: 13px; font-weight: 600; fill: var(--muted); }
+    .frame, .chip { fill: none; stroke: var(--line); stroke-width: 1; }
+    .grid { stroke: var(--line); stroke-opacity: .24; stroke-width: 1; }
+    .ring-a, .ring-b { fill: none; transform-box: fill-box; transform-origin: center; }
+    .ring-a { stroke: var(--mint); stroke-opacity: .34; stroke-width: 1.5; animation: spin var(--dur-long) linear infinite; }
+    .ring-b { stroke: var(--blue); stroke-opacity: .4; stroke-width: 1; stroke-dasharray: 9 8; animation: spin var(--dur-mid) linear infinite reverse; }
+    .halo { fill: url(#halo); animation: breathe var(--dur-short) var(--ease) infinite; }
+    .core { fill: url(#coreGrad); transform-box: fill-box; transform-origin: center; animation: drift var(--dur-short) var(--ease) infinite; }
+    .core-line { fill: none; stroke: var(--mint); stroke-opacity: .56; stroke-width: 1.5; stroke-linecap: round; animation: flow-core var(--flow) linear infinite; }
+    .orbit-dot { fill: var(--mint); animation: orbit var(--dur-mid) linear infinite; transform-box: fill-box; transform-origin: center; }
+    .timeline { stroke: var(--line); stroke-width: 1; }
+    .flow-back { fill: var(--blue); opacity: .08; animation: flow var(--dur-long) linear infinite; }
+    .flow-front { fill: var(--mint); opacity: .14; animation: flow var(--flow) linear infinite; }
+    .card { fill: #ffffff08; stroke: var(--line); stroke-width: 1; }
+    .card-title { font-size: 12px; font-weight: 700; fill: var(--text); }
+    .card-meta { font-size: 10px; fill: var(--muted); }
+    .card-dot { fill: var(--mint); }
+    .card-1 { animation: card-float var(--dur-short) var(--ease) infinite; }
+    .card-2 { animation: card-float var(--dur-short) var(--ease) .9s infinite; }
+    .card-3 { animation: card-float var(--dur-short) var(--ease) 1.8s infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes orbit { to { transform: rotate(360deg) translateX(142px) rotate(-360deg); } }
+    @keyframes flow { from { transform: translateX(0); } to { transform: translateX(-240px); } }
+    @keyframes flow-core { from { transform: translateX(0); } to { transform: translateX(-72px); } }
+    @keyframes drift { 50% { transform: translateY(-8px) rotate(1.5deg); } }
+    @keyframes breathe { 50% { opacity: .52; } }
+    @keyframes card-float { 50% { transform: translateY(-5px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ring-a, .ring-b, .halo, .core, .core-line, .orbit-dot,
+      .flow-back, .flow-front, .card-1, .card-2, .card-3 { animation: none; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color:var(--bg-0)"/>
+      <stop offset=".55" style="stop-color:var(--bg-1)"/>
+      <stop offset="1" style="stop-color:var(--bg-2)"/>
+    </linearGradient>
+    <radialGradient id="glowTeal" cx=".12" cy=".15" r=".4">
+      <stop offset="0" style="stop-color:var(--glow-a);stop-opacity:.28"/>
+      <stop offset="1" style="stop-color:var(--glow-a);stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="glowViolet" cx=".88" cy=".78" r=".45">
+      <stop offset="0" style="stop-color:var(--glow-b);stop-opacity:.26"/>
+      <stop offset="1" style="stop-color:var(--glow-b);stop-opacity:0"/>
+    </radialGradient>
+    <linearGradient id="wordGrad" x1="0" y1=".15" x2="1" y2=".85">
+      <stop offset="0" style="stop-color:var(--text)"/>
+      <stop offset=".58" style="stop-color:var(--mint-soft)"/>
+      <stop offset="1" style="stop-color:var(--blue)"/>
+    </linearGradient>
+    <radialGradient id="halo" cx=".5" cy=".5" r=".5">
+      <stop offset="0" style="stop-color:var(--mint);stop-opacity:.4"/>
+      <stop offset="1" style="stop-color:var(--mint);stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="coreGrad" cx=".28" cy=".2" r=".9">
+      <stop offset="0" style="stop-color:#e1fff7"/>
+      <stop offset=".24" style="stop-color:var(--mint)"/>
+      <stop offset=".64" style="stop-color:var(--blue)"/>
+      <stop offset="1" style="stop-color:#29245b"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path class="grid" d="M48 0H0V48" fill="none"/>
+    </pattern>
+    <clipPath id="frame"><rect width="1200" height="440" rx="20"/></clipPath>
+    <clipPath id="coreClip"><circle cx="0" cy="0" r="62"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="440" fill="url(#bgGrad)"/>
+    <rect width="1200" height="440" fill="url(#glowTeal)"/>
+    <rect width="1200" height="440" fill="url(#glowViolet)"/>
+    <rect width="1200" height="440" fill="url(#grid)" opacity=".62"/>
+
+    <!-- Continuous progress field -->
+    <path class="flow-back" d="M-240 374q60-44 120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0L1680 440H-240Z"/>
+    <path class="flow-front" d="M-240 410q60-58 120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0L1680 440H-240Z"/>
+
+    <!-- Time orbit -->
+    <g transform="translate(910 205)">
+      <circle class="ring-a" r="154"/>
+      <circle class="ring-b" r="112"/>
+      <circle class="halo" r="132"/>
+      <circle class="core" r="62"/>
+      <g clip-path="url(#coreClip)" class="core-line">
+        <path d="M-100-20q18-14 36 0t36 0t36 0t36 0t36 0t36 0"/>
+        <path d="M-100 2q18 12 36 0t36 0t36 0t36 0t36 0t36 0"/>
+        <path d="M-100 24q18-10 36 0t36 0t36 0t36 0t36 0t36 0"/>
+      </g>
+      <circle class="orbit-dot" cx="0" cy="-142" r="4"/>
+      <path d="M-154 0h18M136 0h18M0-154v18M0 136v18" stroke="var(--mint)" stroke-opacity=".5"/>
+    </g>
+
+    <!-- Unified workstream cards -->
+    <g class="card-1">
+      <rect class="card" x="735" y="55" width="142" height="54" rx="12"/>
+      <circle class="card-dot" cx="754" cy="75" r="4"/>
+      <text class="card-title" x="766" y="79">计划进行中</text>
+      <text class="card-meta" x="752" y="96">3 / 5 tasks complete</text>
+    </g>
+    <g class="card-2">
+      <rect class="card" x="1000" y="100" width="142" height="54" rx="12"/>
+      <circle cx="1019" cy="120" r="4" fill="var(--blue)"/>
+      <text class="card-title" x="1031" y="124">专注记录</text>
+      <text class="card-meta" x="1017" y="141">42 min captured</text>
+    </g>
+    <g class="card-3">
+      <rect class="card" x="1010" y="270" width="142" height="54" rx="12"/>
+      <circle cx="1029" cy="290" r="4" fill="var(--violet)"/>
+      <text class="card-title" x="1041" y="294">待办同步</text>
+      <text class="card-meta" x="1027" y="311">2 priorities linked</text>
+    </g>
+
+    <!-- Product identity -->
+    <rect x="76" y="126" width="28" height="1" fill="var(--mint)"/>
+    <text class="eyebrow" x="114" y="132">Personal Time · Plans · Todos</text>
+    <text class="wordmark" x="76" y="204">EffiLife</text>
+    <text class="subtitle" x="76" y="244">Unified Personal Time Management</text>
+
+    <rect class="chip" x="76" y="274" width="92" height="36" rx="10"/>
+    <rect class="chip" x="176" y="274" width="92" height="36" rx="10"/>
+    <rect class="chip" x="276" y="274" width="92" height="36" rx="10"/>
+    <text class="chip-text" x="95" y="297">时间记录</text>
+    <text class="chip-text" x="195" y="297">计划编排</text>
+    <text class="chip-text" x="295" y="297">待办协同</text>
+
+    <line class="timeline" x1="76" y1="348" x2="516" y2="348"/>
+    <circle cx="76" cy="348" r="4" fill="var(--mint)"/>
+    <circle cx="296" cy="348" r="4" fill="var(--blue)"/>
+    <circle cx="516" cy="348" r="4" fill="var(--violet)"/>
+    <text class="card-meta" x="76" y="369">Capture</text>
+    <text class="card-meta" x="276" y="369">Organize</text>
+    <text class="card-meta" x="496" y="369">Focus</text>
+  </g>
+
+  <rect class="frame" width="1200" height="440" rx="20"/>
+</svg>
