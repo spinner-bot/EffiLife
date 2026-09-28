@@ -126,8 +126,8 @@ def get_time_helper_cmd():
     dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
     if (dist_path / "index.html").exists():
         return [
-            sys.executable, "-m", "http.server", "1420",
-            "--bind", "127.0.0.1", "--directory", str(dist_path),
+            sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
+            "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
         ], "http://127.0.0.1:1420", None
     return None, None, None
 
@@ -140,8 +140,8 @@ def get_todos_web_cmd():
     dist_path = BASE_DIR / "to-dos" / "ui" / "dist"
     if (dist_path / "index.html").exists():
         return [
-            sys.executable, "-m", "http.server", "1421",
-            "--bind", "127.0.0.1", "--directory", str(dist_path),
+            sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
+            "--port", "1421", "--bind", "127.0.0.1", "--directory", str(dist_path),
         ], "http://127.0.0.1:1421", None
     return None, None, None
 

@@ -22,7 +22,8 @@ def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_pat
     monkeypatch.setattr(launcher, "find_npm", lambda: None)
     monkeypatch.setattr(launcher, "find_node", lambda: None)
     command, url, setup = launcher.get_time_helper_cmd()
-    assert command[:4] == [sys.executable, "-m", "http.server", "1420"]
+    assert command[:2] == [sys.executable, str(tmp_path / "launcher" / "static_server.py")]
+    assert "--port" in command and "1420" in command
     assert "--directory" in command
     assert url == "http://127.0.0.1:1420"
     assert setup is None
