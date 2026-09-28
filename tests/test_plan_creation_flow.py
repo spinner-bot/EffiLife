@@ -5,21 +5,18 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_collects_initial_sections_and_tasks_before_submission():
+def test_plan_creation_uses_a_lightweight_modal_then_opens_full_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const createSections = ref<InitialPlanSection[]>([])" in view
-    assert "section.tasks" in view
-    assert "createEventPlan(name, toDateTuple(planDate.value), sections)" in view
-    assert "plans.createTaskRequired" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value))" in view
+    assert "plans.createEditorHint" in view
+    assert "plans.createAndEdit" in view
+    assert "createSections" not in view
+    assert "v-model=\"planName\"" in view
+    assert "v-model=\"planDate\"" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
-    assert "export async function listPlanTemplates" in gateway
-    assert "createEventPlanFromTemplate" in gateway
-    assert "v-model=\"selectedTemplateId\"" in view
-    assert "v-model=\"createTodos\"" in view
-    assert "syncCreatedPlanTasks" in view
 
 
 def test_mobile_plan_creation_preserves_section_and_task_shape():
@@ -38,7 +35,7 @@ def test_template_creation_uses_the_existing_plan_helper_endpoint():
     assert "template_id: templateId" in gateway
 
 
-def test_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
+def test_detail_editor_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
     assert "related_plan_id: String(plan.id)" in view
