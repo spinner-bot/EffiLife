@@ -8,10 +8,12 @@ import sys
 import subprocess
 import webbrowser
 import shutil
+import socket
 import threading
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
+from urllib.parse import urlparse
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
@@ -331,6 +333,13 @@ def run_module(choice, modules):
                 terminate_process(companion_process)
         return
 
+    if module.get("url") and local_port_is_occupied(module["url"]):
+        print(f"\nPort conflict: {module['url']} is already occupied by another service.")
+        print("Stop the conflicting process or choose another development port, then retry.")
+        for companion_process in companion_processes:
+            terminate_process(companion_process)
+        return
+
     try:
         process = subprocess.Popen(
             module["cmd"],
@@ -390,6 +399,18 @@ def service_is_ready(url):
                 return "plan-helper" in body and '"status"' in body
             return True
     except (OSError, URLError):
+        return False
+
+
+def local_port_is_occupied(url):
+    """Return whether a local TCP endpoint is already accepting connections."""
+    parsed = urlparse(url)
+    if parsed.hostname not in {"127.0.0.1", "localhost", "::1"} or not parsed.port:
+        return False
+    try:
+        with socket.create_connection((parsed.hostname, parsed.port), timeout=0.25):
+            return True
+    except OSError:
         return False
 
 

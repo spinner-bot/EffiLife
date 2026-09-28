@@ -55,6 +55,41 @@ def test_health_probe_requires_plan_helper_identity(monkeypatch):
     assert launcher.service_is_ready(health_url) is True
 
 
+def test_local_port_probe_reports_occupied_and_free_endpoints(monkeypatch):
+    class FakeSocket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(launcher.socket, "create_connection", lambda *_args, **_kwargs: FakeSocket())
+    assert launcher.local_port_is_occupied("http://127.0.0.1:1420") is True
+    monkeypatch.setattr(launcher.socket, "create_connection", lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError()))
+    assert launcher.local_port_is_occupied("http://127.0.0.1:1420") is False
+    assert launcher.local_port_is_occupied("https://example.com:443") is False
+
+
+def test_launcher_reports_port_conflict_without_starting_main(monkeypatch):
+    terminated = []
+    opened = []
+    companion = object()
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [companion])
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: False)
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: True)
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
+    monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
+
+    class UnexpectedPopen:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("the launcher must not start on an occupied port")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
+    launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
+    assert terminated == [companion]
+    assert opened == []
+
+
 def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
     monkeypatch.setenv("EFFILIFE_STARTUP_TIMEOUT", "90")
     assert launcher.startup_timeout() == 90
