@@ -44,7 +44,8 @@ class EffiLifeIntegration:
         # 核心组件
         self.event_bus = EventBus.get_instance()
         self.data_manager = DataManager.get_instance(data_root)
-        self.auth_manager = AuthManager.get_instance()
+        auth_data_dir = Path(data_root) / 'user' if data_root is not None else None
+        self.auth_manager = AuthManager.get_instance(auth_data_dir)
         self.gateway = APIGateway.get_instance()
 
         # 事件处理器

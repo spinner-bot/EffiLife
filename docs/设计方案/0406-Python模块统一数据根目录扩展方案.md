@@ -9,6 +9,7 @@ DataManager、launcher、Plan Helper 和 Tauri 已建立 `EFFILIFE_DATA_DIR` 契
 - `AuthManager` 在统一根目录模式下写入 `<root>/user`。
 - `TodoStorage` 在统一根目录模式下写入 `<root>/modules/to-dos`，与 DataManager 的模块目录规划一致。
 - 显式构造参数优先级最高，供测试、迁移和临时隔离使用。
+- `EffiLifeIntegration(data_root=...)` 显式传入的根目录继续向认证模块传递，不依赖进程环境变量。
 - 未配置环境变量时不改变历史开发目录，避免破坏已有本地数据。
 
 ## 验收标准

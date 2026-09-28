@@ -4,6 +4,7 @@ import sys
 import types
 
 from common.auth import AuthManager
+from common.bootstrap import EffiLifeIntegration
 
 
 def load_todo_storage():
@@ -44,3 +45,13 @@ def test_todo_storage_follows_unified_data_root(monkeypatch, tmp_path):
     storage = load_todo_storage()
 
     assert storage.data_dir == root / "modules" / "to-dos"
+
+
+def test_integration_explicit_root_is_forwarded_to_auth(monkeypatch, tmp_path):
+    monkeypatch.delenv("EFFILIFE_DATA_DIR", raising=False)
+    AuthManager.reset_instance()
+
+    integration = EffiLifeIntegration(data_root=str(tmp_path / "explicit"))
+
+    assert integration.auth_manager.data_dir == tmp_path / "explicit" / "user"
+    AuthManager.reset_instance()
