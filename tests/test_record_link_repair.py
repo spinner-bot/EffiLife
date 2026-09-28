@@ -28,6 +28,8 @@ def test_startup_repairs_only_provably_stale_plan_task_links():
     assert "from './planGateway'" in source
     assert "listPlanSummaries" in source
     assert "getPlanTasks" in source
+    assert "planDataSource" in source
+    assert "if (planDataSource.value === 'cache') return 0" in source
     assert "taskIds.has(String(todo.related_plan_task_id))" in source
     assert "related_plan_id: undefined" in source
 

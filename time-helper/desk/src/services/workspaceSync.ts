@@ -1,7 +1,7 @@
 import { TodoService } from './todoService'
 import type { TimeRecord } from '@/types'
 import { getRawAll, STORE_NAMES } from '@/storage'
-import { getPlanTasks, listPlanSummaries } from './planGateway'
+import { getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
 
 /**
  * Complete every unified todo linked to a plan task.
@@ -133,6 +133,9 @@ export async function repairTodoPlanTaskLinks(): Promise<number> {
     if (!linkedTodos.length) return 0
 
     const summaries = await listPlanSummaries()
+    // A cached snapshot is intentionally read-only and may be incomplete or
+    // stale. Never unlink user relations based on absence from that snapshot.
+    if (planDataSource.value === 'cache') return 0
     const planIds = new Set(summaries.map((plan) => String(plan.id)))
     const taskIdsByPlan = new Map<string, Set<string>>()
     for (const planId of new Set(linkedTodos.map((todo) => String(todo.related_plan_id)))) {
