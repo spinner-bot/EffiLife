@@ -31,3 +31,12 @@ def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():
 
     assert "const indexedDBRecords: Record<string, unknown[]> = {}" in records
     assert "if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords" in records
+
+
+def test_archive_import_validates_record_buckets_before_writing():
+    source = ARCHIVE.read_text(encoding="utf-8")
+
+    assert "function normalizeImportedRecords(raw: unknown)" in source
+    assert "records: normalizeImportedRecords(datasets.records)" in source
+    assert "records: normalizeImportedRecords(legacy.records)" in source
+    assert "必须是数组" in source

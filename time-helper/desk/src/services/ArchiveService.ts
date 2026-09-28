@@ -456,7 +456,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       dailyTrigger: app.dailyTrigger || null,
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
-      records: (datasets.records && typeof datasets.records === 'object' ? datasets.records : {}) as Record<string, unknown[]>,
+      records: normalizeImportedRecords(datasets.records),
       todos: importedTodos as UnifiedTodo[],
       categories,
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
@@ -483,6 +483,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   const categories = normalizeImportedCategories(undefined, importedTodos as UnifiedTodo[])
   return {
     ...legacy,
+    records: normalizeImportedRecords(legacy.records),
     locale: legacy.locale || 'zh-CN',
     todos: importedTodos as UnifiedTodo[],
     categories,
@@ -526,6 +527,21 @@ function normalizeImportedCategories(raw: unknown, todos: UnifiedTodo[]): TodoCa
       })
       ids.add(todo.category)
     }
+  }
+  return result
+}
+
+function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
+  if (raw === undefined || raw === null) return {}
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('时间记录数据无效：必须是按日期分组的对象')
+  }
+  const result: Record<string, unknown[]> = {}
+  for (const [date, records] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(records)) {
+      throw new Error(`时间记录数据无效：${date} 必须是数组`)
+    }
+    result[date] = records
   }
   return result
 }
