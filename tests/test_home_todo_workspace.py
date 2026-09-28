@@ -49,3 +49,12 @@ def test_home_summary_uses_the_shared_dynamic_priority_order():
 def test_home_todo_summary_survives_category_storage_failure():
     source = HOME.read_text(encoding="utf-8")
     assert "TodoCategoryService.list().catch(() => [])" in source
+
+
+def test_home_refreshes_unified_summaries_after_workspace_changes():
+    source = HOME.read_text(encoding="utf-8")
+    assert "onWorkspaceChanged" in source
+    assert "scheduleWorkspaceSummaryRefresh" in source
+    assert "Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])" in source
+    assert "workspaceRefreshTimer" in source
+    assert "stopWorkspaceListener()" in source

@@ -15,6 +15,7 @@ import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -24,6 +25,7 @@ const currentTime = ref('')
 const currentDate = ref('')
 let timer: number | null = null
 let refreshTimer: number | null = null
+let workspaceRefreshTimer: number | null = null
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const completingTodoId = ref<string | null>(null)
@@ -105,6 +107,16 @@ async function refreshEventPlanSummary() {
     eventPlanState.value = 'unavailable'
   }
 }
+
+function scheduleWorkspaceSummaryRefresh() {
+  if (workspaceRefreshTimer !== null) return
+  workspaceRefreshTimer = window.setTimeout(async () => {
+    workspaceRefreshTimer = null
+    await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
+  }, 80)
+}
+
+const stopWorkspaceListener = onWorkspaceChanged(scheduleWorkspaceSummaryRefresh)
 
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
@@ -236,6 +248,8 @@ onMounted(async () => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
   if (refreshTimer) clearInterval(refreshTimer)
+  if (workspaceRefreshTimer !== null) clearTimeout(workspaceRefreshTimer)
+  stopWorkspaceListener()
 })
 </script>
 
