@@ -376,6 +376,9 @@ function pickColor(target: string) {
 const dataStats = ref({
   recordDays: 0,
   totalRecords: 0,
+  todoCount: 0,
+  activeTodoCount: 0,
+  todoCategoryCount: 0,
   hasConfig: false,
   hasPlans: false,
   eventPlanCount: 0,
@@ -1040,6 +1043,18 @@ onMounted(async () => {
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.eventPlanCount }}</span>
               <span class="stat-label">{{ t('settings.archive.eventPlanSnapshots') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.todoCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.totalTodos') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.activeTodoCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.activeTodos') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.todoCategoryCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.todoCategories') }}</span>
             </div>
           </div>
         </div>

@@ -921,6 +921,9 @@ export async function resetData(type: ResetType): Promise<void> {
 export async function getDataStats(): Promise<{
   recordDays: number
   totalRecords: number
+  todoCount: number
+  activeTodoCount: number
+  todoCategoryCount: number
   hasConfig: boolean
   hasPlans: boolean
   eventPlanCount: number
@@ -933,12 +936,17 @@ export async function getDataStats(): Promise<{
   for (const dateRecords of Object.values(records)) {
     totalRecords += dateRecords.length
   }
+  const { getRawAll, STORE_NAMES } = await import('@/storage')
   const cachedEventPlans = await readCachedPlanHelperData()
-  const { STORE_NAMES } = await import('@/storage')
+  const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
+  const categories = await getRawAll<TodoCategory>(STORE_NAMES.TODO_CATEGORIES)
 
   return {
     recordDays: Object.keys(records).length,
     totalRecords,
+    todoCount: todos.length,
+    activeTodoCount: todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)).length,
+    todoCategoryCount: categories.length,
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: cachedEventPlans?.length || 0,
