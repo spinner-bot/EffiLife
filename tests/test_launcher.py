@@ -75,6 +75,11 @@ def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     assert modules["1"]["companions"][0]["health_url"].endswith("/api/health")
 
 
+def test_launcher_user_facing_brand_name_is_effilife():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+    assert "EffLife" not in source
+
+
 def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     modules = launcher.build_modules()
     assert modules["4"]["url"] == "http://127.0.0.1:1421"

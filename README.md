@@ -38,7 +38,7 @@ python launcher/start.py --unified
 ## 当前模块架构
 
 ```
-EffLife/
+EffiLife/
 ├── time-helper/desk/    # 统一工作台：Vue 3 + Tauri，正式产品前端
 ├── plan-helper/         # 计划领域模型与 HTTP companion/sidecar
 ├── to-dos/              # 待办领域模型、优先级算法与兼容入口

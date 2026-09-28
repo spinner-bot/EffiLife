@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EffLife 效率工具集 - 统一启动器
+EffiLife 效率工具集 - 统一启动器
 """
 
 import os
@@ -377,7 +377,7 @@ def clear():
 def _legacy_show_menu(modules):
     clear()
     print("=" * 50)
-    print("  EffLife 效率工具集 - 统一启动器")
+    print("  EffiLife 效率工具集 - 统一启动器")
     print("=" * 50)
     print()
 
