@@ -56,8 +56,16 @@ def test_settings_subviews_use_localized_back_action():
 def test_selectable_tech_theme_has_a_theme_engine_preset():
     settings = SETTINGS.read_text(encoding="utf-8")
     engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
-    assert "type: 'tech' as ThemeType" in settings
+    assert "getAvailableThemes()" in settings
+    assert "{ type: 'tech', name: '科技'" in engine
     assert "tech: () => ({" in engine
+
+
+def test_settings_uses_theme_engine_registry():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "import { getAvailableThemes } from '@/theme/ThemeEngine'" in source
+    assert "const availableThemes = getAvailableThemes()" in source
+    assert "const availableThemes = [" not in source
 
 
 def test_locale_catalogs_have_the_same_translation_keys():

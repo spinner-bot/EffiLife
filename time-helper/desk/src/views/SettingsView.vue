@@ -17,6 +17,7 @@ import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { getTodayDate } from '@/services/dataService'
+import { getAvailableThemes } from '@/theme/ThemeEngine'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -214,35 +215,8 @@ async function discardThemeChanges() {
   if (restored.neon) neonConfig.value = { ...restored.neon }
 }
 
-// 所有可用主题
-const availableThemes = [
-  // 基础主题
-  { type: 'solid' as ThemeType, name: '纯色', description: '简洁的纯色主题', category: '基础' },
-  { type: 'gradient' as ThemeType, name: '渐变', description: '渐变背景主题', category: '基础' },
-  { type: 'glass' as ThemeType, name: '玻璃', description: '毛玻璃效果主题', category: '基础' },
-  { type: 'neon' as ThemeType, name: '霓虹', description: '霓虹灯效果主题', category: '基础' },
-  // 高级主题
-  { type: 'ink' as ThemeType, name: '水墨', description: '中国水墨画风格，动态墨点晕染', category: '艺术' },
-  { type: 'vintage' as ThemeType, name: '画报', description: '复古画报风格，装饰花纹边框', category: '艺术' },
-  { type: 'cyberpunk' as ThemeType, name: '赛博朋克', description: '未来科技风，网格扫描线效果', category: '科技' },
-  { type: 'tech' as ThemeType, name: '科技', description: '低饱和科技工作台，蓝色网格与柔和光晕', category: '科技' },
-  { type: 'pixel' as ThemeType, name: '像素', description: '复古像素风格，星星月亮', category: '艺术' },
-  { type: 'aurora' as ThemeType, name: '极光', description: '北极光效果，流动彩光', category: '自然' },
-  { type: 'sakura' as ThemeType, name: '樱花', description: '日式樱花风格，飘落花瓣', category: '自然' },
-  { type: 'ocean' as ThemeType, name: '深海', description: '深海探索风格，气泡上升', category: '自然' },
-  { type: 'forest' as ThemeType, name: '森林', description: '神秘森林风格，萤火虫飞舞', category: '自然' },
-  // 新主题
-  { type: 'midnight_library' as ThemeType, name: '午夜图书馆', description: '烛光书香，书架与飘动书页', category: '艺术' },
-  { type: 'star_voyage' as ThemeType, name: '星际航行', description: '星海遨游，星云旋转飞船轨迹', category: '科技' },
-  { type: 'rainy_city' as ThemeType, name: '雨夜城市', description: '霓虹倒影，雨滴滑落天际线', category: '自然' },
-  { type: 'desert_dusk' as ThemeType, name: '沙漠黄昏', description: '落日余晖，多层沙丘与飘沙', category: '自然' },
-  { type: 'bamboo_dawn' as ThemeType, name: '竹林清晨', description: '晨雾竹林，摇曳竹影与露珠', category: '自然' },
-  // 顶级主题
-  { type: 'nordic_polar_night' as ThemeType, name: '北欧极夜', description: '极光流动雪粒飘落，远处小屋灯光闪烁', category: '自然' },
-  { type: 'japanese_garden' as ThemeType, name: '日式庭院', description: '枯山水波纹，樱花瓣飘落，纸灯笼微光', category: '艺术' },
-  { type: 'victorian_study' as ThemeType, name: '维多利亚书房', description: '壁炉火焰，灰尘粒子光束中，书香怀旧', category: '艺术' },
-  { type: 'underwater_temple' as ThemeType, name: '海底神殿', description: '光线穿透深海，气泡上升，水草摇曳鱼群游过', category: '自然' },
-]
+// 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
+const availableThemes = getAvailableThemes()
 
 const themeMeta: Partial<Record<ThemeType, { nameKey: string; descriptionKey: string; categoryKey: string }>> = {
   solid: { nameKey: 'theme.name.solid', descriptionKey: 'theme.desc.solid', categoryKey: 'theme.category.basic' },

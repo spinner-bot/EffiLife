@@ -2676,10 +2676,15 @@ export function getAvailableThemes(): { type: ThemeType; name: string; descripti
     { type: 'sakura', name: '樱花', description: '日式樱花风格', preview: '#fff0f5' },
     { type: 'ocean', name: '深海', description: '深海探索风格', preview: '#001a33' },
     { type: 'forest', name: '森林', description: '神秘森林风格', preview: '#1a2f1a' },
+    { type: 'tech', name: '科技', description: '低饱和科技工作台', preview: '#101827' },
     { type: 'midnight_library', name: '午夜图书馆', description: '烛光书香，温暖静谧', preview: '#2c1810' },
     { type: 'star_voyage', name: '星际航行', description: '星海遨游，星云流转', preview: '#0d0d3a' },
     { type: 'rainy_city', name: '雨夜城市', description: '霓虹倒影，雨声淅沥', preview: '#111828' },
     { type: 'desert_dusk', name: '沙漠黄昏', description: '落日余晖，大漠孤烟', preview: '#5a1a3a' },
     { type: 'bamboo_dawn', name: '竹林清晨', description: '晨雾竹林，清露微光', preview: '#e8f0e0' },
+    { type: 'nordic_polar_night', name: '北欧极夜', description: '极光流动雪粒飘落', preview: '#101a36' },
+    { type: 'japanese_garden', name: '日式庭院', description: '枯山水与纸灯笼', preview: '#e8dfcf' },
+    { type: 'victorian_study', name: '维多利亚书房', description: '壁炉与书香光影', preview: '#2a1d18' },
+    { type: 'underwater_temple', name: '海底神殿', description: '深海光线与气泡', preview: '#06243a' },
   ]
 }
