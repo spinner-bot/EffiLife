@@ -256,11 +256,14 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     monkeypatch.setattr(launcher, "find_node", lambda: "node.exe")
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
     monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: True)
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: True)
     result = launcher.collect_diagnostics(modules)
     assert result["node"] == "node.exe"
     assert result["npm"] == "npm.cmd"
     assert result["version"] == (Path(launcher.BASE_DIR) / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     assert result["modules"]["1"]["port_occupied"] is True
+    assert result["modules"]["1"]["service_ready"] is True
+    assert result["modules"]["2"]["service_ready"] is False
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
 
 

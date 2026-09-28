@@ -261,6 +261,7 @@ def collect_diagnostics(modules):
             "unavailable_reason": module.get("unavailable_reason"),
             "url": url,
             "port_occupied": bool(url and local_port_is_occupied(url)),
+            "service_ready": bool(url and service_is_ready(url)),
             "needs_setup": bool(module.get("needs_setup")),
         }
     return {
