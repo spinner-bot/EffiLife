@@ -31,6 +31,7 @@ from common.schemas.models import UnifiedTodo, UnifiedPlan, UnifiedTimeRecord
 
 
 class TestResult:
+    __test__ = False
     """测试结果记录"""
     def __init__(self):
         self.passed = 0
@@ -56,6 +57,17 @@ class TestResult:
                 print(f'    - {e["name"]}: {e["detail"]}')
         print(f'{"=" * 50}')
         return self.failed == 0
+
+
+_MANUAL_RUN = False
+
+
+def _return_test_result(result):
+    """Keep the legacy CLI aggregate while satisfying pytest's return contract."""
+    if _MANUAL_RUN:
+        return result
+    assert result.failed == 0, result.errors
+    return None
 
 
 def setup_test_env():
@@ -116,7 +128,7 @@ def test_schemas():
     record2 = UnifiedTimeRecord.from_dict(d)
     result.record('UnifiedTimeRecord.from_dict', record2.id == 'TR-20260920-0800')
 
-    return result
+    return _return_test_result(result)
 
 
 def test_data_manager():
@@ -166,7 +178,7 @@ def test_data_manager():
         DataManager.reset_instance()
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def test_event_bus():
@@ -211,7 +223,7 @@ def test_event_bus():
     result.record('event_stats', stats['total_events'] == 2)
 
     EventBus._instance = None
-    return result
+    return _return_test_result(result)
 
 
 def test_auth_manager():
@@ -260,7 +272,7 @@ def test_auth_manager():
         AuthManager.reset_instance()
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def test_todo_api_basic():
@@ -308,7 +320,7 @@ def test_todo_api_basic():
     finally:
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def test_integration_flow():
@@ -368,7 +380,7 @@ def test_integration_flow():
         reset_integration()
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def test_cross_module_references():
@@ -413,7 +425,7 @@ def test_cross_module_references():
         DataManager.reset_instance()
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def test_api_gateway():
@@ -459,7 +471,7 @@ def test_api_gateway():
         APIGateway.reset_instance()
         cleanup_test_env(test_dir)
 
-    return result
+    return _return_test_result(result)
 
 
 def run_all_tests():
@@ -469,6 +481,8 @@ def run_all_tests():
     print(f'  {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     print('=' * 50)
 
+    global _MANUAL_RUN
+    _MANUAL_RUN = True
     all_results = []
     test_groups = [
         ('Schemas', test_schemas),
@@ -494,6 +508,7 @@ def run_all_tests():
             all_results.append((name, r))
 
     # 总结
+    _MANUAL_RUN = False
     total_passed = sum(r.passed for _, r in all_results)
     total_failed = sum(r.failed for _, r in all_results)
     total = total_passed + total_failed
