@@ -565,7 +565,11 @@ def _legacy_main():
 
 
 def main():
-    """Launch unified mode or the interactive compatibility menu."""
+    """Launch the unified workspace by default.
+
+    The old module menu remains available explicitly through
+    ``--legacy-menu`` for migration and debugging.
+    """
     if "--version" in sys.argv:
         print(app_version() or "unknown")
         return
@@ -575,7 +579,7 @@ def main():
         # decode the escaped Unicode path back to its original value.
         print(json.dumps(collect_diagnostics(modules), ensure_ascii=True, indent=2))
         return
-    if "--unified" in sys.argv:
+    if "--unified" in sys.argv or "--legacy-menu" not in sys.argv:
         run_module("1", modules, open_browser="--no-browser" not in sys.argv)
         return
     while True:

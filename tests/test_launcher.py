@@ -14,6 +14,33 @@ def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     assert calls == [("1", modules, {"open_browser": True})]
 
 
+def test_launcher_defaults_to_unified_workspace_without_legacy_flag(monkeypatch):
+    modules = {"1": {"name": "EffiLife unified workspace"}}
+    calls = []
+    monkeypatch.setattr(launcher, "build_modules", lambda: modules)
+    monkeypatch.setattr(launcher, "run_module", lambda choice, available, **kwargs: calls.append((choice, available, kwargs)))
+    monkeypatch.setattr(sys, "argv", ["start.py", "--no-browser"])
+
+    launcher.main()
+
+    assert calls == [("1", modules, {"open_browser": False})]
+
+
+def test_launcher_keeps_legacy_menu_explicit(monkeypatch):
+    import builtins
+
+    modules = {"1": {"name": "workspace"}}
+    shown = []
+    monkeypatch.setattr(launcher, "build_modules", lambda: modules)
+    monkeypatch.setattr(launcher, "show_menu", lambda available: shown.append(available))
+    monkeypatch.setattr(builtins, "input", lambda _prompt: (_ for _ in ()).throw(EOFError()))
+    monkeypatch.setattr(sys, "argv", ["start.py", "--legacy-menu"])
+
+    launcher.main()
+
+    assert shown == [modules]
+
+
 def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_path):
     dist = tmp_path / "time-helper" / "desk" / "dist"
     dist.mkdir(parents=True)
