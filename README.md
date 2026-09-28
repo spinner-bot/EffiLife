@@ -4,6 +4,13 @@
 
 ## 当前统一工作台
 
+### 当前启动与发布边界
+
+- `launcher/start.bat`、`launcher/start.sh` 和 `python launcher/start.py` 仅用于开发、测试、迁移与回归；正式版本应使用 Tauri 安装包。
+- 发布前可执行 `python launcher/start.py --release-check`，该命令只读检查版本、sidecar、发布矩阵和安装包校验链路。
+- 当前桌面发布矩阵包含 Windows NSIS、Linux DEB、Linux AppImage 与 macOS DMG。
+- 桌面正式包由 Tauri 托管 Plan Helper sidecar；移动端不依赖 Python localhost 服务，使用本地计划快照能力。
+
 项目正在由三个历史模块演进为一个统一的个人时间管理工具。推荐使用统一启动器：
 
 ```bash
