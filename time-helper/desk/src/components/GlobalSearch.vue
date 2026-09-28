@@ -18,6 +18,7 @@ const input = ref<HTMLInputElement | null>(null)
 const todos = ref<UnifiedTodo[]>([])
 const plans = ref<PlanSummary[]>([])
 const records = ref<TimeRecord[]>([])
+const selectedIndex = ref(0)
 
 type SearchResult = {
   id: string
@@ -59,6 +60,10 @@ const filteredResults = computed(() => {
     .slice(0, 12)
 })
 
+watch(query, () => {
+  selectedIndex.value = 0
+})
+
 async function loadIndex() {
   isLoading.value = true
   try {
@@ -84,9 +89,24 @@ function openResult(result: SearchResult) {
   router.push(result.route)
 }
 
+function handleSearchKeydown(event: KeyboardEvent) {
+  const count = filteredResults.value.length
+  if (event.key === 'ArrowDown' && count > 0) {
+    event.preventDefault()
+    selectedIndex.value = (selectedIndex.value + 1) % count
+  } else if (event.key === 'ArrowUp' && count > 0) {
+    event.preventDefault()
+    selectedIndex.value = (selectedIndex.value - 1 + count) % count
+  } else if (event.key === 'Enter' && count > 0) {
+    event.preventDefault()
+    openResult(filteredResults.value[selectedIndex.value])
+  }
+}
+
 watch(() => props.open, async (open) => {
   if (!open) return
   query.value = ''
+  selectedIndex.value = 0
   await loadIndex()
   await nextTick()
   input.value?.focus()
@@ -100,12 +120,12 @@ watch(() => props.open, async (open) => {
         <div class="search-heading"><Search :size="18" /><strong>{{ t('search.title') }}</strong></div>
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
-      <input ref="input" v-model="query" class="search-input" type="search" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" />
+      <input ref="input" v-model="query" class="search-input" type="search" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
       <div v-if="isLoading" class="search-state">{{ t('search.loading') }}</div>
       <div v-else-if="query.trim() && filteredResults.length === 0" class="search-state">{{ t('search.empty') }}</div>
       <div v-else-if="!query.trim()" class="search-state search-hint">{{ t('search.hint') }}</div>
       <div v-else class="search-results">
-        <button v-for="result in filteredResults" :key="result.id" class="search-result" type="button" @click="openResult(result)">
+        <button v-for="(result, index) in filteredResults" :key="result.id" class="search-result" :class="{ selected: selectedIndex === index }" type="button" :aria-selected="selectedIndex === index" @click="openResult(result)">
           <span class="search-result-icon">
             <ListTodo v-if="result.kind === 'todo'" :size="16" />
             <ClipboardList v-else-if="result.kind === 'plan'" :size="16" />
@@ -132,7 +152,7 @@ watch(() => props.open, async (open) => {
 .search-hint { border-top: 1px solid var(--color-border); }
 .search-results { display: grid; max-height: min(55vh, 440px); overflow-y: auto; padding: 2px 8px 10px; }
 .search-result { display: flex; align-items: center; gap: 10px; border: 0; border-radius: 11px; padding: 10px 9px; color: var(--color-text-primary); background: transparent; text-align: left; cursor: pointer; }
-.search-result:hover, .search-result:focus-visible { outline: 0; background: var(--color-primary-muted); }
+.search-result:hover, .search-result:focus-visible, .search-result.selected { outline: 0; background: var(--color-primary-muted); }
 .search-result-icon { display: grid; place-items: center; width: 29px; height: 29px; flex: 0 0 29px; border-radius: 9px; color: var(--color-primary); background: var(--color-bg-secondary); }
 .search-result-copy { display: grid; min-width: 0; gap: 3px; flex: 1; }
 .search-result-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }

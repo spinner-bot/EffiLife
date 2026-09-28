@@ -35,6 +35,15 @@ def test_search_targets_are_consumed_by_plan_and_task_views():
     assert "scrollIntoView" in tasks
 
 
+def test_global_search_supports_keyboard_result_navigation():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "selectedIndex" in source
+    assert "ArrowDown" in source
+    assert "ArrowUp" in source
+    assert "openResult(filteredResults.value[selectedIndex.value])" in source
+    assert "class=\"search-result\" :class=\"{ selected: selectedIndex === index }\"" in source
+
+
 def test_global_search_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in (
