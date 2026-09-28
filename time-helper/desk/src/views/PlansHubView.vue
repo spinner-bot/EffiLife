@@ -135,6 +135,11 @@ function formatPlanDate(date?: [number, number, number]): string {
   }).format(value)
 }
 
+function formatLogTime(time?: [number, number]): string {
+  if (!time || time.length < 2 || time[0] === 99 || time[1] === 99) return t('plans.timeUnknown')
+  return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
+}
+
 async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
@@ -790,7 +795,7 @@ onUnmounted(() => {
         <section v-if="selectedPlan.logs.length" class="log-list theme-card">
           <header><strong>{{ t('plans.progressHistory') }}</strong><small>{{ selectedPlan.logs.length }}</small></header>
           <article v-for="log in [...selectedPlan.logs].reverse()" :key="log.index" class="log-row">
-            <div class="log-time"><strong>{{ log.day }}</strong><span>{{ log.time?.[0] ?? '--' }}:{{ String(log.time?.[1] ?? 0).padStart(2, '0') }}</span></div>
+            <div class="log-time"><strong>{{ log.day }}</strong><span>{{ formatLogTime(log.time) }}</span></div>
             <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
