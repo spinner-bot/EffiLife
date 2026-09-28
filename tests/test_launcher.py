@@ -269,6 +269,12 @@ def test_diagnose_output_uses_ascii_safe_json():
     assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
 
 
+def test_launcher_exposes_a_scriptable_version_command():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+    assert 'if "--version" in sys.argv:' in source
+    assert "print(app_version() or \"unknown\")" in source
+
+
 def test_unified_launcher_supports_no_browser_mode():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "def run_module(choice, modules, open_browser=True)" in source

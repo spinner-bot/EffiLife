@@ -566,6 +566,9 @@ def _legacy_main():
 def main():
     """Launch unified mode or the interactive compatibility menu."""
     modules = build_modules()
+    if "--version" in sys.argv:
+        print(app_version() or "unknown")
+        return
     if "--diagnose" in sys.argv:
         # Keep diagnostics copyable across Windows code pages. JSON consumers
         # decode the escaped Unicode path back to its original value.
