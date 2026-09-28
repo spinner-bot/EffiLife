@@ -37,6 +37,14 @@ def test_archive_import_validates_record_buckets_before_writing():
     source = ARCHIVE.read_text(encoding="utf-8")
 
     assert "function normalizeImportedRecords(raw: unknown)" in source
-    assert "records: normalizeImportedRecords(datasets.records)" in source
-    assert "records: normalizeImportedRecords(legacy.records)" in source
+    assert "const records = normalizeImportedRecords(datasets.records)" in source
+    assert "const records = normalizeImportedRecords(legacy.records)" in source
     assert "必须是数组" in source
+
+
+def test_archive_import_repairs_todo_record_links_against_imported_records():
+    source = ARCHIVE.read_text(encoding="utf-8")
+
+    assert "function repairImportedTodoRecordLinks" in source
+    assert "const repairedTodos = repairImportedTodoRecordLinks" in source
+    assert "recordIds.has(id)" in source

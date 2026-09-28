@@ -441,7 +441,9 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       throw new Error('待办数据包含无效任务：缺少有效标题或任务编号类型错误')
     }
 
-    const categories = normalizeImportedCategories(datasets.todo_categories, importedTodos as UnifiedTodo[])
+    const records = normalizeImportedRecords(datasets.records)
+    const repairedTodos = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
+    const categories = normalizeImportedCategories(datasets.todo_categories, repairedTodos)
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
@@ -456,8 +458,8 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       dailyTrigger: app.dailyTrigger || null,
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
-      records: normalizeImportedRecords(datasets.records),
-      todos: importedTodos as UnifiedTodo[],
+      records,
+      todos: repairedTodos,
       categories,
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
@@ -481,11 +483,12 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
   }
   const categories = normalizeImportedCategories(undefined, importedTodos as UnifiedTodo[])
+  const records = normalizeImportedRecords(legacy.records)
   return {
     ...legacy,
-    records: normalizeImportedRecords(legacy.records),
+    records,
     locale: legacy.locale || 'zh-CN',
-    todos: importedTodos as UnifiedTodo[],
+    todos: repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records),
     categories,
     todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
     planHelper: legacy.planHelper || { available: false, plans: [] },
@@ -544,6 +547,23 @@ function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
     result[date] = records
   }
   return result
+}
+
+function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): UnifiedTodo[] {
+  const recordIds = new Set<string>()
+  for (const dayRecords of Object.values(records)) {
+    for (const record of dayRecords) {
+      if (record && typeof record === 'object' && typeof (record as { id?: unknown }).id === 'string') {
+        recordIds.add((record as { id: string }).id)
+      }
+    }
+  }
+  return todos.map((todo) => {
+    if (!todo.related_time_record_ids) return todo
+    const validIds = todo.related_time_record_ids.filter((id) => recordIds.has(id))
+    if (validIds.length === todo.related_time_record_ids.length) return todo
+    return { ...todo, related_time_record_ids: validIds.length ? validIds : undefined }
+  })
 }
 
 interface ArchiveRuntimeSnapshot {
