@@ -14,6 +14,7 @@ import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
 import ConfirmHost from './components/ConfirmHost.vue'
 import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
+import { onWorkspaceChanged } from './services/workspaceEvents'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -40,6 +41,7 @@ const runtimeReady = ref(false)
 const startupError = ref(false)
 const startupErrorMessage = ref('')
 const showGlobalSearch = ref(false)
+let stopWorkspaceListener: (() => void) | null = null
 const searchShortcut = computed(() => {
   const platform = typeof navigator === 'undefined' ? '' : navigator.platform
   return /Mac|iPhone|iPad/.test(platform) ? '⌘K' : 'Ctrl K'
@@ -109,6 +111,12 @@ function onCheckinClose() {
 
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
+  stopWorkspaceListener = onWorkspaceChanged((source) => {
+    if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
+    void appStore.refreshWorkspaceData().catch((error) => {
+      console.warn('Failed to refresh workspace after external change:', error)
+    })
+  })
   try {
     await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
     await appStore.init()
@@ -171,6 +179,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
+  stopWorkspaceListener?.()
+  stopWorkspaceListener = null
 })
 
 watch(() => appStore.config, applyTheme, { deep: true })

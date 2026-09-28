@@ -61,10 +61,19 @@ export const useAppStore = defineStore('app', () => {
     todayStat.value = await DataService.calcRealTimeStat(today)
   }
 
+  /** Reload shared state after a change made by another window. */
+  async function refreshWorkspaceData() {
+    config.value = await DataService.loadConfig()
+    plans.value = await DataService.loadPlans()
+    scheduleRules.value = await DataService.loadScheduleRules()
+    await refreshTodayData()
+  }
+
   // 保存配置
   async function saveConfig(newConfig: Config) {
     config.value = newConfig
     await DataService.saveConfig(newConfig)
+    notifyWorkspaceChanged('settings')
   }
 
   // 仅更新运行时配置，用于设置页实时预览；不会写入持久化存储。
@@ -76,12 +85,14 @@ export const useAppStore = defineStore('app', () => {
   async function savePlans(newPlans: Plans) {
     plans.value = newPlans
     await DataService.savePlans(newPlans)
+    notifyWorkspaceChanged('plans')
   }
 
   // 保存日程规则
   async function saveScheduleRules(newRules: ScheduleRule[]) {
     scheduleRules.value = newRules
     await DataService.saveScheduleRules(newRules)
+    notifyWorkspaceChanged('plans')
   }
 
   // 添加记录
@@ -131,6 +142,7 @@ export const useAppStore = defineStore('app', () => {
     // 方法
     init,
     refreshTodayData,
+    refreshWorkspaceData,
     saveConfig,
     previewConfig,
     savePlans,
