@@ -18,3 +18,12 @@ def test_startup_state_is_localized_in_both_fallback_catalogs():
     source = I18N.read_text(encoding="utf-8")
     assert "'app.starting': '\\u6b63\\u5728\\u51c6\\u5907\\u5de5\\u4f5c\\u53f0\\u2026'" in source
     assert "'app.starting': 'Preparing workspace…'" in source
+
+
+def test_startup_error_exposes_localized_diagnostic_detail():
+    app = APP.read_text(encoding="utf-8")
+    source = I18N.read_text(encoding="utf-8")
+    assert "const startupErrorMessage = ref('')" in app
+    assert "startupErrorMessage.value = error instanceof Error ? error.message : String(error)" in app
+    assert "app.startupFailedDetail" in app
+    assert source.count("'app.startupFailedDetail'") == 4

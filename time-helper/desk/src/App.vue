@@ -38,6 +38,7 @@ const checkinPlanName = ref('')
 const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
 const startupError = ref(false)
+const startupErrorMessage = ref('')
 const showGlobalSearch = ref(false)
 const searchShortcut = computed(() => {
   const platform = typeof navigator === 'undefined' ? '' : navigator.platform
@@ -115,6 +116,7 @@ onMounted(async () => {
     await repairTodoTimeRecordLinks()
   } catch (error) {
     console.error('Failed to initialize EffiLife workspace:', error)
+    startupErrorMessage.value = error instanceof Error ? error.message : String(error)
     startupError.value = true
     return
   }
@@ -243,6 +245,7 @@ watch(() => appStore.todayStat, () => {
       <span class="app-startup-mark">!</span>
       <strong>{{ t('app.startupFailed') }}</strong>
       <span>{{ t('app.startupFailedDescription') }}</span>
+      <small v-if="startupErrorMessage" class="app-startup-detail">{{ t('app.startupFailedDetail', { detail: startupErrorMessage }) }}</small>
       <button class="app-startup-retry" type="button" @click="retryStartup">
         {{ t('app.retryStartup') }}
       </button>
@@ -274,6 +277,7 @@ watch(() => appStore.todayStat, () => {
 .app-startup-error { padding: 24px; text-align: center; }
 .app-startup-error strong { color: var(--color-text-primary); font-size: 16px; }
 .app-startup-error > span:not(.app-startup-mark) { max-width: 360px; }
+.app-startup-detail { max-width: min(620px, calc(100vw - 48px)); overflow-wrap: anywhere; color: var(--color-text-tertiary); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; line-height: 1.5; }
 .app-startup-retry { border: 1px solid var(--color-border); border-radius: 10px; padding: 8px 14px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; }
 .app-startup-retry:hover { filter: brightness(1.06); }
 .app-startup-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: var(--color-button-text); background: var(--color-primary); font-size: 18px; font-weight: 700; box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0,0,0,.08)); }
