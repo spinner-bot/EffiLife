@@ -223,4 +223,12 @@ watch(() => props.open, async (open) => {
 .search-result-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .search-result-copy small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .search-result-arrow { color: var(--color-text-tertiary); }
+
+@media (max-width: 680px) {
+  .search-backdrop { place-items: end center; padding: 0; }
+  .search-dialog { width: 100%; max-height: calc(100vh - 56px); border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .search-close { min-width: 40px; min-height: 40px; }
+  .search-results { max-height: 46vh; padding-bottom: 12px; }
+  .search-result { min-height: 48px; padding: 10px 9px; }
+}
 </style>
