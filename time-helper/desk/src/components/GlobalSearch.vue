@@ -20,6 +20,7 @@ const plans = ref<PlanSummary[]>([])
 const planTasks = ref<Array<{ plan: PlanSummary; task: PlanTaskSummary }>>([])
 const records = ref<TimeRecord[]>([])
 const selectedIndex = ref(0)
+let searchRequestId = 0
 
 type SearchResult = {
   id: string
@@ -90,7 +91,21 @@ watch(query, () => {
   selectedIndex.value = 0
 })
 
+async function loadPlanTaskIndex(planList: PlanSummary[], requestId: number) {
+  if (planList.length === 0) {
+    planTasks.value = []
+    return
+  }
+  const taskResults = await Promise.allSettled(planList.map(async (plan) => {
+    const tasks = await getPlanTasks(plan.id)
+    return tasks.map((task) => ({ plan, task }))
+  }))
+  if (requestId !== searchRequestId) return
+  planTasks.value = taskResults.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+}
+
 async function loadIndex() {
+  const requestId = ++searchRequestId
   isLoading.value = true
   try {
     const [todoResult, planResult, recordResult] = await Promise.allSettled([
@@ -98,19 +113,15 @@ async function loadIndex() {
       listPlanSummaries(),
       getAll<TimeRecord[]>(STORE_NAMES.RECORDS),
     ])
+    if (requestId !== searchRequestId) return
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
     plans.value = planResult.status === 'fulfilled' ? planResult.value : []
     planTasks.value = []
-    if (plans.value.length > 0) {
-      const taskResults = await Promise.allSettled(plans.value.map(async (plan) => {
-        const tasks = await getPlanTasks(plan.id)
-        return tasks.map((task) => ({ plan, task }))
-      }))
-      planTasks.value = taskResults.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
-    }
     records.value = recordResult.status === 'fulfilled' ? recordResult.value.flat() : []
+    // Keep the primary index usable even when the plan service is slow or offline.
+    void loadPlanTaskIndex(plans.value, requestId)
   } finally {
-    isLoading.value = false
+    if (requestId === searchRequestId) isLoading.value = false
   }
 }
 
