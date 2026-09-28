@@ -16,6 +16,7 @@ import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
 import { currentLocale, translate } from '@/i18n'
 import { getTodayDate } from '@/services/dataService'
+import { notifyWorkspaceChanged } from './workspaceEvents'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -845,6 +846,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper.unavailableReason || translate('settings.archive.planServiceUnavailable') }))
     }
 
+    notifyWorkspaceChanged('archive')
     return {
       success: true,
       message: warnings.length

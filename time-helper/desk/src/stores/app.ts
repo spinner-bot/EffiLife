@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Config, Plans, ScheduleRule, TimeRecord, DayPlanInfo, RealTimeStat } from '@/types'
 import { DataService, DEFAULT_CONFIG, DEFAULT_PLANS, DEFAULT_SCHEDULE_RULES, getTodayDate } from '@/services/dataService'
+import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
 export const useAppStore = defineStore('app', () => {
   // 状态
@@ -88,6 +89,7 @@ export const useAppStore = defineStore('app', () => {
     const today = getTodayDate()
     await DataService.saveRecord(record, today)
     await refreshTodayData()
+    notifyWorkspaceChanged('records')
   }
 
   // 删除记录
@@ -95,6 +97,7 @@ export const useAppStore = defineStore('app', () => {
     const today = getTodayDate()
     await DataService.deleteRecord(index, today)
     await refreshTodayData()
+    notifyWorkspaceChanged('records')
   }
 
   // 更新记录
@@ -102,6 +105,7 @@ export const useAppStore = defineStore('app', () => {
     const today = getTodayDate()
     await DataService.updateRecord(index, record, today)
     await refreshTodayData()
+    notifyWorkspaceChanged('records')
   }
 
   // 切换今日计划
