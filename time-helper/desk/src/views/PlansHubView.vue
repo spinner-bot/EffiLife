@@ -52,6 +52,8 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const searchTargetTaskId = ref<string | null>(null)
 const showCreate = ref(false)
+const createNameInput = ref<HTMLInputElement | null>(null)
+const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
 const editingMeta = ref(false)
@@ -208,10 +210,21 @@ async function openEvents() {
 }
 
 function openCreatePlan() {
+  createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
   errorMessage.value = ''
   showCreate.value = true
+  void nextTick(() => createNameInput.value?.focus())
+}
+
+function closeCreatePlan() {
+  showCreate.value = false
+  const returnTarget = createReturnFocus.value
+  createReturnFocus.value = null
+  void nextTick(() => {
+    if (returnTarget?.isConnected) returnTarget.focus()
+  })
 }
 
 function openTimePlan() {
@@ -261,7 +274,7 @@ async function createPlan() {
     // Keep creation lightweight; the detail view is the full-screen editor.
     const created = await createEventPlan(name, toDateTuple(planDate.value))
     selectedPlan.value = await getPlanFull(created.id)
-    showCreate.value = false
+    closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(created.id) } })
@@ -860,14 +873,14 @@ onUnmounted(() => {
       </template>
     </main>
 
-    <div v-if="showCreate" class="modal-backdrop" @click.self="showCreate = false">
-      <form class="create-modal theme-card" @submit.prevent="createPlan" @keydown.esc="showCreate = false">
-        <h2>{{ t('plans.create') }}</h2>
+    <div v-if="showCreate" class="modal-backdrop" @click.self="closeCreatePlan">
+      <form class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown.esc.prevent.stop="closeCreatePlan">
+        <h2 id="plan-create-title">{{ t('plans.create') }}</h2>
         <p>{{ t('plans.createHint') }}</p>
-        <label>{{ t('plans.name') }}<input v-model="planName" required autofocus /></label>
+        <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
         <p class="create-editor-note">{{ t('plans.createEditorHint') }}</p>
-        <div class="modal-actions"><button type="button" class="plans-secondary" @click="showCreate = false">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
+        <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>
   </div>
