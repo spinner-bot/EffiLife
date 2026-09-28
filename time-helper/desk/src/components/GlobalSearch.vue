@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
-import { getRawAll, STORE_NAMES } from '@/storage'
+import { getAll, STORE_NAMES } from '@/storage'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import type { TimeRecord } from '@/types'
@@ -96,7 +96,7 @@ async function loadIndex() {
     const [todoResult, planResult, recordResult] = await Promise.allSettled([
       TodoService.list(),
       listPlanSummaries(),
-      getRawAll<TimeRecord[]>(STORE_NAMES.RECORDS),
+      getAll<TimeRecord[]>(STORE_NAMES.RECORDS),
     ])
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
     plans.value = planResult.status === 'fulfilled' ? planResult.value : []
