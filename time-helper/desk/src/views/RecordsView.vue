@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
@@ -11,6 +11,7 @@ import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
+const route = useRoute()
 const appStore = useAppStore()
 const { t } = useI18n()
 
@@ -25,6 +26,14 @@ const todoOptions = computed(() => {
   return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
 })
 const todoTitleById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo.title])))
+const linkedTodoFromQuery = computed(() => {
+  const value = route.query.todo
+  return typeof value === 'string' ? value : ''
+})
+
+function openLinkedTodo(todoId: string) {
+  router.push({ path: '/tasks', query: { todo: todoId } })
+}
 
 // 获取当前计划的标签列表
 const availableTags = computed(() => {
@@ -296,6 +305,12 @@ onMounted(async () => {
   } catch {
     todos.value = []
   }
+  // A task with no existing record opens the record form with its relation
+  // preselected, completing the task -> time-record workflow.
+  if (linkedTodoFromQuery.value && todos.value.some((todo) => todo.id === linkedTodoFromQuery.value)) {
+    openAddForm()
+    selectedTodoId.value = linkedTodoFromQuery.value
+  }
 })
 </script>
 
@@ -327,7 +342,15 @@ onMounted(async () => {
             <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
           </div>
           <div class="record-content">{{ record.content }}</div>
-          <span v-if="record.todo_id" class="record-todo-link">{{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}</span>
+          <button
+            v-if="record.todo_id"
+            type="button"
+            class="record-todo-link"
+            :title="t('records.openTodo')"
+            @click="openLinkedTodo(record.todo_id)"
+          >
+            {{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}
+          </button>
           <div class="record-actions">
             <button class="icon-btn" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
@@ -560,9 +583,16 @@ onMounted(async () => {
 .record-todo-link {
   display: inline-block;
   margin-bottom: var(--spacing-sm);
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
   color: var(--color-primary);
   font-size: 0.75rem;
 }
+.record-todo-link:hover { text-decoration: underline; }
 
 .record-actions {
   display: flex;
