@@ -976,7 +976,7 @@ onMounted(async () => {
           <details class="faq-item">
             <summary>如何备份我的数据？</summary>
             <div class="faq-answer">
-              <p>进入"设置" → "存档管理" → "导出存档"，可以将所有数据保存为JSON文件。</p>
+              <p>进入"设置" → "存档管理" → "导出存档"，可以将所有数据保存为 .efl 文件。</p>
               <p>建议在更换设备前或重要节点定期备份。</p>
             </div>
           </details>
@@ -1000,7 +1000,7 @@ onMounted(async () => {
             </div>
             <div class="feature-item">
               <span class="feature-icon"><CalendarDays :size="22" /></span>
-              <strong>日历视图</strong>
+              <strong>历史记录</strong>
               <p>直观查看历史记录和完成度</p>
             </div>
             <div class="feature-item">
