@@ -28,3 +28,11 @@ def test_home_todo_workspace_has_bilingual_copy():
         "home.moreTodos",
     ):
         assert source.count(f"'{key}'") == 2
+
+
+def test_home_todos_support_quick_completion_without_leaving_home():
+    source = HOME.read_text(encoding="utf-8")
+    assert "async function completeHomeTodo(todo: UnifiedTodo)" in source
+    assert "await TodoService.complete(todo.id)" in source
+    assert "class=\"today-todo-complete\"" in source
+    assert "await refreshTodoSummary()" in source
