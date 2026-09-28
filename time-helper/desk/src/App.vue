@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
 watch(() => appStore.config, applyTheme, { deep: true })
 
 watch([() => route.path, locale], () => {
-  document.title = `${pageTitle.value} · EffiLife`
+  document.title = t('app.documentTitle', { page: pageTitle.value })
 }, { immediate: true })
 
 // 监听统计数据变化，检查事件
