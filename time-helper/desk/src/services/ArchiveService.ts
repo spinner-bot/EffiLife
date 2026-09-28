@@ -81,6 +81,9 @@ export interface ArchiveData {
   todos: UnifiedTodo[]
   categories: TodoCategory[]
   todoSettings: TodoSettings
+  importRepairs?: {
+    todoRecordLinks: number
+  }
   planHelper: {
     available: boolean
     plans: unknown[]
@@ -443,7 +446,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 
     const records = normalizeImportedRecords(datasets.records)
     const repairedTodos = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
-    const categories = normalizeImportedCategories(datasets.todo_categories, repairedTodos)
+    const categories = normalizeImportedCategories(datasets.todo_categories, repairedTodos.todos)
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
@@ -459,9 +462,10 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records,
-      todos: repairedTodos,
+      todos: repairedTodos.todos,
       categories,
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
+      importRepairs: { todoRecordLinks: repairedTodos.repaired },
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
     }
   }
@@ -482,15 +486,17 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   if (importedTodos.some((todo) => todo === null)) {
     throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
   }
-  const categories = normalizeImportedCategories(undefined, importedTodos as UnifiedTodo[])
   const records = normalizeImportedRecords(legacy.records)
+  const repairedTodos = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
+  const categories = normalizeImportedCategories(undefined, repairedTodos.todos)
   return {
     ...legacy,
     records,
     locale: legacy.locale || 'zh-CN',
-    todos: repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records),
+    todos: repairedTodos.todos,
     categories,
     todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
+    importRepairs: { todoRecordLinks: repairedTodos.repaired },
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
 }
@@ -549,7 +555,7 @@ function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
   return result
 }
 
-function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): UnifiedTodo[] {
+function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): { todos: UnifiedTodo[]; repaired: number } {
   const recordIds = new Set<string>()
   for (const dayRecords of Object.values(records)) {
     for (const record of dayRecords) {
@@ -558,12 +564,15 @@ function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<str
       }
     }
   }
-  return todos.map((todo) => {
+  let repaired = 0
+  const repairedTodos = todos.map((todo) => {
     if (!todo.related_time_record_ids) return todo
     const validIds = todo.related_time_record_ids.filter((id) => recordIds.has(id))
     if (validIds.length === todo.related_time_record_ids.length) return todo
+    repaired += todo.related_time_record_ids.length - validIds.length
     return { ...todo, related_time_record_ids: validIds.length ? validIds : undefined }
   })
+  return { todos: repairedTodos, repaired }
 }
 
 interface ArchiveRuntimeSnapshot {
@@ -696,6 +705,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     }
 
     const warnings: string[] = []
+    if (data.importRepairs?.todoRecordLinks) {
+      warnings.push(translate('settings.archive.repairedTodoRecordLinks', { count: data.importRepairs.todoRecordLinks }))
+    }
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
         await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)

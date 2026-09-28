@@ -48,3 +48,12 @@ def test_archive_import_repairs_todo_record_links_against_imported_records():
     assert "function repairImportedTodoRecordLinks" in source
     assert "const repairedTodos = repairImportedTodoRecordLinks" in source
     assert "recordIds.has(id)" in source
+
+
+def test_archive_import_reports_repaired_todo_record_links():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+
+    assert "importRepairs: { todoRecordLinks: repairedTodos.repaired }" in source
+    assert "settings.archive.repairedTodoRecordLinks" in source
+    assert i18n.count("settings.archive.repairedTodoRecordLinks") == 2
