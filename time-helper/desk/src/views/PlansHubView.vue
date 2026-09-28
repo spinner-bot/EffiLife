@@ -684,20 +684,27 @@ function planProgress(plan: PlanSummary): number {
   return total > 0 ? Math.round((Number(plan.completed_tasks || 0) / total) * 100) : 0
 }
 
+async function revealSearchTarget(): Promise<void> {
+  const targetId = String(route.query.plan || '')
+  if (!targetId) return
+  const target = plans.value.find((plan) => String(plan.id) === targetId)
+  if (!target) return
+  if (String(selectedPlan.value?.id) !== targetId) await openPlan(target)
+  const taskId = String(route.query.task || '')
+  if (!taskId || !selectedPlan.value?.sections.some((section) => section.tasks.some((task) => task.internal_id === taskId))) return
+  searchTargetTaskId.value = taskId
+  await nextTick()
+  document.getElementById(`plan-task-${taskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
+}
+
 onMounted(async () => {
   await loadPlans()
-  const targetId = String(route.query.plan || '')
-  const target = targetId ? plans.value.find((plan) => String(plan.id) === targetId) : undefined
-  if (target) {
-    await openPlan(target)
-    const taskId = String(route.query.task || '')
-    if (taskId && selectedPlan.value?.sections.some((section) => section.tasks.some((task) => task.internal_id === taskId))) {
-      searchTargetTaskId.value = taskId
-      await nextTick()
-      document.getElementById(`plan-task-${taskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
-    }
-  }
+  await revealSearchTarget()
+})
+
+watch(() => [route.query.plan, route.query.task], () => {
+  if (plans.value.length > 0) void revealSearchTarget()
 })
 
 onUnmounted(() => {

@@ -790,6 +790,15 @@ function formatDeadline(deadline?: string): string {
   return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
 }
 
+async function revealSearchTarget(): Promise<void> {
+  const targetId = String(route.query.todo || '')
+  if (!targetId || !todos.value.some((todo) => todo.id === targetId)) return
+  searchTargetTodoId.value = targetId
+  await nextTick()
+  document.getElementById(`todo-${targetId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  window.setTimeout(() => { searchTargetTodoId.value = null }, 2200)
+}
+
 let stopWorkspaceListener: (() => void) | null = null
 
 onMounted(async () => {
@@ -802,13 +811,7 @@ onMounted(async () => {
   await loadCategories()
   loadPlanSummaries()
   loadTodoSettings()
-  const targetId = String(route.query.todo || '')
-  if (targetId && todos.value.some((todo) => todo.id === targetId)) {
-    searchTargetTodoId.value = targetId
-    await nextTick()
-    document.getElementById(`todo-${targetId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    window.setTimeout(() => { searchTargetTodoId.value = null }, 2200)
-  }
+  await revealSearchTarget()
 })
 
 onUnmounted(() => {
@@ -825,6 +828,10 @@ onUnmounted(() => {
 watch(selectedPlanId, (planId) => {
   selectedPlanTaskId.value = ''
   loadPlanTasks(planId)
+})
+
+watch(() => route.query.todo, () => {
+  if (todos.value.length > 0) void revealSearchTarget()
 })
 </script>
 
