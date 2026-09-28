@@ -168,6 +168,15 @@ function mobileCurrentTime(): { day: number; time: [number, number] } {
   return { day: now.getDate(), time: [now.getHours(), now.getMinutes()] }
 }
 
+function mobileGroupCrossesExisting(group: Record<string, { title?: string; description?: string }>, startIndex: number, endIndex: number): boolean {
+  return Object.keys(group).some((key) => {
+    const [existingStart, existingEnd] = key.split('_').map(Number)
+    if (!Number.isInteger(existingStart) || !Number.isInteger(existingEnd)) return false
+    return (existingStart < startIndex && startIndex < existingEnd && existingEnd < endIndex)
+      || (startIndex < existingStart && existingStart < endIndex && endIndex < existingEnd)
+  })
+}
+
 function toMobilePlanFull(raw: RawPlan, fallbackIndex: number): PlanFull {
   const summary = toMobilePlanSummary(raw, fallbackIndex)
   const sections = (Array.isArray(raw.main) ? raw.main : []).map((section, sectionIndex) => {
@@ -468,6 +477,10 @@ export async function addPlanGroup(planId: string, sectionIndex: number, title: 
       const section = plan.main?.[sectionIndex]
       if (!section) throw new Error(translate('plans.sectionMissing'))
       if (!section.group) section.group = {}
+      if (startIndex < 0 || endIndex <= startIndex) throw new Error(translate('plans.groupRangeInvalid'))
+      if (mobileGroupCrossesExisting(section.group, startIndex, endIndex)) {
+        throw new Error(translate('plans.groupConflict'))
+      }
       section.group[`${startIndex}_${endIndex}`] = { title, description }
     })
     return
