@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronRight, Mail, Copy, BarChart3, CalendarDays, Target, F
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
-import { exportArchive, importArchive, importArchiveWithDialog, resetData, getDataStats, type ResetType } from '@/services/ArchiveService'
+import { exportArchive, importArchive, importArchiveWithDialog, previewArchive, resetData, getDataStats, type ArchivePreview, type ResetType } from '@/services/ArchiveService'
 import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData, type DataStatus } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
@@ -406,7 +406,7 @@ async function handleImportArchive() {
   if ((window as any).__TAURI__) {
     archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
-    const result = await importArchiveWithDialog(() => confirm(t('settings.archive.importConfirm')))
+    const result = await importArchiveWithDialog((preview) => confirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`))
     if (result.cancelled) {
       archiveBusy.value = false
       return
@@ -437,7 +437,16 @@ async function onFileSelected(event: Event) {
   input.value = ''
   archiveBusy.value = true
 
-  if (!confirm(t('settings.archive.importConfirm'))) {
+  let preview: ArchivePreview
+  try {
+    preview = await previewArchive(file)
+  } catch (error) {
+    notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+    archiveBusy.value = false
+    return
+  }
+
+  if (!confirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`)) {
     archiveBusy.value = false
     return
   }
@@ -453,6 +462,16 @@ async function onFileSelected(event: Event) {
 }
 
 // ============ 数据恢复 ============
+function formatArchivePreview(preview: ArchivePreview): string {
+  return t('settings.archive.importPreview', {
+    plans: preview.planCount,
+    todos: preview.todoCount,
+    records: preview.recordCount,
+    categories: preview.categoryCount,
+    repairs: preview.repairedLinkCount,
+  })
+}
+
 function openLegacyTodoImport() {
   legacyTodoInputRef.value?.click()
 }

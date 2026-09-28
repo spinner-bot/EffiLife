@@ -94,6 +94,26 @@ export interface ArchiveData {
   }
 }
 
+export interface ArchivePreview {
+  exportDate: string
+  planCount: number
+  todoCount: number
+  recordCount: number
+  categoryCount: number
+  repairedLinkCount: number
+}
+
+function summarizeArchive(data: ArchiveData): ArchivePreview {
+  return {
+    exportDate: data.exportDate,
+    planCount: Array.isArray(data.planHelper?.plans) ? data.planHelper.plans.length : 0,
+    todoCount: data.todos.length,
+    recordCount: Object.values(data.records).reduce((total, records) => total + records.length, 0),
+    categoryCount: data.categories.length,
+    repairedLinkCount: (data.importRepairs?.todoRecordLinks || 0) + (data.importRepairs?.todoPlanTaskLinks || 0),
+  }
+}
+
 // 获取所有日期记录
 function getLocalStorageRecords(): Record<string, unknown[]> {
   const records: Record<string, unknown[]> = {}
@@ -370,7 +390,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 }
 
 // 在 Tauri 桌面环境下打开文件对话框导入
-export async function importArchiveWithDialog(confirmImport?: () => boolean): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
+export async function importArchiveWithDialog(confirmImport?: (preview: ArchivePreview) => boolean): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   // 移动端使用文件选择器，不使用此函数
   if (!isTauri() || isMobilePlatform()) {
     return { success: false, message: translate('settings.archive.filePickerOnly') }
@@ -395,8 +415,9 @@ export async function importArchiveWithDialog(confirmImport?: () => boolean): Pr
     const data = await readFile(filePath as string)
     const blob = new Blob([data])
     const zip = await JSZip.loadAsync(blob)
+    const preview = summarizeArchive(await parseArchiveData(zip))
 
-    if (confirmImport && !confirmImport()) {
+    if (confirmImport && !confirmImport(preview)) {
       return { success: false, message: '', cancelled: true }
     }
 
@@ -503,6 +524,11 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
+}
+
+export async function previewArchive(file: Blob): Promise<ArchivePreview> {
+  const zip = await JSZip.loadAsync(file)
+  return summarizeArchive(await parseArchiveData(zip))
 }
 
 // 处理存档数据（内部函数）
