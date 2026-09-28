@@ -34,10 +34,11 @@ const router = createRouter({
       path: '/calendar',
       redirect: '/records',
     },
+    // Keep legacy management bookmarks inside the unified plan workspace.
     {
       path: '/management',
       name: 'management',
-      component: () => import('@/views/ManagementView.vue'),
+      redirect: { path: '/plans', query: { mode: 'time' } },
     },
     {
       path: '/settings',

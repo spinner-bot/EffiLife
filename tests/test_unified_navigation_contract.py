@@ -14,6 +14,12 @@ def test_unified_shell_removes_standalone_calendar_entry_but_keeps_legacy_redire
     assert "redirect: '/records'" in ROUTER
 
 
+def test_legacy_management_route_redirects_to_unified_plan_workspace():
+    assert "path: '/management'" in ROUTER
+    assert "redirect: { path: '/plans', query: { mode: 'time' } }" in ROUTER
+    assert "component: () => import('@/views/ManagementView.vue')" not in ROUTER
+
+
 def test_unified_shell_updates_document_title_for_route_and_locale():
     assert "const pageTitle = computed(() =>" in APP
     assert "watch([() => route.path, locale]" in APP
