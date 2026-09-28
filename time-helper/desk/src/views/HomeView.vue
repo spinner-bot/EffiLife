@@ -8,7 +8,7 @@ import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
-import { TodoService } from '@/services/todoService'
+import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
@@ -23,6 +23,7 @@ const currentDate = ref('')
 let timer: number | null = null
 let refreshTimer: number | null = null
 const activeTodoCount = ref(0)
+const todayTodos = ref<UnifiedTodo[]>([])
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
@@ -30,11 +31,31 @@ const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 async function refreshTodoSummary() {
   try {
     const todos = await TodoService.list()
-    activeTodoCount.value = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)).length
+    const active = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status))
+    activeTodoCount.value = active.length
+    todayTodos.value = [...active]
+      .sort((a, b) => {
+        if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1
+        const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
+        const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
+        if (aDeadline !== bDeadline) return aDeadline - bDeadline
+        const priorityRank: Record<string, number> = { 'urgent-important': 0, important: 1, urgent: 2, normal: 3 }
+        if ((priorityRank[a.priority] ?? 3) !== (priorityRank[b.priority] ?? 3)) {
+          return (priorityRank[a.priority] ?? 3) - (priorityRank[b.priority] ?? 3)
+        }
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      })
+      .slice(0, 3)
   } catch {
     // 待办存储不可用时不阻断首页的计划和时间功能
     activeTodoCount.value = 0
+    todayTodos.value = []
   }
+}
+
+function formatTodoDeadline(deadline?: string): string {
+  if (!deadline) return t('home.noDeadline')
+  return new Date(deadline).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 }
 
 async function refreshEventPlanSummary() {
@@ -337,6 +358,29 @@ onUnmounted(() => {
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
         </button>
         </div>
+      </section>
+
+      <section class="today-todos-card theme-card">
+        <div class="today-todos-header">
+          <div>
+            <p class="today-todos-eyebrow">{{ t('home.todayTodosEyebrow') }}</p>
+            <h2 class="stats-title">{{ t('home.todayTodos') }}</h2>
+          </div>
+          <button class="today-todos-link" @click="router.push('/tasks')">
+            {{ t('home.viewTodos') }} <ChevronRight :size="16" />
+          </button>
+        </div>
+        <div v-if="todayTodos.length" class="today-todos-list">
+          <button v-for="todo in todayTodos" :key="todo.id" class="today-todo-row" @click="router.push('/tasks')">
+            <span class="today-todo-status"></span>
+            <span class="today-todo-title">{{ todo.title }}</span>
+            <span class="today-todo-deadline">{{ formatTodoDeadline(todo.deadline) }}</span>
+          </button>
+          <p v-if="activeTodoCount > todayTodos.length" class="today-todos-more">
+            {{ t('home.moreTodos', { count: activeTodoCount - todayTodos.length }) }}
+          </p>
+        </div>
+        <EmptyState v-else :icon="ListTodo" :title="t('home.noTodos')" :description="t('home.createTodoHint')" :action-text="t('home.openTodoCenter')" action-route="/tasks" />
       </section>
 
       <nav class="nav-buttons">
@@ -818,9 +862,30 @@ onUnmounted(() => {
 .event-overview-metrics { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: auto; padding-top: var(--spacing-lg); color: var(--color-text-tertiary); font-size: 12px; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
 
+.today-todos-card {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+}
+
+.today-todos-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
+.today-todos-eyebrow { margin: 0 0 4px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.today-todos-link { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; color: var(--color-primary); font-size: 12px; }
+.today-todos-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
+.today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
+.today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
+.today-todo-status { width: 8px; height: 8px; border: 2px solid var(--color-primary); border-radius: 50%; }
+.today-todo-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.today-todo-deadline { color: var(--color-text-tertiary); font-size: 11px; white-space: nowrap; }
+.today-todos-more { margin: 3px 0 0 29px; color: var(--color-text-tertiary); font-size: 11px; }
+
 @media (max-width: 760px) {
   .overview-grid { grid-template-columns: 1fr; }
   .event-overview-card { min-height: 180px; }
+  .today-todos-header { align-items: center; }
+  .today-todo-deadline { display: none; }
 }
 
 .stats-header-row {
