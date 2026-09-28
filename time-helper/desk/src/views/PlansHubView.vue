@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
@@ -169,6 +169,7 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
     return
   }
   if (view.value === 'events') await loadPlans()
+  if (view.value === 'hub') await loadPlans()
   if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
 }
 
@@ -202,11 +203,6 @@ async function restoreArchive(archive: PlanArchiveSummary) {
   } finally {
     isLoading.value = false
   }
-}
-
-async function openEvents() {
-  view.value = 'events'
-  await loadPlans()
 }
 
 function openCreatePlan() {
@@ -719,26 +715,54 @@ onUnmounted(() => {
         <p class="plans-eyebrow">{{ t('plans.center') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
       </div>
-      <button v-if="view === 'events' && canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+      <button v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
     </header>
 
     <main class="plans-content">
       <DailyPlanView v-if="view === 'time'" />
 
       <template v-else-if="view === 'hub'">
-        <section class="plan-domain-grid">
-          <button class="domain-card theme-card" @click="openTimePlan">
-            <Clock3 :size="28" />
-            <strong>{{ t('plans.time') }}</strong>
-            <span>{{ t('plans.timeDescription') }}</span>
-            <ChevronRight :size="18" />
-          </button>
-          <button class="domain-card theme-card" @click="openEvents">
-            <ClipboardList :size="28" />
-            <strong>{{ t('plans.events') }}</strong>
-            <span>{{ t('plans.eventsDescription') }}</span>
-            <ChevronRight :size="18" />
-          </button>
+        <section class="unified-plan-section">
+          <div class="unified-section-heading">
+            <div><p class="plans-eyebrow">{{ t('plans.time') }}</p><h2>{{ t('plans.timeDescription') }}</h2></div>
+            <button class="plans-secondary" @click="openTimePlan"><Clock3 :size="15" /> {{ t('plans.time') }}</button>
+          </div>
+          <DailyPlanView :embedded="true" />
+        </section>
+        <section class="unified-plan-section event-plans-section">
+          <div class="unified-section-heading">
+            <div><p class="plans-eyebrow">{{ t('plans.events') }}</p><h2>{{ t('plans.eventsDescription') }}</h2></div>
+            <button v-if="canEditPlan" class="plans-secondary" @click="openCreatePlan"><Plus :size="15" /> {{ t('plans.create') }}</button>
+          </div>
+          <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
+          <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
+            <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
+            <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+          </div>
+          <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
+          <section v-else-if="plans.length === 0" class="plans-empty theme-card">
+            <FolderPlus :size="34" />
+            <strong>{{ t('plans.empty') }}</strong>
+            <span>{{ t('plans.emptyHint') }}</span>
+            <button v-if="canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+          </section>
+          <section v-else class="event-plan-grid">
+            <button v-for="plan in plans" :key="plan.id" class="event-plan-card theme-card" @click="openPlan(plan)">
+              <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
+              <strong>{{ plan.name }}</strong>
+              <span>{{ formatPlanDate(plan.date) }}</span>
+              <div class="plan-progress-meta"><small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small><small>{{ planProgress(plan) }}%</small></div>
+              <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
+            </button>
+          </section>
+          <section class="archives-panel theme-card">
+            <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
+            <p v-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
+            <div v-for="archive in archives" :key="archive.file" class="archive-row">
+              <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
+              <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
+            </div>
+          </section>
         </section>
       </template>
 
@@ -899,6 +923,12 @@ onUnmounted(() => {
 .icon-button { display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
 .icon-button:hover { color: var(--color-error); border-color: var(--color-error); }
 .plans-content { max-width: 1080px; margin: 0 auto; padding: 10px 28px 50px; }
+.unified-plan-section { margin-bottom: 28px; }
+.unified-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.unified-section-heading h2 { margin: 0; font-size: 21px; letter-spacing: -.02em; }
+.unified-section-heading .plans-eyebrow { margin-bottom: 5px; }
+.event-plans-section { border-top: 1px solid var(--color-border); padding-top: 26px; }
+.event-plans-section .archives-panel { margin-top: 20px; }
 .plan-domain-grid, .event-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .domain-card, .event-plan-card { position: relative; display: grid; gap: 9px; border: 1px solid var(--color-border); border-radius: 17px; padding: 24px; color: var(--color-text-primary); background: var(--color-bg-secondary); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s; }
 .domain-card:hover, .event-plan-card:hover { border-color: var(--color-border-hover); transform: translateY(-2px); }
@@ -999,5 +1029,5 @@ onUnmounted(() => {
 .create-editor-note { border: 1px solid var(--color-primary-muted); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); line-height: 1.5; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>

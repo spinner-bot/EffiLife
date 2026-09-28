@@ -20,6 +20,7 @@ import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 const router = useRouter()
 const appStore = useAppStore()
 const { t } = useI18n()
@@ -413,9 +414,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="plan-view">
+  <div class="plan-view" :class="{ embedded: props.embedded }">
     <!-- 顶部导航栏 -->
-    <header class="pv-header">
+    <header v-if="!props.embedded" class="pv-header">
       <button class="pv-back" @click="AudioManager.playSound('click'); router.push('/plans')">
         <ArrowLeft :size="18" />
       </button>
@@ -906,6 +907,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+}
+.plan-view.embedded {
+  min-height: auto;
+  background: transparent;
+}
+.plan-view.embedded .pv-content {
+  max-width: none;
+  padding: 0;
 }
 
 /* ============ Header ============ */
