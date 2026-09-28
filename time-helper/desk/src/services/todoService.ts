@@ -1,5 +1,6 @@
 import { deleteRaw, get, getRawAll, putRaw, set, STORE_NAMES } from '@/storage'
 import { translate } from '@/i18n'
+import { notifyWorkspaceChanged } from './workspaceEvents'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 export type TodoPriority = 'urgent-important' | 'important' | 'urgent' | 'normal'
@@ -231,6 +232,7 @@ export const TodoCategoryService = {
     })
     if (!category) throw new Error(translate('tasks.error.categoryInvalid'))
     await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+    notifyWorkspaceChanged('todos')
     return category
   },
 
@@ -241,12 +243,14 @@ export const TodoCategoryService = {
     const next = normalizeImportedCategory({ ...current, ...patch })
     if (!next) throw new Error(translate('tasks.error.categoryInvalid'))
     await putRaw(STORE_NAMES.TODO_CATEGORIES, next)
+    notifyWorkspaceChanged('todos')
     return next
   },
 
   async remove(id: string): Promise<void> {
     if (id === 'default') throw new Error(translate('tasks.error.defaultCategory'))
     await deleteRaw(STORE_NAMES.TODO_CATEGORIES, id)
+    notifyWorkspaceChanged('todos')
   },
 }
 
@@ -326,6 +330,7 @@ export const TodoService = {
     const todo = normalize(input)
     if (!todo.title) throw new Error(translate('tasks.error.titleRequired'))
     await putRaw(STORE_NAMES.TODOS, todo)
+    notifyWorkspaceChanged('todos')
     return todo
   },
 
@@ -335,6 +340,7 @@ export const TodoService = {
     if (!current) throw new Error(translate('tasks.error.taskMissing'))
     const next = normalize({ ...current, ...patch, id: current.id, created_at: current.created_at, title: patch.title ?? current.title })
     await putRaw(STORE_NAMES.TODOS, next)
+    notifyWorkspaceChanged('todos')
     return next
   },
 
@@ -379,6 +385,7 @@ export const TodoService = {
 
   async remove(id: string): Promise<void> {
     await deleteRaw(STORE_NAMES.TODOS, id)
+    notifyWorkspaceChanged('todos')
   },
 
   async trackTime(id: string, minutes: number, timeRecordId?: string | string[]): Promise<UnifiedTodo> {

@@ -3,6 +3,7 @@ import { getPlanRuntime, getPlanRuntimeUnavailableReason } from './runtimeCapabi
 import { syncPendingPlanHelperReset } from './planReset'
 import { translate } from '@/i18n'
 import { ref } from 'vue'
+import { notifyWorkspaceChanged } from './workspaceEvents'
 
 export interface PlanSummary {
   id: string
@@ -112,6 +113,7 @@ function cloneMobilePlans(plans: RawPlan[]): RawPlan[] {
 async function saveMobileRawPlans(plans: RawPlan[]): Promise<void> {
   const { set, STORE_NAMES } = await import('@/storage')
   await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+  notifyWorkspaceChanged('plans')
 }
 
 async function mutateMobilePlan(planId: string, mutate: (plan: RawPlan) => void): Promise<RawPlan> {
@@ -231,6 +233,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   })
   const payload = await readPayload<T>(response)
   if (!response.ok || !payload.success) throw new Error(payload.error || translate('plans.serviceError', { status: response.status }))
+  if ((options.method || 'GET').toUpperCase() !== 'GET') notifyWorkspaceChanged('plans')
   return payload.data as T
 }
 

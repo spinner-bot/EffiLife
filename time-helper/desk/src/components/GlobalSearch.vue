@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import { getAll, STORE_NAMES } from '@/storage'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanSummaries, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import type { TimeRecord } from '@/types'
 
 const props = defineProps<{ open: boolean }>()
@@ -90,6 +91,12 @@ const filteredResults = computed(() => {
 watch(query, () => {
   selectedIndex.value = 0
 })
+
+const stopWorkspaceListener = onWorkspaceChanged(() => {
+  if (props.open) void loadIndex()
+})
+
+onBeforeUnmount(stopWorkspaceListener)
 
 async function loadPlanTaskIndex(planList: PlanSummary[], requestId: number) {
   if (planList.length === 0) {

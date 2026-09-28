@@ -28,6 +28,18 @@ def test_global_search_indexes_all_unified_data_domains():
     assert "plans?plan=" in source
 
 
+def test_global_search_refreshes_when_unified_data_changes():
+    source = SEARCH.read_text(encoding="utf-8")
+    events = (ROOT / "time-helper" / "desk" / "src" / "services" / "workspaceEvents.ts").read_text(encoding="utf-8")
+    todo_service = (ROOT / "time-helper" / "desk" / "src" / "services" / "todoService.ts").read_text(encoding="utf-8")
+    plan_gateway = (ROOT / "time-helper" / "desk" / "src" / "services" / "planGateway.ts").read_text(encoding="utf-8")
+    assert "onWorkspaceChanged" in source
+    assert "if (props.open) void loadIndex()" in source
+    assert "WORKSPACE_CHANGED_EVENT" in events
+    assert "notifyWorkspaceChanged('todos')" in todo_service
+    assert "notifyWorkspaceChanged('plans')" in plan_gateway
+
+
 def test_search_targets_are_consumed_by_plan_and_task_views():
     plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
