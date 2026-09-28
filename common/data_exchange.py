@@ -21,6 +21,13 @@ FORMAT_NAME = "effilife.bundle"
 FORMAT_VERSION = "1.0.0"
 MANIFEST_NAME = "manifest.json"
 DATA_PREFIX = "data/"
+CANONICAL_WORKSPACE_DATASETS = (
+    "app",
+    "records",
+    "todos",
+    "todo_categories",
+    "plan_helper",
+)
 
 
 def _json_bytes(value: Any) -> bytes:
@@ -173,3 +180,41 @@ def import_bundle(
         shutil.rmtree(staging_dir, ignore_errors=True)
         if backup_dir is not None:
             shutil.rmtree(backup_dir, ignore_errors=True)
+
+
+def export_workspace_bundle(
+    output_path: str | os.PathLike[str],
+    *,
+    app: Any,
+    records: Any,
+    todos: Any,
+    todo_categories: Any,
+    plan_helper: Any,
+    metadata: Mapping[str, Any] | None = None,
+) -> Path:
+    """Export the canonical datasets used by the unified workspace.
+
+    This adapter keeps Python-side migration and backup tools aligned with the
+    browser/Tauri `.efl` archive without exposing module-specific storage
+    layouts to callers.
+    """
+    return export_bundle(
+        output_path,
+        {
+            "app": app,
+            "records": records,
+            "todos": todos,
+            "todo_categories": todo_categories,
+            "plan_helper": plan_helper,
+        },
+        metadata=metadata,
+    )
+
+
+def read_workspace_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, Any]]:
+    """Read a unified workspace bundle and require all canonical datasets."""
+    manifest, datasets = read_bundle(bundle_path)
+    missing = [name for name in CANONICAL_WORKSPACE_DATASETS if name not in datasets]
+    if missing:
+        raise ValueError(f"Workspace bundle is missing datasets: {', '.join(missing)}")
+    return manifest, datasets

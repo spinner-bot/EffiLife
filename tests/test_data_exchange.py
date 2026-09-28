@@ -4,7 +4,15 @@ from unittest.mock import patch
 
 import pytest
 
-from common.data_exchange import export_bundle, import_bundle, inspect_bundle, read_bundle
+from common.data_exchange import (
+    CANONICAL_WORKSPACE_DATASETS,
+    export_bundle,
+    export_workspace_bundle,
+    import_bundle,
+    inspect_bundle,
+    read_bundle,
+    read_workspace_bundle,
+)
 
 
 def test_bundle_roundtrip(tmp_path):
@@ -26,6 +34,29 @@ def test_bundle_roundtrip(tmp_path):
     written = import_bundle(bundle, destination)
     assert set(written) == {"plans", "todos"}
     assert json.loads((destination / "plans.json").read_text(encoding="utf-8")) == datasets["plans"]
+
+
+def test_workspace_bundle_matches_unified_frontend_dataset_contract(tmp_path):
+    bundle = tmp_path / "workspace.efl"
+    export_workspace_bundle(
+        bundle,
+        app={"version": "2.1"},
+        records={"2026-09-28": []},
+        todos=[],
+        todo_categories=[],
+        plan_helper={"available": False, "plans": []},
+    )
+    manifest, datasets = read_workspace_bundle(bundle)
+    assert manifest["format"] == "effilife.bundle"
+    assert manifest["datasets"] == sorted(CANONICAL_WORKSPACE_DATASETS)
+    assert set(datasets) == set(CANONICAL_WORKSPACE_DATASETS)
+
+
+def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
+    bundle = tmp_path / "partial.efl"
+    export_bundle(bundle, {"app": {}})
+    with pytest.raises(ValueError, match="missing datasets"):
+        read_workspace_bundle(bundle)
 
 
 def test_bundle_rejects_missing_manifest(tmp_path):
