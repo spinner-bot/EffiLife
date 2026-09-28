@@ -1,6 +1,6 @@
 [package]
 name = "efflife-desk"
-version = "1.6.0"
+version = "1.6.1"
 description = "EffiLife personal time management desktop application"
 authors = ["浪兮"]
 license = ""
