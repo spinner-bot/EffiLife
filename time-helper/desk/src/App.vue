@@ -60,6 +60,13 @@ function retryStartup() {
   window.location.reload()
 }
 
+function refreshWhenVisible() {
+  if (document.visibilityState !== 'visible' || !runtimeReady.value) return
+  void appStore.refreshWorkspaceData().catch((error) => {
+    console.warn('Failed to refresh workspace after visibility change:', error)
+  })
+}
+
 // 应用主题到 CSS 变量
 function applyTheme() {
   const root = document.documentElement
@@ -111,6 +118,7 @@ function onCheckinClose() {
 
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
+  document.addEventListener('visibilitychange', refreshWhenVisible)
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
     void appStore.refreshWorkspaceData().catch((error) => {
@@ -179,6 +187,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
+  document.removeEventListener('visibilitychange', refreshWhenVisible)
   stopWorkspaceListener?.()
   stopWorkspaceListener = null
 })

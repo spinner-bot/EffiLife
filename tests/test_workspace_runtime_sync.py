@@ -12,6 +12,8 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     assert "appStore.refreshWorkspaceData()" in source
     assert "['plans', 'records', 'settings', 'archive']" in source
     assert "stopWorkspaceListener?.()" in source
+    assert "document.addEventListener('visibilitychange', refreshWhenVisible)" in source
+    assert "document.removeEventListener('visibilitychange', refreshWhenVisible)" in source
 
 
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
