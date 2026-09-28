@@ -365,7 +365,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 
     return await processArchiveData(zip)
   } catch (e) {
-    return { success: false, message: `导入失败：${(e as Error).message}` }
+    return { success: false, message: translate('settings.archive.importFailed', { detail: (e as Error).message }) }
   }
 }
 
@@ -373,7 +373,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 export async function importArchiveWithDialog(confirmImport?: () => boolean): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   // 移动端使用文件选择器，不使用此函数
   if (!isTauri() || isMobilePlatform()) {
-    return { success: false, message: '请使用文件选择器导入' }
+    return { success: false, message: translate('settings.archive.filePickerOnly') }
   }
 
   try {
@@ -402,7 +402,7 @@ export async function importArchiveWithDialog(confirmImport?: () => boolean): Pr
 
     return await processArchiveData(zip)
   } catch (e) {
-    return { success: false, message: `导入失败：${(e as Error).message}` }
+    return { success: false, message: translate('settings.archive.importFailed', { detail: (e as Error).message }) }
   }
 }
 
