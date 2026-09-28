@@ -27,6 +27,7 @@ def test_archive_manifest_contains_dataset_checksums_and_import_verifies_them():
     assert "dataset_sha256: datasetSha256" in source
     assert "manifest.dataset_sha256?.[name]" in source
     assert "settings.archive.datasetChecksumMismatch" in source
+    assert "if (error instanceof Error && error.message === checksumError) throw error" in source
     assert "'settings.archive.datasetChecksumMismatch'" in I18N.read_text(encoding="utf-8")
 
 

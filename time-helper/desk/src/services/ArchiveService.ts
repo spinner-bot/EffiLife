@@ -466,16 +466,18 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(`非法数据集名称：${name}`)
       if (datasetNames.has(name)) throw new Error(`数据集重复声明：${name}`)
       datasetNames.add(name)
+      const checksumError = translate('settings.archive.datasetChecksumMismatch', { name })
       const file = zip.file(`data/${name}.json`)
       if (!file) throw new Error(`存档缺少数据集：${name}`)
       try {
         const raw = await file.async('uint8array')
         const expected = manifest.dataset_sha256?.[name]
         if (expected && await sha256Hex(raw) !== expected) {
-          throw new Error(translate('settings.archive.datasetChecksumMismatch', { name }))
+          throw new Error(checksumError)
         }
         datasets[name] = JSON.parse(new TextDecoder().decode(raw))
-      } catch {
+      } catch (error) {
+        if (error instanceof Error && error.message === checksumError) throw error
         throw new Error(`数据集无效：${name}`)
       }
     }
