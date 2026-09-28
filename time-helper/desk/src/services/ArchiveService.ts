@@ -622,20 +622,31 @@ function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
 
 function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): { todos: UnifiedTodo[]; repaired: number } {
   const recordIds = new Set<string>()
+  const recordTodoIds = new Map<string, string>()
   for (const dayRecords of Object.values(records)) {
     for (const record of dayRecords) {
-      if (record && typeof record === 'object' && typeof (record as { id?: unknown }).id === 'string') {
-        recordIds.add((record as { id: string }).id)
+      if (!record || typeof record !== 'object') continue
+      const candidate = record as { id?: unknown; todo_id?: unknown }
+      if (typeof candidate.id === 'string') {
+        recordIds.add(candidate.id)
+        if (typeof candidate.todo_id === 'string' && candidate.todo_id) {
+          recordTodoIds.set(candidate.id, candidate.todo_id)
+        }
       }
     }
   }
   let repaired = 0
   const repairedTodos = todos.map((todo) => {
-    if (!todo.related_time_record_ids) return todo
-    const validIds = todo.related_time_record_ids.filter((id) => recordIds.has(id))
-    if (validIds.length === todo.related_time_record_ids.length) return todo
-    repaired += todo.related_time_record_ids.length - validIds.length
-    return { ...todo, related_time_record_ids: validIds.length ? validIds : undefined }
+    const validIds = (todo.related_time_record_ids || []).filter((id) => recordIds.has(id))
+    const reverseIds = [...recordTodoIds.entries()]
+      .filter(([, todoId]) => todoId === todo.id)
+      .map(([recordId]) => recordId)
+    const mergedIds = [...new Set([...validIds, ...reverseIds])]
+    if (mergedIds.length === (todo.related_time_record_ids || []).length
+      && mergedIds.every((id, index) => id === todo.related_time_record_ids?.[index])) return todo
+    repaired += Math.max(0, mergedIds.length - (todo.related_time_record_ids || []).length)
+      + Math.max(0, (todo.related_time_record_ids || []).length - validIds.length)
+    return { ...todo, related_time_record_ids: mergedIds.length ? mergedIds : undefined }
   })
   return { todos: repairedTodos, repaired }
 }

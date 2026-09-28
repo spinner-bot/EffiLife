@@ -18,3 +18,11 @@ def test_unified_archive_import_restores_todos_records_and_plan_snapshot():
     assert "await idbClear(STORE_NAMES.TODOS)" in source
     assert "STORE_NAMES.PLAN_HELPER_SNAPSHOT" in source
     assert "requestPlanHelper('/api/data/import'" in source
+
+
+def test_unified_archive_repairs_todo_record_links_in_both_directions():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "const recordTodoIds = new Map<string, string>()" in source
+    assert "typeof candidate.todo_id === 'string'" in source
+    assert "const reverseIds = [...recordTodoIds.entries()]" in source
+    assert "const mergedIds = [...new Set([...validIds, ...reverseIds])]" in source
