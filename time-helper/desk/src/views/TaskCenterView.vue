@@ -583,6 +583,17 @@ async function openTodoRecords(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
+function openTodoPlan(todo: UnifiedTodo) {
+  if (!todo.related_plan_id) return
+  router.push({
+    path: '/plans',
+    query: {
+      plan: todo.related_plan_id,
+      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
+    },
+  })
+}
+
 const focusElapsedLabel = computed(() => {
   const minutes = Math.floor(focusElapsedSeconds.value / 60)
   const seconds = focusElapsedSeconds.value % 60
@@ -929,8 +940,8 @@ watch(selectedPlanId, (planId) => {
             </button>
             <span v-if="todo.deadline" class="task-deadline">{{ t('tasks.deadlinePrefix') }} {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
-            <span v-if="todo.related_plan_id" class="task-plan-reference">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</span>
-            <span v-if="todo.related_plan_task_id" class="task-plan-reference">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</span>
+            <button v-if="todo.related_plan_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</button>
+            <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</button>
           </div>
           <div v-if="editingId !== todo.id" class="task-item-actions">
             <span class="task-score" :class="{ expired: scoreFor(todo).expired }" :title="t('tasks.priorityScore')">{{ scoreFor(todo).display }}</span>
@@ -1047,6 +1058,7 @@ watch(selectedPlanId, (planId) => {
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
+.task-plan-link { border: 0; padding: 0; background: transparent; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-pin { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-pin.active, .task-pin:hover { color: var(--color-primary); }

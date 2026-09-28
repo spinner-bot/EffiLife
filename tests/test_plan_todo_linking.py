@@ -21,3 +21,11 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in ("plans.linkTodo", "plans.todoCreated", "plans.todoAlreadyLinked", "plans.todoCreateFailed"):
         assert source.count(f"'{key}'") == 2
+
+
+def test_task_center_can_open_the_linked_plan_task():
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    assert "function openTodoPlan(todo: UnifiedTodo)" in tasks
+    assert "path: '/plans'" in tasks
+    assert "task: todo.related_plan_task_id" in tasks
+    assert "@click=\"openTodoPlan(todo)\"" in tasks
