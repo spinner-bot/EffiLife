@@ -25,7 +25,12 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from .schemas.core import CrossReference, UnifiedTimestamp
-from .data_exchange import export_bundle as write_bundle, read_bundle as load_bundle
+from .data_exchange import (
+    export_bundle as write_bundle,
+    export_workspace_bundle as write_workspace_bundle,
+    read_bundle as load_bundle,
+    read_workspace_bundle as load_workspace_bundle,
+)
 
 
 class DataManager:
@@ -222,6 +227,33 @@ class DataManager:
     def read_bundle(bundle_path: str):
         """读取并校验统一数据包，不修改本地数据。"""
         return load_bundle(bundle_path)
+
+    @staticmethod
+    def read_workspace_bundle(bundle_path: str):
+        """Read a unified workspace bundle with all canonical datasets."""
+        return load_workspace_bundle(bundle_path)
+
+    @staticmethod
+    def export_workspace_bundle(
+        output_path: str,
+        *,
+        app: Any,
+        records: Any,
+        todos: Any,
+        todo_categories: Any,
+        plan_helper: Any,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Export a bundle matching the frontend .efl workspace contract."""
+        return str(write_workspace_bundle(
+            output_path,
+            app=app,
+            records=records,
+            todos=todos,
+            todo_categories=todo_categories,
+            plan_helper=plan_helper,
+            metadata=metadata,
+        ))
 
     # ========== 模块数据目录注册 ==========
 
