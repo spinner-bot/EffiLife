@@ -1279,7 +1279,7 @@ onMounted(async () => {
             <h1 class="current-version-number">v{{ appVersion }}</h1>
             <p class="current-version-build">{{ buildInfo }}</p>
             <div v-if="VERSION_HISTORY[0]" class="current-version-changes">
-              <p class="changes-label">最新版本更新：</p>
+              <p class="changes-label">{{ t('settings.version.latestChanges') }}</p>
               <ul>
                 <li v-for="(change, i) in VERSION_HISTORY[0].changes" :key="i">{{ change }}</li>
               </ul>
@@ -1288,7 +1288,7 @@ onMounted(async () => {
 
           <!-- 历史更新记录 -->
           <div class="version-history">
-            <h3 class="history-title">历史更新记录</h3>
+            <h3 class="history-title">{{ t('settings.version.history') }}</h3>
             <div class="history-list">
               <div v-for="release in VERSION_HISTORY.slice(1)" :key="release.version" class="history-item">
                 <div class="history-header">
