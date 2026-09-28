@@ -28,7 +28,7 @@ import {
   updateEventPlan,
   planDataSource,
 } from '@/services/planGateway'
-import { completeLinkedTodos, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { completeLinkedTodos, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
@@ -295,6 +295,11 @@ async function saveTask() {
   try {
     if (editingTaskId.value) {
       await updatePlanTask(planId, editingTaskId.value, taskContent.value.trim(), minutes)
+      try {
+        await syncTodosFromPlanTask(planId, [editingTaskId.value], taskContent.value.trim(), minutes)
+      } catch {
+        errorMessage.value = t('plans.todoSyncFailed')
+      }
     } else if (taskSectionIndex.value !== null) {
       await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
     }

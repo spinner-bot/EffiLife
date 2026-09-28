@@ -14,3 +14,12 @@ def test_deleting_a_plan_task_unlinks_existing_todos():
     assert "related_plan_id: undefined" in sync
     assert "related_plan_task_id: undefined" in sync
     assert "await unlinkTodosFromPlanTask(planId, taskId)" in plans
+
+
+def test_plan_task_edit_syncs_linked_todo_title_and_duration():
+    sync = SYNC.read_text(encoding="utf-8")
+    plans = PLANS.read_text(encoding="utf-8")
+    assert "export async function syncTodosFromPlanTask" in sync
+    assert "time_estimate: Math.max(0, Number(minutes) || 0)" in sync
+    assert "estimated_time: Math.max(0, Number(minutes) || 0)" in sync
+    assert "syncTodosFromPlanTask(planId, [editingTaskId.value]" in plans

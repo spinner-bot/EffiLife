@@ -23,6 +23,26 @@ export async function completeLinkedTodos(planId: string, planTaskIds: string | 
   return linked.length
 }
 
+/** Keep active todos derived from a plan task aligned after task edits. */
+export async function syncTodosFromPlanTask(planId: string, planTaskIds: string | string[], title: string, minutes: number): Promise<number> {
+  const identifiers = new Set(Array.isArray(planTaskIds) ? planTaskIds.map(String) : [String(planTaskIds)])
+  const todos = await TodoService.list()
+  const linked = todos.filter((todo) =>
+    todo.related_plan_id === String(planId)
+    && Boolean(todo.related_plan_task_id && identifiers.has(String(todo.related_plan_task_id)))
+    && !['archived', 'cancelled'].includes(todo.status)
+  )
+
+  for (const todo of linked) {
+    await TodoService.update(todo.id, {
+      title,
+      time_estimate: Math.max(0, Number(minutes) || 0),
+      estimated_time: Math.max(0, Number(minutes) || 0),
+    })
+  }
+  return linked.length
+}
+
 /**
  * Remove a stale plan-task reference while keeping the user's todo intact.
  * Plan-helper may soft-delete the task, so retaining the old identifier would
