@@ -27,3 +27,11 @@ def test_deleted_todo_unlinks_time_records_without_deleting_history():
     assert "async unlinkTodoFromRecords(todoId: string): Promise<number>" in data
     assert "delete nextRecord.todo_id" in data
     assert "await DataService.unlinkTodoFromRecords(todo.id)" in tasks
+
+
+def test_day_detail_delete_cleans_linked_todo_reference():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+
+    assert "import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'" in source
+    assert "const record = records.value[index]" in source
+    assert "await unlinkTodoFromTimeRecord(record)" in source

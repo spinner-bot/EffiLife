@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
 import { ArrowLeft, Trash2, Check, X, Circle, CheckCircle2 } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
+import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -64,7 +65,11 @@ function openLinkedTodo(todoId?: string) {
 // 删除记录
 async function deleteRecord(index: number) {
   if (!confirm(t('dayDetail.deleteConfirm'))) return
+  const record = records.value[index]
   await DataService.deleteRecord(index, dateStr.value)
+  if (record) {
+    try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  }
   await loadData()
 }
 
