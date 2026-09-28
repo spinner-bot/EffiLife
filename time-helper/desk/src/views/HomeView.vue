@@ -28,6 +28,17 @@ const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
+function openDailyPlan() {
+  router.push({ path: '/plans', query: { mode: 'time' } })
+}
+
+function activateDailyPlan(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    openDailyPlan()
+  }
+}
+
 async function refreshTodoSummary() {
   try {
     const todos = await TodoService.list()
@@ -284,7 +295,14 @@ onUnmounted(() => {
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
         <div class="overview-grid">
-        <div class="stats-card" @click="router.push({ path: '/plans', query: { mode: 'time' } })">
+        <div
+          class="stats-card"
+          role="button"
+          tabindex="0"
+          :aria-label="t('home.todayProgress')"
+          @click="openDailyPlan"
+          @keydown="activateDailyPlan"
+        >
           <div class="stats-header-row">
             <h2 class="stats-title">{{ t('home.todayProgress') }}</h2>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
