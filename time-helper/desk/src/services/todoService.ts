@@ -83,6 +83,13 @@ export interface UnifiedTodo {
   related_time_record_ids?: string[]
 }
 
+export interface LegacyTodoImportResult {
+  migrated: number
+  categories: number
+  skipped: number
+  warnings: number
+}
+
 function now(): string {
   return new Date().toISOString()
 }
@@ -385,4 +392,60 @@ export const TodoService = {
         : current.related_time_record_ids,
     })
   },
+}
+
+/** Import a to-dos JSON export without replacing current unified data. */
+export async function importLegacyTodoPayload(source: unknown): Promise<LegacyTodoImportResult> {
+  let payload: unknown = source
+  if (typeof source === 'string') {
+    try {
+      payload = JSON.parse(source)
+    } catch {
+      throw new Error(translate('settings.archive.legacyTodoInvalidJson'))
+    }
+  }
+  const rawTodos = Array.isArray(payload) ? payload : (payload && typeof payload === 'object' ? (payload as { todos?: unknown[] }).todos : undefined)
+  const rawCategories = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? (payload as { categories?: unknown[] }).categories
+    : []
+  if (!Array.isArray(rawTodos)) throw new Error(translate('settings.archive.legacyTodoMissingTodos'))
+
+  const normalizedTodos: UnifiedTodo[] = []
+  let warnings = 0
+  for (const raw of rawTodos) {
+    const todo = normalizeImportedTodo(raw)
+    if (!todo) {
+      warnings += 1
+      continue
+    }
+    normalizedTodos.push(todo)
+  }
+  const normalizedCategories = Array.isArray(rawCategories)
+    ? rawCategories.map(normalizeImportedCategory).filter((category): category is TodoCategory => category !== null)
+    : []
+  const existingTodos = await TodoService.list()
+  const existingIds = new Set(existingTodos.map((todo) => todo.id))
+  let migrated = 0
+  let skipped = 0
+  for (const todo of normalizedTodos) {
+    if (existingIds.has(todo.id)) {
+      skipped += 1
+      continue
+    }
+    await putRaw(STORE_NAMES.TODOS, todo)
+    existingIds.add(todo.id)
+    migrated += 1
+  }
+
+  const existingCategories = await TodoCategoryService.list()
+  const categoryIds = new Set(existingCategories.map((category) => category.id))
+  let categories = 0
+  for (const category of normalizedCategories) {
+    if (categoryIds.has(category.id)) continue
+    await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+    categoryIds.add(category.id)
+    categories += 1
+  }
+  await TodoCategoryService.ensureDefaults([...existingTodos, ...normalizedTodos])
+  return { migrated, categories, skipped, warnings }
 }

@@ -14,6 +14,7 @@ import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
 import RecoveryPanel from '@/components/RecoveryPanel.vue'
 import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { importLegacyTodoPayload } from '@/services/todoService'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -398,6 +399,7 @@ async function handleReset(type: ResetType) {
 // ============ 存档管理 ============
 // 文件选择输入框引用
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const legacyTodoInputRef = ref<HTMLInputElement | null>(null)
 
 async function handleExportArchive() {
   try {
@@ -455,6 +457,25 @@ async function onFileSelected(event: Event) {
 }
 
 // ============ 数据恢复 ============
+function openLegacyTodoImport() {
+  legacyTodoInputRef.value?.click()
+}
+
+async function onLegacyTodoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) return
+  try {
+    const result = await importLegacyTodoPayload(await file.text())
+    alert(t('settings.archive.legacyTodoImportSuccess', result))
+    window.location.reload()
+  } catch (error) {
+    alert(t('settings.archive.legacyTodoImportFailed') + (error as Error).message)
+  }
+}
+
 const backupsList = ref<BackupData[]>([])
 const dataStatus = ref<DataStatus | null>(null)
 
@@ -1030,6 +1051,9 @@ onMounted(async () => {
           <button class="btn primary full" @click="handleImportArchive">
             {{ t('settings.archive.import') }}
           </button>
+          <button class="btn secondary full" @click="openLegacyTodoImport">
+            {{ t('settings.archive.importLegacyTodos') }}
+          </button>
         </div>
 
         <!-- 隐藏的文件输入 -->
@@ -1039,6 +1063,13 @@ onMounted(async () => {
           accept=".efl"
           style="display: none"
           @change="onFileSelected"
+        />
+        <input
+          ref="legacyTodoInputRef"
+          type="file"
+          accept=".json,application/json"
+          style="display: none"
+          @change="onLegacyTodoSelected"
         />
 
         <p class="archive-hint">
