@@ -15,7 +15,7 @@ def test_plan_detail_can_create_a_linked_unified_todo_without_duplicates():
     assert "related_plan_task_id: String(task.internal_id)" in source
     assert "todo.related_plan_task_id === String(task.display_id)" in source
     assert "todoAlreadyLinked" in source
-    assert "@click=\"addTaskToTodos(task)\"" in source
+    assert "addTaskToTodos(task)" in source
 
 
 def test_plan_todo_linking_copy_exists_in_both_locales():
@@ -24,7 +24,7 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
     zh_match = re.search(r"'zh-CN':\s*\{(?P<body>.*?)\n  \},\n  'en-US':", source, re.S)
     en_match = re.search(r"'en-US':\s*\{(?P<body>.*?)\n  \},\n}\n\nfunction readLocale", source, re.S)
     assert zh_match and en_match
-    for key in ("plans.linkTodo", "plans.todoCreated", "plans.todoAlreadyLinked", "plans.todoCreateFailed"):
+    for key in ("plans.linkTodo", "plans.viewTodo", "plans.todoCreated", "plans.todoAlreadyLinked", "plans.todoCreateFailed"):
         assert zh_match.group('body').count(f"'{key}'") == 1
         assert en_match.group('body').count(f"'{key}'") == 1
 

@@ -49,10 +49,12 @@ def test_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
 def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "const linkedTodoTaskIds = ref(new Set<string>())" in view
+    assert "const linkedTodoIdsByTask = ref(new Map<string, string>())" in view
     assert "function isTaskLinkedToTodo" in view
-    assert "isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo')" in view
-    assert "isLoading || isTaskLinkedToTodo(task)" in view
+    assert "isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" in view
+    assert ':disabled="isLoading"' in view
+    assert "t('plans.viewTodo')" in view
+    assert "router.push({ path: '/tasks', query: { todo: todoId } })" in view
     assert "onWorkspaceChanged((source)" in view
     assert "stopWorkspaceListener()" in view
     assert "!['archived', 'cancelled'].includes(todo.status)" in view

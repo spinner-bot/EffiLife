@@ -80,7 +80,7 @@ const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
-const linkedTodoTaskIds = ref(new Set<string>())
+const linkedTodoIdsByTask = ref(new Map<string, string>())
 
 function showPlanSaved(): void {
   successMessage.value = t('plans.saved')
@@ -89,23 +89,28 @@ function showPlanSaved(): void {
 
 async function refreshPlanTodoLinks(planId?: string): Promise<void> {
   if (!planId) {
-    linkedTodoTaskIds.value = new Set()
+    linkedTodoIdsByTask.value = new Map()
     return
   }
   try {
     const todos = await TodoService.list()
-    linkedTodoTaskIds.value = new Set(
+    linkedTodoIdsByTask.value = new Map(
       todos
         .filter((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
-        .map((todo) => String(todo.related_plan_task_id)),
+        .map((todo) => [String(todo.related_plan_task_id), todo.id]),
     )
   } catch {
-    linkedTodoTaskIds.value = new Set()
+    linkedTodoIdsByTask.value = new Map()
   }
 }
 
 function isTaskLinkedToTodo(task: PlanFull['sections'][number]['tasks'][number]): boolean {
-  return linkedTodoTaskIds.value.has(String(task.internal_id)) || linkedTodoTaskIds.value.has(String(task.display_id))
+  return linkedTodoIdsByTask.value.has(String(task.internal_id)) || linkedTodoIdsByTask.value.has(String(task.display_id))
+}
+
+function openLinkedTodo(task: PlanFull['sections'][number]['tasks'][number]): void {
+  const todoId = linkedTodoIdsByTask.value.get(String(task.internal_id)) || linkedTodoIdsByTask.value.get(String(task.display_id))
+  if (todoId) router.push({ path: '/tasks', query: { todo: todoId } })
 }
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
@@ -633,10 +638,11 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
       && !['archived', 'cancelled'].includes(todo.status)
     )
     if (existing) {
+      linkedTodoIdsByTask.value = new Map(linkedTodoIdsByTask.value).set(String(existing.related_plan_task_id), existing.id)
       errorMessage.value = t('plans.todoAlreadyLinked')
       return
     }
-    await TodoService.create({
+    const createdTodo = await TodoService.create({
       title: task.content,
       description: selectedPlan.value.name,
       related_plan_id: planId,
@@ -644,7 +650,7 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
       time_estimate: task.time_minutes,
       estimated_time: task.time_minutes,
     })
-    linkedTodoTaskIds.value = new Set([...linkedTodoTaskIds.value, String(task.internal_id)])
+    linkedTodoIdsByTask.value = new Map(linkedTodoIdsByTask.value).set(String(task.internal_id), createdTodo.id)
     successMessage.value = t('plans.todoCreated')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
@@ -686,7 +692,7 @@ async function addAllTasksToTodos() {
         failed += 1
       }
     }
-    linkedTodoTaskIds.value = activeLinks
+    await refreshPlanTodoLinks(plan.id)
     if (created > 0) notifyToast(t('plans.todosBulkCreated', { count: created }), 'success')
     if (failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
     if (created === 0 && failed === 0) notifyToast(t('plans.todosAllLinked'), 'info')
@@ -913,7 +919,7 @@ onUnmounted(() => {
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button v-if="canEditPlan && !task.finish" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading || isTaskLinkedToTodo(task)" :aria-label="isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo') }}</button>
+            <button v-if="canEditPlan && !task.finish" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading" :aria-label="isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" @click="isTaskLinkedToTodo(task) ? openLinkedTodo(task) : addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo') }}</button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
           </article>
