@@ -61,6 +61,15 @@ def test_global_search_indexes_plan_tasks_and_deep_links():
     assert "plan-task-${task.internal_id}" in plans
 
 
+def test_global_search_targets_a_specific_time_record():
+    source = SEARCH.read_text(encoding="utf-8")
+    day = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+    assert "?record=${encodeURIComponent(record.id || `${record.date}-${index}`)}" in source
+    assert "route.query.record" in day
+    assert "record-search-target" in day
+    assert "openLinkedTodo" in day
+
+
 def test_global_search_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in (

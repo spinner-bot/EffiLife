@@ -14,6 +14,7 @@ const { t } = useI18n()
 
 const dateStr = computed(() => route.params.date as string)
 const highlightedTodoId = computed(() => String(route.query.todo || ''))
+const highlightedRecordKey = computed(() => String(route.query.record || ''))
 const plans = computed(() => appStore.plans)
 
 const stat = ref<RealTimeStat | null>(null)
@@ -46,6 +47,18 @@ function getProgressColor(progress: number): string {
 
 function isHighlightedRecord(record: TimeRecord): boolean {
   return Boolean(highlightedTodoId.value && record.todo_id === highlightedTodoId.value)
+}
+
+function recordKey(record: TimeRecord, index: number): string {
+  return record.id || `${record.date}-${index}`
+}
+
+function isSearchHighlightedRecord(record: TimeRecord, index: number): boolean {
+  return Boolean(highlightedRecordKey.value && recordKey(record, index) === highlightedRecordKey.value)
+}
+
+function openLinkedTodo(todoId?: string) {
+  if (todoId) router.push({ path: '/tasks', query: { todo: todoId } })
 }
 
 // 删除记录
@@ -124,7 +137,7 @@ onMounted(loadData)
             v-for="(record, index) in records"
             :key="index"
             class="record-item"
-            :class="{ 'record-item-highlight': isHighlightedRecord(record) }"
+            :class="{ 'record-item-highlight': isHighlightedRecord(record), 'record-search-target': isSearchHighlightedRecord(record, index) }"
           >
             <div class="record-info">
               <span class="record-tag">[{{ record.tag }}]</span>
@@ -132,7 +145,7 @@ onMounted(loadData)
               <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
             </div>
             <div class="record-content">{{ record.content }}</div>
-            <span v-if="isHighlightedRecord(record)" class="record-linked-label">{{ t('dayDetail.linkedTodo') }}</span>
+            <button v-if="isHighlightedRecord(record)" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>
             <button class="delete-btn" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
@@ -347,11 +360,22 @@ onMounted(loadData)
   box-shadow: 0 0 0 2px var(--color-primary-muted);
 }
 
+.record-search-target {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-muted);
+}
+
 .record-linked-label {
   display: inline-block;
   margin-top: var(--spacing-xs);
+  border: 0;
+  padding: 0;
   color: var(--color-primary);
+  background: transparent;
+  cursor: pointer;
   font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .record-info {
