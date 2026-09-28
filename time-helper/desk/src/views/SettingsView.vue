@@ -15,6 +15,7 @@ import RecoveryPanel from '@/components/RecoveryPanel.vue'
 import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
+import { notifyToast } from '@/services/toastService'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -65,7 +66,7 @@ async function openEmailClient() {
     } catch {
       // 最后 fallback: 复制到剪贴板
       await copyEmail()
-      alert(t('settings.feedback.emailCopied'))
+      notifyToast(t('settings.feedback.emailCopied'), 'success')
     }
   }
 }
@@ -76,7 +77,7 @@ async function copyEmail() {
     copySuccess.value = true
     setTimeout(() => { copySuccess.value = false }, 2000)
   } catch (e) {
-    alert(t('settings.feedback.copyFailed'))
+    notifyToast(t('settings.feedback.copyFailed'), 'error')
   }
 }
 
@@ -130,7 +131,7 @@ async function saveCustomSettings() {
     show_ampm: showAmPm.value
   }
   await appStore.saveConfig(newConfig)
-  alert(t('settings.saved'))
+  notifyToast(t('settings.saved'), 'success')
 }
 
 function addThreshold() {
@@ -406,13 +407,13 @@ async function handleExportArchive() {
     const result = await exportArchive()
     if (result.success) {
       if (result.path) {
-          alert(`${t('settings.archive.savedTo')}\n${result.path}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`)
+          notifyToast(`${t('settings.archive.savedTo')}\n${result.path}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`, 'success')
       } else {
-          alert(`${t('settings.archive.downloaded')}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`)
+          notifyToast(`${t('settings.archive.downloaded')}${result.warning ? `\n\n${t('settings.archive.warning')}${result.warning}` : ''}`, 'success')
       }
     }
   } catch (e) {
-    alert(t('settings.archive.exportFailed') + (e as Error).message)
+    notifyToast(t('settings.archive.exportFailed') + (e as Error).message, 'error')
   }
 }
 
@@ -427,7 +428,7 @@ async function handleImportArchive() {
         window.location.reload()
       }
     } else {
-      alert(result.message)
+      notifyToast(result.message, 'error')
     }
   } else {
     // 浏览器环境：使用文件选择器
@@ -448,7 +449,7 @@ async function onFileSelected(event: Event) {
   if (!confirm(t('settings.archive.importConfirm'))) return
 
   const result = await importArchive(file)
-  alert(result.message)
+  notifyToast(result.message, result.success ? 'success' : 'error')
 
   if (result.success) {
     // 刷新页面以应用更改
@@ -469,10 +470,10 @@ async function onLegacyTodoSelected(event: Event) {
   if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) return
   try {
     const result = await importLegacyTodoPayload(await file.text())
-    alert(t('settings.archive.legacyTodoImportSuccess', { ...result }))
+    notifyToast(t('settings.archive.legacyTodoImportSuccess', { ...result }), 'success')
     window.location.reload()
   } catch (error) {
-    alert(t('settings.archive.legacyTodoImportFailed') + (error as Error).message)
+    notifyToast(t('settings.archive.legacyTodoImportFailed') + (error as Error).message, 'error')
   }
 }
 
@@ -497,15 +498,15 @@ async function handleRestoreBackup(backup: BackupData) {
   try {
     const result = await restoreFromSpecificBackup(backup)
     if (result.success) {
-      alert(result.message + '\n\n' + t('settings.archive.reloadConfirm'))
+      notifyToast(result.message + '\n\n' + t('settings.archive.reloadConfirm'), 'success')
       if (confirm(t('settings.archive.reloadNow'))) {
         window.location.reload()
       }
     } else {
-      alert(result.message)
+      notifyToast(result.message, 'error')
     }
   } catch (e) {
-    alert(t('settings.restore.failed') + (e as Error).message)
+    notifyToast(t('settings.restore.failed') + (e as Error).message, 'error')
   }
 }
 
@@ -519,9 +520,9 @@ async function handleEmergencyExport() {
     a.download = `efflife_emergency_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-    alert(t('settings.restore.emergencyDownloaded'))
+    notifyToast(t('settings.restore.emergencyDownloaded'), 'success')
   } catch (e) {
-    alert(t('settings.archive.exportFailed') + (e as Error).message)
+    notifyToast(t('settings.archive.exportFailed') + (e as Error).message, 'error')
   }
 }
 

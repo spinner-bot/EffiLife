@@ -11,6 +11,7 @@ import { TodoService } from './services/todoService'
 import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
+import ToastHost from './components/ToastHost.vue'
 import { repairTodoTimeRecordLinks } from './services/workspaceSync'
 
 const appStore = useAppStore()
@@ -200,6 +201,7 @@ watch(() => appStore.todayStat, () => {
     <!-- 引导覆盖层 -->
     <GuideOverlay />
     <GlobalSearch :open="showGlobalSearch" @close="showGlobalSearch = false" />
+    <ToastHost />
     </template>
 
     <div v-else class="app-startup" role="status" aria-live="polite">
