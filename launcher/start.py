@@ -119,6 +119,16 @@ def get_time_helper_cmd():
     for exe_path in exe_paths:
         if exe_path.exists():
             return [str(exe_path)], None, None  # cmd, url, setup
+
+    # A checked-in/CI-produced static build remains usable on machines that
+    # do not have Node.js. This is a test-launcher fallback; packaged Tauri
+    # binaries still take precedence above it.
+    dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
+    if (dist_path / "index.html").exists():
+        return [
+            sys.executable, "-m", "http.server", "1420",
+            "--bind", "127.0.0.1", "--directory", str(dist_path),
+        ], "http://127.0.0.1:1420", None
     return None, None, None
 
 
@@ -127,6 +137,12 @@ def get_todos_web_cmd():
     npm = find_npm()
     if npm:
         return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1421", "--strictPort"], "http://127.0.0.1:1421", [npm, "install"]
+    dist_path = BASE_DIR / "to-dos" / "ui" / "dist"
+    if (dist_path / "index.html").exists():
+        return [
+            sys.executable, "-m", "http.server", "1421",
+            "--bind", "127.0.0.1", "--directory", str(dist_path),
+        ], "http://127.0.0.1:1421", None
     return None, None, None
 
 

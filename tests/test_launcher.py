@@ -14,6 +14,20 @@ def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     assert calls == [("1", modules)]
 
 
+def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_path):
+    dist = tmp_path / "time-helper" / "desk" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher, "find_npm", lambda: None)
+    monkeypatch.setattr(launcher, "find_node", lambda: None)
+    command, url, setup = launcher.get_time_helper_cmd()
+    assert command[:4] == [sys.executable, "-m", "http.server", "1420"]
+    assert "--directory" in command
+    assert url == "http://127.0.0.1:1420"
+    assert setup is None
+
+
 def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     modules = launcher.build_modules()
     assert modules["1"]["name"] == "EffiLife unified workspace"
