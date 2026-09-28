@@ -404,8 +404,11 @@ async function handleReset(type: ResetType) {
 // 文件选择输入框引用
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const legacyTodoInputRef = ref<HTMLInputElement | null>(null)
+const archiveBusy = ref(false)
 
 async function handleExportArchive() {
+  if (archiveBusy.value) return
+  archiveBusy.value = true
   try {
     const result = await exportArchive()
     if (result.success) {
@@ -417,15 +420,21 @@ async function handleExportArchive() {
     }
   } catch (e) {
     notifyToast(t('settings.archive.exportFailed') + (e as Error).message, 'error')
+  } finally {
+    archiveBusy.value = false
   }
 }
 
 async function handleImportArchive() {
   // 检测是否在 Tauri 环境
   if ((window as any).__TAURI__) {
+    archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
     const result = await importArchiveWithDialog(() => confirm(t('settings.archive.importConfirm')))
-    if (result.cancelled) return
+    if (result.cancelled) {
+      archiveBusy.value = false
+      return
+    }
     if (result.success) {
       if (confirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
         window.location.reload()
@@ -433,6 +442,7 @@ async function handleImportArchive() {
     } else {
       notifyToast(result.message, 'error')
     }
+    archiveBusy.value = false
   } else {
     // 浏览器环境：使用文件选择器
     if (fileInputRef.value) {
@@ -442,14 +452,19 @@ async function handleImportArchive() {
 }
 
 async function onFileSelected(event: Event) {
+  if (archiveBusy.value) return
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
 
   // 重置 input 以便可以再次选择同一文件
   input.value = ''
+  archiveBusy.value = true
 
-  if (!confirm(t('settings.archive.importConfirm'))) return
+  if (!confirm(t('settings.archive.importConfirm'))) {
+    archiveBusy.value = false
+    return
+  }
 
   const result = await importArchive(file)
   notifyToast(result.message, result.success ? 'success' : 'error')
@@ -458,6 +473,7 @@ async function onFileSelected(event: Event) {
     // 刷新页面以应用更改
     window.location.reload()
   }
+  archiveBusy.value = false
 }
 
 // ============ 数据恢复 ============
@@ -466,17 +482,24 @@ function openLegacyTodoImport() {
 }
 
 async function onLegacyTodoSelected(event: Event) {
+  if (archiveBusy.value) return
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
-  if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) return
+  archiveBusy.value = true
+  if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) {
+    archiveBusy.value = false
+    return
+  }
   try {
     const result = await importLegacyTodoPayload(await file.text())
     notifyToast(t('settings.archive.legacyTodoImportSuccess', { ...result }), 'success')
     window.location.reload()
   } catch (error) {
     notifyToast(t('settings.archive.legacyTodoImportFailed') + (error as Error).message, 'error')
+  } finally {
+    archiveBusy.value = false
   }
 }
 
@@ -1061,13 +1084,13 @@ onMounted(async () => {
 
         <!-- 操作按钮 -->
         <div class="archive-actions">
-          <button class="btn primary full" @click="handleExportArchive">
+          <button class="btn primary full" :disabled="archiveBusy" @click="handleExportArchive">
             {{ t('settings.archive.export') }}
           </button>
-          <button class="btn primary full" @click="handleImportArchive">
+          <button class="btn primary full" :disabled="archiveBusy" @click="handleImportArchive">
             {{ t('settings.archive.import') }}
           </button>
-          <button class="btn secondary full" @click="openLegacyTodoImport">
+          <button class="btn secondary full" :disabled="archiveBusy" @click="openLegacyTodoImport">
             {{ t('settings.archive.importLegacyTodos') }}
           </button>
         </div>
