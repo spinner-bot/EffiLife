@@ -7,6 +7,7 @@ import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
 import { useI18n } from '@/i18n'
 import { getNotificationIcon } from '@/services/notificationIcons'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -202,12 +203,12 @@ async function handleCheckinFromInbox(entry: InboxEntry) {
 
   if (result !== null) {
     // 打卡成功，显示成功提示
-    alert(`${t('settings.events.checkinSuccess')}\n${t('settings.events.date')}${entry.checkinDate}\n${t('settings.events.plan')}${entry.checkinPlanName}\n${t('settings.events.streakCount', { count: result })} 🔥`)
+    notifyToast(`${t('settings.events.checkinSuccess')}\n${t('settings.events.date')}${entry.checkinDate}\n${t('settings.events.plan')}${entry.checkinPlanName}\n${t('settings.events.streakCount', { count: result })} 🔥`, 'success')
 
     // 删除这个收件箱条目
     EventSystem.removeCheckinReminder(entry.id)
   } else {
-    alert(t('settings.events.checkinFailed'))
+    notifyToast(t('settings.events.checkinFailed'), 'error')
   }
 }
 
@@ -250,17 +251,17 @@ function startEditRule(rule: WarningRule) {
 function saveRule() {
   // 验证小时
   if (newRule.value.hour < 0 || newRule.value.hour > 23) {
-    alert(t('settings.events.hourValidation'))
+    notifyToast(t('settings.events.hourValidation'), 'error')
     return
   }
   // 验证分钟
   if (newRule.value.minute < 0 || newRule.value.minute > 59) {
-    alert(t('settings.events.minuteValidation'))
+    notifyToast(t('settings.events.minuteValidation'), 'error')
     return
   }
   // 验证阈值
   if (newRule.value.threshold < 0 || newRule.value.threshold > 100) {
-    alert(t('settings.events.thresholdValidation'))
+    notifyToast(t('settings.events.thresholdValidation'), 'error')
     return
   }
 

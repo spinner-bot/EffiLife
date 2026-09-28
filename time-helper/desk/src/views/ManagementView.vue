@@ -6,6 +6,7 @@ import { rgbToHex, autoBalance } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check, Calendar, FolderKanban, RefreshCw } from 'lucide-vue-next'
 import type { PlanItem, ScheduleRule } from '@/types'
 import { useI18n } from '@/i18n'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -63,24 +64,24 @@ function removePlanItem(index: number) {
 async function savePlan() {
   const name = editingPlanName.value.trim()
   if (!name) {
-    alert(t('management.validation.planName'))
+    notifyToast(t('management.validation.planName'), 'error')
     return
   }
 
   const items = editingPlanItems.value.filter(item => item.name.trim())
   if (items.length === 0) {
-    alert(t('management.validation.planItem'))
+    notifyToast(t('management.validation.planItem'), 'error')
     return
   }
 
   // 验证每个时间类别的时长
   for (const item of items) {
     if (item.hours < 0) {
-      alert(`${t('management.validation.itemPrefix')}${item.name}${t('management.validation.negative')}`)
+      notifyToast(`${t('management.validation.itemPrefix')}${item.name}${t('management.validation.negative')}`, 'error')
       return
     }
     if (item.hours > 24) {
-      alert(`${t('management.validation.itemPrefix')}${item.name}${t('management.validation.max')}`)
+      notifyToast(`${t('management.validation.itemPrefix')}${item.name}${t('management.validation.max')}`, 'error')
       return
     }
   }
@@ -96,7 +97,7 @@ async function savePlan() {
       }
     }
     if (!editingPlanBgTag.value) {
-      alert(t('management.validation.background'))
+    notifyToast(t('management.validation.background'), 'error')
       return
     }
   }
@@ -150,17 +151,17 @@ function openEditRule(index: number) {
 
 async function saveRule() {
   if (!editingRulePlan.value) {
-    alert(t('management.validation.relatedPlan'))
+    notifyToast(t('management.validation.relatedPlan'), 'error')
     return
   }
 
   if (editingRuleType.value === 'default') {
-    alert(t('management.validation.defaultRule'))
+    notifyToast(t('management.validation.defaultRule'), 'error')
     return
   }
 
   if (!editingRuleValue.value) {
-    alert(t('management.validation.ruleValue'))
+    notifyToast(t('management.validation.ruleValue'), 'error')
     return
   }
 
@@ -200,7 +201,7 @@ async function moveRuleUp(index: number) {
 async function changeTodayPlan(planName: string) {
   if (planName === todayPlan.value.name) return
   await appStore.changeTodayPlan(planName)
-  alert(`${t('management.todayChanged')}${planName}`)
+  notifyToast(`${t('management.todayChanged')}${planName}`, 'success')
 }
 
 // ============ 周选择器 ============

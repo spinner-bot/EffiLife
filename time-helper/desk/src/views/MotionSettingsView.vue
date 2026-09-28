@@ -5,6 +5,7 @@ import { ArrowLeft, Gauge, Sparkles, Zap, RotateCcw, Check } from 'lucide-vue-ne
 import { MotionManager } from '@/motion'
 import type { MotionSettings } from '@/motion'
 import { useI18n } from '@/i18n'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -61,7 +62,7 @@ async function runAutoOptimize() {
     showRecommendation.value = true
   } catch (e) {
     console.error('Auto optimize failed:', e)
-    alert(t('settings.motion.testFailed'))
+    notifyToast(t('settings.motion.testFailed'), 'error')
   } finally {
     isOptimizing.value = false
   }
@@ -73,7 +74,7 @@ function applyRecommendation() {
     MotionManager.applyRecommendation(recommendation.value)
     settings.value = MotionManager.getSettings()
     showRecommendation.value = false
-    alert(t('settings.motion.applied'))
+    notifyToast(t('settings.motion.applied'), 'success')
   }
 }
 

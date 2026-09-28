@@ -12,6 +12,13 @@ def test_settings_uses_non_blocking_feedback_for_operations():
     assert "alert(" not in source
 
 
+def test_core_workspace_views_do_not_use_blocking_alerts():
+    views = ("RecordsView.vue", "ManagementView.vue", "EventManagerView.vue", "MotionSettingsView.vue")
+    for name in views:
+        source = (DESK / "src" / "views" / name).read_text(encoding="utf-8")
+        assert "alert(" not in source, f"blocking alert remains in {name}"
+
+
 def test_toast_host_has_accessible_themable_states():
     source = (DESK / "src" / "components" / "ToastHost.vue").read_text(encoding="utf-8")
 

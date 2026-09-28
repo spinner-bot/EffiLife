@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -112,13 +113,13 @@ async function saveRecord() {
 async function saveRecordInternal() {
   // 验证内容
   if (!formContent.value.trim()) {
-    alert(t('records.validation.content'))
+    notifyToast(t('records.validation.content'), 'error')
     return
   }
 
   // 验证标签
   if (!formTag.value.trim()) {
-    alert(t('records.validation.tag'))
+    notifyToast(t('records.validation.tag'), 'error')
     return
   }
 
@@ -134,12 +135,12 @@ async function saveRecordInternal() {
 
     // 验证小时范围
     if (sh < 0 || sh > 23 || eh < 0 || eh > 23) {
-      alert(t('records.validation.hour'))
+      notifyToast(t('records.validation.hour'), 'error')
       return
     }
     // 验证分钟范围
     if (sm < 0 || sm > 59 || em < 0 || em > 59) {
-      alert(t('records.validation.minute'))
+      notifyToast(t('records.validation.minute'), 'error')
       return
     }
 
@@ -150,7 +151,7 @@ async function saveRecordInternal() {
 
     // 验证结束时间必须大于开始时间
     if (endMinutes <= startMinutes) {
-      alert(t('records.validation.end'))
+      notifyToast(t('records.validation.end'), 'error')
       return
     }
   } else {
@@ -162,31 +163,31 @@ async function saveRecordInternal() {
 
     // 验证时长
     if (dh === 0 && dm === 0) {
-      alert(t('records.validation.durationZero'))
+    notifyToast(t('records.validation.durationZero'), 'error')
       return
     }
     if (dh < 0 || dm < 0) {
-      alert(t('records.validation.durationNegative'))
+    notifyToast(t('records.validation.durationNegative'), 'error')
       return
     }
     if (dm > 59) {
-      alert(t('records.validation.minute'))
+    notifyToast(t('records.validation.minute'), 'error')
       return
     }
     // 验证时长不超过 24 小时
     const totalMinutes = dh * 60 + dm
     if (totalMinutes > 24 * 60) {
-      alert(t('records.validation.durationMax'))
+    notifyToast(t('records.validation.durationMax'), 'error')
       return
     }
 
     // 验证参考时间
     if (refH < 0 || refH > 23) {
-      alert(t('records.validation.hour'))
+    notifyToast(t('records.validation.hour'), 'error')
       return
     }
     if (refM < 0 || refM > 59) {
-      alert(t('records.validation.minute'))
+    notifyToast(t('records.validation.minute'), 'error')
       return
     }
 
@@ -215,7 +216,7 @@ async function saveRecordInternal() {
   // 检查冲突
   const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
   if (conflict) {
-    alert(t('records.validation.conflict') + conflict)
+    notifyToast(t('records.validation.conflict') + conflict, 'error')
     return
   }
 
