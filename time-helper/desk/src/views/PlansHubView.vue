@@ -497,7 +497,7 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
   }
 }
 
-async function deleteTask(taskId: string) {
+async function deleteTask(taskId: string, displayTaskId = taskId) {
   if (isLoading.value) return
   if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
   const planId = selectedPlan.value.id
@@ -507,6 +507,9 @@ async function deleteTask(taskId: string) {
     await deletePlanTask(planId, taskId)
     try {
       await unlinkTodosFromPlanTask(planId, taskId)
+      if (displayTaskId !== taskId) {
+        await unlinkTodosFromPlanTask(planId, displayTaskId)
+      }
     } catch {
       // The plan deletion is already accepted; keep the view current and
       // surface the secondary cleanup failure without masking the deletion.
@@ -702,7 +705,7 @@ onMounted(async () => {
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
             <button v-if="canEditPlan && !task.finish" class="task-todo" :disabled="isLoading" :aria-label="t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ t('plans.linkTodo') }}</button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+            <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">

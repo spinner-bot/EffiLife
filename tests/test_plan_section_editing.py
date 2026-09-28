@@ -22,6 +22,14 @@ def test_plan_center_exposes_section_edit_and_cleans_task_links():
     assert "deleteSection(section)" in source
     assert "unlinkTodosFromPlanTask(planId, task.internal_id)" in source
     assert "unlinkTodosFromPlanTask(planId, task.display_id)" in source
+
+
+def test_single_task_delete_cleans_internal_and_display_links():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+
+    assert "async function deleteTask(taskId: string, displayTaskId = taskId)" in source
+    assert "await unlinkTodosFromPlanTask(planId, displayTaskId)" in source
+    assert "@click=\"deleteTask(task.internal_id, task.display_id)\"" in source
     assert "editingSectionIndex" in source
 
 
