@@ -44,3 +44,12 @@ def test_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
     assert "related_plan_id: String(plan.id)" in view
     assert "related_plan_task_id: String(task.internal_id)" in view
     assert "time_estimate: task.time_minutes" in view
+
+
+def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+
+    assert "const linkedTodoTaskIds = ref(new Set<string>())" in view
+    assert "function isTaskLinkedToTodo" in view
+    assert "isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo')" in view
+    assert "isLoading || isTaskLinkedToTodo(task)" in view

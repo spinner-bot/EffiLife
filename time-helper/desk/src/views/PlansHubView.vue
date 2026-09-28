@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -79,10 +79,32 @@ const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
+const linkedTodoTaskIds = ref(new Set<string>())
 
 function showPlanSaved(): void {
   successMessage.value = t('plans.saved')
   notifyToast(t('plans.saved'), 'success')
+}
+
+async function refreshPlanTodoLinks(planId?: string): Promise<void> {
+  if (!planId) {
+    linkedTodoTaskIds.value = new Set()
+    return
+  }
+  try {
+    const todos = await TodoService.list()
+    linkedTodoTaskIds.value = new Set(
+      todos
+        .filter((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id)
+        .map((todo) => String(todo.related_plan_task_id)),
+    )
+  } catch {
+    linkedTodoTaskIds.value = new Set()
+  }
+}
+
+function isTaskLinkedToTodo(task: PlanFull['sections'][number]['tasks'][number]): boolean {
+  return linkedTodoTaskIds.value.has(String(task.internal_id)) || linkedTodoTaskIds.value.has(String(task.display_id))
 }
 
 function toDateInput(date: Date): string {
@@ -615,6 +637,7 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
       time_estimate: task.time_minutes,
       estimated_time: task.time_minutes,
     })
+    linkedTodoTaskIds.value = new Set([...linkedTodoTaskIds.value, String(task.internal_id)])
     successMessage.value = t('plans.todoCreated')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
@@ -663,6 +686,10 @@ const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((t
 const selectedPlanProgress = computed(() => activeTaskCount.value > 0
   ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
   : 0)
+
+watch(() => selectedPlan.value?.id, (planId) => {
+  void refreshPlanTodoLinks(planId)
+}, { immediate: true })
 
 function planProgress(plan: PlanSummary): number {
   const total = Number(plan.total_tasks || 0)
@@ -830,7 +857,7 @@ onMounted(async () => {
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button v-if="canEditPlan && !task.finish" class="task-todo" :disabled="isLoading" :aria-label="t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ t('plans.linkTodo') }}</button>
+            <button v-if="canEditPlan && !task.finish" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading || isTaskLinkedToTodo(task)" :aria-label="isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo') }}</button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
           </article>
@@ -987,6 +1014,7 @@ onMounted(async () => {
 .task-log { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .task-todo { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .task-todo:hover { color: var(--color-primary); }
+.task-todo.linked { color: var(--color-success, #16a34a); background: color-mix(in srgb, var(--color-success, #16a34a) 12%, var(--color-bg-secondary)); cursor: default; }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .event-task-row.finished span { text-decoration: line-through; }

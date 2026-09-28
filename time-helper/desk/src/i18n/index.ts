@@ -1054,6 +1054,7 @@ const catalogs: Record<Locale, Record<string, string>> = {
     'plans.linkTodo': '加入待办',
     'plans.todoCreated': '已加入待办中心',
     'plans.todoAlreadyLinked': '该计划任务已经关联待办',
+    'plans.todoLinked': '已关联待办',
     'plans.todoCreateFailed': '加入待办失败',
   },
   'en-US': {
@@ -2105,6 +2106,7 @@ const catalogs: Record<Locale, Record<string, string>> = {
     'plans.linkTodo': 'Add to tasks',
     'plans.todoCreated': 'Added to the task center',
     'plans.todoAlreadyLinked': 'This plan task is already linked to a task',
+    'plans.todoLinked': 'Todo linked',
     'plans.todoCreateFailed': 'Unable to add the task',
   },
 }
