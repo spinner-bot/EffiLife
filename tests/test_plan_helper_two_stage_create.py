@@ -37,3 +37,17 @@ def test_legacy_plan_editor_is_fullscreen_and_keyboard_dismissible():
     assert '@keydown.esc="closeEditPlan"' in edit_block
     assert ".modal-fullscreen" in STYLE_SOURCE
     assert ".modal-fullscreen .modal-body" in STYLE_SOURCE
+
+
+def test_legacy_plan_dates_use_two_digit_day_and_local_today_default():
+    format_start = APP_SOURCE.index("function formatDate(dateArr)")
+    format_end = APP_SOURCE.index("function todayInput()", format_start)
+    format_block = APP_SOURCE[format_start:format_end]
+    today_start = APP_SOURCE.index("function todayInput()")
+    today_end = APP_SOURCE.index("function dateInputToTuple", today_start)
+    today_block = APP_SOURCE[today_start:today_end]
+
+    assert "String(dateArr[2]).padStart(2, '0')" in format_block
+    assert "now.getFullYear()" in today_block
+    assert "now.getMonth() + 1" in today_block
+    assert "now.getDate()" in today_block
