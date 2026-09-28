@@ -46,3 +46,27 @@ def test_desktop_workflow_installs_sidecar_builder_before_tauri():
     tauri_step = workflow.index("npm run tauri build")
     assert sidecar_dependency_step < tauri_step
     assert sidecar_dependency_step < test_step < tauri_step
+
+
+def test_release_workflow_syncs_repository_version_before_contract_tests():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "python scripts/sync_desktop_version.py" in workflow
+    assert workflow.index("python scripts/sync_desktop_version.py") < workflow.index("python -m pytest -q")
+
+
+def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
+    import json
+    import subprocess
+
+    root = tmp_path / "repo"
+    (root / "time-helper" / "desk" / "src-tauri").mkdir(parents=True)
+    (root / "time-helper").mkdir(exist_ok=True)
+    (root / "time-helper" / "VERSION").write_text("9.8.7\n", encoding="utf-8")
+    (root / "time-helper" / "desk" / "package.json").write_text('{"name":"test","version":"0.0.1"}\n', encoding="utf-8")
+    (root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").write_text('{"version":"0.0.1"}\n', encoding="utf-8")
+    (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").write_text('[package]\nversion = "0.0.1"\n', encoding="utf-8")
+    script = ROOT / "scripts" / "sync_desktop_version.py"
+    subprocess.run(["python", str(script), "--root", str(root)], check=True)
+    assert json.loads((root / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
+    assert json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
+    assert 'version = "9.8.7"' in (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")

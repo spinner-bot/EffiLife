@@ -62,6 +62,9 @@ jobs:
       - name: Install sidecar builder
         run: python -m pip install pyinstaller pytest
 
+      - name: Synchronize desktop release version
+        run: python scripts/sync_desktop_version.py
+
       - name: Run integration and release contract tests
         run: python -m pytest -q
 
