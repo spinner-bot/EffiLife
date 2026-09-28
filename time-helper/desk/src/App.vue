@@ -26,6 +26,7 @@ const checkinPlanName = ref('')
 // 是否已为今天的100%展示过打卡弹窗
 const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
+const startupError = ref(false)
 const showGlobalSearch = ref(false)
 
 function onGlobalKeydown(event: KeyboardEvent) {
@@ -35,6 +36,10 @@ function onGlobalKeydown(event: KeyboardEvent) {
   } else if (event.key === 'Escape') {
     showGlobalSearch.value = false
   }
+}
+
+function retryStartup() {
+  window.location.reload()
 }
 
 // 应用主题到 CSS 变量
@@ -88,10 +93,16 @@ function onCheckinClose() {
 
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
-  await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
-  await appStore.init()
-  await TodoService.migrateLegacyLocalStorage()
-  await repairTodoTimeRecordLinks()
+  try {
+    await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
+    await appStore.init()
+    await TodoService.migrateLegacyLocalStorage()
+    await repairTodoTimeRecordLinks()
+  } catch (error) {
+    console.error('Failed to initialize EffiLife workspace:', error)
+    startupError.value = true
+    return
+  }
   applyTheme()
   runtimeReady.value = true
   // Plan-helper may need network retries; do not delay the first usable frame.
@@ -206,6 +217,14 @@ watch(() => appStore.todayStat, () => {
     <ToastHost />
     </template>
 
+    <div v-else-if="startupError" class="app-startup app-startup-error" role="alert">
+      <span class="app-startup-mark">!</span>
+      <strong>{{ t('app.startupFailed') }}</strong>
+      <span>{{ t('app.startupFailedDescription') }}</span>
+      <button class="app-startup-retry" type="button" @click="retryStartup">
+        {{ t('app.retryStartup') }}
+      </button>
+    </div>
     <div v-else class="app-startup" role="status" aria-live="polite">
       <span class="app-startup-mark">E</span>
       <span>{{ t('app.starting') }}</span>
@@ -230,6 +249,11 @@ watch(() => appStore.todayStat, () => {
 }
 
 .app-startup { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 13px; transition: opacity .2s ease, transform .2s ease; }
+.app-startup-error { padding: 24px; text-align: center; }
+.app-startup-error strong { color: var(--color-text-primary); font-size: 16px; }
+.app-startup-error > span:not(.app-startup-mark) { max-width: 360px; }
+.app-startup-retry { border: 1px solid var(--color-border); border-radius: 10px; padding: 8px 14px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; }
+.app-startup-retry:hover { filter: brightness(1.06); }
 .app-startup-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: var(--color-button-text); background: var(--color-primary); font-size: 18px; font-weight: 700; box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0,0,0,.08)); }
 
 .global-nav {
