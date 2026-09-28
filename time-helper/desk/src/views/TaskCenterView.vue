@@ -16,6 +16,7 @@ import {
 } from '@/services/todoService'
 import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, updatePlanTask, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
+import { notifyToast } from '@/services/toastService'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -493,6 +494,7 @@ async function removeTodo(todo: UnifiedTodo) {
     }
     await TodoService.remove(todo.id)
     todos.value = todos.value.filter((item) => item.id !== todo.id)
+    notifyToast(t('tasks.deleted'), 'success')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
   }

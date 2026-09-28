@@ -14,3 +14,8 @@ def test_task_deletion_requires_a_localized_confirmation():
 def test_task_delete_confirmation_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     assert source.count("'tasks.deleteConfirm'") == 2
+
+
+def test_task_deletion_reports_success():
+    source = TASK_VIEW.read_text(encoding="utf-8")
+    assert "notifyToast(t('tasks.deleted'), 'success')" in source
