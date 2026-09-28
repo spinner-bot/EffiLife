@@ -107,7 +107,7 @@ function toMobilePlanSummary(raw: RawPlan, fallbackIndex: number): PlanSummary {
   const id = String(raw.head?.index ?? fallbackIndex)
   return {
     id,
-    name: String(raw.head?.name || `Plan ${id}`),
+    name: String(raw.head?.name || translate('plans.unnamed', { id })),
     date: Array.isArray(raw.head?.date) ? raw.head.date : undefined,
     total_tasks: tasks.length,
     completed_tasks: completed,
