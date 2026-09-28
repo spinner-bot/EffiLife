@@ -18,6 +18,7 @@ import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, upda
 import { getPriorityScore } from '@/services/priority'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -371,6 +372,14 @@ async function loadPlanTasks(planId: string) {
     planTasks.value = []
     planTaskState.value = 'unavailable'
   }
+}
+
+async function refreshFromWorkspace(source?: string): Promise<void> {
+  if (!source || !['todos', 'plans', 'records', 'archive'].includes(source)) return
+  await loadTodos()
+  await loadCategories()
+  if (source === 'plans' || source === 'archive') await loadPlanSummaries()
+  if (selectedPlanId.value) await loadPlanTasks(selectedPlanId.value)
 }
 
 async function completeTodo(todo: UnifiedTodo) {
@@ -777,7 +786,14 @@ function formatDeadline(deadline?: string): string {
   return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
 }
 
+let stopWorkspaceListener: (() => void) | null = null
+
 onMounted(async () => {
+  stopWorkspaceListener = onWorkspaceChanged((source) => {
+    void refreshFromWorkspace(source).catch((error) => {
+      console.warn('Failed to refresh task center after external change:', error)
+    })
+  })
   await loadTodos()
   await loadCategories()
   loadPlanSummaries()
@@ -792,6 +808,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  stopWorkspaceListener?.()
+  stopWorkspaceListener = null
   if (focusTodoId.value) {
     const activeFocusTodo = todos.value.find((todo) => todo.id === focusTodoId.value)
     if (activeFocusTodo) void stopFocus(activeFocusTodo)
