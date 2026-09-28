@@ -88,3 +88,11 @@ def test_release_preflight_passes_for_current_repository():
 def test_release_workflow_passes_matrix_bundle_to_tauri():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "npm run tauri build -- --bundles ${{ matrix.bundle }}" in workflow
+
+
+def test_release_workflow_verifies_non_empty_platform_installer():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "scripts/verify_release_artifacts.py" in workflow
+    assert "extension: .exe" in workflow
+    assert "extension: .deb" in workflow
+    assert "extension: .dmg" in workflow

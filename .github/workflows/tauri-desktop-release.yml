@@ -17,14 +17,17 @@ jobs:
           - name: windows-nsis
             os: windows-latest
             bundle: nsis
+            extension: .exe
             artifact: time-helper/desk/src-tauri/target/release/bundle/nsis/*.exe
           - name: linux-deb
             os: ubuntu-22.04
             bundle: deb
+            extension: .deb
             artifact: time-helper/desk/src-tauri/target/release/bundle/deb/*.deb
           - name: macos-dmg
             os: macos-latest
             bundle: dmg
+            extension: .dmg
             artifact: time-helper/desk/src-tauri/target/release/bundle/dmg/*.dmg
 
     permissions:
@@ -74,6 +77,12 @@ jobs:
       - name: Build and package installer
         working-directory: time-helper/desk
         run: npm run tauri build -- --bundles ${{ matrix.bundle }}
+
+      - name: Verify packaged installer
+        run: >-
+          python scripts/verify_release_artifacts.py
+          --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
+          --extension ${{ matrix.extension }}
 
       - name: Generate installer checksums
         run: >-

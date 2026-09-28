@@ -35,12 +35,15 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow has no installer checksum step")
     if "npm run tauri build -- --bundles ${{ matrix.bundle }}" not in workflow:
         errors.append("release workflow does not pass the matrix bundle target to Tauri")
-    for runner, bundle, artifact in (
-        ("windows-latest", "nsis", "bundle/nsis/*.exe"),
-        ("ubuntu-22.04", "deb", "bundle/deb/*.deb"),
-        ("macos-latest", "dmg", "bundle/dmg/*.dmg"),
+    if "scripts/verify_release_artifacts.py" not in workflow:
+        errors.append("release workflow has no packaged installer artifact verification step")
+    for runner, bundle, extension, artifact in (
+        ("windows-latest", "nsis", ".exe", "bundle/nsis/*.exe"),
+        ("ubuntu-22.04", "deb", ".deb", "bundle/deb/*.deb"),
+        ("macos-latest", "dmg", ".dmg", "bundle/dmg/*.dmg"),
     ):
-        if runner not in workflow or f"bundle: {bundle}" not in workflow or artifact not in workflow:
+        if (runner not in workflow or f"bundle: {bundle}" not in workflow
+                or f"extension: {extension}" not in workflow or artifact not in workflow):
             errors.append(f"release matrix entry is incomplete: {runner}/{bundle}")
     return errors
 
