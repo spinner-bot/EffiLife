@@ -128,6 +128,30 @@ const visibleTodos = computed(() => {
   })
 })
 
+const categorySummaries = computed(() => categories.value.map((category) => {
+  const items = activeTodos.value.filter((todo) => todo.category === category.id)
+  const score = items.reduce((total, todo) => total + Math.max(0, scoreFor(todo).score), 0)
+  return {
+    category,
+    count: items.length,
+    score: items.length > 0 ? score / Math.sqrt(items.length) : 0,
+  }
+}).sort((left, right) => {
+  if (Boolean(right.category.pinned) !== Boolean(left.category.pinned)) {
+    return Number(Boolean(right.category.pinned)) - Number(Boolean(left.category.pinned))
+  }
+  if ((right.count > 0) !== (left.count > 0)) return Number(right.count > 0) - Number(left.count > 0)
+  return right.score - left.score || left.category.name.localeCompare(right.category.name)
+}))
+
+const activeCategorySummaries = computed(() => categorySummaries.value.filter((item) => item.count > 0))
+const emptyCategorySummaries = computed(() => categorySummaries.value.filter((item) => item.count === 0))
+const showAllCategories = ref(false)
+const showEmptyCategories = ref(false)
+const visibleCategorySummaries = computed(() => showAllCategories.value
+  ? activeCategorySummaries.value
+  : activeCategorySummaries.value.slice(0, Math.max(1, todoSettings.value.expandCount)))
+
 const recurrenceLabels = computed<Record<TodoRecurrence, string>>(() => ({
   none: t('tasks.recurrenceNone'),
   daily: t('tasks.recurrenceDaily'),
@@ -696,6 +720,47 @@ watch(selectedPlanId, (planId) => {
         <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
       </section>
 
+      <section v-if="categories.length" class="task-category-nav theme-card">
+        <div class="task-category-nav-header">
+          <div>
+            <strong>{{ t('tasks.categoryRanking') }}</strong>
+            <small>{{ t('tasks.categoryRankingHint') }}</small>
+          </div>
+          <span v-if="activeCategorySummaries.length === 0" class="task-plan-status">{{ t('tasks.noActiveCategory') }}</span>
+        </div>
+        <div class="task-category-nav-list">
+          <button type="button" class="task-category-chip" :class="{ active: !categoryFilter }" @click="categoryFilter = ''">
+            {{ t('tasks.allCategories') }}
+          </button>
+          <button
+            v-for="item in visibleCategorySummaries"
+            :key="item.category.id"
+            type="button"
+            class="task-category-chip"
+            :class="{ active: categoryFilter === item.category.id }"
+            :style="{ '--category-color': item.category.color }"
+            @click="categoryFilter = item.category.id"
+          >
+            <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
+            <span>{{ item.category.name }}</span><small>{{ item.count }}</small>
+          </button>
+          <button v-if="activeCategorySummaries.length > Math.max(1, todoSettings.expandCount)" type="button" class="task-category-chip task-category-chip-more" @click="showAllCategories = !showAllCategories">
+            {{ showAllCategories ? t('tasks.hideMoreCategories') : t('tasks.showMoreCategories') }}
+          </button>
+        </div>
+        <div v-if="emptyCategorySummaries.length" class="task-empty-category-toggle">
+          <button type="button" @click="showEmptyCategories = !showEmptyCategories">
+            {{ showEmptyCategories ? t('tasks.hideEmptyCategories') : t('tasks.showEmptyCategories') }} ({{ emptyCategorySummaries.length }})
+          </button>
+        </div>
+        <div v-if="showEmptyCategories" class="task-category-nav-list task-empty-category-list">
+          <button v-for="item in emptyCategorySummaries" :key="item.category.id" type="button" class="task-category-chip" :class="{ active: categoryFilter === item.category.id }" :style="{ '--category-color': item.category.color }" @click="categoryFilter = item.category.id">
+            <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
+            <span>{{ item.category.name }}</span><small>0</small>
+          </button>
+        </div>
+      </section>
+
       <section v-if="showCategoryManager" class="category-manager theme-card" @keydown.esc="showCategoryManager = false">
         <div class="category-manager-header">
           <div>
@@ -741,6 +806,14 @@ watch(selectedPlanId, (planId) => {
               <option :value="15000">15s</option>
               <option :value="30000">30s</option>
               <option :value="60000">60s</option>
+            </select>
+          </label>
+          <label>{{ t('tasks.categoryExpandCount') }}
+            <select v-model.number="todoSettings.expandCount" :disabled="settingsSaving" @change="saveTodoSettings">
+              <option :value="3">3</option>
+              <option :value="5">5</option>
+              <option :value="8">8</option>
+              <option :value="10">10</option>
             </select>
           </label>
         </div>
@@ -882,6 +955,18 @@ watch(selectedPlanId, (planId) => {
 .task-category-manage { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
+.task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
+.task-category-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.task-category-nav-header > div { display: grid; gap: 3px; }
+.task-category-nav-header strong { color: var(--color-text-primary); font-size: 13px; }
+.task-category-nav-header small { color: var(--color-text-tertiary); font-size: 11px; }
+.task-category-nav-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.task-category-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-left: 3px solid var(--category-color, var(--color-border)); border-radius: 9px; padding: 5px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
+.task-category-chip:hover, .task-category-chip.active { border-color: var(--category-color, var(--color-primary)); color: var(--color-text-primary); background: var(--color-primary-muted); }
+.task-category-chip small { color: var(--color-text-tertiary); font-size: 10px; }
+.task-category-chip-more, .task-empty-category-toggle button { border-style: dashed; color: var(--color-primary); }
+.task-empty-category-toggle button { border: 0; padding: 0; background: transparent; cursor: pointer; font-size: 11px; }
+.task-empty-category-list { padding-top: 2px; border-top: 1px dashed var(--color-border); }
 .task-ranking-settings { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; border-top: 1px solid var(--color-border); color: var(--color-text-tertiary); font-size: 11px; }
 .task-ranking-settings label { display: inline-flex; align-items: center; gap: 6px; }
 .task-ranking-settings select { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
