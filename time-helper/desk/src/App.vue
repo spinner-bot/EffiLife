@@ -92,9 +92,10 @@ onMounted(async () => {
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
   await repairTodoTimeRecordLinks()
-  await repairTodoPlanTaskLinks()
   applyTheme()
   runtimeReady.value = true
+  // Plan-helper may need network retries; do not delay the first usable frame.
+  void repairTodoPlanTaskLinks()
 
   // 启动背景音乐
   AudioManager.startBgm()

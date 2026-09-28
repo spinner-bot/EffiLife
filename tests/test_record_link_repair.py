@@ -33,4 +33,5 @@ def test_startup_repairs_only_provably_stale_plan_task_links():
 def test_app_runs_plan_task_link_repair_after_record_link_repair():
     source = APP.read_text(encoding="utf-8")
     assert "repairTodoPlanTaskLinks" in source
-    assert "await repairTodoPlanTaskLinks()" in source
+    assert "void repairTodoPlanTaskLinks()" in source
+    assert source.index("runtimeReady.value = true") < source.index("void repairTodoPlanTaskLinks()")
