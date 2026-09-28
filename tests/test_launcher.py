@@ -275,6 +275,15 @@ def test_launcher_exposes_a_scriptable_version_command():
     assert "print(app_version() or \"unknown\")" in source
 
 
+def test_launcher_version_command_short_circuits_module_detection(monkeypatch):
+    calls = []
+    monkeypatch.setattr(sys, "argv", ["start.py", "--version"])
+    monkeypatch.setattr(launcher, "build_modules", lambda: calls.append(True))
+    monkeypatch.setattr(launcher, "app_version", lambda: "9.9.9")
+    launcher.main()
+    assert calls == []
+
+
 def test_unified_launcher_supports_no_browser_mode():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "def run_module(choice, modules, open_browser=True)" in source
