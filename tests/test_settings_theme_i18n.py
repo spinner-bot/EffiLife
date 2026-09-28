@@ -85,3 +85,8 @@ def test_locale_catalogs_have_the_same_translation_keys():
     zh_keys = set(pattern.findall(zh_match.group('body')))
     en_keys = set(pattern.findall(en_match.group('body')))
     assert zh_keys == en_keys
+
+
+def test_theme_save_failure_message_exists_in_both_locales():
+    source = I18N.read_text(encoding="utf-8")
+    assert source.count("'settings.saveFailed'") == 2

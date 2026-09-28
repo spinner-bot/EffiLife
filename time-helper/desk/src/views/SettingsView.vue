@@ -264,8 +264,14 @@ async function saveTheme() {
     ...config.value,
     theme: buildDraftTheme()
   }
-  await appStore.saveConfig(newConfig)
-  savedThemeSnapshot.value = cloneTheme(newConfig.theme)
+  try {
+    await appStore.saveConfig(newConfig)
+    savedThemeSnapshot.value = cloneTheme(newConfig.theme)
+    notifyToast(t('settings.saved'), 'success')
+  } catch (error) {
+    console.error('Failed to save theme settings:', error)
+    notifyToast(t('settings.saveFailed'), 'error')
+  }
 }
 
 // 纯色预设

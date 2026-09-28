@@ -20,3 +20,10 @@ def test_theme_save_refreshes_persistent_snapshot():
     assert "await appStore.saveConfig(newConfig)" in source
     assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
     assert "function discardThemeChanges()" in source
+
+
+def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "notifyToast(t('settings.saved'), 'success')" in source
+    assert "notifyToast(t('settings.saveFailed'), 'error')" in source
+    assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
