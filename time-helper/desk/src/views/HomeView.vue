@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm } from '@/services/dataService'
-import { ClipboardList, Calendar, Settings, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
+import { ClipboardList, Clock3, Settings, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -456,9 +456,9 @@ onUnmounted(() => {
           <ClipboardList :size="22" />
           <span>{{ t('nav.plan') }}</span>
         </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/calendar')">
-          <Calendar :size="22" />
-          <span>{{ t('nav.calendar') }}</span>
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/records')">
+          <Clock3 :size="22" />
+          <span>{{ t('nav.records') }}</span>
         </button>
         <button class="nav-btn checkin-nav" @click="AudioManager.playSound('click'); router.push('/checkin')">
           <CheckCircle :size="22" />

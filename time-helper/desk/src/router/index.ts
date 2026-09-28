@@ -29,10 +29,10 @@ const router = createRouter({
       name: 'records',
       component: () => import('@/views/RecordsView.vue'),
     },
+    // Keep old bookmarks usable after removing the standalone calendar entry.
     {
       path: '/calendar',
-      name: 'calendar',
-      component: () => import('@/views/CalendarView.vue'),
+      redirect: '/records',
     },
     {
       path: '/management',

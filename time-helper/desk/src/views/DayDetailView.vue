@@ -93,7 +93,7 @@ onMounted(loadData)
     <header class="header">
       <button class="back-btn" @click="router.push('/calendar')">
         <ArrowLeft :size="16" />
-        <span>{{ t('dayDetail.back') }}</span>
+        <span>{{ t('dayDetail.backToRecords') }}</span>
       </button>
       <h1>{{ dateStr }} {{ t('dayDetail.titleSuffix') }}</h1>
     </header>
