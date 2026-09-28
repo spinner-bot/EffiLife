@@ -1,0 +1,23 @@
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+TASKS = ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue"
+I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
+
+
+def test_focus_timer_reuses_unified_time_record_and_todo_tracking():
+    source = TASKS.read_text(encoding="utf-8")
+    assert "const focusTodoId = ref<string | null>(null)" in source
+    assert "function startFocus(todo: UnifiedTodo)" in source
+    assert "async function stopFocus(todo: UnifiedTodo)" in source
+    assert "await persistTodoTime(todo, minutes, startedAt)" in source
+    assert "DataService.saveRecord" in source
+    assert "TodoService.trackTime" in source
+    assert "focusTodoId === todo.id ? stopFocus(todo) : startFocus(todo)" in source
+
+
+def test_focus_timer_copy_exists_in_both_locales():
+    source = I18N.read_text(encoding="utf-8")
+    for key in ("tasks.startFocus", "tasks.stopFocus", "tasks.focusHint"):
+        assert source.count(f"'{key}'") == 2

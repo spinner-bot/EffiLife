@@ -55,6 +55,9 @@ const subtaskTitle = ref('')
 const subtaskSaving = ref(false)
 const trackedMinutes = ref(25)
 const trackingTodoId = ref<string | null>(null)
+const focusTodoId = ref<string | null>(null)
+const focusStartedAt = ref<number | null>(null)
+const focusElapsedSeconds = ref(0)
 const planSummaries = ref<PlanSummary[]>([])
 const planGatewayState = ref<PlanGatewayState>('idle')
 const planTasks = ref<PlanTaskSummary[]>([])
@@ -76,6 +79,7 @@ const priorityClock = ref(Date.now())
 const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
 const settingsSaving = ref(false)
 let priorityTimer: number | null = null
+let focusTimer: number | null = null
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
@@ -425,12 +429,11 @@ function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
 
-async function trackTodoTime(todo: UnifiedTodo) {
-  if (trackingTodoId.value || !Number.isInteger(trackedMinutes.value) || trackedMinutes.value < 1 || trackedMinutes.value > 1440) return
+async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = new Date()) {
+  if (trackingTodoId.value) return
   trackingTodoId.value = todo.id
   try {
-    const minutes = trackedMinutes.value
-    const startDate = new Date()
+    const startDate = new Date(startedAt)
     startDate.setSeconds(0, 0)
     let cursor = startDate
     let remaining = minutes
@@ -476,12 +479,51 @@ async function trackTodoTime(todo: UnifiedTodo) {
       if (rollbackErrors.length > 0) throw new Error(t('tasks.error.trackTimeRollback'))
       throw error
     }
-    trackedMinutes.value = 25
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')
   } finally {
     trackingTodoId.value = null
   }
+}
+
+async function trackTodoTime(todo: UnifiedTodo) {
+  if (!Number.isInteger(trackedMinutes.value) || trackedMinutes.value < 1 || trackedMinutes.value > 1440) return
+  await persistTodoTime(todo, trackedMinutes.value)
+  trackedMinutes.value = 25
+}
+
+const focusElapsedLabel = computed(() => {
+  const minutes = Math.floor(focusElapsedSeconds.value / 60)
+  const seconds = focusElapsedSeconds.value % 60
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+})
+
+function clearFocusTimer() {
+  if (focusTimer !== null) window.clearInterval(focusTimer)
+  focusTimer = null
+}
+
+function startFocus(todo: UnifiedTodo) {
+  if (focusTodoId.value || trackingTodoId.value) return
+  focusTodoId.value = todo.id
+  focusStartedAt.value = Date.now()
+  focusElapsedSeconds.value = 0
+  focusTimer = window.setInterval(() => {
+    if (focusStartedAt.value !== null) {
+      focusElapsedSeconds.value = Math.floor((Date.now() - focusStartedAt.value) / 1000)
+    }
+  }, 1000)
+}
+
+async function stopFocus(todo: UnifiedTodo) {
+  if (focusTodoId.value !== todo.id || focusStartedAt.value === null) return
+  const startedAt = new Date(focusStartedAt.value)
+  const minutes = Math.max(1, Math.ceil((Date.now() - focusStartedAt.value) / 60000))
+  clearFocusTimer()
+  focusTodoId.value = null
+  focusStartedAt.value = null
+  focusElapsedSeconds.value = 0
+  await persistTodoTime(todo, minutes, startedAt)
 }
 
 async function addSubtask(todo: UnifiedTodo) {
@@ -535,6 +577,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (priorityTimer !== null) window.clearInterval(priorityTimer)
+  clearFocusTimer()
 })
 
 watch(selectedPlanId, (planId) => {
@@ -737,6 +780,13 @@ watch(selectedPlanId, (planId) => {
               <span>{{ t('tasks.minutesShort') }}</span>
               <button type="submit" :disabled="trackingTodoId === todo.id">{{ trackingTodoId === todo.id ? t('tasks.saving') : t('tasks.recordTime') }}</button>
             </form>
+            <div class="focus-track-form">
+              <button type="button" :disabled="Boolean(focusTodoId && focusTodoId !== todo.id) || trackingTodoId === todo.id" @click="focusTodoId === todo.id ? stopFocus(todo) : startFocus(todo)">
+                {{ focusTodoId === todo.id ? t('tasks.stopFocus') : t('tasks.startFocus') }}
+              </button>
+              <span v-if="focusTodoId === todo.id" class="focus-elapsed">{{ focusElapsedLabel }}</span>
+              <span v-else class="focus-hint">{{ t('tasks.focusHint') }}</span>
+            </div>
             <form class="subtask-add-form" @submit.prevent="addSubtask(todo)">
               <input v-model="subtaskTitle" :placeholder="t('tasks.subtaskPlaceholder')" :disabled="subtaskSaving" />
               <button type="submit" :disabled="subtaskSaving || !subtaskTitle.trim()"><Plus :size="14" /> {{ t('tasks.addSubtask') }}</button>
@@ -763,6 +813,11 @@ watch(selectedPlanId, (planId) => {
 .task-select { border: 1px solid var(--color-border); border-radius: 10px; padding: 0 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-date-input { width: 132px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-number-input { width: 62px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.focus-track-form { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--color-border); }
+.focus-track-form button { border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 10px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-size: 12px; }
+.focus-track-form button:disabled { opacity: .55; cursor: not-allowed; }
+.focus-elapsed { color: var(--color-primary); font-family: var(--font-mono, monospace); font-size: 13px; font-variant-numeric: tabular-nums; }
+.focus-hint { color: var(--color-text-tertiary); font-size: 11px; }
 .task-estimate-input { width: 70px; }
 .task-check-label { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
 .task-add { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 10px; padding: 0 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
