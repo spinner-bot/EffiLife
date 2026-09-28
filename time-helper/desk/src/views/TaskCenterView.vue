@@ -642,6 +642,7 @@ async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = n
       }
 
       replaceTodo(await TodoService.trackTime(todo.id, minutes, recordRefs.map((record) => record.id)))
+      notifyToast(t('tasks.timeRecorded', { minutes }), 'success')
     } catch (error) {
       const rollbackErrors: unknown[] = []
       for (const record of recordRefs) {

@@ -23,6 +23,13 @@ def test_focus_timer_copy_exists_in_both_locales():
         assert source.count(f"'{key}'") == 2
 
 
+def test_recorded_todo_time_confirms_cross_module_sync():
+    source = TASKS.read_text(encoding="utf-8")
+    catalog = I18N.read_text(encoding="utf-8")
+    assert "notifyToast(t('tasks.timeRecorded', { minutes }), 'success')" in source
+    assert catalog.count("'tasks.timeRecorded':") == 2
+
+
 def test_focus_timer_is_saved_when_task_center_unmounts():
     source = TASKS.read_text(encoding="utf-8")
     assert "onUnmounted(() => {" in source
