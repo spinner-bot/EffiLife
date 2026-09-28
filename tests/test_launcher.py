@@ -71,6 +71,21 @@ def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
 
 
+def test_launcher_forwards_configured_unified_data_dir_to_plan_helper(monkeypatch, tmp_path):
+    monkeypatch.setenv("EFFILIFE_DATA_DIR", str(tmp_path / "effilife-data"))
+    command = launcher.plan_helper_command()
+    assert command[:2] == [sys.executable, "web/server.py"]
+    assert command[-2:] == ["--data-dir", str(tmp_path / "effilife-data")]
+    modules = launcher.build_modules()
+    assert modules["1"]["companions"][0]["cmd"] == command
+    assert modules["2"]["cmd"] == command
+
+
+def test_launcher_keeps_legacy_data_location_when_no_data_dir_is_configured(monkeypatch):
+    monkeypatch.delenv("EFFILIFE_DATA_DIR", raising=False)
+    assert launcher.plan_helper_command() == [sys.executable, "web/server.py"]
+
+
 def test_health_probe_requires_plan_helper_identity(monkeypatch):
     class Response:
         status = 200

@@ -26,6 +26,27 @@ VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 CUSTOM_NODE_DIR = Path(os.environ.get("EFFILIFE_NODE_DIR", "F:/dev-tools/node"))
 
 
+def configured_data_dir():
+    """Return the optional unified runtime data directory.
+
+    Development launches keep the historical plan-helper data location when
+    this is unset. Packaged launchers can set ``EFFILIFE_DATA_DIR`` so every
+    sidecar writes below the platform-specific application data root without
+    hard-coding a path into the repository.
+    """
+    raw = os.environ.get("EFFILIFE_DATA_DIR", "").strip()
+    return Path(raw).expanduser() if raw else None
+
+
+def plan_helper_command():
+    """Build the sidecar command, forwarding the unified data root if set."""
+    command = [sys.executable, "web/server.py"]
+    data_dir = configured_data_dir()
+    if data_dir is not None:
+        command.extend(["--data-dir", str(data_dir)])
+    return command
+
+
 def find_npm():
     """Find npm executable, checking custom location first"""
     # npm.cmd is only useful when the matching Node runtime is available.
@@ -234,7 +255,7 @@ def build_modules():
             "setup": th_setup,
             "companions": [{
                 "name": "plan-helper API",
-                "cmd": [sys.executable, "web/server.py"],
+                "cmd": plan_helper_command(),
                 "cwd": BASE_DIR / "plan-helper",
                 "url": "http://127.0.0.1:8765",
                 "health_url": "http://127.0.0.1:8765/api/health",
@@ -243,7 +264,7 @@ def build_modules():
         "2": {
             "name": "plan-helper（兼容入口）",
             "desc": "旧版计划编辑器，仅用于迁移与调试",
-            "cmd": [sys.executable, "web/server.py"],
+            "cmd": plan_helper_command(),
             "cwd": BASE_DIR / "plan-helper",
             "url": "http://127.0.0.1:8765",
             "setup": None,
@@ -330,6 +351,7 @@ def collect_diagnostics(modules):
     return {
         "base_dir": str(BASE_DIR),
         "version": app_version(),
+        "data_dir": str(configured_data_dir()) if configured_data_dir() else None,
         "python": sys.executable,
         "node": node,
         "npm": npm,
