@@ -4,17 +4,17 @@ EffiLife 集成系统入口
 启动集成系统，注册所有模块，提供统一命令行界面。
 
 用法:
-    python run_integration.py                   # 交互模式
-    python run_integration.py stats             # 查看统计
-    python run_integration.py dashboard         # 查看仪表盘
-    python run_integration.py test              # 运行集成测试
-    python run_integration.py benchmark         # 运行性能测试
+    python scripts/run_integration.py                   # 交互模式
+    python scripts/run_integration.py stats             # 查看统计
+    python scripts/run_integration.py dashboard         # 查看仪表盘
+    python scripts/run_integration.py test              # 运行集成测试
+    python scripts/run_integration.py benchmark         # 运行性能测试
 """
 
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / 'to-dos'))
 

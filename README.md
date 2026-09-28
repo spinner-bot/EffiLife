@@ -42,6 +42,8 @@ EffLife/
 ├── to-dos/              # 待办领域模型、优先级算法与兼容入口
 ├── common/              # Python 跨模块适配、事件与数据交换层
 ├── launcher/            # 开发/测试启动器，不属于正式产品入口
+├── scripts/             # 集成、构建、发布预检与维护脚本
+├── artifacts/releases/  # 本机发布产物收纳处（默认忽略二进制）
 ├── tests/               # 集成测试与发布前静态门禁
 └── docs/                # 设计方案、需求与进展报告
 ```
@@ -157,8 +159,8 @@ python tests/test_integration.py
 python tests/test_benchmark.py
 
 # 启动集成系统
-python run_integration.py stats
-python run_integration.py dashboard
+python scripts/run_integration.py stats
+python scripts/run_integration.py dashboard
 ```
 
 ---

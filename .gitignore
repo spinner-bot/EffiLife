@@ -5,6 +5,14 @@
 *.deb
 *.rpm
 
+# Local release artifacts; source and release metadata remain tracked.
+/artifacts/releases/*.exe
+/artifacts/releases/*.msi
+/artifacts/releases/*.dmg
+/artifacts/releases/*.AppImage
+/artifacts/releases/*.deb
+/artifacts/releases/*.rpm
+
 # IDE
 .idea/
 .vscode/
