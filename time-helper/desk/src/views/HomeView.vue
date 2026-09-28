@@ -8,7 +8,8 @@ import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
-import { TodoService, type UnifiedTodo } from '@/services/todoService'
+import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
+import { getPriorityScore } from '@/services/priority'
 import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
@@ -43,20 +44,16 @@ function activateDailyPlan(event: KeyboardEvent) {
 
 async function refreshTodoSummary() {
   try {
-    const todos = await TodoService.list()
+    const [todos, categories] = await Promise.all([TodoService.list(), TodoCategoryService.list()])
+    const categoryById = new Map(categories.map((category) => [category.id, category]))
     const active = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status))
     activeTodoCount.value = active.length
     todayTodos.value = [...active]
       .sort((a, b) => {
         if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1
-        const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
-        const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
-        if (aDeadline !== bDeadline) return aDeadline - bDeadline
-        const priorityRank: Record<string, number> = { 'urgent-important': 0, important: 1, urgent: 2, normal: 3 }
-        if ((priorityRank[a.priority] ?? 3) !== (priorityRank[b.priority] ?? 3)) {
-          return (priorityRank[a.priority] ?? 3) - (priorityRank[b.priority] ?? 3)
-        }
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        const scoreDelta = getPriorityScore(b, categoryById.get(b.category)).score - getPriorityScore(a, categoryById.get(a.category)).score
+        if (scoreDelta !== 0) return scoreDelta
+        return b.updated_at.localeCompare(a.updated_at)
       })
       .slice(0, 3)
   } catch {

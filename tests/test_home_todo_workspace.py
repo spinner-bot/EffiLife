@@ -36,3 +36,11 @@ def test_home_todos_support_quick_completion_without_leaving_home():
     assert "await TodoService.complete(todo.id)" in source
     assert "class=\"today-todo-complete\"" in source
     assert "await refreshTodoSummary()" in source
+
+
+def test_home_summary_uses_the_shared_dynamic_priority_order():
+    source = HOME.read_text(encoding="utf-8")
+    assert "import { getPriorityScore } from '@/services/priority'" in source
+    assert "TodoCategoryService.list()" in source
+    assert "getPriorityScore(b, categoryById.get(b.category)).score" in source
+    assert "b.updated_at.localeCompare(a.updated_at)" in source
