@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
@@ -10,6 +10,7 @@ import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
 const router = useRouter()
 const route = useRoute()
@@ -31,6 +32,16 @@ const linkedTodoFromQuery = computed(() => {
   const value = route.query.todo
   return typeof value === 'string' ? value : ''
 })
+
+async function loadTodoOptions(): Promise<void> {
+  try {
+    todos.value = await TodoService.list()
+  } catch {
+    todos.value = []
+  }
+}
+
+let stopWorkspaceListener: (() => void) | null = null
 
 function openLinkedTodo(todoId: string) {
   router.push({ path: '/tasks', query: { todo: todoId } })
@@ -301,17 +312,21 @@ async function deleteRecord(index: number) {
 
 onMounted(async () => {
   formTag.value = availableTags.value[0] || ''
-  try {
-    todos.value = await TodoService.list()
-  } catch {
-    todos.value = []
-  }
+  stopWorkspaceListener = onWorkspaceChanged((source) => {
+    if (source === 'todos' || source === 'archive') void loadTodoOptions()
+  })
+  await loadTodoOptions()
   // A task with no existing record opens the record form with its relation
   // preselected, completing the task -> time-record workflow.
   if (linkedTodoFromQuery.value && todos.value.some((todo) => todo.id === linkedTodoFromQuery.value)) {
     openAddForm()
     selectedTodoId.value = linkedTodoFromQuery.value
   }
+})
+
+onUnmounted(() => {
+  stopWorkspaceListener?.()
+  stopWorkspaceListener = null
 })
 </script>
 
