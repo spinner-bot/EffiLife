@@ -83,6 +83,7 @@ export interface ArchiveData {
   todoSettings: TodoSettings
   importRepairs?: {
     todoRecordLinks: number
+    todoPlanTaskLinks: number
   }
   planHelper: {
     available: boolean
@@ -445,8 +446,9 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     }
 
     const records = normalizeImportedRecords(datasets.records)
-    const repairedTodos = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
-    const categories = normalizeImportedCategories(datasets.todo_categories, repairedTodos.todos)
+    const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
+    const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, planHelper)
+    const categories = normalizeImportedCategories(datasets.todo_categories, repairedPlanLinks.todos)
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
@@ -462,10 +464,10 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records,
-      todos: repairedTodos.todos,
+      todos: repairedPlanLinks.todos,
       categories,
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
-      importRepairs: { todoRecordLinks: repairedTodos.repaired },
+      importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
       planHelper: (planHelper && typeof planHelper === 'object' ? planHelper : { available: false, plans: [] }) as ArchiveData['planHelper'],
     }
   }
@@ -487,16 +489,17 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
   }
   const records = normalizeImportedRecords(legacy.records)
-  const repairedTodos = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
-  const categories = normalizeImportedCategories(undefined, repairedTodos.todos)
+  const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
+  const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, legacy.planHelper)
+  const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
     ...legacy,
     records,
     locale: legacy.locale || 'zh-CN',
-    todos: repairedTodos.todos,
+    todos: repairedPlanLinks.todos,
     categories,
     todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
-    importRepairs: { todoRecordLinks: repairedTodos.repaired },
+    importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
     planHelper: legacy.planHelper || { available: false, plans: [] },
   }
 }
@@ -571,6 +574,54 @@ function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<str
     if (validIds.length === todo.related_time_record_ids.length) return todo
     repaired += todo.related_time_record_ids.length - validIds.length
     return { ...todo, related_time_record_ids: validIds.length ? validIds : undefined }
+  })
+  return { todos: repairedTodos, repaired }
+}
+
+function planLetter(index: number): string {
+  let value = index
+  let result = ''
+  do {
+    result = String.fromCharCode(65 + (value % 26)) + result
+    value = Math.floor(value / 26) - 1
+  } while (value >= 0)
+  return result
+}
+
+function repairImportedTodoPlanLinks(todos: UnifiedTodo[], rawPlanHelper: unknown): { todos: UnifiedTodo[]; repaired: number } {
+  if (!rawPlanHelper || typeof rawPlanHelper !== 'object') return { todos, repaired: 0 }
+  const snapshot = rawPlanHelper as { available?: unknown; plans?: unknown }
+  if (snapshot.available !== true || !Array.isArray(snapshot.plans)) return { todos, repaired: 0 }
+
+  const taskIdsByPlan = new Map<string, Set<string>>()
+  snapshot.plans.forEach((raw, planIndex) => {
+    if (!raw || typeof raw !== 'object') return
+    const plan = raw as { head?: { index?: unknown }; main?: unknown }
+    const planId = String(plan.head?.index ?? planIndex)
+    const taskIds = new Set<string>()
+    const sections = Array.isArray(plan.main) ? plan.main : []
+    sections.forEach((rawSection, sectionIndex) => {
+      if (!rawSection || typeof rawSection !== 'object') return
+      const section = rawSection as { plan?: unknown }
+      const rawTasks = Array.isArray(section.plan) ? section.plan : []
+      let displayIndex = 0
+      rawTasks.forEach((rawTask, internalIndex) => {
+        if (internalIndex === 0 || !rawTask || typeof rawTask !== 'object' || (rawTask as { is_active?: unknown }).is_active === false) return
+        displayIndex += 1
+        taskIds.add(`${planLetter(sectionIndex)}${internalIndex}`)
+        taskIds.add(`${planLetter(sectionIndex)}${displayIndex}`)
+      })
+    })
+    taskIdsByPlan.set(planId, taskIds)
+  })
+
+  let repaired = 0
+  const repairedTodos = todos.map((todo) => {
+    if (!todo.related_plan_id || !todo.related_plan_task_id) return todo
+    const taskIds = taskIdsByPlan.get(String(todo.related_plan_id))
+    if (taskIds?.has(String(todo.related_plan_task_id))) return todo
+    repaired += 1
+    return { ...todo, related_plan_id: undefined, related_plan_task_id: undefined }
   })
   return { todos: repairedTodos, repaired }
 }
@@ -707,6 +758,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     const warnings: string[] = []
     if (data.importRepairs?.todoRecordLinks) {
       warnings.push(translate('settings.archive.repairedTodoRecordLinks', { count: data.importRepairs.todoRecordLinks }))
+    }
+    if (data.importRepairs?.todoPlanTaskLinks) {
+      warnings.push(translate('settings.archive.repairedTodoPlanTaskLinks', { count: data.importRepairs.todoPlanTaskLinks }))
     }
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
