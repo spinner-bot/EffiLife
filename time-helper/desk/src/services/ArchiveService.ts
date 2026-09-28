@@ -31,6 +31,33 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Serialize bundle datasets with the same rules as common.data_exchange.
+ *
+ * The Python side uses ``json.dumps(..., indent=2, sort_keys=True,
+ * ensure_ascii=False)``. Object insertion order is not a data contract, so
+ * hashing the raw JSON.stringify result would make an otherwise identical
+ * archive fail verification after crossing the frontend/Python boundary.
+ */
+function canonicalJson(value: unknown): string {
+  const normalize = (current: unknown): unknown => {
+    if (Array.isArray(current)) return current.map(normalize)
+    if (current && typeof current === 'object') {
+      const object = current as Record<string, unknown>
+      return Object.fromEntries(
+        Object.keys(object)
+          .sort()
+          .map((key) => [key, normalize(object[key])]),
+      )
+    }
+    return current
+  }
+
+  const serialized = JSON.stringify(normalize(value), null, 2)
+  if (serialized === undefined) throw new Error('无法序列化存档数据')
+  return serialized
+}
+
 // 检测是否在 Tauri 环境
 function isTauri(): boolean {
   return !!(window as any).__TAURI__
@@ -297,11 +324,11 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const { records, todos, categories, planHelper, ...app } = data
   const datasets = ['app', 'records', 'todos', 'todo_categories', 'plan_helper']
   const datasetPayloads = {
-    app: JSON.stringify(app, null, 2),
-    records: JSON.stringify(records, null, 2),
-    todos: JSON.stringify(todos, null, 2),
-    todo_categories: JSON.stringify(categories, null, 2),
-    plan_helper: JSON.stringify(planHelper, null, 2),
+    app: canonicalJson(app),
+    records: canonicalJson(records),
+    todos: canonicalJson(todos),
+    todo_categories: canonicalJson(categories),
+    plan_helper: canonicalJson(planHelper),
   }
   const datasetSha256: Record<string, string> = {}
   for (const name of datasets) {

@@ -12,6 +12,17 @@ def test_unified_archive_exports_all_workspace_datasets():
     assert "zip.file(`data/${name}.json`, datasetPayloads[name as keyof typeof datasetPayloads])" in source
 
 
+def test_unified_archive_uses_canonical_json_before_hashing():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "function canonicalJson(value: unknown): string" in source
+    assert ".sort()" in source
+    assert "app: canonicalJson(app)" in source
+    assert "records: canonicalJson(records)" in source
+    assert "todos: canonicalJson(todos)" in source
+    assert "todo_categories: canonicalJson(categories)" in source
+    assert "plan_helper: canonicalJson(planHelper)" in source
+
+
 def test_unified_archive_import_restores_todos_records_and_plan_snapshot():
     source = ARCHIVE.read_text(encoding="utf-8")
     assert "await idbClear(STORE_NAMES.RECORDS)" in source
