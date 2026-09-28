@@ -11,7 +11,7 @@ def test_theme_changes_preview_before_save_and_confirm_on_exit():
     assert "appStore.previewConfig({ ...config.value, theme })" in source
     assert "const themeDirty = computed" in source
     assert "if (currentView.value === 'theme' && themeDirty.value)" in source
-    assert "confirm(t('settings.theme.unsavedConfirm'))" in source
+    assert "await requestConfirm(t('settings.theme.unsavedConfirm'))" in source
 
 
 def test_theme_save_refreshes_persistent_snapshot():

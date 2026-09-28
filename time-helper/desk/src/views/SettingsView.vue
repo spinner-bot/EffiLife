@@ -16,6 +16,7 @@ import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 import { getTodayDate } from '@/services/dataService'
 import { getAvailableThemes } from '@/theme/ThemeEngine'
 
@@ -106,7 +107,7 @@ function navigateTo(view: ViewType) {
 // 返回上一级
 async function goBack() {
   if (currentView.value === 'theme' && themeDirty.value) {
-    const shouldSave = confirm(t('settings.theme.unsavedConfirm'))
+    const shouldSave = await requestConfirm(t('settings.theme.unsavedConfirm'))
     if (shouldSave) await saveTheme()
     else await discardThemeChanges()
   }
@@ -378,7 +379,7 @@ async function handleReset(type: ResetType) {
     settings: t('settings.reset.confirmSettings'),
   }
 
-  if (!confirm(messages[type])) return
+  if (!await requestConfirm(messages[type], { tone: 'danger' })) return
   await resetData(type)
 }
 
@@ -412,13 +413,13 @@ async function handleImportArchive() {
   if ((window as any).__TAURI__) {
     archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
-    const result = await importArchiveWithDialog((preview) => confirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`))
+    const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
     if (result.cancelled) {
       archiveBusy.value = false
       return
     }
     if (result.success) {
-      if (confirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
+      if (await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
         window.location.reload()
       }
     } else {
@@ -452,7 +453,7 @@ async function onFileSelected(event: Event) {
     return
   }
 
-  if (!confirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`)) {
+  if (!await requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' })) {
     archiveBusy.value = false
     return
   }
@@ -493,7 +494,7 @@ async function onLegacyTodoSelected(event: Event) {
   input.value = ''
   if (!file) return
   archiveBusy.value = true
-  if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) {
+  if (!await requestConfirm(t('settings.archive.legacyTodoImportConfirm'), { tone: 'danger' })) {
     archiveBusy.value = false
     return
   }
@@ -522,7 +523,7 @@ async function loadDataStatus() {
 }
 
 async function handleRestoreBackup(backup: BackupData) {
-  if (!confirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString(locale.value)}${t('settings.restore.confirmSuffix')}`)) {
+  if (!await requestConfirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString(locale.value)}${t('settings.restore.confirmSuffix')}`, { tone: 'danger' })) {
     return
   }
 
@@ -530,7 +531,7 @@ async function handleRestoreBackup(backup: BackupData) {
     const result = await restoreFromSpecificBackup(backup)
     if (result.success) {
       notifyToast(result.message + '\n\n' + t('settings.archive.reloadConfirm'), 'success')
-      if (confirm(t('settings.archive.reloadNow'))) {
+      if (await requestConfirm(t('settings.archive.reloadNow'))) {
         window.location.reload()
       }
     } else {
@@ -586,7 +587,7 @@ onMounted(async () => {
     if (status.localStorageEmpty && status.indexedDBEmpty) {
       // 数据都为空，检查是否有备份
       if (status.hasBackups) {
-        if (confirm(t('settings.restore.emptyWithBackups'))) {
+        if (await requestConfirm(t('settings.restore.emptyWithBackups'))) {
           navigateTo('restore')
         }
       }
