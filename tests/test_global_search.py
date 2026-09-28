@@ -38,6 +38,8 @@ def test_global_search_refreshes_when_unified_data_changes():
     assert "onWorkspaceChanged" in source
     assert "if (props.open) void loadIndex()" in source
     assert "WORKSPACE_CHANGED_EVENT" in events
+    assert "BroadcastChannel" in events
+    assert "channel?.postMessage" in events
     assert "notifyWorkspaceChanged('todos')" in todo_service
     assert "notifyWorkspaceChanged('plans')" in plan_gateway
     assert "notifyWorkspaceChanged('records')" in app_store
