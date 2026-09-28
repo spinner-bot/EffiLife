@@ -512,7 +512,7 @@ async function loadDataStatus() {
 }
 
 async function handleRestoreBackup(backup: BackupData) {
-  if (!confirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString()}${t('settings.restore.confirmSuffix')}`)) {
+  if (!confirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString(locale.value)}${t('settings.restore.confirmSuffix')}`)) {
     return
   }
 
