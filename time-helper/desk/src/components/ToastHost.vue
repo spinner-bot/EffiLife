@@ -43,5 +43,5 @@ const { t } = useI18n()
 .toast-enter-active, .toast-leave-active { transition: opacity .2s ease, transform .2s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(8px); }
 @media (prefers-reduced-motion: reduce) { .toast-enter-active, .toast-leave-active { transition: opacity .1s linear; } .toast-enter-from, .toast-leave-to { transform: none; } }
-@media (max-width: 600px) { .toast-host { right: 14px; bottom: 14px; } }
+@media (max-width: 600px) { .toast-host { right: 14px; bottom: calc(74px + env(safe-area-inset-bottom)); } }
 </style>
