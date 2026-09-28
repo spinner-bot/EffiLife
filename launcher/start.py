@@ -565,7 +565,9 @@ def main():
     """Launch unified mode or the interactive compatibility menu."""
     modules = build_modules()
     if "--diagnose" in sys.argv:
-        print(json.dumps(collect_diagnostics(modules), ensure_ascii=False, indent=2))
+        # Keep diagnostics copyable across Windows code pages. JSON consumers
+        # decode the escaped Unicode path back to its original value.
+        print(json.dumps(collect_diagnostics(modules), ensure_ascii=True, indent=2))
         return
     if "--unified" in sys.argv:
         run_module("1", modules)

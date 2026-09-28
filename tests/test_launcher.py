@@ -256,3 +256,8 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     assert result["version"] == (Path(launcher.BASE_DIR) / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     assert result["modules"]["1"]["port_occupied"] is True
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
+
+
+def test_diagnose_output_uses_ascii_safe_json():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+    assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
