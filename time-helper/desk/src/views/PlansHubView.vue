@@ -568,6 +568,10 @@ onMounted(async () => {
 
       <template v-else-if="view === 'events'">
         <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
+        <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
+          <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
+          <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+        </div>
         <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
         <section v-else-if="plans.length === 0" class="plans-empty theme-card">
           <FolderPlus :size="34" />

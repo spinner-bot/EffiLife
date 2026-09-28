@@ -21,6 +21,8 @@ def test_cached_plan_snapshot_is_read_only_in_desktop_ui():
     tasks = TASKS.read_text(encoding="utf-8")
     assert "const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')" in plans
     assert "planDataSource === 'cache'" in plans
+    assert "plans-list-source-note" in plans
+    assert "@click=\"retryPlanService\"" in plans
     assert ":disabled=\"planGatewayState !== 'ready'\"" in tasks
 
 
