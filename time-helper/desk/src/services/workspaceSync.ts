@@ -43,6 +43,21 @@ export async function syncTodosFromPlanTask(planId: string, planTaskIds: string 
   return linked.length
 }
 
+/** Refresh system-derived plan descriptions without overwriting user text. */
+export async function syncTodoDescriptionsFromPlan(planId: string, previousName: string, nextName: string): Promise<number> {
+  if (previousName === nextName) return 0
+  const todos = await TodoService.list()
+  const linked = todos.filter((todo) =>
+    todo.related_plan_id === String(planId)
+    && todo.description === previousName
+    && !['archived', 'cancelled'].includes(todo.status)
+  )
+  for (const todo of linked) {
+    await TodoService.update(todo.id, { description: nextName })
+  }
+  return linked.length
+}
+
 /**
  * Remove a stale plan-task reference while keeping the user's todo intact.
  * Plan-helper may soft-delete the task, so retaining the old identifier would

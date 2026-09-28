@@ -23,3 +23,11 @@ def test_plan_task_edit_syncs_linked_todo_title_and_duration():
     assert "time_estimate: Math.max(0, Number(minutes) || 0)" in sync
     assert "estimated_time: Math.max(0, Number(minutes) || 0)" in sync
     assert "syncTodosFromPlanTask(planId, [editingTaskId.value]" in plans
+
+
+def test_plan_rename_refreshes_only_system_derived_todo_descriptions():
+    sync = SYNC.read_text(encoding="utf-8")
+    plans = PLANS.read_text(encoding="utf-8")
+    assert "export async function syncTodoDescriptionsFromPlan" in sync
+    assert "todo.description === previousName" in sync
+    assert "syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())" in plans

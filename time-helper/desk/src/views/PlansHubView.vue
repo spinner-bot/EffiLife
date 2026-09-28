@@ -28,7 +28,7 @@ import {
   updateEventPlan,
   planDataSource,
 } from '@/services/planGateway'
-import { completeLinkedTodos, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
@@ -206,7 +206,13 @@ async function savePlanMeta() {
   isLoading.value = true
   try {
     const planId = selectedPlan.value.id
+    const previousName = selectedPlan.value.name
     await updateEventPlan(planId, planName.value.trim(), toDateTuple(planDate.value))
+    try {
+      await syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())
+    } catch {
+      errorMessage.value = t('plans.todoSyncFailed')
+    }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
   } catch (error) {
