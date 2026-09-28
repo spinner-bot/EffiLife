@@ -866,7 +866,10 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       }
     }
     if (getPlanRuntime() === 'mobile-unavailable') {
-      if (!data.planHelper?.available) {
+      if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
+        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
+      } else {
+        await idbClear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)
         warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planSnapshotMissing') }))
       }
     } else if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
@@ -881,8 +884,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       } catch (error) {
         warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
       }
-    } else if (data.planHelper && !data.planHelper.available) {
-      warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper.unavailableReason || translate('settings.archive.planServiceUnavailable') }))
+    } else {
+      await clearPlanHelperData()
+      warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planServiceUnavailable') }))
     }
 
     notifyWorkspaceChanged('archive')
