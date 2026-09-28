@@ -5,12 +5,37 @@ to-dos 数据存储服务
 
 import json
 import os
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
 
 from .types import Todo, Category, Subtask, TodoStatus, Priority
 from .utils import IdGenerator, TimeHelper
+
+
+def _atomic_write_json(path: Path, payload) -> None:
+    """Write a JSON document next to its target before replacing it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            dir=path.parent,
+            prefix=f'.{path.name}.',
+            suffix='.tmp',
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 class TodoStorage:
@@ -91,15 +116,11 @@ class TodoStorage:
 
     def _save_todos(self):
         """保存 todos 到文件"""
-        with open(self.todos_file, 'w', encoding='utf-8') as f:
-            json.dump([t.to_dict() for t in self._todos], f,
-                      ensure_ascii=False, indent=2)
+        _atomic_write_json(self.todos_file, [t.to_dict() for t in self._todos])
 
     def _save_categories(self):
         """保存分类到文件"""
-        with open(self.categories_file, 'w', encoding='utf-8') as f:
-            json.dump([c.to_dict() for c in self._categories], f,
-                      ensure_ascii=False, indent=2)
+        _atomic_write_json(self.categories_file, [c.to_dict() for c in self._categories])
 
     # ========== Todo 操作 ==========
 
@@ -243,8 +264,7 @@ class TodoStorage:
                 pass
 
         archived.append(todo.to_dict())
-        with open(archive_file, 'w', encoding='utf-8') as f:
-            json.dump(archived, f, ensure_ascii=False, indent=2)
+        _atomic_write_json(archive_file, archived)
 
         return True
 
