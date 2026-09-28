@@ -12,3 +12,11 @@ def test_mobile_home_empty_state_describes_snapshot_availability_not_missing_ser
     assert "Mobile event-plan service is not available yet" not in source
     assert "移动端暂无可用的本地事件计划快照" in source
     assert "No local event-plan snapshot is available on this device" in source
+
+
+def test_mobile_plan_capability_copy_does_not_claim_read_only_or_unavailable_editing():
+    source = I18N.read_text(encoding="utf-8")
+    assert "移动端暂未接入兼容原始 plan 模型的本地计划服务" not in source
+    assert "Mobile plan service support for the original plan model is not available yet" not in source
+    assert "编辑会直接写回本地快照" in source
+    assert "Edits are saved locally" in source
