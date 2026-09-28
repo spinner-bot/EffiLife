@@ -101,6 +101,12 @@ const activeTodos = computed(() => todos.value.filter((todo) => !['completed', '
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
 const categoryById = computed(() => new Map(categories.value.map((item) => [item.id, item])))
 
+function categoryLabel(item: Pick<TodoCategory, 'id' | 'name'>): string {
+  return item.id === 'default' && (item.name === '默认' || item.name === 'Default')
+    ? t('tasks.defaultCategory')
+    : item.name
+}
+
 function scoreFor(todo: UnifiedTodo) {
   return getPriorityScore(todo, categoryById.value.get(todo.category), new Date(priorityClock.value))
 }
@@ -827,7 +833,7 @@ watch(selectedPlanId, (planId) => {
         <input id="new-task-estimated-time" v-model.number="estimatedTime" class="task-number-input task-estimate-input" type="number" min="1" step="1" />
         <label class="task-field-label" for="new-task-category">{{ t('tasks.category') }}</label>
         <select id="new-task-category" v-model="category" class="task-select">
-          <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
+          <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
         </select>
         <label class="task-field-label" for="new-task-deadline">{{ t('tasks.deadline') }}</label>
         <input id="new-task-deadline" v-model="deadline" class="task-date-input" type="date" />
@@ -859,7 +865,7 @@ watch(selectedPlanId, (planId) => {
         </div>
         <select v-model="categoryFilter" class="task-filter-select" :aria-label="t('tasks.categoryFilter')">
           <option value="">{{ t('tasks.allCategories') }}</option>
-          <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
+          <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
         </select>
         <button class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
@@ -900,7 +906,7 @@ watch(selectedPlanId, (planId) => {
             @click="categoryFilter = item.category.id"
           >
             <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
-            <span>{{ item.category.name }}</span><small>{{ item.count }}</small>
+    <span>{{ categoryLabel(item.category) }}</span><small>{{ item.count }}</small>
           </button>
           <button v-if="activeCategorySummaries.length > Math.max(1, todoSettings.expandCount)" type="button" class="task-category-chip task-category-chip-more" @click="showAllCategories = !showAllCategories">
             {{ showAllCategories ? t('tasks.hideMoreCategories') : t('tasks.showMoreCategories') }}
@@ -914,7 +920,7 @@ watch(selectedPlanId, (planId) => {
         <div v-if="showEmptyCategories" class="task-category-nav-list task-empty-category-list">
           <button v-for="item in emptyCategorySummaries" :key="item.category.id" type="button" class="task-category-chip" :class="{ active: categoryFilter === item.category.id }" :style="{ '--category-color': item.category.color }" @click="categoryFilter = item.category.id">
             <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
-            <span>{{ item.category.name }}</span><small>0</small>
+    <span>{{ categoryLabel(item.category) }}</span><small>0</small>
           </button>
         </div>
       </section>
@@ -953,7 +959,7 @@ watch(selectedPlanId, (planId) => {
             <template v-else>
               <span class="category-swatch" :style="{ background: item.color }" />
               <CategoryIconPreview :name="item.icon" :ascii="item.ascii_icon" :style="{ '--category-color': item.color }" />
-              <strong>{{ item.name }}</strong>
+              <strong>{{ categoryLabel(item) }}</strong>
               <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
               <button type="button" class="category-pin" :class="{ active: item.pinned }" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
               <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
@@ -1008,7 +1014,7 @@ watch(selectedPlanId, (planId) => {
             <input :id="`edit-estimated-time-${todo.id}`" v-model.number="editingEstimatedTime" class="task-edit-select" type="number" min="1" step="1" />
             <label :for="`edit-category-${todo.id}`">{{ t('tasks.category') }}</label>
             <select :id="`edit-category-${todo.id}`" v-model="editingCategory" class="task-edit-select">
-              <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
+              <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
             </select>
             <label :for="`edit-deadline-${todo.id}`">{{ t('tasks.deadline') }}</label>
             <input :id="`edit-deadline-${todo.id}`" v-model="editingDeadline" class="task-edit-select" type="date" />
