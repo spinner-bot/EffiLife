@@ -1,5 +1,6 @@
 // 版本管理 - 构建时自动生成
 // 此文件由 vite 插件在每次构建时更新
+import { currentLocale } from './i18n'
 
 // 以下值会在构建时被替换
 export const APP_VERSION = '__APP_VERSION__'
@@ -36,7 +37,7 @@ export function getBuildInfo(): string {
 
   if (isDevVersion) {
     const date = new Date(parseInt(timestamp) || Date.now())
-    const dateStr = isNaN(date.getTime()) ? new Date().toLocaleString('zh-CN') : date.toLocaleString('zh-CN')
+    const dateStr = isNaN(date.getTime()) ? new Date().toLocaleString(currentLocale.value) : date.toLocaleString(currentLocale.value)
     return `开发版 #${commitCount} · ${dateStr}`
   }
   const displayTimestamp = BUILD_TIMESTAMP.startsWith('__') ? new Date().toISOString().split('T')[0] : BUILD_TIMESTAMP
