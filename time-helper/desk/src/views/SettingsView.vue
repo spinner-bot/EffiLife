@@ -16,6 +16,7 @@ import { useI18n } from '@/i18n'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
+import { getTodayDate } from '@/services/dataService'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -543,7 +544,7 @@ async function handleEmergencyExport() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `efflife_emergency_${new Date().toISOString().split('T')[0]}.json`
+    a.download = `efflife_emergency_${getTodayDate()}.json`
     a.click()
     URL.revokeObjectURL(url)
     notifyToast(t('settings.restore.emergencyDownloaded'), 'success')

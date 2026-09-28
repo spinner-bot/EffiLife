@@ -44,3 +44,12 @@ def test_archive_filename_uses_local_business_date():
     assert "import { getTodayDate } from '@/services/dataService'" in archive
     assert "const dateStr = getTodayDate()" in archive
     assert "new Date().toISOString().split('T')[0]" not in archive
+
+
+def test_schedule_and_emergency_backup_use_local_business_dates():
+    assert "const date = parseLocalDate(targetDay)" in DATA_SERVICE
+    assert "const targetDate = parseLocalDate(targetDay)" in DATA_SERVICE
+    assert "const todayDate = parseLocalDate(today)" in DATA_SERVICE
+    settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
+    assert "import { getTodayDate } from '@/services/dataService'" in settings
+    assert "efflife_emergency_${getTodayDate()}.json" in settings

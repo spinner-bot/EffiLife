@@ -515,7 +515,7 @@ export const DataService = {
     }
 
     const rules = await this.loadScheduleRules()
-    const date = new Date(targetDay)
+    const date = parseLocalDate(targetDay)
     const weekNum = date.getDay() === 0 ? '7' : date.getDay().toString()
     const month = (date.getMonth() + 1).toString()
     const monthDay = `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
@@ -600,8 +600,8 @@ export const DataService = {
         const now = new Date()
         totalAvailable = now.getHours() * 60 + now.getMinutes()
       } else {
-        const targetDate = new Date(targetDay)
-        const todayDate = new Date(today)
+        const targetDate = parseLocalDate(targetDay)
+        const todayDate = parseLocalDate(today)
         totalAvailable = targetDate < todayDate ? 24 * 60 : 0
       }
       const bgUsed = Math.max(0, (totalAvailable - usedMinutes) / 60)
