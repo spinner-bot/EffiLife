@@ -31,6 +31,7 @@ import {
 import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { notifyToast } from '@/services/toastService'
 
 const DailyPlanView = defineAsyncComponent(() => import('@/views/PlanView.vue'))
 
@@ -70,6 +71,11 @@ const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
+
+function showPlanSaved(): void {
+  successMessage.value = t('plans.saved')
+  notifyToast(t('plans.saved'), 'success')
+}
 
 function toDateInput(date: Date): string {
   const year = date.getFullYear()
@@ -225,6 +231,7 @@ async function savePlanMeta() {
     }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -255,6 +262,7 @@ async function saveSection() {
     sectionInfo.value = ''
     editingSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -293,6 +301,7 @@ async function deleteSection(section: PlanFull['sections'][number]) {
     }
     cancelSectionEdit()
     selectedPlan.value = await getPlanFull(planId)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.sectionUnavailable')
   } finally {
@@ -331,6 +340,7 @@ async function saveTask() {
     editingTaskDisplayId.value = null
     editingTaskSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -347,6 +357,7 @@ async function saveLog() {
     await addPlanLog(selectedPlan.value.id, Math.max(0, Math.min(31, Math.trunc(Number(logDay.value) || new Date().getDate()))), logTaskId.value, logContent.value.trim())
     logContent.value = ''
     selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.logUnavailable')
   } finally {
@@ -412,6 +423,7 @@ async function saveGroup() {
     }
     selectedPlan.value = await getPlanFull(selectedPlan.value.id)
     cancelGroupEdit()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
   } finally {
@@ -427,6 +439,7 @@ async function deleteGroup(sectionIndex: number, groupKey: string) {
     await deletePlanGroup(selectedPlan.value.id, sectionIndex, groupKey)
     selectedPlan.value = await getPlanFull(selectedPlan.value.id)
     cancelGroupEdit()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
   } finally {
@@ -466,6 +479,7 @@ async function completeTask(taskId: string, displayTaskId = taskId) {
       errorMessage.value = t('plans.todoSyncFailed')
     }
     selectedPlan.value = await getPlanFull(planId)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -528,6 +542,7 @@ async function deleteTask(taskId: string, displayTaskId = taskId) {
       errorMessage.value = t('plans.todoSyncFailed')
     }
     selectedPlan.value = await getPlanFull(planId)
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {

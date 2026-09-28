@@ -43,3 +43,11 @@ def test_editing_a_linked_todo_updates_the_source_plan_task_first():
     assert "const linkedTaskChanged = Boolean" in tasks
     assert "await updatePlanTask(todo.related_plan_id as string, todo.related_plan_task_id as string" in tasks
     assert "errorMessage.value = t('tasks.planSyncFailed')" in tasks
+
+
+def test_plan_mutations_expose_success_feedback_in_both_locales():
+    plans = PLANS.read_text(encoding="utf-8")
+    source = I18N.read_text(encoding="utf-8")
+    assert "function showPlanSaved(): void" in plans
+    assert "notifyToast(t('plans.saved'), 'success')" in plans
+    assert source.count("'plans.saved':") == 2
