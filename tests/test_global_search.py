@@ -13,6 +13,8 @@ def test_global_search_is_available_from_app_shell():
     assert "Ctrl" not in source or "onGlobalKeydown" in source
     assert "event.metaKey" in source
     assert "event.ctrlKey" in source
+    assert "searchShortcut" in source
+    assert "Mac|iPhone|iPad" in source
     assert "global-search-trigger" in source
 
 

@@ -28,6 +28,10 @@ const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
 const startupError = ref(false)
 const showGlobalSearch = ref(false)
+const searchShortcut = computed(() => {
+  const platform = typeof navigator === 'undefined' ? '' : navigator.platform
+  return /Mac|iPhone|iPad/.test(platform) ? '⌘K' : 'Ctrl K'
+})
 
 function onGlobalKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -193,7 +197,7 @@ watch(() => appStore.todayStat, () => {
           </RouterLink>
         </nav>
         <button class="global-search-trigger" type="button" :aria-label="t('search.open')" @click="showGlobalSearch = true">
-          <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>⌘K</kbd>
+          <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
       </header>
       <RouterView v-slot="{ Component }">
