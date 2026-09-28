@@ -20,8 +20,13 @@ def test_plan_detail_can_create_a_linked_unified_todo_without_duplicates():
 
 def test_plan_todo_linking_copy_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
+    import re
+    zh_match = re.search(r"'zh-CN':\s*\{(?P<body>.*?)\n  \},\n  'en-US':", source, re.S)
+    en_match = re.search(r"'en-US':\s*\{(?P<body>.*?)\n  \},\n}\n\nfunction readLocale", source, re.S)
+    assert zh_match and en_match
     for key in ("plans.linkTodo", "plans.todoCreated", "plans.todoAlreadyLinked", "plans.todoCreateFailed"):
-        assert source.count(f"'{key}'") == 2
+        assert zh_match.group('body').count(f"'{key}'") == 1
+        assert en_match.group('body').count(f"'{key}'") == 1
 
 
 def test_task_center_can_open_the_linked_plan_task():

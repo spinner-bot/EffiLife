@@ -51,3 +51,15 @@ def test_settings_subviews_use_localized_back_action():
     source = SETTINGS.read_text(encoding="utf-8")
     assert ">返回</button>" not in source
     assert source.count("t('settings.back')") >= 6
+
+
+def test_locale_catalogs_have_the_same_translation_keys():
+    source = I18N.read_text(encoding="utf-8")
+    import re
+    pattern = re.compile(r"^\s*'([^']+)':", re.MULTILINE)
+    zh_match = re.search(r"'zh-CN':\s*\{(?P<body>.*?)\n  \},\n  'en-US':", source, re.S)
+    en_match = re.search(r"'en-US':\s*\{(?P<body>.*?)\n  \},\n}\n\nfunction readLocale", source, re.S)
+    assert zh_match and en_match
+    zh_keys = set(pattern.findall(zh_match.group('body')))
+    en_keys = set(pattern.findall(en_match.group('body')))
+    assert zh_keys == en_keys
