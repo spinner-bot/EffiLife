@@ -26,6 +26,7 @@ import {
   updateEventPlan,
 } from '@/services/planGateway'
 import { completeLinkedTodos } from '@/services/workspaceSync'
+import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
 const router = useRouter()
@@ -39,6 +40,7 @@ const archives = ref<PlanArchiveSummary[]>([])
 const selectedPlan = ref<PlanFull | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const successMessage = ref('')
 const showCreate = ref(false)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
@@ -371,6 +373,39 @@ async function completeTask(taskId: string, displayTaskId = taskId) {
   }
 }
 
+async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number]) {
+  if (isLoading.value || !selectedPlan.value) return
+  const planId = String(selectedPlan.value.id)
+  isLoading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    const todos = await TodoService.list()
+    const existing = todos.find((todo) =>
+      todo.related_plan_id === planId
+      && todo.related_plan_task_id === String(task.internal_id)
+      && !['archived', 'cancelled'].includes(todo.status)
+    )
+    if (existing) {
+      errorMessage.value = t('plans.todoAlreadyLinked')
+      return
+    }
+    await TodoService.create({
+      title: task.content,
+      description: selectedPlan.value.name,
+      related_plan_id: planId,
+      related_plan_task_id: String(task.internal_id),
+      time_estimate: task.time_minutes,
+      estimated_time: task.time_minutes,
+    })
+    successMessage.value = t('plans.todoCreated')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function deleteTask(taskId: string) {
   if (isLoading.value) return
   if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
@@ -459,6 +494,7 @@ onMounted(loadPlans)
 
       <template v-else-if="selectedPlan">
         <div v-if="errorMessage" class="plans-error">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="plans-success">{{ successMessage }}</div>
         <div v-if="isMobilePlanRuntime" class="plans-readonly-note">
           <strong>{{ t('plans.mobileLocalTitle') }}</strong>
           <span>{{ t('plans.mobileLocalDescription') }}</span>
@@ -528,6 +564,7 @@ onMounted(loadPlans)
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} min</small>
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
+            <button v-if="canEditPlan && !task.finish" class="task-todo" :disabled="isLoading" :aria-label="t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ t('plans.linkTodo') }}</button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
@@ -578,7 +615,9 @@ onMounted(loadPlans)
 .event-plan-card-top svg { color: var(--color-text-tertiary); }
 .plans-empty { display: grid; place-items: center; gap: 10px; min-height: 230px; border: 1px dashed var(--color-border); border-radius: 17px; color: var(--color-text-tertiary); text-align: center; }
 .plans-empty strong { color: var(--color-text-secondary); }
-.plans-error { margin-bottom: 14px; color: var(--color-error); font-size: 13px; }
+.plans-error, .plans-success { margin-bottom: 14px; font-size: 13px; }
+.plans-error { color: var(--color-error); }
+.plans-success { color: var(--color-success, #16a34a); }
 .plans-readonly-note { display: grid; gap: 4px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--color-primary); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; line-height: 1.5; }
 .plans-readonly-note strong { color: var(--color-text-primary); }
 .detail-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -618,12 +657,14 @@ onMounted(loadPlans)
 .group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
 .group-editor input, .group-editor select { min-width: 0; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
-.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .event-task-row > div strong { color: var(--color-primary); font-size: 12px; }
 .event-task-row > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-task-row > small { color: var(--color-text-tertiary); white-space: nowrap; }
 .task-log { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
+.task-todo { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+.task-todo:hover { color: var(--color-primary); }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.finished span { text-decoration: line-through; }
 .task-complete, .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
@@ -650,5 +691,5 @@ onMounted(loadPlans)
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>

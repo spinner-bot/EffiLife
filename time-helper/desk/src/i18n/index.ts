@@ -1829,6 +1829,10 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
     'nav.records': '\u65f6\u95f4\u8bb0\u5f55',
     'tasks.planSyncFailed': '\u5f85\u529e\u5df2\u5b8c\u6210\uff0c\u4f46\u8ba1\u5212\u4efb\u52a1\u540c\u6b65\u5931\u8d25',
     'plans.todoSyncFailed': '\u8ba1\u5212\u4efb\u52a1\u5df2\u5b8c\u6210\uff0c\u4f46\u5173\u8054\u5f85\u529e\u540c\u6b65\u5931\u8d25',
+    'plans.linkTodo': '\u52a0\u5165\u5f85\u529e',
+    'plans.todoCreated': '\u5df2\u52a0\u5165\u5f85\u529e\u4e2d\u5fc3',
+    'plans.todoAlreadyLinked': '\u8be5\u8ba1\u5212\u4efb\u52a1\u5df2\u7ecf\u5173\u8054\u5f85\u529e',
+    'plans.todoCreateFailed': '\u52a0\u5165\u5f85\u529e\u5931\u8d25',
   },
   'en-US': {
     'nav.primary': 'Primary navigation',
@@ -1838,6 +1842,10 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
     'nav.records': 'Time',
     'tasks.planSyncFailed': 'The task is complete, but the linked plan task could not be synced',
     'plans.todoSyncFailed': 'The plan task is complete, but linked todos could not be synced',
+    'plans.linkTodo': 'Add to tasks',
+    'plans.todoCreated': 'Added to the task center',
+    'plans.todoAlreadyLinked': 'This plan task is already linked to a task',
+    'plans.todoCreateFailed': 'Unable to add the task',
   },
 }
 
