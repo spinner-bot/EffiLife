@@ -44,7 +44,10 @@ function activateDailyPlan(event: KeyboardEvent) {
 
 async function refreshTodoSummary() {
   try {
-    const [todos, categories] = await Promise.all([TodoService.list(), TodoCategoryService.list()])
+    const [todos, categories] = await Promise.all([
+      TodoService.list(),
+      TodoCategoryService.list().catch(() => []),
+    ])
     const categoryById = new Map(categories.map((category) => [category.id, category]))
     const active = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status))
     activeTodoCount.value = active.length

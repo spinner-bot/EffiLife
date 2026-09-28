@@ -44,3 +44,8 @@ def test_home_summary_uses_the_shared_dynamic_priority_order():
     assert "TodoCategoryService.list()" in source
     assert "getPriorityScore(b, categoryById.get(b.category)).score" in source
     assert "b.updated_at.localeCompare(a.updated_at)" in source
+
+
+def test_home_todo_summary_survives_category_storage_failure():
+    source = HOME.read_text(encoding="utf-8")
+    assert "TodoCategoryService.list().catch(() => [])" in source
