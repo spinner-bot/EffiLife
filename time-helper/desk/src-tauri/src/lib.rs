@@ -113,6 +113,17 @@ struct PlanHelperSidecarState(Mutex<Option<CommandChild>>);
 
 // 获取数据目录
 fn get_data_dir() -> PathBuf {
+    if let Ok(configured) = std::env::var("EFFILIFE_DATA_DIR") {
+        let configured = configured.trim();
+        if !configured.is_empty() {
+            let path = PathBuf::from(configured);
+            if !path.exists() {
+                let _ = fs::create_dir_all(&path);
+            }
+            return path;
+        }
+    }
+
     let mut path = dirs::data_local_dir()
         .or_else(dirs::data_dir)
         .or_else(|| std::env::current_dir().ok())
