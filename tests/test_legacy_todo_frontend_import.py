@@ -13,6 +13,7 @@ def test_frontend_has_non_destructive_legacy_todo_migration():
     assert "normalizeImportedTodo(raw)" in source
     assert "existingIds.has(todo.id)" in source
     assert "TodoCategoryService.ensureDefaults" in source
+    assert "if (migrated > 0 || categories > 0) notifyWorkspaceChanged('todos')" in source
 
 
 def test_todo_normalizer_rejects_malformed_cross_module_references():

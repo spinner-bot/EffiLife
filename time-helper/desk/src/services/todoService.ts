@@ -460,5 +460,6 @@ export async function importLegacyTodoPayload(source: unknown): Promise<LegacyTo
     categories += 1
   }
   await TodoCategoryService.ensureDefaults([...existingTodos, ...normalizedTodos])
+  if (migrated > 0 || categories > 0) notifyWorkspaceChanged('todos')
   return { migrated, categories, skipped, warnings }
 }
