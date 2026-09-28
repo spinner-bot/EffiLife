@@ -53,6 +53,13 @@ def test_settings_subviews_use_localized_back_action():
     assert source.count("t('settings.back')") >= 6
 
 
+def test_backup_timestamps_follow_current_locale():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "const { t, locale } = useI18n()" in source
+    assert "toLocaleString(locale)" in source
+    assert "toLocaleString('zh-CN')" not in source
+
+
 def test_selectable_tech_theme_has_a_theme_engine_preset():
     settings = SETTINGS.read_text(encoding="utf-8")
     engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")

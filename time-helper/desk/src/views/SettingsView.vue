@@ -85,7 +85,7 @@ async function copyEmail() {
 
 const router = useRouter()
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
 const config = computed(() => appStore.config)
@@ -1143,7 +1143,7 @@ onMounted(async () => {
             >
               <div class="backup-info">
                 <span class="backup-module">{{ backup.module }}</span>
-                <span class="backup-time">{{ new Date(backup.timestamp).toLocaleString('zh-CN') }}</span>
+                <span class="backup-time">{{ new Date(backup.timestamp).toLocaleString(locale) }}</span>
               </div>
               <button class="btn primary" @click="handleRestoreBackup(backup)">
                 {{ t('settings.legacyRecovery.restore') }}
