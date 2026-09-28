@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 import { useI18n } from '@/i18n'
+import { parseLocalDate } from '@/services/dataService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -91,7 +92,7 @@ const recentRecords = computed(() => {
 
 // 格式化日期
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr)
+  const d = parseLocalDate(dateStr)
   return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
 }
 
@@ -100,7 +101,7 @@ function formatWeekday(dateStr: string): string {
     t('checkin.weekday.sun'), t('checkin.weekday.mon'), t('checkin.weekday.tue'),
     t('checkin.weekday.wed'), t('checkin.weekday.thu'), t('checkin.weekday.fri'), t('checkin.weekday.sat'),
   ]
-  const d = new Date(dateStr)
+  const d = parseLocalDate(dateStr)
   return `周${weekdays[d.getDay()]}`
 }
 

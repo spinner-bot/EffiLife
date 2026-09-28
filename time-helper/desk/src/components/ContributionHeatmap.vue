@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/i18n'
+import { parseLocalDate } from '@/services/dataService'
 
 /**
  * GitHub 风格贡献热力图
@@ -108,7 +109,7 @@ const monthLabels = computed(() => {
 
   for (let i = 0; i < weekColumns.value.length; i++) {
     const firstDay = weekColumns.value[i][0]
-    const d = new Date(firstDay.date)
+    const d = parseLocalDate(firstDay.date)
     const month = d.getMonth()
     if (month !== lastMonth) {
       labels.push({
@@ -177,7 +178,7 @@ const stats = computed(() => {
     } else {
       if (tempStreak === currentStreak && sortedNonFuture.indexOf(cell) > 0) {
         // 今天的格子如果为空，不算断
-        const d = new Date(cell.date)
+        const d = parseLocalDate(cell.date)
         if (d.getTime() !== today.getTime()) {
           currentStreak = 0
         }

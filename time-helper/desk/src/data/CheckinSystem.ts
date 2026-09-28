@@ -1,5 +1,6 @@
 // 打卡系统 - 记录用户连续完成计划的天数
 import { ref, reactive } from 'vue'
+import { formatDate, parseLocalDate } from '@/services/dataService'
 
 const STORAGE_KEY = 'efflife_checkin_data'
 
@@ -209,9 +210,9 @@ class CheckinSystemClass {
       return
     }
 
-    const lastDate = new Date(this.data.value.lastCheckinDate)
-    const today = new Date(this.getTodayStr())
-    const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+    const lastDate = parseLocalDate(this.data.value.lastCheckinDate)
+    const today = parseLocalDate(this.getTodayStr())
+    const diffDays = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
 
     // 如果最后一次打卡是昨天或今天，连续天数保持
     // 如果超过1天没打卡，连续天数清零
@@ -245,9 +246,9 @@ class CheckinSystemClass {
 
     // 检查连续天数是否已断（超过1天没打卡）
     if (this.data.value.lastCheckinDate) {
-      const lastDate = new Date(this.data.value.lastCheckinDate)
-      const yesterdayDate = new Date(yesterday)
-      const diffDays = Math.floor((yesterdayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+      const lastDate = parseLocalDate(this.data.value.lastCheckinDate)
+      const yesterdayDate = parseLocalDate(yesterday)
+      const diffDays = Math.round((yesterdayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
       if (diffDays > 1) {
         // 连续天数已断，无法补打卡
         return { result: 'streak-broken' }
@@ -357,9 +358,9 @@ class CheckinSystemClass {
    * 获取指定日期的前一天
    */
   private getPreviousDayStr(dateStr: string): string {
-    const d = new Date(dateStr)
+    const d = parseLocalDate(dateStr)
     d.setDate(d.getDate() - 1)
-    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+    return formatDate(d)
   }
 
   // ========= 工具方法 =========

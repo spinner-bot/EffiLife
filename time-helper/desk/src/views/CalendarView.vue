@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, BarChart3, Clock, X, CalendarDays } from 'lucide-vue-next'
-import { DataService, hoursToHm } from '@/services/dataService'
+import { DataService, hoursToHm, formatDate, parseLocalDate } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import ContributionHeatmap from '@/components/ContributionHeatmap.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -36,7 +36,7 @@ async function fetchDayMeta(dateStr: string): Promise<DayMeta> {
   const stat = await DataService.calcRealTimeStat(dateStr)
   return {
     dateStr,
-    date: new Date(dateStr).getDate(),
+    date: parseLocalDate(dateStr).getDate(),
     hasCheckin,
     progress: stat.progress,
     hasRecords: stat.has_records,
@@ -210,7 +210,7 @@ async function loadHeatmapData() {
   const promises = []
   const current = new Date(startDate)
   while (current <= today) {
-    const dateStr = `${current.getFullYear()}-${(current.getMonth() + 1).toString().padStart(2, '0')}-${current.getDate().toString().padStart(2, '0')}`
+    const dateStr = formatDate(current)
     promises.push(
       DataService.calcRealTimeStat(dateStr).then(stat => {
         data[dateStr] = stat.progress
