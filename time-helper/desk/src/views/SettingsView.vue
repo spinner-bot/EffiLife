@@ -717,26 +717,26 @@ onMounted(async () => {
         <!-- 纯色主题配置 -->
         <template v-if="themeType === 'solid'">
           <div class="form-section">
-            <label>颜色配置</label>
+            <label>{{ t('settings.theme.colorConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>窗口背景色</span>
+                <span>{{ t('settings.theme.windowBackground') }}</span>
                 <input type="text" v-model="solidConfig.bg_window" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_bg_window')">选择</button>
+                <button class="btn small" @click="pickColor('solid_bg_window')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>按钮背景色</span>
+                <span>{{ t('settings.theme.buttonBackground') }}</span>
                 <input type="text" v-model="solidConfig.bg_button" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_bg_button')">选择</button>
+                <button class="btn small" @click="pickColor('solid_bg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>按钮文字色</span>
+                <span>{{ t('settings.theme.buttonText') }}</span>
                 <input type="text" v-model="solidConfig.fg_button" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_fg_button')">选择</button>
+                <button class="btn small" @click="pickColor('solid_fg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
             </div>
             <div class="preset-buttons">
-              <span>预设方案：</span>
+              <span>{{ t('settings.theme.presetLabel') }}</span>
               <button class="btn small" @click="applySolidPreset('default')">{{ t('settings.theme.preset.default') }}</button>
               <button class="btn small" @click="applySolidPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
               <button class="btn small" @click="applySolidPreset('light')">{{ t('settings.theme.preset.light') }}</button>
@@ -747,32 +747,32 @@ onMounted(async () => {
         <!-- 渐变主题配置 -->
         <template v-if="themeType === 'gradient'">
           <div class="form-section">
-            <label>渐变配置</label>
+            <label>{{ t('settings.theme.gradientConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>起始颜色</span>
+                <span>{{ t('settings.theme.startColor') }}</span>
                 <input type="text" v-model="gradientConfig.color_start" class="color-input" />
-                <button class="btn small" @click="pickColor('gradient_color_start')">选择</button>
+                <button class="btn small" @click="pickColor('gradient_color_start')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>结束颜色</span>
+                <span>{{ t('settings.theme.endColor') }}</span>
                 <input type="text" v-model="gradientConfig.color_end" class="color-input" />
-                <button class="btn small" @click="pickColor('gradient_color_end')">选择</button>
+                <button class="btn small" @click="pickColor('gradient_color_end')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>渐变方向</span>
+                <span>{{ t('settings.theme.gradientDirection') }}</span>
                 <select v-model="gradientConfig.direction" class="select-input">
-                  <option value="to-right">向右 →</option>
-                  <option value="to-left">向左 ←</option>
-                  <option value="to-bottom">向下 ↓</option>
-                  <option value="to-top">向上 ↑</option>
-                  <option value="to-br">右下 ↘</option>
-                  <option value="to-tl">左上 ↖</option>
+                  <option value="to-right">{{ t('settings.theme.right') }}</option>
+                  <option value="to-left">{{ t('settings.theme.left') }}</option>
+                  <option value="to-bottom">{{ t('settings.theme.down') }}</option>
+                  <option value="to-top">{{ t('settings.theme.up') }}</option>
+                  <option value="to-br">{{ t('settings.theme.bottomRight') }}</option>
+                  <option value="to-tl">{{ t('settings.theme.topLeft') }}</option>
                 </select>
               </div>
             </div>
             <div class="preset-buttons">
-              <span>预设方案：</span>
+              <span>{{ t('settings.theme.presetLabel') }}</span>
               <button class="btn small" @click="applyGradientPreset('purple')">{{ t('settings.theme.preset.purple') }}</button>
               <button class="btn small" @click="applyGradientPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
               <button class="btn small" @click="applyGradientPreset('sunset')">{{ t('settings.theme.preset.sunset') }}</button>
@@ -784,26 +784,26 @@ onMounted(async () => {
         <!-- 玻璃主题配置 -->
         <template v-if="themeType === 'glass'">
           <div class="form-section">
-            <label>玻璃配置</label>
+            <label>{{ t('settings.theme.glassConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>背景颜色</span>
+                <span>{{ t('settings.theme.backgroundColor') }}</span>
                 <input type="text" v-model="glassConfig.bg_color" class="color-input" />
-                <button class="btn small" @click="pickColor('glass_bg_color')">选择</button>
+                <button class="btn small" @click="pickColor('glass_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>玻璃透明度</span>
+                <span>{{ t('settings.theme.glassOpacity') }}</span>
                 <input type="range" v-model.number="glassConfig.glass_opacity" min="0.05" max="0.5" step="0.05" class="slider" />
                 <span class="slider-value">{{ glassConfig.glass_opacity.toFixed(2) }}</span>
               </div>
               <div class="color-row">
-                <span>模糊程度</span>
+                <span>{{ t('settings.theme.blurAmount') }}</span>
                 <input type="range" v-model.number="glassConfig.blur_amount" min="0" max="30" step="2" class="slider" />
                 <span class="slider-value">{{ glassConfig.blur_amount }}px</span>
               </div>
             </div>
             <div class="preset-buttons">
-              <span>预设方案：</span>
+              <span>{{ t('settings.theme.presetLabel') }}</span>
               <button class="btn small" @click="applyGlassPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
               <button class="btn small" @click="applyGlassPreset('light')">{{ t('settings.theme.preset.light') }}</button>
               <button class="btn small" @click="applyGlassPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
@@ -814,31 +814,31 @@ onMounted(async () => {
         <!-- 霓虹主题配置 -->
         <template v-if="themeType === 'neon'">
           <div class="form-section">
-            <label>霓虹配置</label>
+            <label>{{ t('settings.theme.neonConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>背景颜色</span>
+                <span>{{ t('settings.theme.backgroundColor') }}</span>
                 <input type="text" v-model="neonConfig.bg_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_bg_color')">选择</button>
+                <button class="btn small" @click="pickColor('neon_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>霓虹颜色</span>
+                <span>{{ t('settings.theme.neonColor') }}</span>
                 <input type="text" v-model="neonConfig.neon_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_neon_color')">选择</button>
+                <button class="btn small" @click="pickColor('neon_neon_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>强调颜色</span>
+                <span>{{ t('settings.theme.accentColor') }}</span>
                 <input type="text" v-model="neonConfig.accent_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_accent_color')">选择</button>
+                <button class="btn small" @click="pickColor('neon_accent_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>发光强度</span>
+                <span>{{ t('settings.theme.glowIntensity') }}</span>
                 <input type="range" v-model.number="neonConfig.glow_intensity" min="0" max="30" step="2" class="slider" />
                 <span class="slider-value">{{ neonConfig.glow_intensity }}px</span>
               </div>
             </div>
             <div class="preset-buttons">
-              <span>预设方案：</span>
+              <span>{{ t('settings.theme.presetLabel') }}</span>
               <button class="btn small" @click="applyNeonPreset('green')">{{ t('settings.theme.preset.green') }}</button>
               <button class="btn small" @click="applyNeonPreset('pink')">{{ t('settings.theme.preset.pink') }}</button>
               <button class="btn small" @click="applyNeonPreset('cyan')">{{ t('settings.theme.preset.cyan') }}</button>
