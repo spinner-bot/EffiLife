@@ -44,6 +44,15 @@ def test_global_search_supports_keyboard_result_navigation():
     assert "class=\"search-result\" :class=\"{ selected: selectedIndex === index }\"" in source
 
 
+def test_global_search_exposes_active_result_to_assistive_technology():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "role=\"combobox\"" in source
+    assert 'aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined"' in source
+    assert 'id="global-search-results" class="search-results" role="listbox"' in source
+    assert 'role="option"' in source
+    assert "function resultDomId(result: SearchResult)" in source
+
+
 def test_global_search_indexes_todo_descriptions_and_tags():
     source = SEARCH.read_text(encoding="utf-8")
     assert "todo.description || todo.tags?.join(', ')" in source

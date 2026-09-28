@@ -123,6 +123,10 @@ function openResult(result: SearchResult) {
   router.push(result.route)
 }
 
+function resultDomId(result: SearchResult): string {
+  return `search-result-${result.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
 function handleSearchKeydown(event: KeyboardEvent) {
   const count = filteredResults.value.length
   if (event.key === 'ArrowDown' && count > 0) {
@@ -154,12 +158,12 @@ watch(() => props.open, async (open) => {
         <div class="search-heading"><Search :size="18" /><strong>{{ t('search.title') }}</strong></div>
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
-      <input ref="input" v-model="query" class="search-input" type="search" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
+      <input ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
       <div v-if="isLoading" class="search-state">{{ t('search.loading') }}</div>
       <div v-else-if="query.trim() && filteredResults.length === 0" class="search-state">{{ t('search.empty') }}</div>
       <div v-else-if="!query.trim()" class="search-state search-hint">{{ t('search.hint') }}</div>
-      <div v-else class="search-results">
-        <button v-for="(result, index) in filteredResults" :key="result.id" class="search-result" :class="{ selected: selectedIndex === index }" type="button" :aria-selected="selectedIndex === index" @click="openResult(result)">
+      <div v-else id="global-search-results" class="search-results" role="listbox" :aria-label="t('search.results')">
+        <button v-for="(result, index) in filteredResults" :id="resultDomId(result)" :key="result.id" class="search-result" :class="{ selected: selectedIndex === index }" type="button" role="option" :aria-selected="selectedIndex === index" @click="openResult(result)">
           <span class="search-result-icon">
             <ListTodo v-if="result.kind === 'todo'" :size="16" />
             <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'planTask'" :size="16" />
