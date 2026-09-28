@@ -23,6 +23,7 @@ def test_legacy_management_route_redirects_to_unified_plan_workspace():
 def test_unified_shell_updates_document_title_for_route_and_locale():
     assert "const pageTitle = computed(() =>" in APP
     assert "watch([() => route.path, locale]" in APP
-    assert "document.title = `${pageTitle.value} · EffiLife`" in APP
+    assert "document.title = t('app.documentTitle', { page: pageTitle.value })" in APP
+    assert "'app.documentTitle': '{page} · EffiLife'" in (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert "path.startsWith('/tasks')" in APP
     assert "path.startsWith('/day')" in APP
