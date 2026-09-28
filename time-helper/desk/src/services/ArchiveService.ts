@@ -14,7 +14,7 @@ import {
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
-import { translate } from '@/i18n'
+import { currentLocale, translate } from '@/i18n'
 import { getTodayDate } from '@/services/dataService'
 
 // 存档版本
@@ -282,7 +282,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   zip.file('README.txt', `浪兮效率时钟存档文件
 协议: ${ARCHIVE_FORMAT} ${ARCHIVE_FORMAT_VERSION}
 版本: ${ARCHIVE_VERSION}
-导出时间: ${new Date(data.exportDate).toLocaleString('zh-CN')}
+导出时间: ${new Date(data.exportDate).toLocaleString(currentLocale.value)}
 
 此文件包含以下数据:
 - 应用配置

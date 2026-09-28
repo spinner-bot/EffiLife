@@ -53,3 +53,10 @@ def test_schedule_and_emergency_backup_use_local_business_dates():
     settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
     assert "import { getTodayDate } from '@/services/dataService'" in settings
     assert "efflife_emergency_${getTodayDate()}.json" in settings
+
+
+def test_archive_readme_export_time_follows_current_locale():
+    archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
+    assert "import { currentLocale, translate } from '@/i18n'" in archive
+    assert "toLocaleString(currentLocale.value)" in archive
+    assert "toLocaleString('zh-CN')" not in archive
