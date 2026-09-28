@@ -41,14 +41,32 @@ const STORAGE_KEY = 'efflife_motion_settings'
 // 全局响应式状态
 export const motionState = reactive({
   settings: { ...DEFAULT_MOTION_SETTINGS },
+  systemReducedMotion: false,
   version: 0
 })
 
 class MotionManagerClass {
   private benchmarkResults: { fps: number; score: number } | null = null
+  private reducedMotionQuery: MediaQueryList | null = null
 
   constructor() {
     this.loadSettings()
+    this.watchSystemPreference()
+  }
+
+  private watchSystemPreference() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    this.reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    motionState.systemReducedMotion = this.reducedMotionQuery.matches
+    const onChange = (event: MediaQueryListEvent) => {
+      motionState.systemReducedMotion = event.matches
+      motionState.version++
+    }
+    if (typeof this.reducedMotionQuery.addEventListener === 'function') {
+      this.reducedMotionQuery.addEventListener('change', onChange)
+    } else {
+      this.reducedMotionQuery.addListener(onChange)
+    }
   }
 
   // ========= 设置持久化 =========
@@ -89,7 +107,7 @@ class MotionManagerClass {
   // ========= 帧率计算 =========
 
   getFrameInterval(): number {
-    if (!motionState.settings.enabled) {
+    if (!motionState.settings.enabled || motionState.systemReducedMotion) {
       return Infinity  // 禁用动画
     }
     return 1000 / motionState.settings.targetFps
@@ -103,15 +121,15 @@ class MotionManagerClass {
   }
 
   isThemeCanvasEnabled(): boolean {
-    return motionState.settings.enabled && motionState.settings.themeCanvasEnabled
+    return motionState.settings.enabled && !motionState.systemReducedMotion && motionState.settings.themeCanvasEnabled
   }
 
   isParticleEnabled(): boolean {
-    return motionState.settings.enabled && motionState.settings.particleEnabled
+    return motionState.settings.enabled && !motionState.systemReducedMotion && motionState.settings.particleEnabled
   }
 
   isTransitionEnabled(): boolean {
-    return motionState.settings.enabled && motionState.settings.transitionEnabled
+    return motionState.settings.enabled && !motionState.systemReducedMotion && motionState.settings.transitionEnabled
   }
 
   getAnimationSpeed(): number {
