@@ -8,7 +8,7 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
-import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-vue-next'
+import { Home, ClipboardList, ListTodo, Clock3, CalendarDays, Settings, Search } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
@@ -184,6 +184,9 @@ watch(() => appStore.todayStat, () => {
           </RouterLink>
           <RouterLink class="global-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
             <Clock3 :size="16" /> <span>{{ t('nav.records') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" to="/calendar" :class="{ active: route.path.startsWith('/calendar') }">
+            <CalendarDays :size="16" /> <span>{{ t('nav.calendar') }}</span>
           </RouterLink>
           <RouterLink class="global-nav-link" to="/settings" :class="{ active: route.path.startsWith('/settings') }">
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
