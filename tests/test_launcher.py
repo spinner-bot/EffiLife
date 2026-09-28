@@ -156,6 +156,12 @@ def test_launcher_groups_owned_processes_for_shutdown():
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
     assert "python3 launcher/start.py --unified" in script
+    assert 'python3 launcher/start.py --unified "$@"' in script
+
+
+def test_windows_launcher_forwards_extra_arguments():
+    script = (Path(launcher.BASE_DIR) / "launcher" / "start.bat").read_text(encoding="utf-8")
+    assert "launcher\\start.py --unified %*" in script
 
 
 def test_launcher_cleans_up_when_companion_cannot_start(monkeypatch):
