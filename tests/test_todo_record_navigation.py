@@ -21,6 +21,8 @@ def test_day_detail_highlights_linked_todo_records():
     assert "route.query.todo" in source
     assert "record.todo_id === highlightedTodoId.value" in source
     assert "record-item-highlight" in source
+    assert 'v-if="record.todo_id"' in source
+    assert "openLinkedTodo(record.todo_id)" in source
 
 
 def test_record_date_lookup_reads_unified_record_store():

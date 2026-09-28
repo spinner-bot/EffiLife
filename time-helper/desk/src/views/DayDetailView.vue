@@ -150,7 +150,7 @@ onMounted(loadData)
               <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
             </div>
             <div class="record-content">{{ record.content }}</div>
-            <button v-if="isHighlightedRecord(record)" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>
+            <button v-if="record.todo_id" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>
             <button class="delete-btn" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
