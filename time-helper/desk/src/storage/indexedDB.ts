@@ -3,6 +3,7 @@
 const DB_NAME = 'efflife_db'
 const DB_VERSION = 3
 const STORAGE_PREFIX = 'efflife_'
+const RAW_STORAGE_PREFIX = `${STORAGE_PREFIX}raw_`
 
 // 对象存储名称
 export const STORE_NAMES = {
@@ -147,10 +148,20 @@ export async function set<T>(storeName: string, key: string, value: T): Promise<
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([storeName], 'readwrite')
       const store = transaction.objectStore(storeName)
-      const request = store.put({ key, value, updatedAt: Date.now() })
+      const record: Record<string, unknown> = { key, value, updatedAt: Date.now() }
+      // Older stores use date/id as their keyPath while the generic API uses
+      // a logical key. Mirror that key into the active keyPath so one write
+      // works across all supported schema versions.
+      if (typeof store.keyPath === 'string' && !(store.keyPath in record)) {
+        record[store.keyPath] = key
+      }
+      const request = store.put(record)
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
+      request.onsuccess = () => {
+        localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+        resolve()
+      }
     })
   } catch (error) {
     console.warn(`IndexedDB set failed for ${storeName}/${key}, falling back to localStorage:`, error)
@@ -169,12 +180,15 @@ export async function del(storeName: string, key: string): Promise<void> {
       const request = store.delete(key)
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
+      request.onsuccess = () => {
+        localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+        resolve()
+      }
     })
   } catch (error) {
     console.warn(`IndexedDB delete failed for ${storeName}/${key}, falling back to localStorage:`, error)
-    localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
   }
+  localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
 }
 
 // 获取存储中的所有数据
@@ -217,36 +231,90 @@ export async function getAll<T>(storeName: string): Promise<T[]> {
 // 原始对象存储读写：用于 todos 等以业务对象自身作为 keyPath 的集合。
 // 与上面的 key/value 配置存储分开，避免把 { key, value } 包装写入业务表。
 export async function getRawAll<T>(storeName: string): Promise<T[]> {
-  const db = await openDB()
-  return new Promise<T[]>((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readonly')
-    const store = transaction.objectStore(storeName)
-    const request = store.getAll()
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve((request.result || []) as T[])
-  })
+  try {
+    const db = await openDB()
+    return await new Promise<T[]>((resolve, reject) => {
+      const transaction = db.transaction([storeName], 'readonly')
+      const store = transaction.objectStore(storeName)
+      const request = store.getAll()
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve((request.result || []) as T[])
+    })
+  } catch (error) {
+    console.warn(`IndexedDB raw getAll failed for ${storeName}, falling back to localStorage:`, error)
+    const values: T[] = []
+    const rawPrefix = `${RAW_STORAGE_PREFIX}${storeName}_`
+    const valuePrefix = `${STORAGE_PREFIX}${storeName}_`
+    for (let i = 0; i < localStorage.length; i++) {
+      const storageKey = localStorage.key(i)
+      if (!storageKey) continue
+      try {
+        if (storageKey.startsWith(rawPrefix)) {
+          const value = JSON.parse(localStorage.getItem(storageKey) || 'null')
+          if (value !== null) values.push(value as T)
+        } else if (storageKey.startsWith(valuePrefix)) {
+          const key = storageKey.slice(valuePrefix.length)
+          const value = JSON.parse(localStorage.getItem(storageKey) || 'null')
+          if (value !== null) values.push({ key, value } as T)
+        }
+      } catch {
+        // Ignore malformed fallback entries and keep valid data readable.
+      }
+    }
+    return values
+  }
 }
 
 export async function putRaw<T>(storeName: string, value: T): Promise<void> {
-  const db = await openDB()
-  await new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite')
-    const store = transaction.objectStore(storeName)
-    const request = store.put(value)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve()
-  })
+  try {
+    const db = await openDB()
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([storeName], 'readwrite')
+      const store = transaction.objectStore(storeName)
+      const request = store.put(value)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
+    })
+  } catch (error) {
+    console.warn(`IndexedDB raw put failed for ${storeName}, falling back to localStorage:`, error)
+    const key = rawValueKey(value)
+    localStorage.setItem(`${RAW_STORAGE_PREFIX}${storeName}_${key}`, JSON.stringify(value))
+  }
 }
 
 export async function deleteRaw(storeName: string, key: IDBValidKey): Promise<void> {
-  const db = await openDB()
-  await new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite')
-    const store = transaction.objectStore(storeName)
-    const request = store.delete(key)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve()
-  })
+  try {
+    const db = await openDB()
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([storeName], 'readwrite')
+      const store = transaction.objectStore(storeName)
+      const request = store.delete(key)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
+    })
+  } catch (error) {
+    console.warn(`IndexedDB raw delete failed for ${storeName}, falling back to localStorage:`, error)
+  }
+  localStorage.removeItem(`${RAW_STORAGE_PREFIX}${storeName}_${String(key)}`)
+  localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${String(key)}`)
+}
+
+function rawValueKey<T>(value: T): string {
+  if (!value || typeof value !== 'object') throw new Error('Raw storage values must be objects')
+  const record = value as Record<string, unknown>
+  const key = record.id ?? record.date ?? record.key
+  if (key === undefined || key === null || String(key) === '') throw new Error('Raw storage values require id, date, or key')
+  return String(key)
+}
+
+function removeFallbackEntries(storeName: string): void {
+  const prefixes = [`${STORAGE_PREFIX}${storeName}_`, `${RAW_STORAGE_PREFIX}${storeName}_`]
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && prefixes.some((prefix) => key.startsWith(prefix))) keysToRemove.push(key)
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key))
 }
 
 // 清空存储
@@ -259,20 +327,15 @@ export async function clear(storeName: string): Promise<void> {
       const request = store.clear()
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
+      request.onsuccess = () => {
+        removeFallbackEntries(storeName)
+        resolve()
+      }
     })
   } catch (error) {
     console.warn(`IndexedDB clear failed for ${storeName}, falling back to localStorage:`, error)
     // 降级到 localStorage
-    const prefix = `${STORAGE_PREFIX}${storeName}_`
-    const keysToRemove: string[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith(prefix)) {
-        keysToRemove.push(key)
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key))
+    removeFallbackEntries(storeName)
   }
 }
 
@@ -293,10 +356,10 @@ export async function isEmpty(storeName: string): Promise<boolean> {
   } catch (error) {
     console.warn(`IndexedDB isEmpty failed for ${storeName}, falling back to localStorage:`, error)
     // 降级到 localStorage
-    const prefix = `${STORAGE_PREFIX}${storeName}_`
+    const prefixes = [`${STORAGE_PREFIX}${storeName}_`, `${RAW_STORAGE_PREFIX}${storeName}_`]
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
-      if (key && key.startsWith(prefix)) {
+      if (key && prefixes.some((prefix) => key.startsWith(prefix))) {
         return false
       }
     }
