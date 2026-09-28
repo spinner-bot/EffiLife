@@ -61,6 +61,9 @@ def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_pat
     command, url, setup = launcher.get_time_helper_cmd()
     assert command[:2] == [sys.executable, str(tmp_path / "launcher" / "static_server.py")]
     assert "--port" in command and "1420" in command
+    assert "--directory" in command
+    assert url == "http://127.0.0.1:1420"
+    assert setup is None
 
 
 def test_launcher_packaged_mode_prefers_native_tauri_binary(monkeypatch, tmp_path):
@@ -82,9 +85,6 @@ def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     command, url, setup = launcher.get_time_helper_cmd()
     assert command is None
     assert url is None and setup is None
-    assert "--directory" in command
-    assert url == "http://127.0.0.1:1420"
-    assert setup is None
 
 
 def test_launcher_keeps_unified_workspace_as_first_menu_entry():
