@@ -24,6 +24,7 @@ import {
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
+  planDataSource,
 } from '@/services/planGateway'
 import { completeLinkedTodos, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { TodoService } from '@/services/todoService'
@@ -33,7 +34,7 @@ const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
-const canEditPlan = true
+const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
 const canArchivePlan = !isMobilePlanRuntime
 const view = ref<'hub' | 'events' | 'detail'>('hub')
 const plans = ref<PlanSummary[]>([])
@@ -526,6 +527,10 @@ onMounted(async () => {
         <div v-if="isMobilePlanRuntime" class="plans-readonly-note">
           <strong>{{ t('plans.mobileLocalTitle') }}</strong>
           <span>{{ t('plans.mobileLocalDescription') }}</span>
+        </div>
+        <div v-else-if="planDataSource === 'cache'" class="plans-readonly-note">
+          <strong>{{ t('plans.cachedTitle') }}</strong>
+          <span>{{ t('plans.cachedDescription') }}</span>
         </div>
         <div class="detail-toolbar">
           <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>

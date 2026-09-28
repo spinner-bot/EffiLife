@@ -14,7 +14,7 @@ import {
   type TodoSettings,
   type UnifiedTodo,
 } from '@/services/todoService'
-import { completePlanTask, getPlanTasks, listPlanSummaries, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
@@ -346,7 +346,7 @@ async function loadPlanSummaries() {
   planGatewayState.value = 'loading'
   try {
     planSummaries.value = await listPlanSummaries()
-    planGatewayState.value = 'ready'
+    planGatewayState.value = planDataSource.value === 'cache' ? 'unavailable' : 'ready'
   } catch {
     planSummaries.value = []
     planGatewayState.value = 'unavailable'
@@ -363,7 +363,8 @@ async function loadPlanTasks(planId: string) {
   planTaskState.value = 'loading'
   try {
     planTasks.value = await getPlanTasks(planId)
-    planTaskState.value = 'ready'
+    planTaskState.value = planDataSource.value === 'cache' ? 'unavailable' : 'ready'
+    if (planDataSource.value === 'cache') planGatewayState.value = 'unavailable'
   } catch {
     planTasks.value = []
     planTaskState.value = 'unavailable'
@@ -731,12 +732,12 @@ watch(selectedPlanId, (planId) => {
           <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
         </select>
         <label class="task-field-label" for="new-task-plan">{{ t('tasks.plan') }}</label>
-        <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState === 'loading'">
+        <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState !== 'ready'">
           <option value="">{{ t('tasks.noPlan') }}</option>
           <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
         </select>
         <label class="task-field-label" for="new-task-plan-task">{{ t('tasks.planTask') }}</label>
-        <select id="new-task-plan-task" v-model="selectedPlanTaskId" class="task-select task-plan-select" :disabled="!selectedPlanId || planTaskState === 'loading'">
+        <select id="new-task-plan-task" v-model="selectedPlanTaskId" class="task-select task-plan-select" :disabled="!selectedPlanId || planTaskState !== 'ready'">
           <option value="">{{ t('tasks.noTask') }}</option>
           <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
@@ -898,12 +899,12 @@ watch(selectedPlanId, (planId) => {
               <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
             </select>
             <label :for="`edit-plan-${todo.id}`">{{ t('tasks.plan') }}</label>
-            <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState === 'loading'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
+            <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState !== 'ready'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
               <option value="">{{ t('tasks.noPlan') }}</option>
               <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
             </select>
             <label :for="`edit-plan-task-${todo.id}`">{{ t('tasks.planTask') }}</label>
-            <select :id="`edit-plan-task-${todo.id}`" v-model="editingPlanTaskId" class="task-edit-select" :disabled="!editingPlanId || planTaskState === 'loading'">
+            <select :id="`edit-plan-task-${todo.id}`" v-model="editingPlanTaskId" class="task-edit-select" :disabled="!editingPlanId || planTaskState !== 'ready'">
               <option value="">{{ t('tasks.noTask') }}</option>
               <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
             </select>

@@ -2,6 +2,7 @@ import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, getPlanRuntimeUnavailableReason } from './runtimeCapabilities'
 import { syncPendingPlanHelperReset } from './planReset'
 import { translate } from '@/i18n'
+import { ref } from 'vue'
 
 export interface PlanSummary {
   id: string
@@ -46,6 +47,11 @@ export interface PlanArchiveSummary {
 }
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
+export type PlanDataSource = 'unknown' | 'service' | 'mobile' | 'cache'
+
+// A cached snapshot is safe for reading but must never be mistaken for a
+// writable desktop service. The UI uses this state to expose read-only mode.
+export const planDataSource = ref<PlanDataSource>('unknown')
 
 type RawPlan = {
   head?: { index?: number | string; name?: string; date?: [number, number, number] }
@@ -230,52 +236,90 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') {
+    planDataSource.value = 'mobile'
     const plans = await getMobileRawPlans()
     return plans.map((plan, index) => toMobilePlanSummary(plan, index))
   }
-  const response = await fetchPlan('/api/plans', {
-    signal,
-    headers: { Accept: 'application/json' },
-  })
-  if (!response.ok) throw new Error(translate('plans.serviceError', { status: response.status }))
-  const payload = await readPayload<{ plans?: PlanSummary[] }>(response)
-  if (!payload.success) throw new Error(payload.error || translate('plans.serviceFailed'))
-  return (payload.data?.plans || []).map((plan) => ({
-    ...plan,
-    id: String(plan.id),
-  }))
+  try {
+    const response = await fetchPlan('/api/plans', {
+      signal,
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(translate('plans.serviceError', { status: response.status }))
+    const payload = await readPayload<{ plans?: PlanSummary[] }>(response)
+    if (!payload.success) throw new Error(payload.error || translate('plans.serviceFailed'))
+    planDataSource.value = 'service'
+    return (payload.data?.plans || []).map((plan) => ({
+      ...plan,
+      id: String(plan.id),
+    }))
+  } catch (error) {
+    if (signal?.aborted) throw error
+    const cached = (await getMobileRawPlans()).map((plan, index) => toMobilePlanSummary(plan, index))
+    if (cached.length === 0) throw error
+    planDataSource.value = 'cache'
+    return cached
+  }
 }
 
 export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') return []
-  const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
-  return data.archives || []
+  try {
+    const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
+    return data.archives || []
+  } catch {
+    // Archives are a secondary panel; keep cached active plans visible when
+    // the service is temporarily unavailable.
+    return []
+  }
 }
 
 export async function getPlanTasks(planId: string, signal?: AbortSignal): Promise<PlanTaskSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') {
+    planDataSource.value = 'mobile'
     const plans = await getMobileRawPlans()
     const plan = findMobilePlan(plans, planId)
     return plan ? toMobilePlanFull(plan, plans.indexOf(plan)).sections.flatMap((section) => section.tasks) : []
   }
-  const response = await fetchPlan(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
-    signal,
-    headers: { Accept: 'application/json' },
-  })
-  if (!response.ok) throw new Error(translate('plans.taskServiceError', { status: response.status }))
-  const payload = await readPayload<{ tasks?: PlanTaskSummary[] }>(response)
-  if (!payload.success) throw new Error(payload.error || translate('plans.taskServiceFailed'))
-  return (payload.data?.tasks || []).filter((task) => task.is_active !== false)
+  try {
+    const response = await fetchPlan(`/api/plans/${encodeURIComponent(planId)}/tasks`, {
+      signal,
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) throw new Error(translate('plans.taskServiceError', { status: response.status }))
+    const payload = await readPayload<{ tasks?: PlanTaskSummary[] }>(response)
+    if (!payload.success) throw new Error(payload.error || translate('plans.taskServiceFailed'))
+    planDataSource.value = 'service'
+    return (payload.data?.tasks || []).filter((task) => task.is_active !== false)
+  } catch (error) {
+    if (signal?.aborted) throw error
+    const plans = await getMobileRawPlans()
+    const plan = findMobilePlan(plans, planId)
+    if (!plan) throw error
+    planDataSource.value = 'cache'
+    return toMobilePlanFull(plan, plans.indexOf(plan)).sections.flatMap((section) => section.tasks)
+  }
 }
 
 export async function getPlanFull(planId: string): Promise<PlanFull> {
   if (getPlanRuntime() === 'mobile-unavailable') {
+    planDataSource.value = 'mobile'
     const plans = await getMobileRawPlans()
     const plan = findMobilePlan(plans, planId)
     if (!plan) throw new Error(translate('plans.mobileSnapshotMissing'))
     return toMobilePlanFull(plan, plans.indexOf(plan))
   }
-  return request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}/full`)
+  try {
+    const result = await request<PlanFull>(`/api/plans/${encodeURIComponent(planId)}/full`)
+    planDataSource.value = 'service'
+    return result
+  } catch (error) {
+    const plans = await getMobileRawPlans()
+    const plan = findMobilePlan(plans, planId)
+    if (!plan) throw error
+    planDataSource.value = 'cache'
+    return toMobilePlanFull(plan, plans.indexOf(plan))
+  }
 }
 
 export async function createEventPlan(name: string, date: [number, number, number]): Promise<PlanSummary> {
