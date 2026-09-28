@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
 import { getThemeCssVariables } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
-import { Home, ClipboardList, ListTodo, Clock3, Settings } from 'lucide-vue-next'
+import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
+import GlobalSearch from './components/GlobalSearch.vue'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -23,6 +24,16 @@ const checkinPlanName = ref('')
 // 是否已为今天的100%展示过打卡弹窗
 const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
+const showGlobalSearch = ref(false)
+
+function onGlobalKeydown(event: KeyboardEvent) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    showGlobalSearch.value = true
+  } else if (event.key === 'Escape') {
+    showGlobalSearch.value = false
+  }
+}
 
 // 应用主题到 CSS 变量
 function applyTheme() {
@@ -74,6 +85,7 @@ function onCheckinClose() {
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', onGlobalKeydown)
   await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
@@ -119,6 +131,10 @@ onMounted(async () => {
   checkProgressEvents()
 })
 
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
+})
+
 watch(() => appStore.config, applyTheme, { deep: true })
 
 // 监听统计数据变化，检查事件
@@ -157,6 +173,9 @@ watch(() => appStore.todayStat, () => {
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
           </RouterLink>
         </nav>
+        <button class="global-search-trigger" type="button" :aria-label="t('search.open')" @click="showGlobalSearch = true">
+          <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>⌘K</kbd>
+        </button>
       </header>
       <RouterView v-slot="{ Component }">
         <Transition name="page-fade" mode="out-in">
@@ -178,6 +197,7 @@ watch(() => appStore.todayStat, () => {
 
     <!-- 引导覆盖层 -->
     <GuideOverlay />
+    <GlobalSearch :open="showGlobalSearch" @close="showGlobalSearch = false" />
     </template>
 
     <div v-else class="app-startup" role="status" aria-live="polite">
@@ -232,6 +252,9 @@ watch(() => appStore.todayStat, () => {
 .global-nav-links { display: flex; align-items: center; gap: 3px; }
 .global-nav-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 10px; color: var(--color-text-tertiary); font-size: 12px; transition: color .2s, background-color .2s; }
 .global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
+.global-search-trigger { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 9px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
+.global-search-trigger:hover { color: var(--color-text-primary); border-color: var(--color-border-hover); }
+.global-search-trigger kbd { border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 4px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 10px; }
 
 @media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
 
@@ -272,5 +295,7 @@ watch(() => appStore.todayStat, () => {
   .global-nav-links { flex: 1; justify-content: space-between; }
   .global-nav-link { flex: 1; justify-content: center; padding: 8px 5px; }
   .global-nav-link span { display: none; }
+  .global-search-trigger span, .global-search-trigger kbd { display: none; }
+  .global-search-trigger { margin-left: 0; padding: 8px; }
 }
 </style>
