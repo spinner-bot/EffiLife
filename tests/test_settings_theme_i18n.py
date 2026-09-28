@@ -31,6 +31,7 @@ THEME_KEYS = (
     "glowIntensity",
     "presetLabel",
     "chooseColor",
+    "previewStatus",
 )
 
 
@@ -44,3 +45,9 @@ def test_theme_editor_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in THEME_KEYS:
         assert source.count(f"'settings.theme.{key}'") == 2
+
+
+def test_settings_subviews_use_localized_back_action():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert ">返回</button>" not in source
+    assert source.count("t('settings.back')") >= 6

@@ -848,8 +848,8 @@ onMounted(async () => {
         </template>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="goBack">返回</button>
-          <span class="theme-preview-status">选择后立即预览，返回时可选择是否保存</span>
+          <button class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
+          <span class="theme-preview-status">{{ t('settings.theme.previewStatus') }}</span>
         </div>
       </template>
 
@@ -1045,7 +1045,7 @@ onMounted(async () => {
           {{ t('settings.archive.hint') }}
         </p>
 
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 数据恢复 -->
@@ -1237,7 +1237,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <button class="btn secondary full" @click="goBack">返回</button>
+        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
     </main>
   </div>
