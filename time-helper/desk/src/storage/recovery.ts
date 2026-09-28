@@ -3,6 +3,7 @@
 import { get, set, openDB, STORE_NAMES } from './indexedDB'
 import { getAllBackups, restoreFromBackup, type BackupData } from './backup'
 import { hasLocalStorageData, hasIndexedDBData } from './migration'
+import { translate, currentLocale } from '@/i18n'
 
 // 数据状态
 export interface DataStatus {
@@ -51,32 +52,32 @@ export async function getRecoverySuggestions(): Promise<RecoverySuggestion[]> {
     if (status.hasBackups) {
       suggestions.push({
         type: 'restore_from_backup',
-        message: `检测到数据为空，但发现 ${status.backupCount} 个备份。建议从最近的备份恢复。`,
+        message: translate('settings.restore.suggestionBackups', { count: status.backupCount }),
         backupInfo: status.latestBackup || undefined,
       })
     } else {
       suggestions.push({
         type: 'import_archive',
-        message: '检测到数据为空，且无备份。可以导入存档文件恢复数据。',
+        message: translate('settings.restore.suggestionImport'),
       })
     }
   } else if (status.indexedDBEmpty && !status.localStorageEmpty) {
     // IndexedDB 为空但 localStorage 有数据（可能是迁移失败）
     suggestions.push({
       type: 'restore_from_backup',
-      message: '检测到 IndexedDB 数据为空，但 localStorage 有数据。建议重新执行数据迁移。',
+      message: translate('settings.restore.suggestionMigration'),
     })
   } else if (!status.indexedDBEmpty && status.localStorageEmpty) {
     // 正常状态：数据已迁移到 IndexedDB
     suggestions.push({
       type: 'no_action',
-      message: '数据状态正常，无需恢复操作。',
+      message: translate('settings.restore.suggestionNoAction'),
     })
   } else {
     // 两个存储都有数据（可能是迁移后 localStorage 未清理）
     suggestions.push({
       type: 'no_action',
-      message: '数据状态正常。',
+      message: translate('settings.restore.suggestionNormal'),
     })
   }
 
@@ -91,7 +92,7 @@ export async function restoreFromLatestBackup(): Promise<{
   try {
     const backups = getAllBackups()
     if (backups.length === 0) {
-      return { success: false, message: '没有找到备份文件' }
+      return { success: false, message: translate('settings.restore.noBackupFound') }
     }
 
     const latestBackup = backups[0]
@@ -99,12 +100,12 @@ export async function restoreFromLatestBackup(): Promise<{
 
     return {
       success: true,
-      message: `已从 ${new Date(latestBackup.timestamp).toLocaleString('zh-CN')} 的备份恢复数据`,
+      message: translate('settings.restore.restoredAt', { time: new Date(latestBackup.timestamp).toLocaleString(currentLocale.value) }),
     }
   } catch (error) {
     return {
       success: false,
-      message: `恢复失败：${(error as Error).message}`,
+      message: translate('settings.restore.restoreFailedDetail', { detail: (error as Error).message }),
     }
   }
 }
@@ -119,12 +120,12 @@ export async function restoreFromSpecificBackup(backup: BackupData): Promise<{
 
     return {
       success: true,
-      message: `已从 ${new Date(backup.timestamp).toLocaleString('zh-CN')} 的备份恢复数据`,
+      message: translate('settings.restore.restoredAt', { time: new Date(backup.timestamp).toLocaleString(currentLocale.value) }),
     }
   } catch (error) {
     return {
       success: false,
-      message: `恢复失败：${(error as Error).message}`,
+      message: translate('settings.restore.restoreFailedDetail', { detail: (error as Error).message }),
     }
   }
 }
@@ -223,12 +224,12 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
 
     return {
       success: true,
-      message: '已从紧急备份恢复数据',
+      message: translate('settings.restore.emergencyRestored'),
     }
   } catch (error) {
     return {
       success: false,
-      message: `恢复失败：${(error as Error).message}`,
+      message: translate('settings.restore.restoreFailedDetail', { detail: (error as Error).message }),
     }
   }
 }
