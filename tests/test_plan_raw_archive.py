@@ -62,3 +62,27 @@ def test_soft_deleted_task_is_renumbered_only_in_the_display_projection():
         assert set(plan.plan["main"][0]["group"]) == set(historical_snapshot["main"][0]["group"])
     finally:
         Plan.registry.pop(plan_id, None)
+
+
+def test_hard_deleted_log_preserves_date_and_content_of_remaining_entries():
+    plan_id = Plan.request_id()
+    created = api.create_plan(name="Log deletion", plan_id=plan_id)
+    assert created.success
+    plan = Plan.registry[plan_id]
+    plan.add_section("阶段", "说明")
+    plan.add_plan(0, "任务", 2)
+    plan.add_log(1, "A1", (10, 20), "保留日志", date="2026-09-28")
+    plan.add_log(2, "A1", (11, 30), "删除日志", date="2026-09-29")
+
+    try:
+        removed = plan.pur_log(1)
+        assert len(removed) == 1
+        assert plan.plan["log"] == [{
+            "day": 1,
+            "plan": "A1",
+            "time": (10, 20),
+            "content": "保留日志",
+            "date": "2026-09-28",
+        }]
+    finally:
+        Plan.registry.pop(plan_id, None)

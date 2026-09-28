@@ -4,6 +4,7 @@
         by spinner-bot
 """
 from datetime import datetime
+import copy
 import json
 from pathlib import Path
 import os
@@ -314,16 +315,17 @@ class Plan:
         return len(self.plan["log"])-1
 
     def pur_log(self,*index):
-        temp = self.plan["log"]
-        count=0
-        f=[]
-        self.plan["log"]=[]
-        for i in temp:
-            if not count in index:
-                self.add_log(i["day"],i["plan"],i["time"],i["content"])
-                f.append(i)
-            count+=1
-        return tuple(f)
+        """Remove log positions while preserving every remaining field exactly.
+
+        Log entries may carry an explicit calendar date in addition to the
+        display day. Rebuilding them through ``add_log`` can lose that field
+        and reinterpret content, so hard deletion filters the existing list
+        instead. The list index remains the historical log identifier.
+        """
+        remove = {int(item) for item in index if str(item).lstrip("-").isdigit()}
+        kept = [copy.deepcopy(entry) for position, entry in enumerate(self.plan["log"]) if position not in remove]
+        self.plan["log"] = kept
+        return tuple(kept)
 
     @staticmethod
     def to_json(input):
