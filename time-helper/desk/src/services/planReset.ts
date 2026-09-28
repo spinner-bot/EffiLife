@@ -1,4 +1,5 @@
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
+import { translate } from '@/i18n'
 
 /** A local tombstone prevents an offline reset from being undone by stale server data. */
 export const PLAN_HELPER_RESET_PENDING_KEY = 'effilife_plan_helper_reset_pending'
@@ -35,7 +36,7 @@ export async function syncPendingPlanHelperReset(): Promise<void> {
     })
     const payload = await response.json() as { success?: boolean; error?: string }
     if (!response.ok || !payload.success) {
-      throw new Error(payload.error || `计划重置同步失败（${response.status}）`)
+      throw new Error(payload.error || translate('plans.resetSyncFailed', { status: response.status }))
     }
     clearPlanHelperResetPending()
   } finally {
