@@ -70,6 +70,13 @@ def test_global_search_targets_a_specific_time_record():
     assert "openLinkedTodo" in day
 
 
+def test_global_search_prioritizes_title_matches():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "title === normalized" in source
+    assert "title.startsWith(normalized)" in source
+    assert ".sort((left, right) => right.score - left.score" in source
+
+
 def test_global_search_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in (

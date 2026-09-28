@@ -70,6 +70,19 @@ const filteredResults = computed(() => {
   if (!normalized) return []
   return allResults.value
     .filter((result) => `${result.title} ${result.detail} ${result.searchText}`.toLocaleLowerCase().includes(normalized))
+    .map((result, index) => {
+      const title = result.title.toLocaleLowerCase()
+      const detail = result.detail.toLocaleLowerCase()
+      const searchText = result.searchText.toLocaleLowerCase()
+      const score = title === normalized ? 1000
+        : title.startsWith(normalized) ? 800
+          : title.includes(normalized) ? 600
+            : detail.includes(normalized) ? 400
+              : searchText.includes(normalized) ? 200 : 0
+      return { result, score, index }
+    })
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ result }) => result)
     .slice(0, 12)
 })
 
