@@ -46,9 +46,15 @@ class DataManager:
 
     def __init__(self, data_root: Optional[str] = None):
         if data_root is None:
-            # 默认使用项目根目录下的 common/data
-            project_root = Path(__file__).parent.parent
-            data_root = project_root / 'common' / 'data'
+            # Packaged launchers and the plan-helper sidecar share this
+            # optional root. Keep the repository path as the development
+            # fallback so existing scripts remain compatible.
+            configured_root = os.environ.get('EFFILIFE_DATA_DIR', '').strip()
+            if configured_root:
+                data_root = Path(configured_root).expanduser()
+            else:
+                project_root = Path(__file__).parent.parent
+                data_root = project_root / 'common' / 'data'
         else:
             data_root = Path(data_root)
 

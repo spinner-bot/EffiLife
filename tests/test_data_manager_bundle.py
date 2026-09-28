@@ -14,6 +14,13 @@ def test_data_manager_bundle_includes_cross_refs(tmp_path):
     assert datasets["cross_refs"][0]["source_id"] == "plan-1"
 
 
+def test_data_manager_uses_launcher_data_root_when_explicit(monkeypatch, tmp_path):
+    configured = tmp_path / "shared-data"
+    monkeypatch.setenv("EFFILIFE_DATA_DIR", str(configured))
+    manager = DataManager()
+    assert manager.data_root == configured
+
+
 def test_data_manager_workspace_bundle_uses_canonical_contract(tmp_path):
     manager = DataManager(tmp_path / "data")
     bundle = tmp_path / "workspace.efl"
