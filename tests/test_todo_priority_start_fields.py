@@ -6,12 +6,10 @@ TASKS = ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue"
 I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 
-def test_task_forms_keep_start_time_while_rank_lives_on_the_task_row():
+def test_task_forms_keep_start_time_internal_while_rank_lives_on_the_task_row():
     source = TASKS.read_text(encoding="utf-8")
-    assert "start_time: fromDateTimeLocal(startTime.value)" in source
-    assert "start_time: fromDateTimeLocal(editingStartTime.value)" in source
-    assert "id=\"new-task-start-time\"" in source
-    assert "edit-start-time-${todo.id}" in source
+    assert "start_time: fromDateTimeLocal" not in source
+    assert 'type="datetime-local"' not in source
     assert "adjustTodoRank(todo, 1)" in source
     assert "adjustTodoRank(todo, -1)" in source
     assert "task-rank-control" in source
