@@ -12,7 +12,7 @@ import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
-import { repairTodoTimeRecordLinks } from './services/workspaceSync'
+import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -92,6 +92,7 @@ onMounted(async () => {
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
   await repairTodoTimeRecordLinks()
+  await repairTodoPlanTaskLinks()
   applyTheme()
   runtimeReady.value = true
 

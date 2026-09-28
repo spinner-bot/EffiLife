@@ -1,6 +1,7 @@
 import { TodoService } from './todoService'
 import type { TimeRecord } from '@/types'
 import { getRawAll, STORE_NAMES } from '@/storage'
+import { getPlanTasks, listPlanSummaries } from './planGateway'
 
 /**
  * Complete every unified todo linked to a plan task.
@@ -113,6 +114,49 @@ export async function repairTodoTimeRecordLinks(): Promise<number> {
       const validLinks = links.filter((id) => recordIds.has(id))
       if (validLinks.length === links.length) continue
       await TodoService.update(todo.id, { related_time_record_ids: validLinks })
+      repaired += 1
+    }
+    return repaired
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Remove plan-task references that are provably stale after imports or soft
+ * deletes. If the plan gateway is unavailable, leave all links untouched.
+ */
+export async function repairTodoPlanTaskLinks(): Promise<number> {
+  try {
+    const todos = await TodoService.list()
+    const linkedTodos = todos.filter((todo) => todo.related_plan_id && todo.related_plan_task_id)
+    if (!linkedTodos.length) return 0
+
+    const summaries = await listPlanSummaries()
+    const planIds = new Set(summaries.map((plan) => String(plan.id)))
+    const taskIdsByPlan = new Map<string, Set<string>>()
+    for (const planId of new Set(linkedTodos.map((todo) => String(todo.related_plan_id)))) {
+      if (!planIds.has(planId)) {
+        taskIdsByPlan.set(planId, new Set())
+        continue
+      }
+      try {
+        const tasks = await getPlanTasks(planId)
+        taskIdsByPlan.set(planId, new Set(tasks.flatMap((task) => [String(task.internal_id), String(task.display_id)])))
+      } catch {
+        // A single plan may be temporarily unavailable; do not repair it.
+      }
+    }
+
+    let repaired = 0
+    for (const todo of linkedTodos) {
+      const planId = String(todo.related_plan_id)
+      const taskIds = taskIdsByPlan.get(planId)
+      if (!taskIds || taskIds.has(String(todo.related_plan_task_id))) continue
+      await TodoService.update(todo.id, {
+        related_plan_id: undefined,
+        related_plan_task_id: undefined,
+      })
       repaired += 1
     }
     return repaired
