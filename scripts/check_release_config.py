@@ -1,0 +1,55 @@
+"""Validate the repository's desktop release configuration without building it."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+
+
+def validate(root: Path) -> list[str]:
+    errors: list[str] = []
+    version = (root / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
+    package = json.loads((root / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))
+    tauri = json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+    cargo = (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+    workflow = (root / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+
+    cargo_match = re.search(r'^version\s*=\s*"([^"]+)"', cargo, re.MULTILINE)
+    versions = {version, str(package.get("version")), str(tauri.get("version")), cargo_match.group(1) if cargo_match else ""}
+    if len(versions) != 1:
+        errors.append(f"desktop versions are not aligned: {sorted(versions)}")
+    if "binaries/efflife-plan-helper" not in tauri.get("bundle", {}).get("externalBin", []):
+        errors.append("Tauri config does not declare the Plan Helper sidecar")
+    if "build:sidecar" not in str(tauri.get("build", {}).get("beforeBuildCommand", "")):
+        errors.append("Tauri release build does not build the Plan Helper sidecar")
+    if "python -m pytest -q" not in workflow:
+        errors.append("release workflow has no Python contract-test step")
+    if "scripts/generate_checksums.py" not in workflow:
+        errors.append("release workflow has no installer checksum step")
+    for runner, bundle, artifact in (
+        ("windows-latest", "nsis", "bundle/nsis/*.exe"),
+        ("ubuntu-22.04", "deb", "bundle/deb/*.deb"),
+        ("macos-latest", "dmg", "bundle/dmg/*.dmg"),
+    ):
+        if runner not in workflow or f"bundle: {bundle}" not in workflow or artifact not in workflow:
+            errors.append(f"release matrix entry is incomplete: {runner}/{bundle}")
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    args = parser.parse_args()
+    errors = validate(args.root.resolve())
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}")
+        return 1
+    print("EffiLife desktop release configuration is ready")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

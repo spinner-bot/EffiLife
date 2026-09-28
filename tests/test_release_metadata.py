@@ -71,3 +71,15 @@ def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
     assert json.loads((root / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
     assert json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
     assert 'version = "9.8.7"' in (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+
+
+def test_release_preflight_passes_for_current_repository():
+    import importlib.util
+
+    script = ROOT / "scripts" / "check_release_config.py"
+    spec = importlib.util.spec_from_file_location("effilife_release_preflight", script)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    assert module.validate(ROOT) == []
