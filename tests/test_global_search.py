@@ -40,6 +40,8 @@ def test_global_search_refreshes_when_unified_data_changes():
     assert "WORKSPACE_CHANGED_EVENT" in events
     assert "BroadcastChannel" in events
     assert "channel?.postMessage" in events
+    assert "catch" in events
+    assert "Math.max(0, subscriberCount - 1)" in events
     assert "notifyWorkspaceChanged('todos')" in todo_service
     assert "notifyWorkspaceChanged('plans')" in plan_gateway
     assert "notifyWorkspaceChanged('records')" in app_store
