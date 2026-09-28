@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { DataService } from '@/services/dataService'
@@ -20,6 +20,7 @@ import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t, locale } = useI18n()
 
 function toDateTimeLocal(date: Date): string {
@@ -71,6 +72,7 @@ const isSaving = ref(false)
 const creatingTodo = ref(false)
 const completingTodoId = ref<string | null>(null)
 const expandedTodoId = ref<string | null>(null)
+const searchTargetTodoId = ref<string | null>(null)
 const subtaskTitle = ref('')
 const subtaskSaving = ref(false)
 const trackedMinutes = ref(25)
@@ -594,10 +596,18 @@ function formatDeadline(deadline?: string): string {
   return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
 }
 
-onMounted(() => {
-  loadTodos().then(loadCategories)
+onMounted(async () => {
+  await loadTodos()
+  await loadCategories()
   loadPlanSummaries()
   loadTodoSettings()
+  const targetId = String(route.query.todo || '')
+  if (targetId && todos.value.some((todo) => todo.id === targetId)) {
+    searchTargetTodoId.value = targetId
+    await nextTick()
+    document.getElementById(`todo-${targetId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    window.setTimeout(() => { searchTargetTodoId.value = null }, 2200)
+  }
 })
 
 onUnmounted(() => {
@@ -741,7 +751,7 @@ watch(selectedPlanId, (planId) => {
         <span>{{ t('tasks.emptyHint') }}</span>
       </section>
       <section v-else class="task-list">
-        <article v-for="todo in visibleTodos" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed' }">
+        <article v-for="todo in visibleTodos" :id="`todo-${todo.id}`" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed', 'search-target': searchTargetTodoId === todo.id }">
           <button class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
@@ -873,6 +883,7 @@ watch(selectedPlanId, (planId) => {
 .task-list { display: grid; gap: 10px; }
 .task-item { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }
+.task-item.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .task-item.completed { opacity: .68; }
 .task-check { display: grid; place-items: center; width: 23px; height: 23px; flex: 0 0 23px; border: 2px solid var(--color-border-hover); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
 .task-check:disabled { cursor: default; opacity: .85; }

@@ -22,6 +22,17 @@ def test_global_search_indexes_all_unified_data_domains():
     assert "listPlanSummaries()" in source
     assert "STORE_NAMES.RECORDS" in source
     assert "router.push(result.route)" in source
+    assert "tasks?todo=" in source
+    assert "plans?plan=" in source
+
+
+def test_search_targets_are_consumed_by_plan_and_task_views():
+    plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    assert "route.query.plan" in plans
+    assert "openPlan(target)" in plans
+    assert "route.query.todo" in tasks
+    assert "scrollIntoView" in tasks
 
 
 def test_global_search_translation_keys_exist_in_both_locales():

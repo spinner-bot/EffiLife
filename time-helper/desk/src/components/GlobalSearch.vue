@@ -33,14 +33,14 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'todo' as const,
     title: todo.title,
     detail: todo.deadline || t('search.todoDetail'),
-    route: '/tasks',
+    route: `/tasks?todo=${encodeURIComponent(todo.id)}`,
   })),
   ...plans.value.map((plan) => ({
     id: `plan:${plan.id}`,
     kind: 'plan' as const,
     title: plan.name,
     detail: t('search.planDetail'),
-    route: '/plans',
+    route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
   })),
   ...records.value.map((record, index) => ({
     id: `record:${record.id || `${record.date}-${index}`}`,

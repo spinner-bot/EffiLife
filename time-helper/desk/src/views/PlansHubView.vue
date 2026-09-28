@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
@@ -30,6 +30,7 @@ import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
 const router = useRouter()
+const route = useRoute()
 const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = true
@@ -436,7 +437,12 @@ function backFromDetail() {
 
 const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.length, 0) || 0)
 
-onMounted(loadPlans)
+onMounted(async () => {
+  await loadPlans()
+  const targetId = String(route.query.plan || '')
+  const target = targetId ? plans.value.find((plan) => String(plan.id) === targetId) : undefined
+  if (target) await openPlan(target)
+})
 </script>
 
 <template>
