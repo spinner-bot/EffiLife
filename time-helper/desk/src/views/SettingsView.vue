@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ArrowLeft, ChevronRight, Mail, Copy, BarChart3, CalendarDays, Target, Flame, BellRing, Music2, Palette, HardDrive } from 'lucide-vue-next'
+import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
@@ -91,7 +91,7 @@ const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'legacy-help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore' | 'legacy-recovery'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore' | 'legacy-recovery'
 const currentView = ref<ViewType>('main')
 // 导航历史栈（用于返回上一级）
 const viewHistory = ref<ViewType[]>(['main'])
@@ -909,134 +909,6 @@ onMounted(async () => {
       <!-- 帮助 -->
       <template v-else-if="currentView === 'help'">
         <HelpCenterPanel @back="goBack" />
-      </template>
-
-      <template v-else-if="currentView === 'legacy-help'">
-        <h2>帮助中心</h2>
-
-        <!-- 快速入门 -->
-        <div class="help-section">
-          <h3>快速入门</h3>
-          <div class="help-steps">
-            <div class="help-step">
-              <div class="step-number">1</div>
-              <div class="step-content">
-                <strong>设置日计划</strong>
-                <p>进入"管理" → "日计划管理"，创建或选择适合你的计划模板</p>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="step-number">2</div>
-              <div class="step-content">
-                <strong>记录时间</strong>
-                <p>点击"记录"按钮，添加你花费在各项活动上的时间</p>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="step-number">3</div>
-              <div class="step-content">
-                <strong>查看进度</strong>
-                <p>主页实时显示今日完成度，追踪你的效率目标</p>
-              </div>
-            </div>
-            <div class="help-step">
-              <div class="step-number">4</div>
-              <div class="step-content">
-                <strong>每日打卡</strong>
-                <p>完成100%计划后，点击打卡按钮记录你的连续成就</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 常见问题 -->
-        <div class="help-section">
-          <h3>常见问题</h3>
-          <details class="faq-item">
-            <summary>什么是切分制和分配制？</summary>
-            <div class="faq-answer">
-              <p><strong>切分制</strong>：将24小时切分为多个时间段，所有时间类别加起来必须等于24小时。适合严格的时间管理。</p>
-              <p><strong>分配制</strong>：为每个活动分配目标时长，总时长可以超过或不足24小时。更灵活，适合弹性安排。</p>
-            </div>
-          </details>
-          <details class="faq-item">
-            <summary>如何设置自动日程分配？</summary>
-            <div class="faq-answer">
-              <p>进入"管理" → "日程安排"，可以设置规则让系统自动为每天分配计划。例如：周一到周五使用"工作日"计划，周末使用"休息日"计划。</p>
-              <p>规则按优先级排序，系统会从前往后匹配第一条符合的规则。</p>
-            </div>
-          </details>
-          <details class="faq-item">
-            <summary>为什么打卡天数没有增加？</summary>
-            <div class="faq-answer">
-              <p>打卡需要在完成100%计划后，手动点击"打卡"按钮。如果关闭了弹窗或没有点击打卡，天数不会增加。</p>
-              <p>另外，如果当天已经打过卡，再次完成计划不会重复计数。</p>
-            </div>
-          </details>
-          <details class="faq-item">
-            <summary>如何备份我的数据？</summary>
-            <div class="faq-answer">
-              <p>进入"设置" → "存档管理" → "导出存档"，可以将所有数据保存为 .efl 文件。</p>
-              <p>建议在更换设备前或重要节点定期备份。</p>
-            </div>
-          </details>
-          <details class="faq-item">
-            <summary>背景音乐没有声音？</summary>
-            <div class="faq-answer">
-              <p>请检查：1) 设置 → 声音 → 启用背景音乐已开启；2) 音量不为0；3) 系统音量正常。</p>
-              <p>首次使用可能需要在浏览器中点击页面任意位置激活音频。</p>
-            </div>
-          </details>
-        </div>
-
-        <!-- 功能概览 -->
-        <div class="help-section">
-          <h3>功能概览</h3>
-          <div class="feature-grid">
-            <div class="feature-item">
-              <span class="feature-icon"><BarChart3 :size="22" /></span>
-              <strong>时间统计</strong>
-              <p>实时追踪各类别时间分配</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><CalendarDays :size="22" /></span>
-              <strong>历史记录</strong>
-              <p>直观查看历史记录和完成度</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><Target :size="22" /></span>
-              <strong>计划管理</strong>
-              <p>自定义日计划，灵活配置</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><Flame :size="22" /></span>
-              <strong>打卡系统</strong>
-              <p>记录连续完成天数，激励坚持</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><BellRing :size="22" /></span>
-              <strong>进度预警</strong>
-              <p>多时段提醒，防止落后计划</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><Music2 :size="22" /></span>
-              <strong>环境音效</strong>
-              <p>9种背景音乐，专注工作</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><Palette :size="22" /></span>
-              <strong>主题切换</strong>
-              <p>12种主题风格，个性定制</p>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><HardDrive :size="22" /></span>
-              <strong>数据备份</strong>
-              <p>导出导入，数据永不丢失</p>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 存档管理 -->
