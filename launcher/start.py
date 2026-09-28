@@ -198,6 +198,17 @@ def verify_bundle_command(bundle_path):
     return True
 
 
+def release_check_command():
+    """Print the read-only desktop release preflight as machine-readable JSON."""
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from scripts.check_release_config import validate
+
+    errors = validate(BASE_DIR)
+    print(json.dumps({"ok": not errors, "errors": errors}, ensure_ascii=True, indent=2))
+    return not errors
+
+
 def get_time_helper_cmd():
     """Get command for time-helper, prefer dev mode for latest features"""
     npm = find_npm()
@@ -700,6 +711,10 @@ def main():
             print(json.dumps({"ok": False, "error": "--verify-bundle requires a bundle path"}, ensure_ascii=True))
             raise SystemExit(2)
         if not verify_bundle_command(bundle_path):
+            raise SystemExit(1)
+        return
+    if "--release-check" in sys.argv:
+        if not release_check_command():
             raise SystemExit(1)
         return
     modules = build_modules()

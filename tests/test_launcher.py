@@ -14,6 +14,16 @@ def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     assert calls == [("1", modules, {"open_browser": True})]
 
 
+def test_release_check_is_read_only_and_short_circuits_startup(monkeypatch, capsys):
+    monkeypatch.setattr(launcher, "build_modules", lambda: (_ for _ in ()).throw(AssertionError("must not start modules")))
+    monkeypatch.setattr(launcher, "release_check_command", lambda: True)
+    monkeypatch.setattr(sys, "argv", ["start.py", "--release-check"])
+
+    launcher.main()
+
+    assert capsys.readouterr().out == ""
+
+
 def test_launcher_defaults_to_unified_workspace_without_legacy_flag(monkeypatch):
     modules = {"1": {"name": "EffiLife unified workspace"}}
     calls = []
