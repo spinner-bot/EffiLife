@@ -60,7 +60,7 @@ EffLife/
 |------|--------|------|
 | `time-helper/python/` | Python 3 + Tkinter | 原生桌面版，单文件实现 |
 | `time-helper/desk/` | Vue 3 + Tauri (Rust) | 桌面版，支持主题、音频、动效系统 |
-| `time-helper/android/` | Tauri Mobile (Kotlin) | 移动端适配（已搁置） |
+| `time-helper/desk/` | Vue 3 + Tauri Mobile candidate | 复用统一前端的移动端适配链路（待 Android/iOS 真机验收） |
 
 **功能概览**
 
