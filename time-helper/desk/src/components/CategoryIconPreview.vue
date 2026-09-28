@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Circle, icons as lucideIcons } from 'lucide-vue-next'
-import type { LucideIcon } from 'lucide-vue-next'
+import { categoryIconRegistry } from './categoryIcons'
+import { Circle } from 'lucide-vue-next'
 
 const props = withDefaults(defineProps<{
   name?: string
@@ -11,13 +11,7 @@ const props = withDefaults(defineProps<{
   size: 14,
 })
 
-const iconRegistry = lucideIcons as Record<string, LucideIcon>
-
-function toPascalCase(value: string): string {
-  return value.split('-').filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('')
-}
-
-const iconComponent = computed(() => iconRegistry[toPascalCase(props.name || '')] || Circle)
+const iconComponent = computed(() => categoryIconRegistry[props.name || ''] || Circle)
 </script>
 
 <template>

@@ -469,7 +469,7 @@ async function onLegacyTodoSelected(event: Event) {
   if (!confirm(t('settings.archive.legacyTodoImportConfirm'))) return
   try {
     const result = await importLegacyTodoPayload(await file.text())
-    alert(t('settings.archive.legacyTodoImportSuccess', result))
+    alert(t('settings.archive.legacyTodoImportSuccess', { ...result }))
     window.location.reload()
   } catch (error) {
     alert(t('settings.archive.legacyTodoImportFailed') + (error as Error).message)

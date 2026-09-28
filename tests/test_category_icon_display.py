@@ -8,8 +8,7 @@ PREVIEW = ROOT / "time-helper" / "desk" / "src" / "components" / "CategoryIconPr
 
 def test_category_icon_preview_supports_lucide_and_ascii_fallbacks():
     source = PREVIEW.read_text(encoding="utf-8")
-    assert "icons as lucideIcons" in source
-    assert "toPascalCase" in source
+    assert "categoryIconRegistry" in source
     assert "v-if=\"ascii\"" in source
     assert "|| Circle" in source
 

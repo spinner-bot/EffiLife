@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -17,8 +17,8 @@ import {
 import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, updatePlanTask, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
-import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
-import CategoryIconPreview from '@/components/CategoryIconPreview.vue'
+const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
+const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
 
 const router = useRouter()
 const route = useRoute()

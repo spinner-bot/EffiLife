@@ -335,9 +335,9 @@ class CheckinSystemClass {
         // 筛选出完成度 100% 的记录
         return records
           .filter((r: { progress?: number }) => r.progress === 100)
-          .map((r: { plan_name?: string; planName?: string; progress: number }) => ({
+          .map((r: { plan_name?: string; planName?: string; progress?: number }) => ({
             planName: r.plan_name || r.planName || '未知计划',
-            progress: r.progress
+            progress: r.progress ?? 0
           }))
       }
     } catch (e) {
