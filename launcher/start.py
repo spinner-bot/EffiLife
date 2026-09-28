@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
+VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 
 # Custom Node.js location (F drive)
 CUSTOM_NODE_DIR = Path(os.environ.get("EFFILIFE_NODE_DIR", "F:/dev-tools/node"))
@@ -103,6 +104,14 @@ def setup_timeout(default=300):
         return max(30, min(900, int(raw)))
     except ValueError:
         return default
+
+
+def app_version():
+    """Read the desktop version without importing frontend or build tooling."""
+    try:
+        return VERSION_FILE.read_text(encoding="utf-8").strip() or None
+    except OSError:
+        return None
 
 
 def get_time_helper_cmd():
@@ -256,6 +265,7 @@ def collect_diagnostics(modules):
         }
     return {
         "base_dir": str(BASE_DIR),
+        "version": app_version(),
         "python": sys.executable,
         "node": node,
         "npm": npm,

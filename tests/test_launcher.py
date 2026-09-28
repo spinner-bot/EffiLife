@@ -253,5 +253,6 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     result = launcher.collect_diagnostics(modules)
     assert result["node"] == "node.exe"
     assert result["npm"] == "npm.cmd"
+    assert result["version"] == (Path(launcher.BASE_DIR) / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     assert result["modules"]["1"]["port_occupied"] is True
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
