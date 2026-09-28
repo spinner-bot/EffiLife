@@ -27,3 +27,8 @@ def test_unified_shell_updates_document_title_for_route_and_locale():
     assert "'app.documentTitle': '{page} · EffiLife'" in (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert "path.startsWith('/tasks')" in APP
     assert "path.startsWith('/day')" in APP
+
+
+def test_settings_subroutes_keep_the_settings_navigation_entry_active():
+    assert "const isSettingsRoute = computed(() => ['/settings', '/audio-settings', '/motion-settings', '/event-manager'].includes(route.path))" in APP
+    assert ":class=\"{ active: isSettingsRoute }\"" in APP

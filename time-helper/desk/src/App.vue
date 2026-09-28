@@ -32,6 +32,8 @@ const pageTitle = computed(() => {
   return t('nav.settings')
 })
 
+const isSettingsRoute = computed(() => ['/settings', '/audio-settings', '/motion-settings', '/event-manager'].includes(route.path))
+
 // 打卡弹窗状态
 const showCheckinPopup = ref(false)
 const checkinPlanName = ref('')
@@ -230,7 +232,7 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
             <Clock3 :size="16" /> <span>{{ t('nav.records') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" to="/settings" :class="{ active: route.path.startsWith('/settings') }">
+          <RouterLink class="global-nav-link" to="/settings" :class="{ active: isSettingsRoute }">
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
           </RouterLink>
         </nav>
@@ -251,7 +253,7 @@ watch(() => appStore.todayStat, () => {
         <RouterLink class="mobile-bottom-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
           <Clock3 :size="19" /> <span>{{ t('nav.records') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" to="/settings" :class="{ active: route.path.startsWith('/settings') }">
+        <RouterLink class="mobile-bottom-nav-link" to="/settings" :class="{ active: isSettingsRoute }">
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>
