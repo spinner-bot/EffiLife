@@ -6,6 +6,7 @@ import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
+import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 
@@ -16,6 +17,14 @@ const { t } = useI18n()
 const records = computed(() => appStore.todayRecords)
 const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
+const todos = ref<UnifiedTodo[]>([])
+const selectedTodoId = ref('')
+const todoOptions = computed(() => {
+  const selected = todos.value.find((todo) => todo.id === selectedTodoId.value)
+  const active = todos.value.filter((todo) => !['archived', 'cancelled'].includes(todo.status))
+  return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
+})
+const todoTitleById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo.title])))
 
 // 获取当前计划的标签列表
 const availableTags = computed(() => {
@@ -49,6 +58,7 @@ function resetForm() {
   formDurationTime.value = { h: '09', m: '00' }
   formContent.value = ''
   formTag.value = availableTags.value[0] || ''
+  selectedTodoId.value = ''
   isEditing.value = false
   editingIndex.value = -1
 }
@@ -72,6 +82,7 @@ function openEditForm(index: number) {
   formEnd.value = { h: eh, m: em }
   formContent.value = record.content
   formTag.value = record.tag
+  selectedTodoId.value = record.todo_id || ''
   isEditing.value = true
   editingIndex.value = index
   showForm.value = true
@@ -224,8 +235,8 @@ async function saveRecordInternal() {
   const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined
 
   const record: TimeRecord = {
-    id: originalRecord?.id,
-    todo_id: originalRecord?.todo_id,
+    id: originalRecord?.id || `TR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    todo_id: selectedTodoId.value || undefined,
     date: getTodayDate(),
     start,
     end,
@@ -239,7 +250,30 @@ async function saveRecordInternal() {
   } else {
     await appStore.addRecord(record)
   }
-  notifyToast(t('records.saved'), 'success')
+  let todoLinkFailed = false
+  if (originalRecord?.todo_id && originalRecord.todo_id !== record.todo_id) {
+    try {
+      await unlinkTodoFromTimeRecord({ ...record, todo_id: originalRecord.todo_id })
+    } catch (error) {
+      todoLinkFailed = true
+      console.warn('Failed to unlink previous todo record reference', error)
+    }
+  }
+  if (record.todo_id) {
+    try {
+      const todo = todos.value.find((item) => item.id === record.todo_id)
+      if (todo && !todo.related_time_record_ids?.includes(record.id as string)) {
+        const updated = await TodoService.update(todo.id, {
+          related_time_record_ids: [...(todo.related_time_record_ids || []), record.id as string],
+        })
+        todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
+      }
+    } catch (error) {
+      todoLinkFailed = true
+      console.warn('Failed to link saved record to todo', error)
+    }
+  }
+  notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
 
   showForm.value = false
   resetForm()
@@ -255,8 +289,13 @@ async function deleteRecord(index: number) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   formTag.value = availableTags.value[0] || ''
+  try {
+    todos.value = await TodoService.list()
+  } catch {
+    todos.value = []
+  }
 })
 </script>
 
@@ -288,6 +327,7 @@ onMounted(() => {
             <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
           </div>
           <div class="record-content">{{ record.content }}</div>
+          <span v-if="record.todo_id" class="record-todo-link">{{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}</span>
           <div class="record-actions">
             <button class="icon-btn" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
@@ -392,6 +432,14 @@ onMounted(() => {
             <label>{{ t('records.category') }}：</label>
             <select v-model="formTag" class="select-input">
               <option v-for="tag in availableTags" :key="tag" :value="tag">{{ tag }}</option>
+            </select>
+          </div>
+
+          <div class="form-section">
+            <label>{{ t('records.linkTodo') }}：</label>
+            <select v-model="selectedTodoId" class="select-input">
+              <option value="">{{ t('records.noLinkedTodo') }}</option>
+              <option v-for="todo in todoOptions" :key="todo.id" :value="todo.id">{{ todo.title }}</option>
             </select>
           </div>
         </div>
@@ -507,6 +555,13 @@ onMounted(() => {
 .record-content {
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
+}
+
+.record-todo-link {
+  display: inline-block;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-primary);
+  font-size: 0.75rem;
 }
 
 .record-actions {

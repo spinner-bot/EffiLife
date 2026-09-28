@@ -40,5 +40,5 @@ def test_day_detail_delete_cleans_linked_todo_reference():
 def test_record_save_confirms_success_in_both_locales():
     source = RECORDS.read_text(encoding="utf-8")
     i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
-    assert "notifyToast(t('records.saved'), 'success')" in source
+    assert "todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved')" in source
     assert i18n.count("'records.saved':") == 2
