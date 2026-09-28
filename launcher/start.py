@@ -211,16 +211,31 @@ def release_check_command():
 
 def get_time_helper_cmd():
     """Get command for time-helper, prefer dev mode for latest features"""
+    exe_paths = [
+        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe",
+        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "debug" / "efflife-desk.exe",
+    ]
+
+    # Formal installers must never unexpectedly switch to a source checkout's
+    # Vite server merely because Node happens to be installed on the machine.
+    if "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged":
+        for exe_path in exe_paths:
+            if exe_path.exists():
+                return [str(exe_path)], None, None
+        dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
+        if (dist_path / "index.html").exists():
+            return [
+                sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
+                "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
+            ], "http://127.0.0.1:1420", None
+        return None, None, None
+
     npm = find_npm()
     if npm:
         # Dev mode - shows latest code changes
         return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1420", "--strictPort"], "http://127.0.0.1:1420", [npm, "install"]
 
     # Fall back to compiled exe
-    exe_paths = [
-        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe",
-        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "debug" / "efflife-desk.exe",
-    ]
     for exe_path in exe_paths:
         if exe_path.exists():
             return [str(exe_path)], None, None  # cmd, url, setup
