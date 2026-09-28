@@ -29,12 +29,10 @@ def test_public_date_api_reuses_local_date_helpers():
 def test_user_visible_date_modules_parse_calendar_dates_locally():
     checkin = (ROOT / "time-helper" / "desk" / "src" / "data" / "CheckinSystem.ts").read_text(encoding="utf-8")
     checkin_view = (ROOT / "time-helper" / "desk" / "src" / "views" / "CheckinView.vue").read_text(encoding="utf-8")
-    calendar = (ROOT / "time-helper" / "desk" / "src" / "views" / "CalendarView.vue").read_text(encoding="utf-8")
     heatmap = (ROOT / "time-helper" / "desk" / "src" / "components" / "ContributionHeatmap.vue").read_text(encoding="utf-8")
     assert "parseLocalDate(this.data.value.lastCheckinDate)" in checkin
     assert "Math.round((today.getTime() - lastDate.getTime())" in checkin
     assert "parseLocalDate(dateStr)" in checkin_view
-    assert "parseLocalDate(dateStr).getDate()" in calendar
     assert "parseLocalDate(firstDay.date)" in heatmap
     assert "parseLocalDate(cell.date)" in heatmap
 

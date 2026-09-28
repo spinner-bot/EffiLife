@@ -91,7 +91,7 @@ onMounted(loadData)
 <template>
   <div class="day-detail-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/calendar')">
+      <button class="back-btn" @click="router.push('/records')">
         <ArrowLeft :size="16" />
         <span>{{ t('dayDetail.backToRecords') }}</span>
       </button>
