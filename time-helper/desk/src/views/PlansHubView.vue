@@ -436,6 +436,15 @@ function backFromDetail() {
 }
 
 const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.length, 0) || 0)
+const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => task.finish).length, 0) || 0)
+const selectedPlanProgress = computed(() => activeTaskCount.value > 0
+  ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
+  : 0)
+
+function planProgress(plan: PlanSummary): number {
+  const total = Number(plan.total_tasks || 0)
+  return total > 0 ? Math.round((Number(plan.completed_tasks || 0) / total) * 100) : 0
+}
 
 onMounted(async () => {
   await loadPlans()
@@ -490,7 +499,8 @@ onMounted(async () => {
             <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
             <strong>{{ plan.name }}</strong>
             <span>{{ formatPlanDate(plan.date) }}</span>
-            <small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small>
+            <div class="plan-progress-meta"><small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small><small>{{ planProgress(plan) }}%</small></div>
+            <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
           </button>
         </section>
         <section class="archives-panel theme-card">
@@ -525,7 +535,8 @@ onMounted(async () => {
         <section class="plan-detail-summary theme-card">
           <div><span>{{ t('plans.date') }}</span><strong>{{ formatPlanDate(selectedPlan.date) }}</strong></div>
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
-          <div><span>{{ t('plans.completed') }}</span><strong>{{ selectedPlan.sections.reduce((n, section) => n + section.tasks.filter((task) => task.finish).length, 0) }}</strong></div>
+          <div><span>{{ t('plans.completed') }}</span><strong>{{ completedTaskCount }}</strong></div>
+          <div class="plan-detail-progress"><span>{{ t('plans.progress') }}</span><strong>{{ selectedPlanProgress }}%</strong><div class="plan-progress-track"><span :style="{ width: `${selectedPlanProgress}%` }" /></div></div>
         </section>
         <section v-if="canEditPlan" class="log-editor theme-card">
           <div class="log-editor-heading"><div><strong>{{ t('plans.recordProgress') }}</strong><small>{{ t('plans.recordProgressHint') }}</small></div></div>
@@ -625,6 +636,9 @@ onMounted(async () => {
 .event-plan-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .event-plan-card-top { display: flex; justify-content: space-between; color: var(--color-text-tertiary); font-size: 12px; }
 .event-plan-card-top svg { color: var(--color-text-tertiary); }
+.plan-progress-meta { display: flex; justify-content: space-between; gap: 8px; color: var(--color-text-secondary); }
+.plan-progress-track { height: 6px; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
+.plan-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
 .plans-empty { display: grid; place-items: center; gap: 10px; min-height: 230px; border: 1px dashed var(--color-border); border-radius: 17px; color: var(--color-text-tertiary); text-align: center; }
 .plans-empty strong { color: var(--color-text-secondary); }
 .plans-error, .plans-success { margin-bottom: 14px; font-size: 13px; }
@@ -641,6 +655,7 @@ onMounted(async () => {
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
+.plan-detail-progress { min-width: 130px; }
 .log-editor, .log-list { display: grid; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
 .log-editor { grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1.4fr) auto; align-items: end; }
 .log-editor-heading { display: grid; gap: 3px; }
