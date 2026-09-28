@@ -484,6 +484,7 @@ async function saveEdit(todo: UnifiedTodo) {
 }
 
 async function removeTodo(todo: UnifiedTodo) {
+  if (!confirm(t('tasks.deleteConfirm'))) return
   try {
     try {
       await DataService.unlinkTodoFromRecords(todo.id)
