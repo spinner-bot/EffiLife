@@ -91,7 +91,7 @@ const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const config = computed(() => appStore.config)
 
 // 当前视图
-type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore' | 'legacy-recovery'
+type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
 const currentView = ref<ViewType>('main')
 // 导航历史栈（用于返回上一级）
 const viewHistory = ref<ViewType[]>(['main'])
@@ -998,70 +998,6 @@ onMounted(async () => {
       <!-- 数据恢复 -->
       <template v-else-if="currentView === 'restore'">
         <RecoveryPanel :data-status="dataStatus" :backups="backupsList" @back="goBack" @restore="handleRestoreBackup" @emergency-export="handleEmergencyExport" />
-      </template>
-
-      <template v-else-if="currentView === 'legacy-recovery'">
-        <h2>{{ t('settings.legacyRecovery.title') }}</h2>
-
-        <!-- 数据状态 -->
-        <div class="data-stats">
-          <h3>{{ t('settings.legacyRecovery.statusTitle') }}</h3>
-          <div v-if="dataStatus" class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-value">{{ dataStatus.localStorageEmpty ? t('settings.restore.empty') : t('settings.restore.available') }}</span>
-              <span class="stat-label">localStorage</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ dataStatus.indexedDBEmpty ? t('settings.restore.empty') : t('settings.restore.available') }}</span>
-              <span class="stat-label">IndexedDB</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ dataStatus.backupCount }}</span>
-              <span class="stat-label">{{ t('settings.legacyRecovery.availableBackups') }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 紧急操作 -->
-        <div class="reset-section">
-          <h3>{{ t('settings.legacyRecovery.emergencyTitle') }}</h3>
-          <button class="btn secondary full" @click="handleEmergencyExport">
-            {{ t('settings.legacyRecovery.emergencyAction') }}
-          </button>
-          <p class="archive-hint">
-            {{ t('settings.legacyRecovery.emergencyDescription') }}
-          </p>
-        </div>
-
-        <!-- 备份列表 -->
-        <div class="reset-section" v-if="backupsList.length > 0">
-          <h3>{{ t('settings.legacyRecovery.availableBackups') }} ({{ backupsList.length }})</h3>
-          <div class="backup-list">
-            <div
-              v-for="backup in backupsList"
-              :key="`${backup.module}_${backup.timestamp}`"
-              class="backup-item"
-            >
-              <div class="backup-info">
-                <span class="backup-module">{{ backup.module }}</span>
-                <span class="backup-time">{{ new Date(backup.timestamp).toLocaleString(locale) }}</span>
-              </div>
-              <button class="btn primary" @click="handleRestoreBackup(backup)">
-                {{ t('settings.legacyRecovery.restore') }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="reset-section" v-else>
-          <h3>{{ t('settings.legacyRecovery.noBackups') }}</h3>
-          <p class="archive-hint">
-            {{ t('settings.legacyRecovery.noBackups') }}<br>
-            {{ t('settings.legacyRecovery.autoBackupHint') }}
-          </p>
-        </div>
-
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 恢复 -->

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue"
+RECOVERY = ROOT / "time-helper" / "desk" / "src" / "components" / "RecoveryPanel.vue"
 I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 
@@ -55,8 +56,10 @@ def test_settings_subviews_use_localized_back_action():
 
 def test_backup_timestamps_follow_current_locale():
     source = SETTINGS.read_text(encoding="utf-8")
+    recovery = RECOVERY.read_text(encoding="utf-8")
     assert "const { t, locale } = useI18n()" in source
-    assert "toLocaleString(locale)" in source
+    assert "toLocaleString(locale.value)" in source
+    assert "toLocaleString(locale)" in recovery
     assert "toLocaleString('zh-CN')" not in source
 
 

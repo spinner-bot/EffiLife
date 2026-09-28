@@ -38,6 +38,7 @@ def test_current_help_copy_does_not_advertise_retired_calendar_view():
     settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
     catalog = I18N_SOURCE.read_text(encoding="utf-8")
     assert "legacy-help" not in settings
+    assert "legacy-recovery" not in settings
     assert "CalendarDays" not in settings
     assert '可以将所有数据保存为JSON文件' not in settings
     assert '<strong>日历视图</strong>' not in settings
