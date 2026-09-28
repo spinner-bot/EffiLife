@@ -1,21 +1,14 @@
 // 自动备份模块 - 数据变更时自动备份
 
 import { set, STORE_NAMES } from './indexedDB'
+import { isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
 
 const MAX_BACKUPS_PER_MODULE = 10
 const BACKUP_DEBOUNCE_MS = 5000 // 5秒内多次变更只备份一次
 const STORAGE_PREFIX = 'efflife_backup_'
 
 // 检测是否在 Tauri 环境
-function isTauri(): boolean {
-  return !!(window as any).__TAURI__
-}
-
 // 检测是否在移动端
-function isMobile(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
 // 备份数据接口
 export interface BackupData {
   version: string
@@ -80,7 +73,7 @@ async function saveBackupToFileSystem(
   moduleName: string,
   data: unknown
 ): Promise<string | null> {
-  if (!isTauri() || isMobile()) {
+  if (!isTauriRuntime() || isMobilePlatform()) {
     return null
   }
 
@@ -153,7 +146,7 @@ export async function createBackup(moduleName: string, data: unknown): Promise<v
   saveBackupToLocalStorage(moduleName, data)
 
   // 桌面端同时保存到文件系统
-  if (isTauri() && !isMobile()) {
+  if (isTauriRuntime() && !isMobilePlatform()) {
     await saveBackupToFileSystem(moduleName, data)
   }
 }

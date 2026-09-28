@@ -1,17 +1,18 @@
 /** Runtime capabilities shared by gateway and archive services. */
 
 import { translate } from '@/i18n'
+import { isTauri as tauriIsTauri } from '@tauri-apps/api/core'
 
 export type PlanRuntime = 'desktop-sidecar' | 'browser-service' | 'mobile-unavailable'
 
 export function isMobilePlatform(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    typeof navigator === 'undefined' ? '' : navigator.userAgent,
-  )
+  if (typeof navigator === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 }
 
 export function isTauriRuntime(): boolean {
-  return typeof window !== 'undefined' && !!(window as Window & { __TAURI__?: unknown }).__TAURI__
+  return tauriIsTauri()
 }
 
 export function getPlanRuntime(): PlanRuntime {

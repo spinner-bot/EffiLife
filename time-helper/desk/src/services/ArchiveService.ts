@@ -12,7 +12,7 @@ import {
   type UnifiedTodo,
 } from './todoService'
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
-import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
+import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
 import { currentLocale, translate } from '@/i18n'
 import { getTodayDate } from '@/services/dataService'
@@ -59,10 +59,6 @@ function canonicalJson(value: unknown): string {
 }
 
 // 检测是否在 Tauri 环境
-function isTauri(): boolean {
-  return !!(window as any).__TAURI__
-}
-
 // 检测是否在移动端（Android/iOS）
 // 获取下载路径设置
 function getDownloadPath(): string | null {
@@ -371,7 +367,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const fileName = `efflife_archive_${dateStr}.efl`
 
   // 如果在 Tauri 桌面环境，使用原生对话框
-  if (isTauri() && !isMobilePlatform()) {
+  if (isTauriRuntime() && !isMobilePlatform()) {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog')
       const { writeFile } = await import('@tauri-apps/plugin-fs')
@@ -440,7 +436,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 // 在 Tauri 桌面环境下打开文件对话框导入
 export async function importArchiveWithDialog(confirmImport?: (preview: ArchivePreview) => boolean | Promise<boolean>): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   // 移动端使用文件选择器，不使用此函数
-  if (!isTauri() || isMobilePlatform()) {
+  if (!isTauriRuntime() || isMobilePlatform()) {
     return { success: false, message: translate('settings.archive.filePickerOnly') }
   }
 

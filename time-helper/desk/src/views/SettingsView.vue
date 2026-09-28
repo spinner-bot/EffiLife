@@ -13,7 +13,7 @@ import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
 import RecoveryPanel from '@/components/RecoveryPanel.vue'
 import { useI18n } from '@/i18n'
-import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
@@ -43,17 +43,13 @@ const FEEDBACK_EMAIL = 'langxibielangle@qq.com'
 const copySuccess = ref(false)
 
 // 检测是否在移动端
-function isMobileDevice(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
 async function openEmailClient() {
   const subject = encodeURIComponent(t('settings.feedback.emailSubject'))
   const body = encodeURIComponent(t('settings.feedback.emailBody', { version: appVersion }))
   const mailto = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
 
   // 移动端直接使用 window.location
-  if (isMobileDevice()) {
+  if (isMobilePlatform()) {
     window.location.href = mailto
     return
   }
@@ -410,7 +406,7 @@ async function handleExportArchive() {
 
 async function handleImportArchive() {
   // 检测是否在 Tauri 环境
-  if ((window as any).__TAURI__) {
+  if (isTauriRuntime()) {
     archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
     const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
