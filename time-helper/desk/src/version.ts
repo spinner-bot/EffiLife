@@ -40,7 +40,10 @@ export function getBuildInfo(): string {
     const dateStr = isNaN(date.getTime()) ? new Date().toLocaleString(currentLocale.value) : date.toLocaleString(currentLocale.value)
     return `开发版 #${commitCount} · ${dateStr}`
   }
-  const displayTimestamp = BUILD_TIMESTAMP.startsWith('__') ? new Date().toISOString().split('T')[0] : BUILD_TIMESTAMP
+  const releaseDate = new Date(parseInt(timestamp) || Date.now())
+  const displayTimestamp = isNaN(releaseDate.getTime())
+    ? new Date().toLocaleDateString(currentLocale.value)
+    : releaseDate.toLocaleDateString(currentLocale.value)
   return `正式版 · ${displayTimestamp}`
 }
 
