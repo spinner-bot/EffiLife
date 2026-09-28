@@ -229,3 +229,29 @@ def test_launcher_exits_when_reused_frontend_stops(monkeypatch):
     monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
     launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
     assert opened == ["http://127.0.0.1:1420"]
+
+
+def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch):
+    modules = {
+        "1": {
+            "name": "workspace",
+            "available": True,
+            "url": "http://127.0.0.1:1420",
+            "needs_setup": False,
+        },
+        "2": {
+            "name": "legacy",
+            "available": False,
+            "unavailable_reason": "missing runtime",
+            "url": None,
+            "needs_setup": False,
+        },
+    }
+    monkeypatch.setattr(launcher, "find_node", lambda: "node.exe")
+    monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: True)
+    result = launcher.collect_diagnostics(modules)
+    assert result["node"] == "node.exe"
+    assert result["npm"] == "npm.cmd"
+    assert result["modules"]["1"]["port_occupied"] is True
+    assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"

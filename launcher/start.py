@@ -5,6 +5,7 @@ EffLife 效率工具集 - 统一启动器
 
 import os
 import sys
+import json
 import subprocess
 import webbrowser
 import shutil
@@ -236,6 +237,30 @@ def build_modules():
         mod["needs_setup"] = bool(mod["setup"] and not dependencies_ready(mod["cwd"]))
 
     return modules
+
+
+def collect_diagnostics(modules):
+    """Collect startup facts without starting or mutating any process."""
+    node = find_node()
+    npm = find_npm()
+    module_status = {}
+    for key, module in modules.items():
+        url = module.get("url")
+        module_status[key] = {
+            "name": module.get("name"),
+            "available": bool(module.get("available")),
+            "unavailable_reason": module.get("unavailable_reason"),
+            "url": url,
+            "port_occupied": bool(url and local_port_is_occupied(url)),
+            "needs_setup": bool(module.get("needs_setup")),
+        }
+    return {
+        "base_dir": str(BASE_DIR),
+        "python": sys.executable,
+        "node": node,
+        "npm": npm,
+        "modules": module_status,
+    }
 
 
 def clear():
@@ -529,6 +554,9 @@ def _legacy_main():
 def main():
     """Launch unified mode or the interactive compatibility menu."""
     modules = build_modules()
+    if "--diagnose" in sys.argv:
+        print(json.dumps(collect_diagnostics(modules), ensure_ascii=False, indent=2))
+        return
     if "--unified" in sys.argv:
         run_module("1", modules)
         return
