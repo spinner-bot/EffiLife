@@ -20,6 +20,7 @@
 
 import json
 import os
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -32,6 +33,30 @@ from .data_exchange import (
     read_workspace_bundle as load_workspace_bundle,
     verify_workspace_bundle as verify_workspace,
 )
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    """Write a JSON document beside its target, then replace it atomically."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            dir=path.parent,
+            prefix=f'.{path.name}.',
+            suffix='.tmp',
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 class DataManager:
@@ -114,9 +139,7 @@ class DataManager:
     def _save_references(self):
         """保存跨模块引用"""
         ref_file = self.cross_ref_dir / 'references.json'
-        with open(ref_file, 'w', encoding='utf-8') as f:
-            json.dump([r.to_dict() for r in self._references], f,
-                      ensure_ascii=False, indent=2)
+        _atomic_write_json(ref_file, [r.to_dict() for r in self._references])
 
     def add_reference(self, ref: CrossReference):
         """添加跨模块引用"""
@@ -206,8 +229,7 @@ class DataManager:
             'references': [r.to_dict() for r in self._references],
         }
 
-        with open(backup_file, 'w', encoding='utf-8') as f:
-            json.dump(backup_data, f, ensure_ascii=False, indent=2)
+        _atomic_write_json(backup_file, backup_data)
 
         return str(backup_file)
 
@@ -280,8 +302,7 @@ class DataManager:
             except (json.JSONDecodeError, IOError):
                 pass
         dirs[module_name] = str(path)
-        with open(config_file, 'w', encoding='utf-8') as f:
-            json.dump(dirs, f, ensure_ascii=False, indent=2)
+        _atomic_write_json(config_file, dirs)
 
     def get_module_data_dir(self, module_name: str) -> Optional[str]:
         """获取模块的数据目录路径"""
