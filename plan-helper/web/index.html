@@ -294,10 +294,10 @@
         </main>
 
         <!-- Create Plan Modal -->
-        <div v-if="showCreatePlan" class="modal-overlay" @click.self="showCreatePlan = false">
+        <div v-if="showCreatePlan" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-plan-title" @click.self="showCreatePlan = false" @keydown.esc="showCreatePlan = false">
             <div class="modal">
                 <div class="modal-header">
-                    <h2>新建计划</h2>
+                    <h2 id="create-plan-title">新建计划</h2>
                     <button class="btn-icon" @click="showCreatePlan = false">×</button>
                 </div>
                 <div class="modal-body">
@@ -309,20 +309,7 @@
                         <label>计划日期</label>
                         <input v-model="newPlan.date" type="date" class="input">
                     </div>
-                    <div v-for="(section, sectionIndex) in newPlan.sections" :key="sectionIndex" class="form-section-editor">
-                        <div class="form-row">
-                            <input v-model="section.name" placeholder="章节名称" class="input">
-                            <button class="btn-sm btn-danger" @click="removeNewSection(sectionIndex)">删除章节</button>
-                        </div>
-                        <input v-model="section.info" placeholder="章节说明（可选）" class="input">
-                        <div v-for="(task, taskIndex) in section.tasks" :key="taskIndex" class="form-row task-editor-row">
-                            <input v-model="task.content" placeholder="任务内容" class="input">
-                            <input v-model.number="task.time_minutes" type="number" min="0" step="1" placeholder="分钟" class="input task-minutes">
-                            <button class="btn-sm btn-danger" @click="removeNewTask(sectionIndex, taskIndex)">删除</button>
-                        </div>
-                        <button class="btn btn-outline btn-sm" @click="addNewTask(sectionIndex)">+ 添加任务</button>
-                    </div>
-                    <button class="btn btn-outline" @click="addNewSection">+ 添加章节</button>
+                    <p class="muted">创建后将进入全屏编辑器，你可以从空白计划开始添加章节和任务。</p>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline" @click="showCreatePlan = false">取消</button>
@@ -332,10 +319,10 @@
         </div>
 
         <!-- Edit Plan Modal -->
-        <div v-if="showEditPlan" class="modal-overlay" @click.self="closeEditPlan">
-            <div class="modal modal-wide">
+        <div v-if="showEditPlan" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-plan-title" @click.self="closeEditPlan" @keydown.esc="closeEditPlan">
+            <div class="modal modal-wide modal-fullscreen">
                 <div class="modal-header">
-                    <h2>编辑计划</h2>
+                    <h2 id="edit-plan-title">编辑计划</h2>
                     <button class="btn-icon" @click="closeEditPlan">×</button>
                 </div>
                 <div class="modal-body" v-if="editPlan">

@@ -186,7 +186,10 @@ const app = createApp({
         function openCreatePlan() {
             newPlan.name = '';
             newPlan.date = todayInput();
-            newPlan.sections = [newSection()];
+            // Creation is intentionally lightweight. The detail editor is the
+            // single place where sections and tasks are added from an empty
+            // plan, matching the unified workspace flow.
+            newPlan.sections = [];
             showCreatePlan.value = true;
         }
 
