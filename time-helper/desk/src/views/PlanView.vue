@@ -158,7 +158,10 @@ async function saveRecord() {
   if (conflict) { alert(conflict); return }
 
   const duration = (endMinutes - startMinutes) / 60
+  const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined
   const record: TimeRecord = {
+    id: originalRecord?.id,
+    todo_id: originalRecord?.todo_id,
     date: getTodayDate(), start, end, duration,
     content: formContent.value.trim(), tag: formTag.value
   }
