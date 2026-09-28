@@ -160,6 +160,23 @@ async function openPlan(plan: PlanSummary) {
   }
 }
 
+async function retryPlanService() {
+  if (isLoading.value) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    if (selectedPlan.value) {
+      selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    } else {
+      await loadPlans()
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
@@ -531,6 +548,7 @@ onMounted(async () => {
         <div v-else-if="planDataSource === 'cache'" class="plans-readonly-note">
           <strong>{{ t('plans.cachedTitle') }}</strong>
           <span>{{ t('plans.cachedDescription') }}</span>
+          <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
         <div class="detail-toolbar">
           <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
@@ -658,6 +676,7 @@ onMounted(async () => {
 .plans-success { color: var(--color-success, #16a34a); }
 .plans-readonly-note { display: grid; gap: 4px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--color-primary); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; line-height: 1.5; }
 .plans-readonly-note strong { color: var(--color-text-primary); }
+.plans-retry { justify-self: start; }
 .detail-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .detail-actions { display: flex; gap: 8px; }
 .meta-editor, .section-editor { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
