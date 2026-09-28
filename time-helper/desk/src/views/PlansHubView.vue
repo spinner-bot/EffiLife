@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
@@ -653,6 +653,50 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
   }
 }
 
+async function addAllTasksToTodos() {
+  if (isLoading.value || !selectedPlan.value) return
+  const plan = selectedPlan.value
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const existingTodos = await TodoService.list()
+    const activeLinks = new Set(
+      existingTodos
+        .filter((todo) => todo.related_plan_id === String(plan.id) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
+        .map((todo) => String(todo.related_plan_task_id)),
+    )
+    const pendingTasks = plan.sections
+      .flatMap((section) => section.tasks)
+      .filter((task) => !task.finish && !activeLinks.has(String(task.internal_id)) && !activeLinks.has(String(task.display_id)))
+    let created = 0
+    let failed = 0
+    for (const task of pendingTasks) {
+      try {
+        await TodoService.create({
+          title: task.content,
+          description: plan.name,
+          related_plan_id: String(plan.id),
+          related_plan_task_id: String(task.internal_id),
+          time_estimate: task.time_minutes,
+          estimated_time: task.time_minutes,
+        })
+        activeLinks.add(String(task.internal_id))
+        created += 1
+      } catch {
+        failed += 1
+      }
+    }
+    linkedTodoTaskIds.value = activeLinks
+    if (created > 0) notifyToast(t('plans.todosBulkCreated', { count: created }), 'success')
+    if (failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+    if (created === 0 && failed === 0) notifyToast(t('plans.todosAllLinked'), 'info')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function deleteTask(taskId: string, displayTaskId = taskId) {
   if (isLoading.value) return
   if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
@@ -805,6 +849,7 @@ onUnmounted(() => {
           <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
           <div v-if="canEditPlan" class="detail-actions">
             <button class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
+            <button class="plans-secondary" :disabled="isLoading || !activeTaskCount" @click="addAllTasksToTodos"><ListTodo :size="15" /> {{ t('plans.linkAllTodos') }}</button>
             <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>

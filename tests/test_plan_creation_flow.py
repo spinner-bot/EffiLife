@@ -56,3 +56,13 @@ def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
     assert "onWorkspaceChanged((source)" in view
     assert "stopWorkspaceListener()" in view
     assert "!['archived', 'cancelled'].includes(todo.status)" in view
+
+
+def test_plan_detail_can_bulk_link_unfinished_tasks_without_duplicates():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+
+    assert "async function addAllTasksToTodos()" in view
+    assert "const pendingTasks = plan.sections" in view
+    assert "!task.finish" in view
+    assert "t('plans.todosBulkCreated'" in view
+    assert "t('plans.todosAllLinked'" in view
