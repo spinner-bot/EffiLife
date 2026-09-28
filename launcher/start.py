@@ -114,6 +114,29 @@ def app_version():
         return None
 
 
+def bundle_argument():
+    """Return the bundle path passed to the read-only verification command."""
+    for index, argument in enumerate(sys.argv):
+        if argument == "--verify-bundle":
+            return sys.argv[index + 1] if index + 1 < len(sys.argv) else None
+        if argument.startswith("--verify-bundle="):
+            return argument.split("=", 1)[1] or None
+    return None
+
+
+def verify_bundle_command(bundle_path):
+    """Print a machine-readable workspace bundle health report."""
+    from common.data_exchange import verify_workspace_bundle
+
+    try:
+        report = verify_workspace_bundle(bundle_path)
+    except (OSError, ValueError, KeyError) as error:
+        print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=True))
+        return False
+    print(json.dumps({"ok": True, **report}, ensure_ascii=True, indent=2))
+    return True
+
+
 def get_time_helper_cmd():
     """Get command for time-helper, prefer dev mode for latest features"""
     npm = find_npm()
@@ -572,6 +595,14 @@ def main():
     """
     if "--version" in sys.argv:
         print(app_version() or "unknown")
+        return
+    if "--verify-bundle" in sys.argv or any(argument.startswith("--verify-bundle=") for argument in sys.argv):
+        bundle_path = bundle_argument()
+        if not bundle_path:
+            print(json.dumps({"ok": False, "error": "--verify-bundle requires a bundle path"}, ensure_ascii=True))
+            raise SystemExit(2)
+        if not verify_bundle_command(bundle_path):
+            raise SystemExit(1)
         return
     modules = build_modules()
     if "--diagnose" in sys.argv:

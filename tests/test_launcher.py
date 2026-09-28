@@ -314,6 +314,38 @@ def test_launcher_version_command_short_circuits_module_detection(monkeypatch):
     assert calls == []
 
 
+def test_launcher_verifies_workspace_bundle_without_starting_modules(monkeypatch, tmp_path, capsys):
+    from common.data_exchange import export_workspace_bundle
+
+    bundle = tmp_path / "workspace.efl"
+    export_workspace_bundle(
+        bundle,
+        app={},
+        records={},
+        todos=[],
+        todo_categories=[],
+        plan_helper={"plans": []},
+    )
+    monkeypatch.setattr(sys, "argv", ["start.py", "--verify-bundle", str(bundle)])
+    monkeypatch.setattr(launcher, "build_modules", lambda: (_ for _ in ()).throw(AssertionError("must stay read-only")))
+
+    launcher.main()
+
+    output = capsys.readouterr().out
+    assert '"ok": true' in output
+    assert '"integrity": "verified"' in output
+
+
+def test_launcher_verify_bundle_requires_path(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["start.py", "--verify-bundle"])
+    try:
+        launcher.main()
+    except SystemExit as error:
+        assert error.code == 2
+    else:
+        raise AssertionError("missing bundle path should fail")
+
+
 def test_unified_launcher_supports_no_browser_mode():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "def run_module(choice, modules, open_browser=True)" in source
