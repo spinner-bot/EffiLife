@@ -59,6 +59,7 @@ const planDate = ref(toDateInput(new Date()))
 const createSections = ref<InitialPlanSection[]>([])
 const createTemplates = ref<PlanTemplateSummary[]>([])
 const selectedTemplateId = ref('')
+const createTodos = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -164,6 +165,7 @@ function openCreatePlan() {
   planDate.value = toDateInput(new Date())
   createSections.value = [{ name: '', info: '', tasks: [{ content: '', time_minutes: 30 }] }]
   selectedTemplateId.value = ''
+  createTodos.value = false
   createTemplates.value = []
   void loadCreateTemplates()
   errorMessage.value = ''
@@ -177,6 +179,29 @@ async function loadCreateTemplates() {
     // Templates are an optional enhancement; manual creation remains usable.
     createTemplates.value = []
   }
+}
+
+async function syncCreatedPlanTasks(plan: PlanFull): Promise<void> {
+  const tasks = plan.sections.flatMap((section) => section.tasks).filter((task) => !task.finish)
+  let created = 0
+  let failed = 0
+  for (const task of tasks) {
+    try {
+      await TodoService.create({
+        title: task.content,
+        description: plan.name,
+        related_plan_id: String(plan.id),
+        related_plan_task_id: String(task.internal_id),
+        time_estimate: task.time_minutes,
+        estimated_time: task.time_minutes,
+      })
+      created += 1
+    } catch {
+      failed += 1
+    }
+  }
+  if (created > 0) notifyToast(t('plans.todosCreated', { count: created }), 'success')
+  if (failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
 }
 
 function addCreateSection() {
@@ -244,9 +269,11 @@ async function createPlan() {
     try {
       const created = await createEventPlanFromTemplate(selectedTemplateId.value, name, toDateTuple(planDate.value))
       selectedPlan.value = created
+      if (createTodos.value) await syncCreatedPlanTasks(created)
       showCreate.value = false
       planName.value = ''
       selectedTemplateId.value = ''
+      createTodos.value = false
       createSections.value = []
       view.value = 'detail'
       await router.replace({ path: '/plans', query: { plan: String(created.id) } })
@@ -275,8 +302,10 @@ async function createPlan() {
   try {
     const created = await createEventPlan(name, toDateTuple(planDate.value), sections)
     selectedPlan.value = await getPlanFull(created.id)
+    if (createTodos.value && selectedPlan.value) await syncCreatedPlanTasks(selectedPlan.value)
     showCreate.value = false
     planName.value = ''
+    createTodos.value = false
     createSections.value = []
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(created.id) } })
@@ -830,6 +859,7 @@ onMounted(async () => {
           </select>
           <small v-if="selectedTemplateId">{{ t('plans.templateHint') }}</small>
         </label>
+        <label class="create-todo-option"><input v-model="createTodos" type="checkbox" /> <span><strong>{{ t('plans.createTodos') }}</strong><small>{{ t('plans.createTodosHint') }}</small></span></label>
         <div class="create-sections-heading">
           <div><strong>{{ t('plans.createSections') }}</strong><small>{{ t('plans.createSectionsHint') }}</small></div>
           <button type="button" class="plans-secondary" :disabled="Boolean(selectedTemplateId)" @click="addCreateSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
@@ -904,6 +934,10 @@ onMounted(async () => {
 .create-template-field select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .create-template-field small, .create-template-note { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.5; }
 .create-template-note { border: 1px dashed var(--color-primary); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); }
+.create-todo-option { display: flex !important; align-items: flex-start; gap: 8px; padding: 9px 10px; border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.create-todo-option input { margin-top: 2px; accent-color: var(--color-primary); }
+.create-todo-option span { display: grid; gap: 3px; }
+.create-todo-option small { color: var(--color-text-tertiary); font-size: 11px; font-weight: 400; }
 .create-sections { display: grid; gap: 10px; }
 .create-section { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-secondary); }
 .create-section header { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; }

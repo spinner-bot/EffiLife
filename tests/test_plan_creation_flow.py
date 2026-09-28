@@ -18,6 +18,8 @@ def test_plan_creation_collects_initial_sections_and_tasks_before_submission():
     assert "export async function listPlanTemplates" in gateway
     assert "createEventPlanFromTemplate" in gateway
     assert "v-model=\"selectedTemplateId\"" in view
+    assert "v-model=\"createTodos\"" in view
+    assert "syncCreatedPlanTasks" in view
 
 
 def test_mobile_plan_creation_preserves_section_and_task_shape():
@@ -34,3 +36,11 @@ def test_template_creation_uses_the_existing_plan_helper_endpoint():
     assert "request<{ templates?: PlanTemplateSummary[] }>('/api/templates')" in gateway
     assert "request<PlanFull>('/api/plans/from-template'" in gateway
     assert "template_id: templateId" in gateway
+
+
+def test_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+
+    assert "related_plan_id: String(plan.id)" in view
+    assert "related_plan_task_id: String(task.internal_id)" in view
+    assert "time_estimate: task.time_minutes" in view
