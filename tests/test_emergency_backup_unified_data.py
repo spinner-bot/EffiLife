@@ -13,6 +13,7 @@ def test_emergency_backup_contains_and_restores_unified_todos():
     assert "backupData.todos" in source
     assert "backupData.todoCategories" in source
     assert "if (Array.isArray(data.todos))" in source
+    assert "await clear(STORE_NAMES.RECORDS)" in source
     assert "clear(STORE_NAMES.TODOS)" in source
     assert "putRaw(STORE_NAMES.TODOS, todo)" in source
     assert "if (Array.isArray(data.todoCategories))" in source

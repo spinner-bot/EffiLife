@@ -214,6 +214,7 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
       await set(STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans)
     }
     if (data.records) {
+      await clear(STORE_NAMES.RECORDS)
       for (const [date, records] of Object.entries(data.records)) {
         await set(STORE_NAMES.RECORDS, date, records)
       }
