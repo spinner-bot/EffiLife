@@ -21,6 +21,19 @@ const targetRect = ref<DOMRect | null>(null)
 let targetElement: Element | null = null
 let mutationObserver: MutationObserver | null = null
 
+function isVisibleTarget(element: Element): boolean {
+  const htmlElement = element as HTMLElement
+  const rect = element.getBoundingClientRect()
+  if (rect.width <= 0 || rect.height <= 0) return false
+  const style = window.getComputedStyle(htmlElement)
+  return style.display !== 'none' && style.visibility !== 'hidden'
+}
+
+function findVisibleTarget(selector: string): Element | null {
+  const candidates = Array.from(document.querySelectorAll(selector))
+  return candidates.find(isVisibleTarget) || candidates[0] || null
+}
+
 watch(() => guideState.version, () => {
   nextTick(() => updateTargetElement())
 }, { immediate: true })
@@ -39,7 +52,7 @@ function updateTargetElement() {
   }
 
   const findTarget = () => {
-    targetElement = document.querySelector(step.target!)
+    targetElement = findVisibleTarget(step.target!)
     if (targetElement) {
       targetRect.value = targetElement.getBoundingClientRect()
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -100,7 +113,7 @@ function onClickCapture(e: MouseEvent) {
 
     let isActionTargetClick = false
     if (step.actionTarget) {
-      const actionEl = document.querySelector(step.actionTarget)
+      const actionEl = findVisibleTarget(step.actionTarget)
       if (actionEl && (actionEl === clickedTarget || actionEl.contains(clickedTarget))) {
         isActionTargetClick = true
       }
