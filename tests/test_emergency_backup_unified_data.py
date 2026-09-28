@@ -9,6 +9,7 @@ def test_emergency_backup_contains_and_restores_unified_todos():
     source = RECOVERY.read_text(encoding="utf-8")
     assert "getRawAll(STORE_NAMES.TODOS)" in source
     assert "getRawAll(STORE_NAMES.TODO_CATEGORIES)" in source
+    assert "getRawAll(STORE_NAMES.PLAN_HELPER_SNAPSHOT)" in source
     assert "backupData.todos" in source
     assert "backupData.todoCategories" in source
     assert "if (Array.isArray(data.todos))" in source
@@ -16,5 +17,7 @@ def test_emergency_backup_contains_and_restores_unified_todos():
     assert "putRaw(STORE_NAMES.TODOS, todo)" in source
     assert "if (Array.isArray(data.todoCategories))" in source
     assert "putRaw(STORE_NAMES.TODO_CATEGORIES, category)" in source
+    assert "if (Array.isArray(data.planHelperSnapshot))" in source
+    assert "clear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)" in source
+    assert "putRaw(STORE_NAMES.PLAN_HELPER_SNAPSHOT, snapshot)" in source
     assert "notifyWorkspaceChanged('archive')" in source
-

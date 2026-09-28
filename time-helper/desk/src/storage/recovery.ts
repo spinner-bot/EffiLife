@@ -143,6 +143,7 @@ export async function exportEmergencyBackup(): Promise<string> {
     backupData.manualPlans = await get(STORE_NAMES.MANUAL_PLANS, 'all')
     backupData.todos = await getRawAll(STORE_NAMES.TODOS)
     backupData.todoCategories = await getRawAll(STORE_NAMES.TODO_CATEGORIES)
+    backupData.planHelperSnapshot = await getRawAll(STORE_NAMES.PLAN_HELPER_SNAPSHOT)
 
     // 导出所有记录
     const records: Record<string, unknown> = {}
@@ -224,6 +225,10 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
     if (Array.isArray(data.todoCategories)) {
       await clear(STORE_NAMES.TODO_CATEGORIES)
       for (const category of data.todoCategories) await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+    }
+    if (Array.isArray(data.planHelperSnapshot)) {
+      await clear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)
+      for (const snapshot of data.planHelperSnapshot) await putRaw(STORE_NAMES.PLAN_HELPER_SNAPSHOT, snapshot)
     }
 
     // 恢复 localStorage 数据
