@@ -69,9 +69,17 @@ jobs:
         working-directory: time-helper/desk
         run: npm run tauri build -- --bundles ${{ matrix.bundle }}
 
+      - name: Generate installer checksums
+        run: >-
+          python scripts/generate_checksums.py
+          --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
+          --output release-checksums/EffiLife-${{ matrix.name }}.sha256
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: EffiLife-${{ matrix.name }}-installer
-          path: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}
+            release-checksums/EffiLife-${{ matrix.name }}.sha256
           if-no-files-found: error
