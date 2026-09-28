@@ -10,7 +10,7 @@ import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
-import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { completePlanTask, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
@@ -70,6 +70,17 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   if (completingTodoId.value) return
   completingTodoId.value = todo.id
   try {
+    // Keep the unified todo and its source plan task consistent. There is no
+    // cross-store transaction, so only update the todo after the plan accepts
+    // the completion.
+    if (todo.related_plan_id && todo.related_plan_task_id) {
+      try {
+        await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
+      } catch {
+        notifyToast(t('tasks.planSyncFailed'), 'error')
+        return
+      }
+    }
     await TodoService.complete(todo.id)
     await refreshTodoSummary()
   } catch (error) {

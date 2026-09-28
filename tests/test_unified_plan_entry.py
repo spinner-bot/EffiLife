@@ -26,3 +26,11 @@ def test_home_daily_plan_link_uses_unified_workspace_query():
     assert 'tabindex="0"' in source
     assert "@keydown=\"activateDailyPlan\"" in source
     assert "router.push({ path: '/plans', query: { mode: 'time' } })" in source
+
+
+def test_home_todo_completion_syncs_linked_plan_task_first():
+    source = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
+    assert "import { completePlanTask" in source
+    assert "if (todo.related_plan_id && todo.related_plan_task_id)" in source
+    assert "await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)" in source
+    assert "await TodoService.complete(todo.id)" in source
