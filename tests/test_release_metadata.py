@@ -85,6 +85,11 @@ def test_release_preflight_passes_for_current_repository():
     assert module.validate(ROOT) == []
 
 
+def test_frontend_exposes_release_preflight_command():
+    package = json.loads((ROOT / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))
+    assert package["scripts"]["release:check"] == "python ../../scripts/check_release_config.py"
+
+
 def test_release_workflow_passes_matrix_bundle_to_tauri():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "npm run tauri build -- --bundles ${{ matrix.bundle }}" in workflow
