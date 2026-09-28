@@ -266,6 +266,7 @@ export const TodoSettingsService = {
   async save(value: Partial<TodoSettings>): Promise<TodoSettings> {
     const settings = normalizeTodoSettings(value)
     await set(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY, settings)
+    notifyWorkspaceChanged('settings')
     return settings
   },
 }

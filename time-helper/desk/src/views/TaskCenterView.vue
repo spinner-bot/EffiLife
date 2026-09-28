@@ -375,7 +375,11 @@ async function loadPlanTasks(planId: string) {
 }
 
 async function refreshFromWorkspace(source?: string): Promise<void> {
-  if (!source || !['todos', 'plans', 'records', 'archive'].includes(source)) return
+  if (!source || !['todos', 'plans', 'records', 'archive', 'settings'].includes(source)) return
+  if (source === 'settings') {
+    await loadTodoSettings()
+    return
+  }
   await loadTodos()
   await loadCategories()
   if (source === 'plans' || source === 'archive') await loadPlanSummaries()
