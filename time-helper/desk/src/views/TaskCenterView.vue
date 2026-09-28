@@ -928,18 +928,24 @@ watch(selectedPlanId, (planId) => {
           <button type="button" class="task-edit-cancel" @click="showCategoryManager = false">{{ t('tasks.cancel') }}</button>
         </div>
         <form class="category-create" @submit.prevent="createCategory">
-          <input v-model="categoryName" :placeholder="t('tasks.categoryName')" :aria-label="t('tasks.categoryName')" />
-          <input v-model="categoryColor" type="color" :aria-label="t('tasks.categoryColor')" />
-          <label>{{ t('tasks.categoryDifficulty') }} <input v-model.number="categoryDifficulty" type="number" min="0" max="10" /></label>
+          <label for="category-name">{{ t('tasks.categoryName') }}</label>
+          <input id="category-name" v-model="categoryName" :placeholder="t('tasks.categoryName')" />
+          <label for="category-color">{{ t('tasks.categoryColor') }}</label>
+          <input id="category-color" v-model="categoryColor" type="color" />
+          <label for="category-difficulty">{{ t('tasks.categoryDifficulty') }}</label>
+          <input id="category-difficulty" v-model.number="categoryDifficulty" type="number" min="0" max="10" />
           <CategoryIconPicker v-model="categoryIcon" v-model:model-color="categoryColor" v-model:model-ascii="categoryAsciiIcon" />
           <button type="submit" class="task-edit-save" :disabled="!categoryName.trim()"><Plus :size="14" /> {{ t('tasks.add') }}</button>
         </form>
         <div class="category-list">
           <div v-for="item in categories" :key="item.id" class="category-row">
             <template v-if="editingCategoryId === item.id">
-              <input v-model="editingCategoryName" class="task-edit-input" />
-              <input v-model="editingCategoryColor" type="color" />
-              <input v-model.number="editingCategoryDifficulty" class="category-difficulty" type="number" min="0" max="10" />
+              <label :for="`edit-category-name-${item.id}`">{{ t('tasks.categoryName') }}</label>
+              <input :id="`edit-category-name-${item.id}`" v-model="editingCategoryName" class="task-edit-input" />
+              <label :for="`edit-category-color-${item.id}`">{{ t('tasks.categoryColor') }}</label>
+              <input :id="`edit-category-color-${item.id}`" v-model="editingCategoryColor" type="color" />
+              <label :for="`edit-category-difficulty-${item.id}`">{{ t('tasks.categoryDifficulty') }}</label>
+              <input :id="`edit-category-difficulty-${item.id}`" v-model.number="editingCategoryDifficulty" class="category-difficulty" type="number" min="0" max="10" />
               <CategoryIconPicker v-model="editingCategoryIcon" v-model:model-color="editingCategoryColor" v-model:model-ascii="editingCategoryAsciiIcon" />
               <button type="button" class="task-edit-save" @click="saveCategory(item)">{{ t('tasks.save') }}</button>
               <button type="button" class="task-edit-cancel" @click="cancelCategoryEdit">{{ t('tasks.cancel') }}</button>

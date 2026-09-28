@@ -783,7 +783,8 @@ onUnmounted(() => {
             </select>
           </label>
           <label>{{ t('plans.logDay') }}<input v-model.number="logDay" type="number" min="0" max="31" /></label>
-          <input v-model="logContent" class="log-content-input" :placeholder="t('plans.logContentPlaceholder')" @keyup.enter="saveLog" />
+          <label for="plan-log-content">{{ t('plans.logContent') }}</label>
+          <input id="plan-log-content" v-model="logContent" class="log-content-input" :placeholder="t('plans.logContentPlaceholder')" @keyup.enter="saveLog" />
           <button class="plans-primary" :disabled="isLoading || !logContent.trim()" @click="saveLog">{{ t('plans.record') }}</button>
         </section>
         <section v-if="selectedPlan.logs.length" class="log-list theme-card">
@@ -794,8 +795,10 @@ onUnmounted(() => {
           </article>
         </section>
         <section v-if="canEditPlan" class="section-editor theme-card">
-          <input v-model="sectionName" :placeholder="t('plans.sectionName')" />
-          <input v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
+          <label for="plan-section-name">{{ t('plans.sectionName') }}</label>
+          <input id="plan-section-name" v-model="sectionName" :placeholder="t('plans.sectionName')" />
+          <label for="plan-section-info">{{ t('plans.sectionInfo') }}</label>
+          <input id="plan-section-info" v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
           <div class="section-editor-actions"><button v-if="editingSectionIndex !== null" class="plans-secondary" :disabled="isLoading" @click="cancelSectionEdit">{{ t('plans.cancel') }}</button><button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Pencil v-if="editingSectionIndex !== null" :size="15" /><Plus v-else :size="15" /> {{ editingSectionIndex !== null ? t('plans.saveSection') : t('plans.addSection') }}</button></div>
         </section>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
