@@ -39,7 +39,8 @@ def test_archive_import_validates_record_buckets_before_writing():
     assert "function normalizeImportedRecords(raw: unknown)" in source
     assert "const records = normalizeImportedRecords(datasets.records)" in source
     assert "const records = normalizeImportedRecords(legacy.records)" in source
-    assert "必须是数组" in source
+    assert "settings.archive.recordsInvalid" in source
+    assert "settings.archive.recordsDateInvalid" in source
 
 
 def test_archive_import_repairs_todo_record_links_against_imported_records():

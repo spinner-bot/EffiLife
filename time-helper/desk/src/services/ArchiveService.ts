@@ -54,7 +54,7 @@ function canonicalJson(value: unknown): string {
   }
 
   const serialized = JSON.stringify(normalize(value), null, 2)
-  if (serialized === undefined) throw new Error('无法序列化存档数据')
+  if (serialized === undefined) throw new Error(translate('settings.archive.serializationFailed'))
   return serialized
 }
 
@@ -258,12 +258,12 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
     const response = await requestPlanHelper('/api/data/export', {
       headers: { Accept: 'application/json' },
     })
-    if (!response.ok) throw new Error(`plan-helper responded with ${response.status}`)
+    if (!response.ok) throw new Error(translate('settings.archive.planServiceResponse', { status: response.status }))
     const payload = await response.json() as {
       success?: boolean
       data?: { plans?: unknown[] }
     }
-    if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error('Invalid plan-helper export')
+    if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error(translate('settings.archive.planExportInvalid'))
     try {
       const { set, STORE_NAMES } = await import('@/storage')
       await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', payload.data.plans)
@@ -482,11 +482,11 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     try {
       manifest = JSON.parse(await manifestFile.async('text'))
     } catch {
-      throw new Error('存档 manifest.json 无效')
+      throw new Error(translate('settings.archive.manifestInvalid'))
     }
     const hasChecksums = !!manifest.dataset_sha256 && manifest.datasets?.every((name) => typeof manifest.dataset_sha256?.[name] === 'string')
     if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets) || (manifest.dataset_sha256 && !hasChecksums)) {
-      throw new Error('不支持的 .efl 存档协议')
+      throw new Error(translate('settings.archive.unsupportedFormat'))
     }
     const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => !manifest.datasets?.includes(name))
     if (missingDatasets.length > 0) {
@@ -496,12 +496,12 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     const datasets: Record<string, unknown> = {}
     const datasetNames = new Set<string>()
     for (const name of manifest.datasets) {
-      if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(`非法数据集名称：${name}`)
-      if (datasetNames.has(name)) throw new Error(`数据集重复声明：${name}`)
+      if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(translate('settings.archive.invalidDatasetName', { name }))
+      if (datasetNames.has(name)) throw new Error(translate('settings.archive.duplicateDataset', { name }))
       datasetNames.add(name)
       const checksumError = translate('settings.archive.datasetChecksumMismatch', { name })
       const file = zip.file(`data/${name}.json`)
-      if (!file) throw new Error(`存档缺少数据集：${name}`)
+      if (!file) throw new Error(translate('settings.archive.datasetMissing', { name }))
       try {
         const raw = await file.async('uint8array')
         const expected = manifest.dataset_sha256?.[name]
@@ -511,7 +511,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
         datasets[name] = JSON.parse(new TextDecoder().decode(raw))
       } catch (error) {
         if (error instanceof Error && error.message === checksumError) throw error
-        throw new Error(`数据集无效：${name}`)
+          throw new Error(translate('settings.archive.datasetInvalid', { name }))
       }
     }
 
@@ -524,7 +524,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       ? datasets.todos.map(normalizeImportedTodo)
       : []
     if (importedTodos.some((todo) => todo === null)) {
-      throw new Error('待办数据包含无效任务：缺少有效标题或任务编号类型错误')
+      throw new Error(translate('settings.archive.todoInvalid'))
     }
 
     const records = normalizeImportedRecords(datasets.records)
@@ -557,19 +557,19 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 
   // 兼容 2.0 及更早的单文件 archive.json 存档。
   const archiveFile = zip.file('archive.json')
-  if (!archiveFile) throw new Error('存档格式无效：缺少 manifest.json 或 archive.json')
+  if (!archiveFile) throw new Error(translate('settings.archive.archiveInvalid'))
   let legacy: ArchiveData
   try {
     legacy = JSON.parse(await archiveFile.async('text')) as ArchiveData
   } catch {
-    throw new Error('旧版 archive.json 无效')
+    throw new Error(translate('settings.archive.legacyArchiveInvalid'))
   }
-  if (!legacy.version) throw new Error('存档文件格式无效：缺少版本信息')
+  if (!legacy.version) throw new Error(translate('settings.archive.versionMissing'))
   const importedTodos = Array.isArray(legacy.todos)
     ? legacy.todos.map(normalizeImportedTodo)
     : []
   if (importedTodos.some((todo) => todo === null)) {
-    throw new Error('旧版待办数据包含无效任务：缺少有效标题或任务编号类型错误')
+    throw new Error(translate('settings.archive.legacyTodoInvalid'))
   }
   const records = normalizeImportedRecords(legacy.records)
   const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
@@ -601,13 +601,13 @@ function normalizeImportedCategories(raw: unknown, todos: UnifiedTodo[]): TodoCa
       ? raw.map(normalizeImportedCategory)
       : null
   if (!categories || categories.some((category) => category === null)) {
-    throw new Error('分类数据无效：必须是包含有效编号、名称和颜色的数组')
+    throw new Error(translate('settings.archive.categoriesInvalid'))
   }
 
   const result = categories as TodoCategory[]
   const ids = new Set<string>()
   for (const category of result) {
-    if (ids.has(category.id)) throw new Error(`分类数据包含重复编号：${category.id}`)
+    if (ids.has(category.id)) throw new Error(translate('settings.archive.duplicateCategory', { id: category.id }))
     ids.add(category.id)
   }
   for (const category of DEFAULT_TODO_CATEGORIES) {
@@ -635,12 +635,12 @@ function normalizeImportedCategories(raw: unknown, todos: UnifiedTodo[]): TodoCa
 function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
   if (raw === undefined || raw === null) return {}
   if (typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new Error('时间记录数据无效：必须是按日期分组的对象')
+    throw new Error(translate('settings.archive.recordsInvalid'))
   }
   const result: Record<string, unknown[]> = {}
   for (const [date, records] of Object.entries(raw as Record<string, unknown>)) {
     if (!Array.isArray(records)) {
-      throw new Error(`时间记录数据无效：${date} 必须是数组`)
+      throw new Error(translate('settings.archive.recordsDateInvalid', { date }))
     }
     result[date] = records
   }
@@ -881,7 +881,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
           body: JSON.stringify({ plans: data.planHelper.plans, replace: true }),
         })
         const payload = await response.json() as { success?: boolean; error?: string }
-        if (!response.ok || !payload.success) throw new Error(payload.error || `HTTP ${response.status}`)
+        if (!response.ok || !payload.success) throw new Error(payload.error || translate('settings.archive.planRestoreResponse', { status: response.status }))
       } catch (error) {
         warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
       }
@@ -900,9 +900,11 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       try {
         await restoreArchiveRuntimeSnapshot(runtimeSnapshot)
       } catch (rollbackError) {
-        throw new Error(`存档写入失败，且回滚失败：${error instanceof Error ? error.message : String(error)}；${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`)
+        throw new Error(translate('settings.archive.importRollbackFailed', {
+          detail: `${error instanceof Error ? error.message : String(error)}; ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`,
+        }))
       }
-      throw new Error(`存档写入失败，已恢复导入前数据：${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(translate('settings.archive.importRolledBack', { detail: error instanceof Error ? error.message : String(error) }))
     }
 }
 
