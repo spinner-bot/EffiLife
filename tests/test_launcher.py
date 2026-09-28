@@ -305,6 +305,28 @@ def test_launcher_exposes_a_scriptable_version_command():
     assert "print(app_version() or \"unknown\")" in source
 
 
+def test_launcher_records_best_effort_jsonl_diagnostics(monkeypatch, tmp_path):
+    monkeypatch.setenv("EFFILIFE_LOG_DIR", str(tmp_path))
+
+    assert launcher.record_launcher_event("test_event", module="workspace", port=1420) is True
+
+    log_path = tmp_path / "launcher.log"
+    lines = log_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    event = __import__("json").loads(lines[0])
+    assert event["event"] == "test_event"
+    assert event["module"] == "workspace"
+    assert event["port"] == 1420
+    assert event["version"]
+
+
+def test_launcher_diagnostics_do_not_fail_when_log_directory_is_read_only(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "launcher_log_path", lambda: tmp_path / "missing" / "launcher.log")
+    monkeypatch.setattr(launcher.Path, "mkdir", lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("read only")))
+
+    assert launcher.record_launcher_event("read_only") is False
+
+
 def test_launcher_version_command_short_circuits_module_detection(monkeypatch):
     calls = []
     monkeypatch.setattr(sys, "argv", ["start.py", "--version"])

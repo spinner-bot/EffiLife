@@ -12,6 +12,7 @@ import shutil
 import socket
 import threading
 import time
+from datetime import datetime, timezone
 from urllib.error import URLError
 from urllib.request import urlopen
 from urllib.parse import urlparse
@@ -112,6 +113,44 @@ def app_version():
         return VERSION_FILE.read_text(encoding="utf-8").strip() or None
     except OSError:
         return None
+
+
+def launcher_log_path():
+    """Return the per-user JSONL log path used for startup diagnostics."""
+    override = os.environ.get("EFFILIFE_LOG_DIR")
+    if override:
+        return Path(override) / "launcher.log"
+    if os.name == "nt":
+        root = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+    else:
+        root = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
+    return root / "EffiLife" / "logs" / "launcher.log"
+
+
+def record_launcher_event(event, **details):
+    """Append a compact, best-effort startup event for later troubleshooting."""
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": event,
+        "version": app_version(),
+        **details,
+    }
+    try:
+        path = launcher_log_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists() and path.stat().st_size > 1024 * 1024:
+            rotated = path.with_suffix(".log.1")
+            try:
+                rotated.unlink(missing_ok=True)
+            except OSError:
+                pass
+            path.replace(rotated)
+        with path.open("a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except OSError:
+        # Diagnostics must never make the launcher fail on read-only installs.
+        return False
+    return True
 
 
 def bundle_argument():
@@ -344,8 +383,16 @@ def run_module(choice, modules, open_browser=True):
         return
 
     module = modules[choice]
+    record_launcher_event(
+        "module_start",
+        choice=choice,
+        module=module.get("name"),
+        url=module.get("url"),
+        command=[str(item) for item in module.get("cmd") or []],
+    )
 
     if not module["available"]:
+        record_launcher_event("module_unavailable", choice=choice, module=module.get("name"), reason=module.get("unavailable_reason"))
         print(f"\n❌ {module['name']} 未就绪")
         if "npm" in str(module.get("setup", "")):
             print("请安装 Node.js: https://nodejs.org")
@@ -367,14 +414,17 @@ def run_module(choice, modules, open_browser=True):
                 timeout=setup_timeout(),
             )
         except subprocess.TimeoutExpired:
+            record_launcher_event("dependency_setup_timeout", module=module.get("name"), timeout=setup_timeout())
             print(f"\nSetup timed out after {setup_timeout()} seconds.")
             print("Check the network/npm registry, then retry or install dependencies manually.")
             return
         except OSError as error:
+            record_launcher_event("dependency_setup_error", module=module.get("name"), error=str(error))
             print(f"\nUnable to run dependency setup: {error}")
             print(f"Run manually in {module['cwd']}: {' '.join(module['setup'])}")
             return
         if result.returncode != 0:
+            record_launcher_event("dependency_setup_failed", module=module.get("name"), returncode=result.returncode)
             print(f"\n❌ Setup 失败，请手动执行:")
             print(f"   cd {module['cwd']}")
             print(f"   {' '.join(module['setup'])}")
@@ -394,6 +444,7 @@ def run_module(choice, modules, open_browser=True):
     # Reuse it instead of launching a second strict-port dev server that exits
     # immediately and is then reported as a startup failure.
     if module.get("url") and service_is_ready(module["url"]):
+        record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
         print(f"使用已运行的主服务: {module['url']}")
         try:
             if open_browser:
@@ -410,6 +461,7 @@ def run_module(choice, modules, open_browser=True):
         return
 
     if module.get("url") and local_port_is_occupied(module["url"]):
+        record_launcher_event("port_conflict", module=module.get("name"), url=module["url"])
         print(f"\nPort conflict: {module['url']} is already occupied by another service.")
         print("Stop the conflicting process or choose another development port, then retry.")
         for companion_process in companion_processes:
@@ -436,6 +488,12 @@ def run_module(choice, modules, open_browser=True):
 
         if module.get("url"):
             if not wait_for_service(process, module["url"]):
+                record_launcher_event(
+                    "service_start_failed",
+                    module=module.get("name"),
+                    url=module["url"],
+                    returncode=process.returncode,
+                )
                 # Do not block forever when a child stays alive but never
                 # becomes reachable. The finally block cleans up companions.
                 terminate_process(process)
@@ -445,11 +503,13 @@ def run_module(choice, modules, open_browser=True):
                 webbrowser.open(module["url"])
 
         process.wait()
+        record_launcher_event("module_exit", module=module.get("name"), returncode=process.returncode)
         output_thread.join(timeout=2)
 
     except KeyboardInterrupt:
         print("\n已停止")
     except FileNotFoundError as e:
+        record_launcher_event("module_command_missing", module=module.get("name"), error=str(e))
         print(f"\n❌ 找不到命令: {e}")
         print(f"请确保已安装所需依赖")
     finally:
@@ -547,6 +607,12 @@ def start_companions(module, env):
         output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
         output_thread.start()
         if health_url and not wait_for_service(process, health_url):
+            record_launcher_event(
+                "companion_start_failed",
+                companion=companion.get("name"),
+                url=health_url,
+                returncode=process.returncode,
+            )
             terminate_process(process)
             for started in managed:
                 terminate_process(started)
