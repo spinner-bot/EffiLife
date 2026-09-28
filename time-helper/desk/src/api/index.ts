@@ -1,7 +1,7 @@
 // time-helper API 层
 // 提供清晰的接口规范，便于未来与 plan-helper、to-dos 等模块互通
 
-import { DataService, hoursToHm, getTodayDate, formatDate, addDays } from '@/services/dataService'
+import { DataService, hoursToHm, getTodayDate, formatDate, parseLocalDate, addDays } from '@/services/dataService'
 import { CheckinSystem } from '@/data'
 import { EventSystem } from '@/audio'
 import type { Config, Plans, ScheduleRule, TimeRecord, RealTimeStat, DayPlanInfo } from '@/types'
@@ -236,8 +236,8 @@ export const RecordApi = {
   async getRecordsInRange(startDate: string, endDate: string): Promise<ApiResponse<Record<string, TimeRecord[]>>> {
     try {
       const result: Record<string, TimeRecord[]> = {}
-      const start = new Date(startDate)
-      const end = new Date(endDate)
+      const start = parseLocalDate(startDate)
+      const end = parseLocalDate(endDate)
       const current = new Date(start)
 
       while (current <= end) {
@@ -276,8 +276,8 @@ export const RecordApi = {
       const progress: number[] = []
       const totalHours: number[] = []
       const planNames: string[] = []
-      const start = new Date(startDate)
-      const end = new Date(endDate)
+      const start = parseLocalDate(startDate)
+      const end = parseLocalDate(endDate)
       const current = new Date(start)
 
       while (current <= end) {
@@ -541,7 +541,7 @@ export const AnalyticsApi = {
   }>> {
     try {
       const today = new Date()
-      const start = weekStart ? new Date(weekStart) : new Date(today)
+      const start = weekStart ? parseLocalDate(weekStart) : new Date(today)
       // 找到本周一
       const dayOfWeek = start.getDay() || 7
       start.setDate(start.getDate() - dayOfWeek + 1)
