@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -36,6 +36,7 @@ import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTas
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
 const DailyPlanView = defineAsyncComponent(() => import('@/views/PlanView.vue'))
 
@@ -106,6 +107,12 @@ async function refreshPlanTodoLinks(planId?: string): Promise<void> {
 function isTaskLinkedToTodo(task: PlanFull['sections'][number]['tasks'][number]): boolean {
   return linkedTodoTaskIds.value.has(String(task.internal_id)) || linkedTodoTaskIds.value.has(String(task.display_id))
 }
+
+const stopWorkspaceListener = onWorkspaceChanged((source) => {
+  if ((source === 'todos' || source === 'archive') && selectedPlan.value) {
+    void refreshPlanTodoLinks(selectedPlan.value.id)
+  }
+})
 
 function toDateInput(date: Date): string {
   const year = date.getFullYear()
@@ -710,6 +717,10 @@ onMounted(async () => {
       window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
     }
   }
+})
+
+onUnmounted(() => {
+  stopWorkspaceListener()
 })
 </script>
 

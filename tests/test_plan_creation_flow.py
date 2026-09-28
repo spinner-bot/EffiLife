@@ -53,3 +53,5 @@ def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
     assert "function isTaskLinkedToTodo" in view
     assert "isTaskLinkedToTodo(task) ? t('plans.todoLinked') : t('plans.linkTodo')" in view
     assert "isLoading || isTaskLinkedToTodo(task)" in view
+    assert "onWorkspaceChanged((source)" in view
+    assert "stopWorkspaceListener()" in view
