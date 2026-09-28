@@ -8,10 +8,10 @@ def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     modules = {"1": {"name": "EffiLife unified workspace"}}
     calls = []
     monkeypatch.setattr(launcher, "build_modules", lambda: modules)
-    monkeypatch.setattr(launcher, "run_module", lambda choice, available: calls.append((choice, available)))
+    monkeypatch.setattr(launcher, "run_module", lambda choice, available, **kwargs: calls.append((choice, available, kwargs)))
     monkeypatch.setattr(sys, "argv", ["start.py", "--unified"])
     launcher.main()
-    assert calls == [("1", modules)]
+    assert calls == [("1", modules, {"open_browser": True})]
 
 
 def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_path):
@@ -261,3 +261,10 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
 def test_diagnose_output_uses_ascii_safe_json():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
+
+
+def test_unified_launcher_supports_no_browser_mode():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+    assert "def run_module(choice, modules, open_browser=True)" in source
+    assert 'open_browser="--no-browser" not in sys.argv' in source
+    assert "if open_browser:" in source

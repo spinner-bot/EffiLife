@@ -310,7 +310,7 @@ def show_menu(modules):
     print()
 
 
-def run_module(choice, modules):
+def run_module(choice, modules, open_browser=True):
     if choice == "0":
         print("再见！")
         sys.exit(0)
@@ -372,7 +372,8 @@ def run_module(choice, modules):
     if module.get("url") and service_is_ready(module["url"]):
         print(f"使用已运行的主服务: {module['url']}")
         try:
-            webbrowser.open(module["url"])
+            if open_browser:
+                webbrowser.open(module["url"])
             # Stop automatically when a reused frontend exits, instead of
             # leaving an orphan launcher process behind forever.
             while service_is_ready(module["url"]):
@@ -416,7 +417,8 @@ def run_module(choice, modules):
                 terminate_process(process)
                 return
             print(f"\n>>> 打开浏览器: {module['url']}")
-            webbrowser.open(module["url"])
+            if open_browser:
+                webbrowser.open(module["url"])
 
         process.wait()
         output_thread.join(timeout=2)
@@ -570,7 +572,7 @@ def main():
         print(json.dumps(collect_diagnostics(modules), ensure_ascii=True, indent=2))
         return
     if "--unified" in sys.argv:
-        run_module("1", modules)
+        run_module("1", modules, open_browser="--no-browser" not in sys.argv)
         return
     while True:
         show_menu(modules)
