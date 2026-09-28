@@ -18,6 +18,7 @@ import { useFormValidation } from '@/composables/useFormValidation'
 import { useI18n } from '@/i18n'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -178,7 +179,7 @@ async function saveRecord() {
 }
 
 async function deleteRecord(index: number) {
-  if (!confirm(t('legacyPlan.deleteRecordConfirm'))) return
+  if (!await requestConfirm(t('legacyPlan.deleteRecordConfirm'), { tone: 'danger' })) return
   const record = records.value[index]
   await appStore.deleteRecord(index)
   if (record) {
@@ -235,7 +236,7 @@ async function savePlan() {
   if (editingPlanType.value === '切分制') {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
     if (Math.abs(total - 24) > 0.01) {
-      if (confirm(t('legacyPlan.balanceConfirm', { total }))) {
+      if (await requestConfirm(t('legacyPlan.balanceConfirm', { total }))) {
         editingPlanItems.value = autoBalance(items, 24)
       } else { return }
     }
@@ -252,7 +253,7 @@ async function savePlan() {
   manageView.value = 'plans'
 }
 async function deletePlan(name: string) {
-  if (!confirm(t('legacyPlan.deletePlanConfirm', { name }))) return
+  if (!await requestConfirm(t('legacyPlan.deletePlanConfirm', { name }), { tone: 'danger' })) return
   const newPlans = { ...plans.value }
   delete newPlans[name]
   await appStore.savePlans(newPlans)
@@ -314,7 +315,7 @@ async function saveRule() {
   manageView.value = 'rules'
 }
 async function deleteRule(index: number) {
-  if (!confirm(t('legacyPlan.deleteRuleConfirm'))) return
+  if (!await requestConfirm(t('legacyPlan.deleteRuleConfirm'), { tone: 'danger' })) return
   const newRules = [...scheduleRules.value]
   newRules.splice(index, 1)
   await appStore.saveScheduleRules(newRules)

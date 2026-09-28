@@ -8,6 +8,7 @@ import type { EventType, WarningRule, InboxEntry } from '@/audio'
 import { useI18n } from '@/i18n'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -128,7 +129,7 @@ const autoCleanOptions: Array<{ value: 1 | 3 | 7 | 30 | -1; labelKey: string }> 
   { value: -1, labelKey: 'settings.events.cleanNever' }
 ]
 
-function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
+async function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
   const currentDays = eventSettings.value.autoCleanDays
 
   // 如果是相同的设置，不需要确认
@@ -158,7 +159,7 @@ function setAutoCleanDays(days: 1 | 3 | 7 | 30 | -1) {
     confirmMsg += `\n\n${t('settings.events.cleanNoMatch')}`
   }
 
-  if (!confirm(confirmMsg)) return
+  if (!await requestConfirm(confirmMsg, { tone: 'danger' })) return
 
   EventSystem.updateSettings({ autoCleanDays: days })
   eventSettings.value = EventSystem.getSettings()
@@ -189,8 +190,8 @@ function deleteEntry(entryId: string) {
   EventSystem.deleteInboxEntry(entryId)
 }
 
-function clearRead() {
-  if (!confirm(t('settings.events.clearConfirm'))) return
+async function clearRead() {
+  if (!await requestConfirm(t('settings.events.clearConfirm'), { tone: 'danger' })) return
   EventSystem.clearReadInbox()
 }
 
@@ -279,8 +280,8 @@ function cancelRule() {
   editingRuleId.value = null
 }
 
-function deleteRule(id: string) {
-  if (!confirm(t('settings.events.deleteRuleConfirm'))) return
+async function deleteRule(id: string) {
+  if (!await requestConfirm(t('settings.events.deleteRuleConfirm'), { tone: 'danger' })) return
   EventSystem.removeWarningRule(id)
   eventSettings.value = EventSystem.getSettings()
 }

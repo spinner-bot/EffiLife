@@ -6,6 +6,11 @@ APP = ROOT / "time-helper" / "desk" / "src" / "App.vue"
 SERVICE = ROOT / "time-helper" / "desk" / "src" / "services" / "confirmService.ts"
 I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 SETTINGS = ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue"
+LEGACY_CONFIRM_VIEWS = (
+    ROOT / "time-helper" / "desk" / "src" / "views" / "MotionSettingsView.vue",
+    ROOT / "time-helper" / "desk" / "src" / "views" / "EventManagerView.vue",
+    ROOT / "time-helper" / "desk" / "src" / "views" / "PlanView.vue",
+)
 
 
 def test_unified_shell_mounts_the_themed_confirm_host():
@@ -31,3 +36,10 @@ def test_settings_uses_themed_confirmation_service():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "import { requestConfirm } from '@/services/confirmService'" in source
     assert "confirm(" not in source
+
+
+def test_compatibility_management_views_use_themed_confirmation_service():
+    for view in LEGACY_CONFIRM_VIEWS:
+        source = view.read_text(encoding="utf-8")
+        assert "requestConfirm" in source, view.name
+        assert "confirm(" not in source, view.name

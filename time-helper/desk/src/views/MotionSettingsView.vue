@@ -6,6 +6,7 @@ import { MotionManager } from '@/motion'
 import type { MotionSettings } from '@/motion'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -79,8 +80,8 @@ function applyRecommendation() {
 }
 
 // 重置为默认
-function resetToDefault() {
-  if (!confirm(t('settings.motion.resetConfirm'))) return
+async function resetToDefault() {
+  if (!await requestConfirm(t('settings.motion.resetConfirm'), { tone: 'danger' })) return
   MotionManager.updateSettings({
     enabled: true,
     targetFps: 15,
