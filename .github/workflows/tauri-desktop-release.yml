@@ -63,6 +63,9 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Verify desktop build environment
+        run: python scripts/check_build_environment.py --target desktop
+
       - name: Install frontend dependencies
         working-directory: time-helper/desk
         run: npm ci

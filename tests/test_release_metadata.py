@@ -56,6 +56,12 @@ def test_release_workflow_syncs_repository_version_before_contract_tests():
     assert workflow.index("python scripts/sync_desktop_version.py") < workflow.index("python -m pytest -q")
 
 
+def test_release_workflow_runs_desktop_toolchain_preflight():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "python scripts/check_build_environment.py --target desktop" in workflow
+    assert workflow.index("check_build_environment.py --target desktop") < workflow.index("npm run tauri build")
+
+
 def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
     import json
     import subprocess
