@@ -1,6 +1,6 @@
 // 版本管理 - 构建时自动生成
 // 此文件由 vite 插件在每次构建时更新
-import { currentLocale } from './i18n'
+import { currentLocale, translate } from './i18n'
 
 // 以下值会在构建时被替换
 export const APP_VERSION = '__APP_VERSION__'
@@ -38,13 +38,13 @@ export function getBuildInfo(): string {
   if (isDevVersion) {
     const date = new Date(parseInt(timestamp) || Date.now())
     const dateStr = isNaN(date.getTime()) ? new Date().toLocaleString(currentLocale.value) : date.toLocaleString(currentLocale.value)
-    return `开发版 #${commitCount} · ${dateStr}`
+    return `${translate('version.build.development')} #${commitCount} · ${dateStr}`
   }
   const releaseDate = new Date(parseInt(timestamp) || Date.now())
   const displayTimestamp = isNaN(releaseDate.getTime())
     ? new Date().toLocaleDateString(currentLocale.value)
     : releaseDate.toLocaleDateString(currentLocale.value)
-  return `正式版 · ${displayTimestamp}`
+  return `${translate('version.build.release')} · ${displayTimestamp}`
 }
 
 // 版本历史（手动维护）
