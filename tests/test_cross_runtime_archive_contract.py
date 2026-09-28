@@ -27,5 +27,5 @@ def test_python_and_frontend_archive_protocol_constants_match():
 
 def test_frontend_export_uses_the_declared_canonical_dataset_list():
     source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
-    assert "const datasets = ['app', 'records', 'todos', 'todo_categories', 'plan_helper']" in source
+    assert "const datasets = [...CANONICAL_ARCHIVE_DATASETS]" in source
     assert "data/${name}.json" in source

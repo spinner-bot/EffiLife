@@ -318,7 +318,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 
   // 使用公共层约定的 manifest + datasets 协议导出。
   const { records, todos, categories, planHelper, ...app } = data
-  const datasets = ['app', 'records', 'todos', 'todo_categories', 'plan_helper']
+  const datasets = [...CANONICAL_ARCHIVE_DATASETS]
   const datasetPayloads = {
     app: canonicalJson(app),
     records: canonicalJson(records),
