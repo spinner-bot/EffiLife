@@ -7,11 +7,36 @@
 import json
 import hashlib
 import os
+import tempfile
 import uuid
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 from dataclasses import dataclass, field
+
+
+def _atomic_write_json(path: Path, payload) -> None:
+    """Persist an authentication JSON document without partial replacement."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            dir=path.parent,
+            prefix=f'.{path.name}.',
+            suffix='.tmp',
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 @dataclass
@@ -120,9 +145,7 @@ class AuthManager:
 
     def _save_users(self):
         """保存用户列表"""
-        with open(self.users_file, 'w', encoding='utf-8') as f:
-            json.dump([u.to_dict(include_password=True) for u in self._users], f,
-                      ensure_ascii=False, indent=2)
+        _atomic_write_json(self.users_file, [u.to_dict(include_password=True) for u in self._users])
 
     def _load_session(self) -> Optional[User]:
         """加载当前登录用户"""
@@ -142,9 +165,7 @@ class AuthManager:
     def _save_session(self, user: Optional[User]):
         """保存当前登录会话"""
         if user:
-            with open(self.session_file, 'w', encoding='utf-8') as f:
-                json.dump({'user_id': user.id, 'login_time': datetime.now().isoformat()}, f,
-                          ensure_ascii=False, indent=2)
+            _atomic_write_json(self.session_file, {'user_id': user.id, 'login_time': datetime.now().isoformat()})
         else:
             if self.session_file.exists():
                 self.session_file.unlink()
