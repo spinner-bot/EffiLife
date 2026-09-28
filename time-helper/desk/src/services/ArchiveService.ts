@@ -365,7 +365,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 }
 
 // 在 Tauri 桌面环境下打开文件对话框导入
-export async function importArchiveWithDialog(): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
+export async function importArchiveWithDialog(confirmImport?: () => boolean): Promise<{ success: boolean; message: string; cancelled?: boolean }> {
   // 移动端使用文件选择器，不使用此函数
   if (!isTauri() || isMobilePlatform()) {
     return { success: false, message: '请使用文件选择器导入' }
@@ -390,6 +390,10 @@ export async function importArchiveWithDialog(): Promise<{ success: boolean; mes
     const data = await readFile(filePath as string)
     const blob = new Blob([data])
     const zip = await JSZip.loadAsync(blob)
+
+    if (confirmImport && !confirmImport()) {
+      return { success: false, message: '', cancelled: true }
+    }
 
     return await processArchiveData(zip)
   } catch (e) {

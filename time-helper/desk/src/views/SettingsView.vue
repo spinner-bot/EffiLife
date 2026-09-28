@@ -418,7 +418,7 @@ async function handleImportArchive() {
   // 检测是否在 Tauri 环境
   if ((window as any).__TAURI__) {
     // Tauri 环境：使用原生文件对话框
-    const result = await importArchiveWithDialog()
+    const result = await importArchiveWithDialog(() => confirm(t('settings.archive.importConfirm')))
     if (result.cancelled) return
     if (result.success) {
       if (confirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
