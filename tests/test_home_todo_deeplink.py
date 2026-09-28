@@ -15,3 +15,10 @@ def test_task_center_consumes_home_todo_deeplink():
     source = TASKS.read_text(encoding="utf-8")
     assert "route.query.todo" in source
     assert "document.getElementById(`todo-${targetId}`)?.scrollIntoView" in source
+
+
+def test_home_event_plan_summary_has_aggregate_progress_visual():
+    source = HOME.read_text(encoding="utf-8")
+    assert "const eventPlanProgress = computed" in source
+    assert "event-overview-progress-track" in source
+    assert "eventPlanProgress}%`" in source

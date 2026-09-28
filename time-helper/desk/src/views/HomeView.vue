@@ -71,6 +71,9 @@ async function refreshEventPlanSummary() {
 
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
+const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
+  ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
+  : 0)
 
 const updateTime = () => {
   const now = new Date()
@@ -353,6 +356,7 @@ onUnmounted(() => {
             <strong class="event-overview-count">{{ eventPlans.length }}</strong>
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
+            <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
@@ -860,6 +864,9 @@ onUnmounted(() => {
 .event-overview-count { margin-top: var(--spacing-xl); color: var(--color-primary); font-size: 2.4rem; line-height: 1; }
 .event-overview-label { margin-top: 7px; color: var(--color-text-secondary); font-size: 13px; }
 .event-overview-metrics { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: auto; padding-top: var(--spacing-lg); color: var(--color-text-tertiary); font-size: 12px; }
+.event-overview-progress { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--color-primary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.event-overview-progress-track { height: 6px; flex: 1; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
+.event-overview-progress-track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
 
 .today-todos-card {
