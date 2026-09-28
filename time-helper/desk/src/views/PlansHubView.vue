@@ -107,9 +107,10 @@ function openLinkedTodo(task: PlanFull['sections'][number]['tasks'][number]): vo
 }
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
-  if ((source === 'todos' || source === 'archive') && selectedPlan.value) {
-    void refreshPlanTodoLinks(selectedPlan.value.id)
-  }
+  if (isLoading.value) return
+  void refreshFromWorkspace(source).catch((error) => {
+    console.warn('Failed to refresh plans after external change:', error)
+  })
 })
 
 function toDateInput(date: Date): string {
@@ -153,6 +154,20 @@ async function loadPlans() {
   } finally {
     isLoading.value = false
   }
+}
+
+async function refreshFromWorkspace(source?: string): Promise<void> {
+  if (!source || !['todos', 'plans', 'archive'].includes(source)) return
+  if (source === 'todos') {
+    if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
+    return
+  }
+  if (selectedPlan.value && source === 'plans') {
+    selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    return
+  }
+  if (view.value === 'events') await loadPlans()
+  if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
 }
 
 async function archiveSelectedPlan() {
