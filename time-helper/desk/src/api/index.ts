@@ -353,9 +353,9 @@ export const CheckinApi = {
   },
 
   /** 为指定日期打卡（补打卡） */
-  checkinForDate(date: string, planName: string, progress: number = 100): ApiResponse<number | null> {
+  async checkinForDate(date: string, planName: string, progress: number = 100): Promise<ApiResponse<number | null>> {
     try {
-      const result = CheckinSystem.checkinForDate(date, planName, progress)
+      const result = await CheckinSystem.checkinForDate(date, planName, progress)
       return ok(result)
     } catch (e) {
       return fail('补打卡失败')

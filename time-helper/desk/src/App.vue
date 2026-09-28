@@ -84,7 +84,7 @@ onMounted(async () => {
   AudioManager.startBgm()
 
   // 自动补打卡检查（跨天后如果昨天完成了计划但没打卡）
-  const autoCheckinResult = CheckinSystem.autoCheckinIfMissed()
+  const autoCheckinResult = await CheckinSystem.autoCheckinIfMissed()
 
   if (autoCheckinResult.result === 'checked') {
     // 自动补打卡成功，通知用户
@@ -95,7 +95,7 @@ onMounted(async () => {
     )
   } else if (autoCheckinResult.result === 'streak-broken') {
     // 连续天数已断，但昨天有完成的计划，添加到收件箱让用户手动补打
-    const yesterdayRecords = CheckinSystem.getYesterdayCompletedRecords()
+    const yesterdayRecords = await CheckinSystem.getYesterdayCompletedRecords()
     if (yesterdayRecords.length > 0) {
       const yesterday = CheckinSystem.getYesterdayDate()
       // 为每个完成的计划添加收件箱提醒（虽然连续天数断了，但用户仍可手动打卡记录）

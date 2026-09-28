@@ -228,7 +228,7 @@ class CheckinSystemClass {
    * 如果昨天有完成计划但未打卡，在新的一天自动补打卡
    * @returns 补打卡结果：'checked' 补打卡成功, 'already' 已打过卡, 'no-record' 昨天无记录, 'streak-broken' 连续天数已断
    */
-  autoCheckinIfMissed(): { result: string; streak?: number } {
+  async autoCheckinIfMissed(): Promise<{ result: string; streak?: number }> {
     const today = this.getTodayStr()
     const yesterday = this.getYesterdayStr()
 
@@ -238,7 +238,7 @@ class CheckinSystemClass {
     }
 
     // 检查昨天是否有完成的计划记录
-    const yesterdayRecords = this.getYesterdayRecords()
+    const yesterdayRecords = await this.getYesterdayRecords()
     if (yesterdayRecords.length === 0) {
       return { result: 'no-record' }
     }
@@ -256,7 +256,7 @@ class CheckinSystemClass {
 
     // 执行补打卡（使用昨天的第一个完成记录的计划名）
     const planName = yesterdayRecords[0]?.planName || '自动补打卡'
-    const streak = this.checkinForDate(yesterday, planName, 100)
+    const streak = await this.checkinForDate(yesterday, planName, 100)
 
     if (streak !== null) {
       return { result: 'checked', streak }
@@ -269,7 +269,7 @@ class CheckinSystemClass {
    * 为指定日期打卡（用于补打卡）
    * 注意：调用前需确保该日期有100%完成的任务记录
    */
-  checkinForDate(date: string, planName: string, progress: number): number | null {
+  async checkinForDate(date: string, planName: string, progress: number): Promise<number | null> {
     // 检查该日期是否已经打过卡
     const existingRecord = this.data.value.records.find(r => r.date === date)
     if (existingRecord) {
@@ -277,7 +277,7 @@ class CheckinSystemClass {
     }
 
     // 验证该日期确实有100%完成的任务
-    const completedRecords = this.getCompletedRecordsForDate(date)
+    const completedRecords = await this.getCompletedRecordsForDate(date)
     if (completedRecords.length === 0) {
       return null  // 该日期没有完成的任务，无法打卡
     }
@@ -314,20 +314,24 @@ class CheckinSystemClass {
   /**
    * 获取昨天完成的计划记录（用于判断是否需要补打卡）
    */
-  getYesterdayCompletedRecords(): { planName: string; progress: number }[] {
+  async getYesterdayCompletedRecords(): Promise<{ planName: string; progress: number }[]> {
     const yesterday = this.getYesterdayStr()
-    return this.getCompletedRecordsForDate(yesterday)
+    return await this.getCompletedRecordsForDate(yesterday)
   }
 
   /**
    * 获取指定日期完成的计划记录
    */
-  getCompletedRecordsForDate(dateStr: string): { planName: string; progress: number }[] {
+  async getCompletedRecordsForDate(dateStr: string): Promise<{ planName: string; progress: number }[]> {
     const key = `efflife_records_${dateStr}`
     try {
-      const saved = localStorage.getItem(key)
-      if (saved) {
-        const records = JSON.parse(saved)
+      const { get, STORE_NAMES } = await import('@/storage')
+      let records = await get<Array<{ progress?: number; plan_name?: string; planName?: string }>>(STORE_NAMES.RECORDS, dateStr)
+      if (records === null) {
+        const saved = localStorage.getItem(key)
+        records = saved ? JSON.parse(saved) : []
+      }
+      if (Array.isArray(records)) {
         // 筛选出完成度 100% 的记录
         return records
           .filter((r: { progress?: number }) => r.progress === 100)
@@ -345,8 +349,8 @@ class CheckinSystemClass {
   /**
    * 获取昨天的时间记录（判断是否完成了计划）
    */
-  private getYesterdayRecords(): { planName: string; progress: number }[] {
-    return this.getYesterdayCompletedRecords()
+  private async getYesterdayRecords(): Promise<{ planName: string; progress: number }[]> {
+    return await this.getYesterdayCompletedRecords()
   }
 
   /**

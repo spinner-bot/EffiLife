@@ -194,11 +194,11 @@ function clearRead() {
 }
 
 // 从收件箱条目进行补打卡
-function handleCheckinFromInbox(entry: InboxEntry) {
+async function handleCheckinFromInbox(entry: InboxEntry) {
   if (!entry.checkinPlanName || !entry.checkinDate) return
 
   // 执行补打卡
-  const result = CheckinSystem.checkinForDate(entry.checkinDate, entry.checkinPlanName, 100)
+  const result = await CheckinSystem.checkinForDate(entry.checkinDate, entry.checkinPlanName, 100)
 
   if (result !== null) {
     // 打卡成功，显示成功提示
