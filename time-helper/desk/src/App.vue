@@ -223,16 +223,16 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }">
             <Home :size="16" /> <span>{{ t('nav.home') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+          <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
             <ClipboardList :size="16" /> <span>{{ t('nav.plans') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+          <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
             <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
             <Clock3 :size="16" /> <span>{{ t('nav.records') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" to="/settings" :class="{ active: isSettingsRoute }">
+          <RouterLink class="global-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }">
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
           </RouterLink>
         </nav>
@@ -244,16 +244,16 @@ watch(() => appStore.todayStat, () => {
         <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }">
           <Home :size="19" /> <span>{{ t('nav.home') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
           <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
           <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
           <Clock3 :size="19" /> <span>{{ t('nav.records') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" to="/settings" :class="{ active: isSettingsRoute }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }">
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>

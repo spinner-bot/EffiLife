@@ -12,10 +12,9 @@ def test_onboarding_targets_unified_navigation():
     source = GUIDE_SOURCE.read_text(encoding="utf-8")
     current_steps = source.split("MAIN_GUIDE.steps = [", 1)[1].split("\n]", 1)[0]
 
-    assert ".global-nav-link:nth-child(2)" in current_steps
-    assert ".global-nav-link:nth-child(3)" in current_steps
-    assert ".global-nav-link:nth-child(4)" in current_steps
-    assert ".global-nav-link:nth-child(5)" in current_steps
+    for key in ("plans", "tasks", "records", "settings"):
+        assert f'[data-guide="{key}"]' in current_steps
+    assert "global-nav-link:nth-child" not in current_steps
     assert ".pv-tab" not in current_steps
     assert ".nav-btn" not in current_steps
     assert "actionType: 'input'" not in current_steps
