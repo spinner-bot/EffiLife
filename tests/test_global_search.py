@@ -96,6 +96,7 @@ def test_global_search_translation_keys_exist_in_both_locales():
         "search.loading",
         "search.empty",
         "search.hint",
+        "search.results",
         "search.todoDetail",
         "search.planDetail",
         "search.planTaskDetail",
