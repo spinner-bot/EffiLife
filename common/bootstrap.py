@@ -4,6 +4,7 @@ EffiLife 集成启动器
 初始化所有共享组件，注册模块到 API 网关，启动事件处理器。
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -65,19 +66,34 @@ class EffiLifeIntegration:
         log_dir = self.data_manager.events_dir
         self.event_bus.set_log_file(str(log_dir / 'events.log'))
 
-        # 注册模块数据目录
-        project_root = Path(__file__).parent.parent
+        # 注册模块数据目录。统一根目录模式下，注册表必须描述运行时根目录
+        # 下的模块位置；未配置时保留仓库开发环境的历史路径。
+        configured_root = self.data_root is not None or bool(os.environ.get('EFFILIFE_DATA_DIR', '').strip())
+        if configured_root:
+            module_root = self.data_manager.data_root / 'modules'
+            module_dirs = {
+                'time-helper': module_root / 'time-helper',
+                'to-dos': module_root / 'to-dos',
+                'plan-helper': module_root / 'plan-helper',
+            }
+        else:
+            project_root = Path(__file__).parent.parent
+            module_dirs = {
+                'time-helper': project_root / 'time-helper' / 'data',
+                'to-dos': project_root / 'to-dos' / 'data',
+                'plan-helper': project_root / 'plan-helper' / 'data',
+            }
         self.data_manager.register_module_data_dir(
             'time-helper',
-            str(project_root / 'time-helper' / 'data')
+            str(module_dirs['time-helper'])
         )
         self.data_manager.register_module_data_dir(
             'to-dos',
-            str(project_root / 'to-dos' / 'data')
+            str(module_dirs['to-dos'])
         )
         self.data_manager.register_module_data_dir(
             'plan-helper',
-            str(project_root / 'plan-helper' / 'data')
+            str(module_dirs['plan-helper'])
         )
 
         self._initialized = True
