@@ -37,3 +37,4 @@ def test_data_manager_workspace_bundle_uses_canonical_contract(tmp_path):
         "todos",
     ]
     assert datasets["app"] == {"version": "dev"}
+    assert manager.verify_workspace_bundle(bundle)["integrity"] == "verified"

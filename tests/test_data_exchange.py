@@ -12,6 +12,7 @@ from common.data_exchange import (
     inspect_bundle,
     read_bundle,
     read_workspace_bundle,
+    verify_workspace_bundle,
 )
 
 
@@ -71,6 +72,24 @@ def test_bundle_rejects_valid_json_dataset_tampering(tmp_path):
             target.writestr(item, content)
     with pytest.raises(ValueError, match="checksum mismatch"):
         read_bundle(rewritten)
+
+
+def test_workspace_bundle_verification_report_is_read_only(tmp_path):
+    bundle = tmp_path / "workspace.efl"
+    export_workspace_bundle(
+        bundle,
+        app={"version": "dev"},
+        records={"2026-09-28": []},
+        todos=[{"id": "TODO-1"}],
+        todo_categories=[],
+        plan_helper={"plans": []},
+    )
+
+    report = verify_workspace_bundle(bundle)
+
+    assert report["integrity"] == "verified"
+    assert report["datasets"] == sorted(CANONICAL_WORKSPACE_DATASETS)
+    assert report["top_level_counts"]["todos"] == 1
 
 
 def test_bundle_rejects_missing_manifest(tmp_path):

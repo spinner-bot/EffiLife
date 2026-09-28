@@ -236,3 +236,18 @@ def read_workspace_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, di
     if missing:
         raise ValueError(f"Workspace bundle is missing datasets: {', '.join(missing)}")
     return manifest, datasets
+
+
+def verify_workspace_bundle(bundle_path: str | os.PathLike[str]) -> dict[str, Any]:
+    """Return a read-only health report for a canonical workspace bundle."""
+    manifest, datasets = read_workspace_bundle(bundle_path)
+    return {
+        "format": manifest["format"],
+        "format_version": manifest["format_version"],
+        "integrity": "verified" if manifest.get("dataset_sha256") else "legacy",
+        "datasets": sorted(datasets),
+        "top_level_counts": {
+            name: len(value) if isinstance(value, (dict, list)) else None
+            for name, value in datasets.items()
+        },
+    }

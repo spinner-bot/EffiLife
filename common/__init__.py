@@ -19,5 +19,6 @@ from .data_exchange import (
     inspect_bundle,
     read_bundle,
     read_workspace_bundle,
+    verify_workspace_bundle,
 )
 from .i18n import I18n

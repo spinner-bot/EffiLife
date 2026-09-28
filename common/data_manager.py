@@ -30,6 +30,7 @@ from .data_exchange import (
     export_workspace_bundle as write_workspace_bundle,
     read_bundle as load_bundle,
     read_workspace_bundle as load_workspace_bundle,
+    verify_workspace_bundle as verify_workspace,
 )
 
 
@@ -232,6 +233,11 @@ class DataManager:
     def read_workspace_bundle(bundle_path: str):
         """Read a unified workspace bundle with all canonical datasets."""
         return load_workspace_bundle(bundle_path)
+
+    @staticmethod
+    def verify_workspace_bundle(bundle_path: str):
+        """Return a read-only health report for a workspace bundle."""
+        return verify_workspace(bundle_path)
 
     @staticmethod
     def export_workspace_bundle(
