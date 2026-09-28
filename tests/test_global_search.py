@@ -37,6 +37,8 @@ def test_global_search_refreshes_when_unified_data_changes():
     archive_service = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
     assert "onWorkspaceChanged" in source
     assert "if (props.open) void loadIndex()" in source
+    assert "document.visibilityState === 'visible'" in source
+    assert "visibilitychange" in source
     assert "WORKSPACE_CHANGED_EVENT" in events
     assert "BroadcastChannel" in events
     assert "channel?.postMessage" in events

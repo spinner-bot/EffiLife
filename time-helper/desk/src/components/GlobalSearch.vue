@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
@@ -96,7 +96,16 @@ const stopWorkspaceListener = onWorkspaceChanged(() => {
   if (props.open) void loadIndex()
 })
 
-onBeforeUnmount(stopWorkspaceListener)
+function refreshWhenVisible() {
+  if (document.visibilityState === 'visible' && props.open) void loadIndex()
+}
+
+onMounted(() => document.addEventListener('visibilitychange', refreshWhenVisible))
+
+onBeforeUnmount(() => {
+  stopWorkspaceListener()
+  document.removeEventListener('visibilitychange', refreshWhenVisible)
+})
 
 async function loadPlanTaskIndex(planList: PlanSummary[], requestId: number) {
   if (planList.length === 0) {
