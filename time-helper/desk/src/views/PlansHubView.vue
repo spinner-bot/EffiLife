@@ -14,15 +14,18 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
+  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
   listPlanSummaries,
+  listPlanTemplates,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type InitialPlanSection,
+  type PlanTemplateSummary,
   type PlanSummary,
   updatePlanTask,
   updatePlanGroup,
@@ -54,6 +57,8 @@ const showCreate = ref(false)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
 const createSections = ref<InitialPlanSection[]>([])
+const createTemplates = ref<PlanTemplateSummary[]>([])
+const selectedTemplateId = ref('')
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -158,8 +163,20 @@ function openCreatePlan() {
   planName.value = ''
   planDate.value = toDateInput(new Date())
   createSections.value = [{ name: '', info: '', tasks: [{ content: '', time_minutes: 30 }] }]
+  selectedTemplateId.value = ''
+  createTemplates.value = []
+  void loadCreateTemplates()
   errorMessage.value = ''
   showCreate.value = true
+}
+
+async function loadCreateTemplates() {
+  try {
+    createTemplates.value = await listPlanTemplates()
+  } catch {
+    // Templates are an optional enhancement; manual creation remains usable.
+    createTemplates.value = []
+  }
 }
 
 function addCreateSection() {
@@ -221,6 +238,25 @@ async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
   if (!name || !planDate.value) return
+  if (selectedTemplateId.value) {
+    isLoading.value = true
+    errorMessage.value = ''
+    try {
+      const created = await createEventPlanFromTemplate(selectedTemplateId.value, name, toDateTuple(planDate.value))
+      selectedPlan.value = created
+      showCreate.value = false
+      planName.value = ''
+      selectedTemplateId.value = ''
+      createSections.value = []
+      view.value = 'detail'
+      await router.replace({ path: '/plans', query: { plan: String(created.id) } })
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    } finally {
+      isLoading.value = false
+    }
+    return
+  }
   const sections = createSections.value
     .map((section) => ({
       name: section.name.trim(),
@@ -787,11 +823,19 @@ onMounted(async () => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input v-model="planName" required autofocus /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
+        <label v-if="createTemplates.length" class="create-template-field">{{ t('plans.template') }}
+          <select v-model="selectedTemplateId">
+            <option value="">{{ t('plans.templateManual') }}</option>
+            <option v-for="template in createTemplates" :key="template.id" :value="template.id">{{ template.name }}<template v-if="template.description"> — {{ template.description }}</template></option>
+          </select>
+          <small v-if="selectedTemplateId">{{ t('plans.templateHint') }}</small>
+        </label>
         <div class="create-sections-heading">
           <div><strong>{{ t('plans.createSections') }}</strong><small>{{ t('plans.createSectionsHint') }}</small></div>
-          <button type="button" class="plans-secondary" @click="addCreateSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
+          <button type="button" class="plans-secondary" :disabled="Boolean(selectedTemplateId)" @click="addCreateSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
         </div>
-        <div class="create-sections">
+        <div v-if="selectedTemplateId" class="create-template-note">{{ t('plans.templateSelected') }}</div>
+        <div v-else class="create-sections">
           <section v-for="(section, sectionIndex) in createSections" :key="sectionIndex" class="create-section">
             <header><strong>{{ t('plans.section') }} {{ sectionIndex + 1 }}</strong><button v-if="createSections.length > 1" type="button" class="icon-button" :aria-label="t('plans.deleteSection')" @click="removeCreateSection(sectionIndex)"><Trash2 :size="15" /></button></header>
             <div class="create-section-fields">
@@ -856,6 +900,10 @@ onMounted(async () => {
 .create-sections-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; color: var(--color-text-primary); }
 .create-sections-heading > div { display: grid; gap: 3px; }
 .create-sections-heading small { color: var(--color-text-tertiary); font-size: 11px; font-weight: 400; }
+.create-template-field { display: grid; gap: 6px; }
+.create-template-field select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.create-template-field small, .create-template-note { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.5; }
+.create-template-note { border: 1px dashed var(--color-primary); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); }
 .create-sections { display: grid; gap: 10px; }
 .create-section { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-secondary); }
 .create-section header { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; }

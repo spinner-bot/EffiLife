@@ -45,6 +45,14 @@ export interface InitialPlanSection {
   tasks: Array<{ content: string; time_minutes: number }>
 }
 
+export interface PlanTemplateSummary {
+  id: string
+  name: string
+  description: string
+  type: string
+  built_in: boolean
+}
+
 export interface PlanArchiveSummary {
   file: string
   plan_id?: number
@@ -358,6 +366,27 @@ export async function createEventPlan(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, date, sections }),
+  })
+}
+
+export async function listPlanTemplates(): Promise<PlanTemplateSummary[]> {
+  if (getPlanRuntime() === 'mobile-unavailable') return []
+  const data = await request<{ templates?: PlanTemplateSummary[] }>('/api/templates')
+  return data.templates || []
+}
+
+export async function createEventPlanFromTemplate(
+  templateId: string,
+  name: string,
+  date: [number, number, number],
+): Promise<PlanFull> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    throw new Error(getPlanRuntimeUnavailableReason())
+  }
+  return request<PlanFull>('/api/plans/from-template', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ template_id: templateId, name, date }),
   })
 }
 

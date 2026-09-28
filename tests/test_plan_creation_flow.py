@@ -15,6 +15,9 @@ def test_plan_creation_collects_initial_sections_and_tasks_before_submission():
     assert "plans.createTaskRequired" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
+    assert "export async function listPlanTemplates" in gateway
+    assert "createEventPlanFromTemplate" in gateway
+    assert "v-model=\"selectedTemplateId\"" in view
 
 
 def test_mobile_plan_creation_preserves_section_and_task_shape():
@@ -23,3 +26,11 @@ def test_mobile_plan_creation_preserves_section_and_task_shape():
     assert "plan: [null, ...section.tasks" in gateway
     assert "t_m: Math.max(0, Number(task.time_minutes) || 0) / 6" in gateway
     assert "group: {}," in gateway
+
+
+def test_template_creation_uses_the_existing_plan_helper_endpoint():
+    gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
+
+    assert "request<{ templates?: PlanTemplateSummary[] }>('/api/templates')" in gateway
+    assert "request<PlanFull>('/api/plans/from-template'" in gateway
+    assert "template_id: templateId" in gateway
