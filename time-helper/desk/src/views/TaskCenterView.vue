@@ -18,6 +18,7 @@ import { completePlanTask, getPlanTasks, listPlanSummaries, type PlanGatewayStat
 import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
+import CategoryIconPreview from '@/components/CategoryIconPreview.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -722,6 +723,7 @@ watch(selectedPlanId, (planId) => {
             </template>
             <template v-else>
               <span class="category-swatch" :style="{ background: item.color }" />
+              <CategoryIconPreview :name="item.icon" :ascii="item.ascii_icon" :style="{ '--category-color': item.color }" />
               <strong>{{ item.name }}</strong>
               <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
               <button type="button" class="category-pin" :class="{ active: item.pinned }" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
@@ -796,7 +798,10 @@ watch(selectedPlanId, (planId) => {
               <h2>{{ todo.title }}</h2>
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
-            <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
+            <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">
+              <CategoryIconPreview :name="categories.find((item) => item.id === todo.category)?.icon" :ascii="categories.find((item) => item.id === todo.category)?.ascii_icon" />
+              <span>{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
+            </span>
             <span v-if="todo.time_spent" class="task-time-spent">{{ t('tasks.timeSpent') }} {{ todo.time_spent }} {{ t('tasks.minutesShort') }}</span>
             <span v-if="todo.deadline" class="task-deadline">{{ t('tasks.deadlinePrefix') }} {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
@@ -895,7 +900,7 @@ watch(selectedPlanId, (planId) => {
 .task-score.expired { color: var(--color-text-tertiary); background: var(--color-bg-secondary); }
 .task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
-.task-category { display: inline-block; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
+.task-category { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
