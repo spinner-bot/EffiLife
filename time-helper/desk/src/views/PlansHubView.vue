@@ -547,6 +547,7 @@ onMounted(loadPlans)
           <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <div v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
+            <label class="task-minutes-field">{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
             <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
             <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
           </div>
@@ -653,6 +654,8 @@ onMounted(loadPlans)
 .plan-section header small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; }
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-editor label:first-child { flex: 1; }
+.task-minutes-field { flex: 0 0 110px; }
+.task-minutes-field input { width: 100%; box-sizing: border-box; }
 .group-editor { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(160px, 1.4fr) 110px 110px auto auto; align-items: end; gap: 8px; margin: 10px 0; padding: 10px; border: 1px dashed var(--color-border); border-radius: 10px; background: var(--color-bg-secondary); }
 .group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
 .group-editor input, .group-editor select { min-width: 0; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
