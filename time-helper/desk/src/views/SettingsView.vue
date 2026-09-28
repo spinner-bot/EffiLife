@@ -1274,7 +1274,7 @@ onMounted(async () => {
           <!-- 当前版本 - 突出显示 -->
           <div class="current-version-card">
             <div class="version-badge" :class="{ dev: isDev }">
-              {{ isDev ? '开发版' : '正式版' }}
+              {{ isDev ? t('version.build.development') : t('version.build.release') }}
             </div>
             <h1 class="current-version-number">v{{ appVersion }}</h1>
             <p class="current-version-build">{{ buildInfo }}</p>
