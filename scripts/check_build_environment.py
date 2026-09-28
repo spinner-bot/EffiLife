@@ -20,9 +20,33 @@ def executable_path(name: str) -> str | None:
     return shutil.which(name)
 
 
+def node_tool_path(name: str) -> str | None:
+    """Find Node/npm using the same custom-tool directory as the launcher."""
+    configured = os.environ.get("EFFILIFE_NODE_DIR", "").strip()
+    if configured:
+        custom_dir = Path(configured).expanduser()
+    elif os.name == "nt":
+        custom_dir = Path("F:/dev-tools/node")
+    else:
+        custom_dir = None
+
+    if custom_dir is not None:
+        if os.name == "nt":
+            filename = f"{name}.cmd" if name == "npm" else f"{name}.exe"
+        else:
+            filename = name
+        candidate = custom_dir / filename
+        if candidate.is_file():
+            return str(candidate)
+    return executable_path(name)
+
+
 def build_report(target: str) -> dict[str, object]:
     requirements = TARGET_REQUIREMENTS[target]
-    tools = {name: executable_path(name) for name in requirements}
+    tools = {
+        name: node_tool_path(name) if name in {"node", "npm"} else executable_path(name)
+        for name in requirements
+    }
     sdk_roots = {
         "ANDROID_HOME": os.environ.get("ANDROID_HOME"),
         "ANDROID_SDK_ROOT": os.environ.get("ANDROID_SDK_ROOT"),

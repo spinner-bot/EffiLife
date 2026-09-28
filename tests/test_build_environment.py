@@ -30,3 +30,27 @@ def test_android_report_requires_sdk_root_in_addition_to_tool_binaries(monkeypat
 
     assert report["ready"] is False
     assert "ANDROID_HOME or ANDROID_SDK_ROOT" in report["missing"]
+
+
+def test_node_tool_path_prefers_configured_custom_directory(monkeypatch, tmp_path):
+    custom_dir = tmp_path / "node"
+    custom_dir.mkdir()
+    node_name = "node.exe" if MODULE.os.name == "nt" else "node"
+    npm_name = "npm.cmd" if MODULE.os.name == "nt" else "npm"
+    node_path = custom_dir / node_name
+    npm_path = custom_dir / npm_name
+    node_path.write_text("node", encoding="utf-8")
+    npm_path.write_text("npm", encoding="utf-8")
+    monkeypatch.setenv("EFFILIFE_NODE_DIR", str(custom_dir))
+    monkeypatch.setattr(MODULE, "executable_path", lambda _name: "/system/tool")
+
+    assert MODULE.node_tool_path("node") == str(node_path)
+    assert MODULE.node_tool_path("npm") == str(npm_path)
+
+
+def test_node_tool_path_falls_back_to_system_path(monkeypatch, tmp_path):
+    monkeypatch.setenv("EFFILIFE_NODE_DIR", str(tmp_path / "missing"))
+    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/system/{name}")
+
+    assert MODULE.node_tool_path("node") == "/system/node"
+    assert MODULE.node_tool_path("npm") == "/system/npm"
