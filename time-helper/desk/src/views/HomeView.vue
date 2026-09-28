@@ -9,7 +9,7 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
-import { listPlanSummaries, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
@@ -74,6 +74,7 @@ const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, pla
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
+const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache')
 
 const updateTime = () => {
   const now = new Date()
@@ -357,6 +358,7 @@ onUnmounted(() => {
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
             <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
+            <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ t('plans.cachedTitle') }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
@@ -867,6 +869,7 @@ onUnmounted(() => {
 .event-overview-progress { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--color-primary); font-size: 12px; font-variant-numeric: tabular-nums; }
 .event-overview-progress-track { height: 6px; flex: 1; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
 .event-overview-progress-track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
+.event-overview-snapshot { margin-top: 7px; color: var(--color-warning, var(--color-text-tertiary)); font-size: 11px; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
 
 .today-todos-card {

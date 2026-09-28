@@ -22,3 +22,10 @@ def test_home_event_plan_summary_has_aggregate_progress_visual():
     assert "const eventPlanProgress = computed" in source
     assert "event-overview-progress-track" in source
     assert "eventPlanProgress}%`" in source
+
+
+def test_home_event_plan_summary_discloses_cached_source():
+    source = HOME.read_text(encoding="utf-8")
+    assert "planDataSource" in source
+    assert "isEventPlanSnapshot" in source
+    assert "plans.cachedTitle" in source
