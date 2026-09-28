@@ -405,8 +405,8 @@ async function handleExportArchive() {
 }
 
 async function handleImportArchive() {
-  // 检测是否在 Tauri 环境
-  if (isTauriRuntime()) {
+  // 桌面 Tauri 使用原生文件对话框；浏览器和 Tauri Mobile 使用 WebView 文件选择器。
+  if (isTauriRuntime() && !isMobilePlatform()) {
     archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
     const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
