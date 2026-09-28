@@ -30,7 +30,7 @@ import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = true
 const canArchivePlan = !isMobilePlanRuntime
@@ -77,7 +77,12 @@ function toDateTuple(value: string): [number, number, number] {
 function formatPlanDate(date?: [number, number, number]): string {
   if (!date) return ''
   const [year, month, day] = date
-  return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`
+  const value = new Date(year, month - 1, day)
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(value)
 }
 
 async function loadPlans() {
