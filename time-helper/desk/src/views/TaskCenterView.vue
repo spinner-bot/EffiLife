@@ -81,6 +81,8 @@ const editingPlanTaskId = ref('')
 const isSaving = ref(false)
 const creatingTodo = ref(false)
 const completingTodoId = ref<string | null>(null)
+const selectedTodoIds = ref<Set<string>>(new Set())
+const bulkWorking = ref(false)
 const expandedTodoId = ref<string | null>(null)
 const searchTargetTodoId = ref<string | null>(null)
 const subtaskTitle = ref('')
@@ -139,6 +141,9 @@ const visibleTodos = computed(() => {
     return right.updated_at.localeCompare(left.updated_at)
   })
 })
+
+const selectedTodoCount = computed(() => selectedTodoIds.value.size)
+const allVisibleTodosSelected = computed(() => visibleTodos.value.length > 0 && visibleTodos.value.every((todo) => selectedTodoIds.value.has(todo.id)))
 
 const categorySummaries = computed(() => categories.value.map((category) => {
   const items = activeTodos.value.filter((todo) => todo.category === category.id)
@@ -500,6 +505,80 @@ async function removeTodo(todo: UnifiedTodo) {
   }
 }
 
+function toggleTodoSelection(todoId: string) {
+  const next = new Set(selectedTodoIds.value)
+  if (next.has(todoId)) next.delete(todoId)
+  else next.add(todoId)
+  selectedTodoIds.value = next
+}
+
+function toggleVisibleTodoSelection() {
+  const next = new Set(selectedTodoIds.value)
+  if (allVisibleTodosSelected.value) {
+    visibleTodos.value.forEach((todo) => next.delete(todo.id))
+  } else {
+    visibleTodos.value.forEach((todo) => next.add(todo.id))
+  }
+  selectedTodoIds.value = next
+}
+
+function clearTodoSelection() {
+  selectedTodoIds.value = new Set()
+}
+
+async function bulkCompleteTodos() {
+  if (bulkWorking.value || selectedTodoCount.value === 0) return
+  bulkWorking.value = true
+  let completed = 0
+  let failed = 0
+  try {
+    for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
+      if (todo.status === 'completed') continue
+      if (todo.related_plan_id && todo.related_plan_task_id) {
+        try {
+          await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
+        } catch {
+          failed += 1
+          continue
+        }
+      }
+      replaceTodo(await TodoService.complete(todo.id))
+      completed += 1
+    }
+    notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')
+    if (failed > 0) errorMessage.value = t('tasks.bulkPlanSyncFailed', { count: failed })
+    clearTodoSelection()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+  } finally {
+    bulkWorking.value = false
+  }
+}
+
+async function bulkDeleteTodos() {
+  if (bulkWorking.value || selectedTodoCount.value === 0 || !confirm(t('tasks.bulkDeleteConfirm', { count: selectedTodoCount.value }))) return
+  bulkWorking.value = true
+  let deleted = 0
+  try {
+    for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
+      try {
+        await DataService.unlinkTodoFromRecords(todo.id)
+      } catch (error) {
+        console.warn('Failed to clean deleted todo record links', error)
+      }
+      await TodoService.remove(todo.id)
+      deleted += 1
+    }
+    todos.value = todos.value.filter((todo) => !selectedTodoIds.value.has(todo.id))
+    clearTodoSelection()
+    notifyToast(t('tasks.bulkDeleted', { count: deleted }), 'success')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+  } finally {
+    bulkWorking.value = false
+  }
+}
+
 async function toggleTodoPinned(todo: UnifiedTodo) {
   try {
     replaceTodo(await TodoService.update(todo.id, { pinned: !todo.pinned }))
@@ -809,6 +888,16 @@ watch(selectedPlanId, (planId) => {
         <button class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
         </button>
+        <label v-if="visibleTodos.length" class="task-select-all">
+          <input type="checkbox" :checked="allVisibleTodosSelected" :disabled="bulkWorking" @change="toggleVisibleTodoSelection" />
+          {{ t('tasks.selectVisible') }}
+        </label>
+        <div v-if="selectedTodoCount" class="task-bulk-actions">
+          <span>{{ t('tasks.selectedCount', { count: selectedTodoCount }) }}</span>
+          <button type="button" :disabled="bulkWorking" @click="bulkCompleteTodos"><Check :size="14" /> {{ t('tasks.bulkComplete') }}</button>
+          <button type="button" class="danger" :disabled="bulkWorking" @click="bulkDeleteTodos"><Trash2 :size="14" /> {{ t('tasks.bulkDelete') }}</button>
+          <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
+        </div>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
         <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
       </section>
@@ -920,6 +1009,7 @@ watch(selectedPlanId, (planId) => {
       </section>
       <section v-else class="task-list">
         <article v-for="todo in visibleTodos" :id="`todo-${todo.id}`" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed', 'search-target': searchTargetTodoId === todo.id }">
+          <input class="task-select-checkbox" type="checkbox" :checked="selectedTodoIds.has(todo.id)" :aria-label="t('tasks.selectTask', { title: todo.title })" :disabled="bulkWorking" @click.stop @change="toggleTodoSelection(todo.id)" />
           <button class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
@@ -1067,6 +1157,12 @@ watch(selectedPlanId, (planId) => {
 .task-tabs button.active { color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08)); }
 .task-filter-select { min-width: 120px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-category-manage { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
+.task-select-all { display: inline-flex; align-items: center; gap: 5px; color: var(--color-text-secondary); font-size: 11px; white-space: nowrap; }
+.task-bulk-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-left: auto; color: var(--color-text-tertiary); font-size: 11px; }
+.task-bulk-actions button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 8px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; }
+.task-bulk-actions button.danger { border-color: var(--color-error); background: var(--color-error); }
+.task-bulk-actions button.task-bulk-clear { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
@@ -1086,6 +1182,7 @@ watch(selectedPlanId, (planId) => {
 .task-ranking-settings select { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-list { display: grid; gap: 10px; }
 .task-item { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
+.task-select-checkbox { width: 16px; height: 16px; flex: 0 0 16px; accent-color: var(--color-primary); }
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }
 .task-item.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .task-item.completed { opacity: .68; }
