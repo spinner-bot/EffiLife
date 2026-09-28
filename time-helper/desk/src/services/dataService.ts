@@ -16,6 +16,7 @@ import type {
 import {
   get as idbGet,
   set as idbSet,
+  getRawAll,
   STORE_NAMES,
   runMigration,
   scheduleBackup,
@@ -412,6 +413,22 @@ export const DataService = {
       }
     }
     return []
+  },
+
+  // 查找某个待办关联的记录日期，用于跨模块回看时间投入。
+  async findRecordDatesByTodoId(todoId: string): Promise<string[]> {
+    await ensureMigration()
+    if (!todoId) return []
+    try {
+      const entries = await getRawAll<{ key?: string; value?: unknown }>(STORE_NAMES.RECORDS)
+      return entries
+        .filter((entry) => typeof entry.key === 'string' && Array.isArray(entry.value))
+        .filter((entry) => (entry.value as TimeRecord[]).some((record) => record.todo_id === todoId))
+        .map((entry) => entry.key as string)
+        .sort()
+    } catch {
+      return []
+    }
   },
 
   async saveRecord(record: TimeRecord, day?: string): Promise<void> {

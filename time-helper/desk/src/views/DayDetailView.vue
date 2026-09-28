@@ -13,6 +13,7 @@ const appStore = useAppStore()
 const { t } = useI18n()
 
 const dateStr = computed(() => route.params.date as string)
+const highlightedTodoId = computed(() => String(route.query.todo || ''))
 const plans = computed(() => appStore.plans)
 
 const stat = ref<RealTimeStat | null>(null)
@@ -41,6 +42,10 @@ function getProgressColor(progress: number): string {
   if (progress < 70) return 'var(--color-progress-medium)'
   if (progress < 90) return 'var(--color-progress-good)'
   return 'var(--color-progress-high)'
+}
+
+function isHighlightedRecord(record: TimeRecord): boolean {
+  return Boolean(highlightedTodoId.value && record.todo_id === highlightedTodoId.value)
 }
 
 // 删除记录
@@ -119,6 +124,7 @@ onMounted(loadData)
             v-for="(record, index) in records"
             :key="index"
             class="record-item"
+            :class="{ 'record-item-highlight': isHighlightedRecord(record) }"
           >
             <div class="record-info">
               <span class="record-tag">[{{ record.tag }}]</span>
@@ -126,6 +132,7 @@ onMounted(loadData)
               <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
             </div>
             <div class="record-content">{{ record.content }}</div>
+            <span v-if="isHighlightedRecord(record)" class="record-linked-label">{{ t('dayDetail.linkedTodo') }}</span>
             <button class="delete-btn" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
@@ -333,6 +340,18 @@ onMounted(loadData)
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   padding-right: 40px;
+}
+
+.record-item-highlight {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-muted);
+}
+
+.record-linked-label {
+  display: inline-block;
+  margin-top: var(--spacing-xs);
+  color: var(--color-primary);
+  font-size: 0.75rem;
 }
 
 .record-info {
