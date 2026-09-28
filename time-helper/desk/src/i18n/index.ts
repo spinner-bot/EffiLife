@@ -3,6 +3,7 @@ import { ref } from 'vue'
 export type Locale = 'zh-CN' | 'en-US'
 
 const STORAGE_KEY = 'efflife_locale'
+export const SUPPORTED_LOCALES: readonly Locale[] = ['zh-CN', 'en-US']
 
 const catalogs: Record<Locale, Record<string, string>> = {
   'zh-CN': {
@@ -2196,11 +2197,31 @@ const catalogs: Record<Locale, Record<string, string>> = {
 }
 
 function readLocale(): Locale {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'en-US' ? 'en-US' : 'zh-CN'
+  let stored = ''
+  try {
+    stored = typeof localStorage === 'undefined' ? '' : localStorage.getItem(STORAGE_KEY) || ''
+  } catch {
+    // Restricted WebViews may deny storage while the rest of the workspace remains usable.
+  }
+  const candidates = [stored]
+  if (typeof navigator !== 'undefined') {
+    candidates.push(...(navigator.languages || []), navigator.language || '')
+  }
+  for (const candidate of candidates) {
+    const normalized = candidate.toLowerCase()
+    if (normalized === 'en-us' || normalized.startsWith('en-') || normalized === 'en') return 'en-US'
+    if (normalized === 'zh-cn' || normalized.startsWith('zh-') || normalized === 'zh') return 'zh-CN'
+  }
+  return 'zh-CN'
 }
 
 export const currentLocale = ref<Locale>(readLocale())
+
+function syncDocumentLocale(locale: Locale): void {
+  if (typeof document !== 'undefined') document.documentElement.lang = locale
+}
+
+syncDocumentLocale(currentLocale.value)
 
 const navigationFallbacks: Record<Locale, Record<string, string>> = {
   'zh-CN': {
@@ -2251,7 +2272,12 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
 
 export function setLocale(next: string): void {
   currentLocale.value = next === 'en-US' ? 'en-US' : 'zh-CN'
-  localStorage.setItem(STORAGE_KEY, currentLocale.value)
+  syncDocumentLocale(currentLocale.value)
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, currentLocale.value)
+  } catch {
+    // Locale remains active for this session when persistence is unavailable.
+  }
 }
 
 export function translate(key: string, params: Record<string, string | number> = {}): string {
@@ -2264,6 +2290,6 @@ export function useI18n() {
     locale: currentLocale,
     setLocale,
     t: translate,
-    localeOptions: ['zh-CN', 'en-US'] as Locale[],
+    localeOptions: [...SUPPORTED_LOCALES],
   }
 }
