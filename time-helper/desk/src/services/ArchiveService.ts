@@ -15,6 +15,7 @@ import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
 import { translate } from '@/i18n'
+import { getTodayDate } from '@/services/dataService'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -298,7 +299,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const blob = await zip.generateAsync({ type: 'blob' })
 
   // 生成文件名
-  const dateStr = new Date().toISOString().split('T')[0]
+  const dateStr = getTodayDate()
   const fileName = `efflife_archive_${dateStr}.efl`
 
   // 如果在 Tauri 桌面环境，使用原生对话框
