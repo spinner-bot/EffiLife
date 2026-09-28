@@ -40,6 +40,7 @@ def validate(root: Path) -> list[str]:
     for runner, bundle, extension, artifact in (
         ("windows-latest", "nsis", ".exe", "bundle/nsis/*.exe"),
         ("ubuntu-22.04", "deb", ".deb", "bundle/deb/*.deb"),
+        ("ubuntu-22.04", "appimage", ".AppImage", "bundle/appimage/*.AppImage"),
         ("macos-latest", "dmg", ".dmg", "bundle/dmg/*.dmg"),
     ):
         if (runner not in workflow or f"bundle: {bundle}" not in workflow

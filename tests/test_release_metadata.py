@@ -32,6 +32,7 @@ def test_desktop_workflow_covers_all_release_platforms():
     for runner, bundle, artifact in (
         ("windows-latest", "nsis", "bundle/nsis/*.exe"),
         ("ubuntu-22.04", "deb", "bundle/deb/*.deb"),
+        ("ubuntu-22.04", "appimage", "bundle/appimage/*.AppImage"),
         ("macos-latest", "dmg", "bundle/dmg/*.dmg"),
     ):
         assert runner in workflow
@@ -100,4 +101,5 @@ def test_release_workflow_verifies_non_empty_platform_installer():
     assert "scripts/verify_release_artifacts.py" in workflow
     assert "extension: .exe" in workflow
     assert "extension: .deb" in workflow
+    assert "extension: .AppImage" in workflow
     assert "extension: .dmg" in workflow

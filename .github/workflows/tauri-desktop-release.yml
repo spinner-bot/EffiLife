@@ -24,6 +24,11 @@ jobs:
             bundle: deb
             extension: .deb
             artifact: time-helper/desk/src-tauri/target/release/bundle/deb/*.deb
+          - name: linux-appimage
+            os: ubuntu-22.04
+            bundle: appimage
+            extension: .AppImage
+            artifact: time-helper/desk/src-tauri/target/release/bundle/appimage/*.AppImage
           - name: macos-dmg
             os: macos-latest
             bundle: dmg
@@ -41,7 +46,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libfuse2
 
       - name: Set up Python
         uses: actions/setup-python@v5
