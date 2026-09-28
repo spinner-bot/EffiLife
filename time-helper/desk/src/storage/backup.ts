@@ -2,6 +2,7 @@
 
 import { set, STORE_NAMES } from './indexedDB'
 import { isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
+import { notifyWorkspaceChanged, type WorkspaceChangeSource } from '@/services/workspaceEvents'
 
 const MAX_BACKUPS_PER_MODULE = 10
 const BACKUP_DEBOUNCE_MS = 5000 // 5秒内多次变更只备份一次
@@ -171,14 +172,17 @@ export function scheduleBackup(moduleName: string, data: unknown): void {
 // 从备份恢复数据
 export async function restoreFromBackup(backup: BackupData): Promise<void> {
   const data = backup.data as Record<string, unknown>
+  let changeSource: WorkspaceChangeSource | null = null
 
   // 根据模块类型恢复数据
   switch (backup.module) {
     case 'config':
       await set(STORE_NAMES.CONFIG, 'config', data)
+      changeSource = 'settings'
       break
     case 'plans':
       await set(STORE_NAMES.PLANS, 'plans', data)
+      changeSource = 'plans'
       break
     case 'records':
       if (Array.isArray(data)) {
@@ -186,19 +190,26 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
           const r = record as { date: string; records: unknown[] }
           await set(STORE_NAMES.RECORDS, r.date, r.records)
         }
+        changeSource = 'records'
       }
       break
     case 'schedule_rules':
       await set(STORE_NAMES.SCHEDULE_RULES, 'rules', data)
+      changeSource = 'plans'
       break
     case 'manual_plans':
       if (typeof data === 'object' && data !== null) {
         for (const [date, planName] of Object.entries(data)) {
           await set(STORE_NAMES.MANUAL_PLANS, date, planName)
         }
+        changeSource = 'plans'
       }
       break
   }
+
+  // Normal backup recovery must follow the same cross-window contract as
+  // interactive mutations. Unknown/legacy backup modules remain silent.
+  if (changeSource) notifyWorkspaceChanged(changeSource)
 }
 
 // 获取所有备份模块列表
