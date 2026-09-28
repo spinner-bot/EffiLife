@@ -562,7 +562,7 @@ onMounted(loadPlans)
           <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
             <button class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
-            <small>{{ task.time_minutes }} min</small>
+            <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
             <button v-if="canEditPlan && !task.finish" class="task-todo" :disabled="isLoading" :aria-label="t('plans.linkTodo')" @click="addTaskToTodos(task)">{{ t('plans.linkTodo') }}</button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
