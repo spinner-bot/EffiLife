@@ -12,6 +12,7 @@ import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
+import ConfirmHost from './components/ConfirmHost.vue'
 import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
 
 const appStore = useAppStore()
@@ -240,6 +241,7 @@ watch(() => appStore.todayStat, () => {
     <GuideOverlay />
     <GlobalSearch :open="showGlobalSearch" @close="showGlobalSearch = false" />
     <ToastHost />
+    <ConfirmHost />
     </template>
 
     <div v-else-if="startupError" class="app-startup app-startup-error" role="alert">

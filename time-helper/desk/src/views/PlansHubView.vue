@@ -32,6 +32,7 @@ import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTas
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
 const DailyPlanView = defineAsyncComponent(() => import('@/views/PlanView.vue'))
@@ -151,7 +152,7 @@ async function loadPlans() {
 
 async function archiveSelectedPlan() {
   if (isLoading.value) return
-  if (!selectedPlan.value || !confirm(t('plans.archiveConfirm'))) return
+  if (!selectedPlan.value || !(await requestConfirm(t('plans.archiveConfirm'), { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
   errorMessage.value = ''
@@ -318,7 +319,7 @@ function cancelSectionEdit() {
 }
 
 async function deleteSection(section: PlanFull['sections'][number]) {
-  if (isLoading.value || !selectedPlan.value || !confirm(t('plans.deleteSectionConfirm'))) return
+  if (isLoading.value || !selectedPlan.value || !(await requestConfirm(t('plans.deleteSectionConfirm'), { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
   errorMessage.value = ''
@@ -468,7 +469,7 @@ async function saveGroup() {
 
 async function deleteGroup(sectionIndex: number, groupKey: string) {
   if (isLoading.value) return
-  if (!selectedPlan.value || !confirm(t('plans.deleteGroupConfirm'))) return
+  if (!selectedPlan.value || !(await requestConfirm(t('plans.deleteGroupConfirm'), { tone: 'danger' }))) return
   isLoading.value = true
   try {
     await deletePlanGroup(selectedPlan.value.id, sectionIndex, groupKey)
@@ -606,7 +607,7 @@ async function addAllTasksToTodos() {
 
 async function deleteTask(taskId: string, displayTaskId = taskId) {
   if (isLoading.value) return
-  if (!selectedPlan.value || !confirm(`${t('plans.delete')}?`)) return
+  if (!selectedPlan.value || !(await requestConfirm(`${t('plans.delete')}?`, { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
   errorMessage.value = ''

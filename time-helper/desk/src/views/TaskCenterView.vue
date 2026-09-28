@@ -17,6 +17,7 @@ import {
 import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, updatePlanTask, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -307,7 +308,7 @@ async function saveCategory(item: TodoCategory) {
 }
 
 async function removeCategory(item: TodoCategory) {
-  if (item.id === 'default' || !confirm(`${t('tasks.deleteCategory')}?`)) return
+  if (item.id === 'default' || !(await requestConfirm(`${t('tasks.deleteCategory')}?`, { tone: 'danger' }))) return
   try {
     const affected = todos.value.filter((todo) => todo.category === item.id)
     for (const todo of affected) {
@@ -466,7 +467,7 @@ async function saveEdit(todo: UnifiedTodo) {
 }
 
 async function removeTodo(todo: UnifiedTodo) {
-  if (!confirm(t('tasks.deleteConfirm'))) return
+  if (!(await requestConfirm(t('tasks.deleteConfirm'), { tone: 'danger' }))) return
   try {
     try {
       await DataService.unlinkTodoFromRecords(todo.id)
@@ -532,7 +533,7 @@ async function bulkCompleteTodos() {
 }
 
 async function bulkDeleteTodos() {
-  if (bulkWorking.value || selectedTodoCount.value === 0 || !confirm(t('tasks.bulkDeleteConfirm', { count: selectedTodoCount.value }))) return
+  if (bulkWorking.value || selectedTodoCount.value === 0 || !(await requestConfirm(t('tasks.bulkDeleteConfirm', { count: selectedTodoCount.value }), { tone: 'danger' }))) return
   bulkWorking.value = true
   let deleted = 0
   try {
@@ -748,7 +749,7 @@ async function toggleSubtask(todo: UnifiedTodo, subtaskId: string) {
 }
 
 async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
-  if (subtaskSaving.value || !confirm(`${t('tasks.deleteSubtask')}?`)) return
+  if (subtaskSaving.value || !(await requestConfirm(`${t('tasks.deleteSubtask')}?`, { tone: 'danger' }))) return
   subtaskSaving.value = true
   try {
     replaceTodo(await TodoService.removeSubtask(todo.id, subtaskId))

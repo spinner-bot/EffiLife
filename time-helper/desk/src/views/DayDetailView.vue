@@ -7,6 +7,7 @@ import { ArrowLeft, Trash2, Check, X, Circle, CheckCircle2 } from 'lucide-vue-ne
 import type { TimeRecord, RealTimeStat } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
+import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
 const route = useRoute()
@@ -64,7 +65,7 @@ function openLinkedTodo(todoId?: string) {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!confirm(t('dayDetail.deleteConfirm'))) return
+  if (!(await requestConfirm(t('dayDetail.deleteConfirm'), { tone: 'danger' }))) return
   const record = records.value[index]
   await DataService.deleteRecord(index, dateStr.value)
   if (record) {

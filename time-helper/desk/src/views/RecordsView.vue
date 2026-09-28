@@ -9,6 +9,7 @@ import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
+import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
 const route = useRoute()
@@ -290,7 +291,7 @@ async function saveRecordInternal() {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!confirm(t('records.deleteConfirm'))) return
+  if (!(await requestConfirm(t('records.deleteConfirm'), { tone: 'danger' }))) return
   const record = records.value[index]
   await appStore.deleteRecord(index)
   if (record) {
