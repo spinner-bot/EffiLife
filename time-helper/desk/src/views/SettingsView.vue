@@ -622,9 +622,9 @@ onMounted(async () => {
         <div class="form-section">
           <label>{{ t('settings.timeDisplay') }}</label>
           <div class="checkbox-list">
-            <label><input type="checkbox" v-model="showSeconds" /><span>显示秒</span></label>
-            <label><input type="checkbox" v-model="use24h" /><span>24小时制</span></label>
-            <label><input type="checkbox" v-model="showAmPm" /><span>半日显示(AM/PM)</span></label>
+            <label><input type="checkbox" v-model="showSeconds" /><span>{{ t('settings.showSeconds') }}</span></label>
+            <label><input type="checkbox" v-model="use24h" /><span>{{ t('settings.use24h') }}</span></label>
+            <label><input type="checkbox" v-model="showAmPm" /><span>{{ t('settings.showAmPm') }}</span></label>
           </div>
         </div>
 
