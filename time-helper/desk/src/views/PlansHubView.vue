@@ -6,6 +6,8 @@ import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
   addPlanSection,
+  updatePlanSection,
+  deletePlanSection,
   addPlanGroup,
   addPlanLog,
   addPlanTask,
@@ -50,6 +52,7 @@ const planDate = ref(toDateInput(new Date()))
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
+const editingSectionIndex = ref<number | null>(null)
 const taskSectionIndex = ref<number | null>(null)
 const editingTaskId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
@@ -227,12 +230,55 @@ async function saveSection() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    await addPlanSection(planId, sectionName.value.trim(), sectionInfo.value.trim())
+    if (editingSectionIndex.value === null) {
+      await addPlanSection(planId, sectionName.value.trim(), sectionInfo.value.trim())
+    } else {
+      await updatePlanSection(planId, editingSectionIndex.value, sectionName.value.trim(), sectionInfo.value.trim())
+    }
     sectionName.value = ''
     sectionInfo.value = ''
+    editingSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function startSectionEdit(section: PlanFull['sections'][number]) {
+  editingSectionIndex.value = section.index
+  sectionName.value = section.name
+  sectionInfo.value = section.info
+}
+
+function cancelSectionEdit() {
+  editingSectionIndex.value = null
+  sectionName.value = ''
+  sectionInfo.value = ''
+}
+
+async function deleteSection(section: PlanFull['sections'][number]) {
+  if (isLoading.value || !selectedPlan.value || !confirm(t('plans.deleteSectionConfirm'))) return
+  const planId = selectedPlan.value.id
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    await deletePlanSection(planId, section.index)
+    for (const task of section.tasks) {
+      try {
+        await unlinkTodosFromPlanTask(planId, task.internal_id)
+        if (task.display_id !== task.internal_id) {
+          await unlinkTodosFromPlanTask(planId, task.display_id)
+        }
+      } catch {
+        errorMessage.value = t('plans.todoSyncFailed')
+      }
+    }
+    cancelSectionEdit()
+    selectedPlan.value = await getPlanFull(planId)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.sectionUnavailable')
   } finally {
     isLoading.value = false
   }
@@ -602,11 +648,11 @@ onMounted(async () => {
         <section v-if="canEditPlan" class="section-editor theme-card">
           <input v-model="sectionName" :placeholder="t('plans.sectionName')" />
           <input v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
-          <button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
+          <div class="section-editor-actions"><button v-if="editingSectionIndex !== null" class="plans-secondary" :disabled="isLoading" @click="cancelSectionEdit">{{ t('plans.cancel') }}</button><button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Pencil v-if="editingSectionIndex !== null" :size="15" /><Plus v-else :size="15" /> {{ editingSectionIndex !== null ? t('plans.saveSection') : t('plans.addSection') }}</button></div>
         </section>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <div v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <label class="task-minutes-field">{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
@@ -711,6 +757,7 @@ onMounted(async () => {
 .log-time span { color: var(--color-text-tertiary); font-size: 11px; }
 .log-row p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: 12px; }
 .section-editor { align-items: center; }
+.section-editor-actions { display: flex; gap: 7px; flex: 0 0 auto; }
 .section-editor input:first-child { flex: 1; }
 .section-editor input:nth-child(2) { flex: 1.5; }
 .plan-section { margin-bottom: 12px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }

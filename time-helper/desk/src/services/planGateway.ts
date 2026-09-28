@@ -379,6 +379,37 @@ export async function addPlanSection(planId: string, name: string, info = ''): P
   })
 }
 
+export async function updatePlanSection(planId: string, sectionIndex: number, name: string, info = ''): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const section = plan.main?.[sectionIndex]
+      if (!section) throw new Error(translate('plans.sectionMissing'))
+      section.name = name
+      section.info = info
+    })
+    return
+  }
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, info }),
+  })
+}
+
+export async function deletePlanSection(planId: string, sectionIndex: number): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    await mutateMobilePlan(planId, (plan) => {
+      const section = plan.main?.[sectionIndex]
+      if (!section) throw new Error(translate('plans.sectionMissing'))
+      // Match plan.py del_section: clear active task slots without shifting
+      // section indexes or rewriting historical task references.
+      section.plan = [null]
+    })
+    return
+  }
+  await request(`/api/plans/${encodeURIComponent(planId)}/sections/${sectionIndex}`, { method: 'DELETE' })
+}
+
 export async function addPlanGroup(planId: string, sectionIndex: number, title: string, description: string, startIndex: number, endIndex: number): Promise<void> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     await mutateMobilePlan(planId, (plan) => {
