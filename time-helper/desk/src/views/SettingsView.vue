@@ -2046,4 +2046,17 @@ h2 {
 .history-changes li:last-child {
   margin-bottom: 0;
 }
+
+@media (max-width: 680px) {
+  .settings-view { padding: 16px; }
+  .header { gap: 10px; margin-bottom: 20px; }
+  .header h1 { font-size: 1.25rem; }
+  .back-btn { min-height: 40px; padding: 8px 10px; }
+  .settings-item { min-height: 52px; padding: 13px 14px; }
+  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .data-stats { padding: 14px; }
+  .stat-value { font-size: 1.3rem; }
+  .modal-footer { flex-direction: column-reverse; padding: 14px 16px; }
+  .modal-footer .btn { justify-content: center; min-height: 42px; }
+}
 </style>

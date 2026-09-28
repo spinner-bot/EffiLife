@@ -844,4 +844,15 @@ onMounted(async () => {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+@media (max-width: 680px) {
+  .records-view { padding: 16px; }
+  .header { flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .header h1 { order: 3; flex-basis: 100%; font-size: 1.25rem; }
+  .back-btn, .add-btn { min-height: 40px; }
+  .add-btn { margin-left: auto; }
+  .record-item { padding: 13px; }
+  .modal-footer { flex-direction: column-reverse; }
+  .modal-footer .btn { justify-content: center; min-height: 42px; }
+}
 </style>
