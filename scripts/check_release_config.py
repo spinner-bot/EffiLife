@@ -22,12 +22,19 @@ def validate(root: Path) -> list[str]:
         errors.append(f"desktop versions are not aligned: {sorted(versions)}")
     if "binaries/efflife-plan-helper" not in tauri.get("bundle", {}).get("externalBin", []):
         errors.append("Tauri config does not declare the Plan Helper sidecar")
+    if "nsis" not in tauri.get("bundle", {}).get("targets", []):
+        errors.append("Tauri config does not include the Windows NSIS target")
+    for icon in tauri.get("bundle", {}).get("icon", []):
+        if not (root / "time-helper" / "desk" / "src-tauri" / icon).exists():
+            errors.append(f"Tauri bundle icon is missing: {icon}")
     if "build:sidecar" not in str(tauri.get("build", {}).get("beforeBuildCommand", "")):
         errors.append("Tauri release build does not build the Plan Helper sidecar")
     if "python -m pytest -q" not in workflow:
         errors.append("release workflow has no Python contract-test step")
     if "scripts/generate_checksums.py" not in workflow:
         errors.append("release workflow has no installer checksum step")
+    if "npm run tauri build -- --bundles ${{ matrix.bundle }}" not in workflow:
+        errors.append("release workflow does not pass the matrix bundle target to Tauri")
     for runner, bundle, artifact in (
         ("windows-latest", "nsis", "bundle/nsis/*.exe"),
         ("ubuntu-22.04", "deb", "bundle/deb/*.deb"),

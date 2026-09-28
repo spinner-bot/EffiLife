@@ -83,3 +83,8 @@ def test_release_preflight_passes_for_current_repository():
     spec.loader.exec_module(module)
 
     assert module.validate(ROOT) == []
+
+
+def test_release_workflow_passes_matrix_bundle_to_tauri():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "npm run tauri build -- --bundles ${{ matrix.bundle }}" in workflow
