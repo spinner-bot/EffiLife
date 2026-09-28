@@ -157,6 +157,7 @@ async function openPlan(plan: PlanSummary) {
   try {
     selectedPlan.value = await getPlanFull(plan.id)
     view.value = 'detail'
+    await router.replace({ path: '/plans', query: { ...route.query, plan: String(plan.id) } })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -193,6 +194,7 @@ async function createPlan() {
     showCreate.value = false
     planName.value = ''
     view.value = 'detail'
+    await router.replace({ path: '/plans', query: { plan: String(created.id) } })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -515,6 +517,7 @@ function backFromDetail() {
   selectedPlan.value = null
   editingMeta.value = false
   view.value = 'events'
+  router.replace({ path: '/plans', query: {} })
   loadPlans()
 }
 
