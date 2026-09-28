@@ -1,4 +1,5 @@
 import { TodoService } from './todoService'
+import type { TimeRecord } from '@/types'
 
 /**
  * Complete every unified todo linked to a plan task.
@@ -40,4 +41,15 @@ export async function unlinkTodosFromPlanTask(planId: string, planTaskId: string
     })
   }
   return linked.length
+}
+
+/** Remove a deleted time-record ID without changing the todo's historical total. */
+export async function unlinkTodoFromTimeRecord(record: TimeRecord): Promise<boolean> {
+  if (!record.id || !record.todo_id) return false
+  const todo = (await TodoService.list()).find((item) => item.id === record.todo_id)
+  if (!todo?.related_time_record_ids?.includes(record.id)) return false
+  await TodoService.update(todo.id, {
+    related_time_record_ids: todo.related_time_record_ids.filter((id) => id !== record.id),
+  })
+  return true
 }

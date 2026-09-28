@@ -16,6 +16,7 @@ import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
 import EmptyState from '@/components/EmptyState.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { useI18n } from '@/i18n'
+import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -177,7 +178,11 @@ async function saveRecord() {
 
 async function deleteRecord(index: number) {
   if (!confirm(t('legacyPlan.deleteRecordConfirm'))) return
+  const record = records.value[index]
   await appStore.deleteRecord(index)
+  if (record) {
+    try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  }
 }
 
 // ============ Management 相关状态 ============

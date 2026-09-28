@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
+import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -245,7 +246,11 @@ async function saveRecordInternal() {
 // 删除记录
 async function deleteRecord(index: number) {
   if (!confirm(t('records.deleteConfirm'))) return
+  const record = records.value[index]
   await appStore.deleteRecord(index)
+  if (record) {
+    try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  }
 }
 
 onMounted(() => {
