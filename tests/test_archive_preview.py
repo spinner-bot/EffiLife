@@ -38,3 +38,12 @@ def test_archive_preview_exposes_integrity_status_to_confirmation():
     assert "archiveIntegrity: hasChecksums ? 'verified' : 'legacy'" in source
     assert "preview.integrity === 'verified'" in settings
     assert "settings.archive.integrityLegacy" in settings
+
+
+def test_archive_import_rejects_partial_canonical_bundles_before_writing():
+    source = SERVICE.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "CANONICAL_ARCHIVE_DATASETS" in source
+    assert "const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter" in source
+    assert "settings.archive.missingDatasets" in source
+    assert i18n.count("'settings.archive.missingDatasets'") == 2

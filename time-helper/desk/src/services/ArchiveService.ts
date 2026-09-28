@@ -22,6 +22,7 @@ import { notifyWorkspaceChanged } from './workspaceEvents'
 const ARCHIVE_VERSION = '2.1'
 const ARCHIVE_FORMAT = 'effilife.bundle'
 const ARCHIVE_FORMAT_VERSION = '1.0.0'
+const CANONICAL_ARCHIVE_DATASETS = ['app', 'records', 'todos', 'todo_categories', 'plan_helper'] as const
 const PLAN_HELPER_REQUEST_TIMEOUT_MS = 4000
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -459,6 +460,10 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     const hasChecksums = !!manifest.dataset_sha256 && manifest.datasets?.every((name) => typeof manifest.dataset_sha256?.[name] === 'string')
     if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets) || (manifest.dataset_sha256 && !hasChecksums)) {
       throw new Error('不支持的 .efl 存档协议')
+    }
+    const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => !manifest.datasets?.includes(name))
+    if (missingDatasets.length > 0) {
+      throw new Error(translate('settings.archive.missingDatasets', { names: missingDatasets.join(', ') }))
     }
 
     const datasets: Record<string, unknown> = {}
