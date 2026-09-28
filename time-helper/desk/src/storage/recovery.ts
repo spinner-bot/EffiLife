@@ -1,9 +1,10 @@
 // 数据恢复机制 - 启动时检测数据状态，提供恢复选项
 
-import { get, set, openDB, STORE_NAMES } from './indexedDB'
+import { clear, get, getRawAll, openDB, putRaw, set, STORE_NAMES } from './indexedDB'
 import { getAllBackups, restoreFromBackup, type BackupData } from './backup'
 import { hasLocalStorageData, hasIndexedDBData } from './migration'
 import { translate, currentLocale } from '@/i18n'
+import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
 // 数据状态
 export interface DataStatus {
@@ -140,6 +141,8 @@ export async function exportEmergencyBackup(): Promise<string> {
     backupData.plans = await get(STORE_NAMES.PLANS, 'plans')
     backupData.scheduleRules = await get(STORE_NAMES.SCHEDULE_RULES, 'rules')
     backupData.manualPlans = await get(STORE_NAMES.MANUAL_PLANS, 'all')
+    backupData.todos = await getRawAll(STORE_NAMES.TODOS)
+    backupData.todoCategories = await getRawAll(STORE_NAMES.TODO_CATEGORIES)
 
     // 导出所有记录
     const records: Record<string, unknown> = {}
@@ -214,6 +217,14 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
         await set(STORE_NAMES.RECORDS, date, records)
       }
     }
+    if (Array.isArray(data.todos)) {
+      await clear(STORE_NAMES.TODOS)
+      for (const todo of data.todos) await putRaw(STORE_NAMES.TODOS, todo)
+    }
+    if (Array.isArray(data.todoCategories)) {
+      await clear(STORE_NAMES.TODO_CATEGORIES)
+      for (const category of data.todoCategories) await putRaw(STORE_NAMES.TODO_CATEGORIES, category)
+    }
 
     // 恢复 localStorage 数据
     if (data.localStorage) {
@@ -221,6 +232,8 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
         localStorage.setItem(key, JSON.stringify(value))
       }
     }
+
+    notifyWorkspaceChanged('archive')
 
     return {
       success: true,
