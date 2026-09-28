@@ -21,3 +21,11 @@ def test_focus_timer_copy_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in ("tasks.startFocus", "tasks.stopFocus", "tasks.focusHint"):
         assert source.count(f"'{key}'") == 2
+
+
+def test_focus_timer_is_saved_when_task_center_unmounts():
+    source = TASKS.read_text(encoding="utf-8")
+    assert "onUnmounted(() => {" in source
+    assert "const activeFocusTodo = todos.value.find" in source
+    assert "if (activeFocusTodo) void stopFocus(activeFocusTodo)" in source
+    assert "clearFocusTimer()" in source

@@ -576,6 +576,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (focusTodoId.value) {
+    const activeFocusTodo = todos.value.find((todo) => todo.id === focusTodoId.value)
+    if (activeFocusTodo) void stopFocus(activeFocusTodo)
+  }
   if (priorityTimer !== null) window.clearInterval(priorityTimer)
   clearFocusTimer()
 })
