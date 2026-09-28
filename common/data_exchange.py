@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import shutil
 import tempfile
@@ -32,6 +33,10 @@ CANONICAL_WORKSPACE_DATASETS = (
 
 def _json_bytes(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+
+
+def _sha256(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
 
 
 def _safe_dataset_name(name: str) -> str:
@@ -66,11 +71,13 @@ def export_bundle(
     target = Path(output_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     normalized = {_safe_dataset_name(name): value for name, value in datasets.items()}
+    dataset_bytes = {name: _json_bytes(value) for name, value in normalized.items()}
     manifest = {
         "format": FORMAT_NAME,
         "format_version": FORMAT_VERSION,
         "created_at": _utc_now(),
         "datasets": sorted(normalized),
+        "dataset_sha256": {name: _sha256(dataset_bytes[name]) for name in sorted(normalized)},
         "metadata": dict(metadata or {}),
     }
 
@@ -81,7 +88,7 @@ def export_bundle(
         with zipfile.ZipFile(temp_path, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
             bundle.writestr(MANIFEST_NAME, _json_bytes(manifest))
             for name in sorted(normalized):
-                bundle.writestr(f"{DATA_PREFIX}{name}.json", _json_bytes(normalized[name]))
+                bundle.writestr(f"{DATA_PREFIX}{name}.json", dataset_bytes[name])
         os.replace(temp_path, target)
     finally:
         temp_path.unlink(missing_ok=True)
@@ -105,6 +112,9 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
         if not isinstance(manifest.get("datasets"), list):
             raise ValueError("Bundle datasets declaration is invalid")
         normalized_names: list[str] = []
+        checksums = manifest.get("dataset_sha256")
+        if checksums is not None and not isinstance(checksums, dict):
+            raise ValueError("Bundle dataset checksums declaration is invalid")
         for name in manifest["datasets"]:
             safe_name = _safe_dataset_name(name)
             if safe_name in normalized_names:
@@ -112,6 +122,10 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
             normalized_names.append(safe_name)
             if f"{DATA_PREFIX}{safe_name}.json" not in bundle.namelist():
                 raise ValueError(f"Dataset file is missing: {safe_name}")
+            if checksums is not None:
+                checksum = checksums.get(safe_name)
+                if not isinstance(checksum, str) or len(checksum) != 64 or any(char not in "0123456789abcdef" for char in checksum):
+                    raise ValueError(f"Bundle dataset checksum is invalid: {safe_name}")
         return manifest
 
 
@@ -121,8 +135,12 @@ def read_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, An
     datasets: dict[str, Any] = {}
     with zipfile.ZipFile(bundle_path, "r") as bundle:
         for name in manifest["datasets"]:
+            raw = bundle.read(f"{DATA_PREFIX}{name}.json")
+            expected = manifest.get("dataset_sha256", {}).get(name)
+            if expected and _sha256(raw) != expected:
+                raise ValueError(f"Dataset checksum mismatch: {name}")
             try:
-                datasets[name] = json.loads(bundle.read(f"{DATA_PREFIX}{name}.json").decode("utf-8"))
+                datasets[name] = json.loads(raw.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 raise ValueError(f"Dataset is invalid: {name}") from exc
     return manifest, datasets

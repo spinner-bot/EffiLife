@@ -23,6 +23,12 @@ const ARCHIVE_FORMAT = 'effilife.bundle'
 const ARCHIVE_FORMAT_VERSION = '1.0.0'
 const PLAN_HELPER_REQUEST_TIMEOUT_MS = 4000
 
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const input = new Uint8Array(bytes)
+  const digest = await crypto.subtle.digest('SHA-256', input.buffer as ArrayBuffer)
+  return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
+}
+
 // 检测是否在 Tauri 环境
 function isTauri(): boolean {
   return !!(window as any).__TAURI__
@@ -285,18 +291,28 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   // 使用公共层约定的 manifest + datasets 协议导出。
   const { records, todos, categories, planHelper, ...app } = data
   const datasets = ['app', 'records', 'todos', 'todo_categories', 'plan_helper']
+  const datasetPayloads = {
+    app: JSON.stringify(app, null, 2),
+    records: JSON.stringify(records, null, 2),
+    todos: JSON.stringify(todos, null, 2),
+    todo_categories: JSON.stringify(categories, null, 2),
+    plan_helper: JSON.stringify(planHelper, null, 2),
+  }
+  const datasetSha256: Record<string, string> = {}
+  for (const name of datasets) {
+    datasetSha256[name] = await sha256Hex(new TextEncoder().encode(datasetPayloads[name as keyof typeof datasetPayloads]))
+  }
   zip.file('manifest.json', JSON.stringify({
     format: ARCHIVE_FORMAT,
     format_version: ARCHIVE_FORMAT_VERSION,
     created_at: data.exportDate,
     datasets,
+    dataset_sha256: datasetSha256,
     metadata: { source: 'time-helper', archive_version: ARCHIVE_VERSION },
   }, null, 2))
-  zip.file('data/app.json', JSON.stringify(app, null, 2))
-  zip.file('data/records.json', JSON.stringify(records, null, 2))
-  zip.file('data/todos.json', JSON.stringify(todos, null, 2))
-  zip.file('data/todo_categories.json', JSON.stringify(categories, null, 2))
-  zip.file('data/plan_helper.json', JSON.stringify(planHelper, null, 2))
+  for (const name of datasets) {
+    zip.file(`data/${name}.json`, datasetPayloads[name as keyof typeof datasetPayloads])
+  }
 
   // 添加说明文件
   zip.file('README.txt', `浪兮效率时钟存档文件
@@ -430,7 +446,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
 async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   const manifestFile = zip.file('manifest.json')
   if (manifestFile) {
-    let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[] }
+    let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[]; dataset_sha256?: Record<string, string> }
     try {
       manifest = JSON.parse(await manifestFile.async('text'))
     } catch {
@@ -449,7 +465,12 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       const file = zip.file(`data/${name}.json`)
       if (!file) throw new Error(`存档缺少数据集：${name}`)
       try {
-        datasets[name] = JSON.parse(await file.async('text'))
+        const raw = await file.async('uint8array')
+        const expected = manifest.dataset_sha256?.[name]
+        if (expected && await sha256Hex(raw) !== expected) {
+          throw new Error(translate('settings.archive.datasetChecksumMismatch', { name }))
+        }
+        datasets[name] = JSON.parse(new TextDecoder().decode(raw))
       } catch {
         throw new Error(`数据集无效：${name}`)
       }

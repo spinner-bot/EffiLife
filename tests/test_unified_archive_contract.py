@@ -9,7 +9,7 @@ def test_unified_archive_exports_all_workspace_datasets():
     source = ARCHIVE.read_text(encoding="utf-8")
     for dataset in ("app", "records", "todos", "todo_categories", "plan_helper"):
         assert f"'{dataset}'" in source
-        assert f"data/{dataset}.json" in source
+    assert "zip.file(`data/${name}.json`, datasetPayloads[name as keyof typeof datasetPayloads])" in source
 
 
 def test_unified_archive_import_restores_todos_records_and_plan_snapshot():

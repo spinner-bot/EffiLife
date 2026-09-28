@@ -19,3 +19,12 @@ def test_archive_import_exposes_a_read_only_preview_before_confirmation():
 def test_archive_preview_translation_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     assert source.count("'settings.archive.importPreview'") == 2
+
+
+def test_archive_manifest_contains_dataset_checksums_and_import_verifies_them():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "async function sha256Hex(bytes: Uint8Array)" in source
+    assert "dataset_sha256: datasetSha256" in source
+    assert "manifest.dataset_sha256?.[name]" in source
+    assert "settings.archive.datasetChecksumMismatch" in source
+    assert "'settings.archive.datasetChecksumMismatch'" in I18N.read_text(encoding="utf-8")

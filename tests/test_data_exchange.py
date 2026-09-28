@@ -59,6 +59,20 @@ def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
         read_workspace_bundle(bundle)
 
 
+def test_bundle_rejects_valid_json_dataset_tampering(tmp_path):
+    bundle = tmp_path / "tampered.efl"
+    export_bundle(bundle, {"app": {"version": "one"}})
+    rewritten = tmp_path / "rewritten.efl"
+    with zipfile.ZipFile(bundle, "r") as source, zipfile.ZipFile(rewritten, "w") as target:
+        for item in source.infolist():
+            content = source.read(item.filename)
+            if item.filename == "data/app.json":
+                content = b'{"version": "two"}'
+            target.writestr(item, content)
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        read_bundle(rewritten)
+
+
 def test_bundle_rejects_missing_manifest(tmp_path):
     bundle = tmp_path / "invalid.efl"
     with zipfile.ZipFile(bundle, "w") as archive:
