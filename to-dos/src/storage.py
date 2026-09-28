@@ -22,9 +22,13 @@ class TodoStorage:
         data_dir: 数据存储目录，默认为模块内的 data/ 目录
         """
         if data_dir is None:
-            # 默认使用 to-dos 模块本地数据目录
-            module_root = Path(__file__).parent.parent  # to-dos/
-            data_dir = module_root / 'data'
+            configured_root = os.environ.get('EFFILIFE_DATA_DIR', '').strip()
+            if configured_root:
+                data_dir = Path(configured_root).expanduser() / 'modules' / 'to-dos'
+            else:
+                # 未配置统一根目录时保留 to-dos 模块本地数据目录。
+                module_root = Path(__file__).parent.parent  # to-dos/
+                data_dir = module_root / 'data'
         else:
             data_dir = Path(data_dir)
 

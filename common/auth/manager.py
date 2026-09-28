@@ -6,6 +6,7 @@
 
 import json
 import hashlib
+import os
 import uuid
 from pathlib import Path
 from datetime import datetime
@@ -69,8 +70,12 @@ class AuthManager:
 
     def __init__(self, data_dir: Optional[str] = None):
         if data_dir is None:
-            project_root = Path(__file__).parent.parent.parent
-            data_dir = project_root / 'common' / 'data' / 'user'
+            configured_root = os.environ.get('EFFILIFE_DATA_DIR', '').strip()
+            if configured_root:
+                data_dir = Path(configured_root).expanduser() / 'user'
+            else:
+                project_root = Path(__file__).parent.parent.parent
+                data_dir = project_root / 'common' / 'data' / 'user'
         else:
             data_dir = Path(data_dir)
 
