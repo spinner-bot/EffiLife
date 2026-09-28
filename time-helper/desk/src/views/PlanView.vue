@@ -17,6 +17,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { useI18n } from '@/i18n'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -115,25 +116,25 @@ async function saveRecord() {
     const sm = parseInt(String(formStart.value.m)) || 0
     const eh = parseInt(String(formEnd.value.h)) || 0
     const em = parseInt(String(formEnd.value.m)) || 0
-    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) { alert(t('legacyPlan.validationHour')); return }
-    if (sm < 0 || sm > 59 || em < 0 || em > 59) { alert(t('legacyPlan.validationMinute')); return }
+    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) { notifyToast(t('legacyPlan.validationHour'), 'error'); return }
+    if (sm < 0 || sm > 59 || em < 0 || em > 59) { notifyToast(t('legacyPlan.validationMinute'), 'error'); return }
     start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
     end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
     startMinutes = sh * 60 + sm
     endMinutes = eh * 60 + em
-    if (endMinutes <= startMinutes) { alert(t('legacyPlan.validationEnd')); return }
+  if (endMinutes <= startMinutes) { notifyToast(t('legacyPlan.validationEnd'), 'error'); return }
   } else {
     const dh = parseInt(formDuration.value.h) || 0
     const dm = parseInt(formDuration.value.m) || 0
     const refH = parseInt(formDurationTime.value.h) || 0
     const refM = parseInt(formDurationTime.value.m) || 0
-    if (dh === 0 && dm === 0) { alert(t('legacyPlan.validationDurationZero')); return }
-    if (dh < 0 || dm < 0) { alert(t('legacyPlan.validationDurationNegative')); return }
-    if (dm > 59) { alert(t('legacyPlan.validationMinute')); return }
+  if (dh === 0 && dm === 0) { notifyToast(t('legacyPlan.validationDurationZero'), 'error'); return }
+  if (dh < 0 || dm < 0) { notifyToast(t('legacyPlan.validationDurationNegative'), 'error'); return }
+  if (dm > 59) { notifyToast(t('legacyPlan.validationMinute'), 'error'); return }
     const totalMinutes = dh * 60 + dm
-    if (totalMinutes > 24 * 60) { alert(t('legacyPlan.validationDurationMax')); return }
-    if (refH < 0 || refH > 23) { alert(t('legacyPlan.validationHour')); return }
-    if (refM < 0 || refM > 59) { alert(t('legacyPlan.validationMinute')); return }
+  if (totalMinutes > 24 * 60) { notifyToast(t('legacyPlan.validationDurationMax'), 'error'); return }
+  if (refH < 0 || refH > 23) { notifyToast(t('legacyPlan.validationHour'), 'error'); return }
+  if (refM < 0 || refM > 59) { notifyToast(t('legacyPlan.validationMinute'), 'error'); return }
     const durationHours = dh + dm / 60
     const refMinutes = refH * 60 + refM
     if (formDurationRef.value === 'start') {
@@ -156,7 +157,7 @@ async function saveRecord() {
   }
 
   const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
-  if (conflict) { alert(conflict); return }
+  if (conflict) { notifyToast(conflict, 'error'); return }
 
   const duration = (endMinutes - startMinutes) / 60
   const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined
@@ -226,10 +227,10 @@ async function savePlan() {
   const valid = planValidation.validate({ planName: name })
   if (!valid) return
   const items = editingPlanItems.value.filter(item => item.name.trim())
-  if (items.length === 0) { alert(t('legacyPlan.validationCategoryRequired')); return }
+  if (items.length === 0) { notifyToast(t('legacyPlan.validationCategoryRequired'), 'error'); return }
   for (const item of items) {
-    if (item.hours < 0) { alert(t('legacyPlan.validationHoursNegative', { name: item.name })); return }
-    if (item.hours > 24) { alert(t('legacyPlan.validationHoursMax', { name: item.name })); return }
+    if (item.hours < 0) { notifyToast(t('legacyPlan.validationHoursNegative', { name: item.name }), 'error'); return }
+    if (item.hours > 24) { notifyToast(t('legacyPlan.validationHoursMax', { name: item.name }), 'error'); return }
   }
   if (editingPlanType.value === '切分制') {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
@@ -238,7 +239,7 @@ async function savePlan() {
         editingPlanItems.value = autoBalance(items, 24)
       } else { return }
     }
-    if (!editingPlanBgTag.value) { alert(t('legacyPlan.backgroundRequired')); return }
+  if (!editingPlanBgTag.value) { notifyToast(t('legacyPlan.backgroundRequired'), 'error'); return }
   }
   const newPlans = { ...plans.value }
   newPlans[name] = {
@@ -288,16 +289,16 @@ function openEditRule(index: number) {
   manageView.value = 'editRule'
 }
 async function saveRule() {
-  if (!editingRulePlan.value) { alert(t('legacyPlan.relatedPlanRequired')); return }
-  if (editingRuleType.value === 'default') { alert(t('legacyPlan.defaultRuleImmutable')); return }
+  if (!editingRulePlan.value) { notifyToast(t('legacyPlan.relatedPlanRequired'), 'error'); return }
+  if (editingRuleType.value === 'default') { notifyToast(t('legacyPlan.defaultRuleImmutable'), 'error'); return }
 
   // 对于 week 类型，从 selectedWeekDays 构建 value
   if (editingRuleType.value === 'week') {
-    if (selectedWeekDays.value.size === 0) { alert(t('legacyPlan.weekRequired')); return }
+  if (selectedWeekDays.value.size === 0) { notifyToast(t('legacyPlan.weekRequired'), 'error'); return }
     editingRuleValue.value = Array.from(selectedWeekDays.value).sort().join(',')
   }
 
-  if (!editingRuleValue.value) { alert(t('legacyPlan.ruleValueRequired')); return }
+  if (!editingRuleValue.value) { notifyToast(t('legacyPlan.ruleValueRequired'), 'error'); return }
   const newRule: ScheduleRule = {
     rule_type: editingRuleType.value,
     value: editingRuleValue.value,
@@ -328,7 +329,7 @@ async function moveRuleUp(index: number) {
 async function changeTodayPlan(planName: string) {
   if (planName === todayPlan.value.name) return
   await appStore.changeTodayPlan(planName)
-  alert(t('legacyPlan.switchedPlan', { name: planName }))
+  notifyToast(t('legacyPlan.switchedPlan', { name: planName }), 'success')
 }
 
 const weekDays = computed(() => [
