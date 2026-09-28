@@ -107,6 +107,11 @@ function categoryLabel(item: Pick<TodoCategory, 'id' | 'name'>): string {
     : item.name
 }
 
+function todoCategoryLabel(categoryId: string): string {
+  const item = categoryById.value.get(categoryId)
+  return item ? categoryLabel(item) : categoryId
+}
+
 function scoreFor(todo: UnifiedTodo) {
   return getPriorityScore(todo, categoryById.value.get(todo.category), new Date(priorityClock.value))
 }
@@ -1044,7 +1049,7 @@ watch(selectedPlanId, (planId) => {
             <p v-if="todo.description">{{ todo.description }}</p>
             <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">
               <CategoryIconPreview :name="categories.find((item) => item.id === todo.category)?.icon" :ascii="categories.find((item) => item.id === todo.category)?.ascii_icon" />
-              <span>{{ categories.find((item) => item.id === todo.category)?.name || todo.category }}</span>
+              <span>{{ todoCategoryLabel(todo.category) }}</span>
             </span>
             <span v-for="tag in todo.tags" :key="tag" class="task-tag">#{{ tag }}</span>
             <span v-if="todo.time_spent" class="task-time-spent">{{ t('tasks.timeSpent') }} {{ todo.time_spent }} {{ t('tasks.minutesShort') }}</span>

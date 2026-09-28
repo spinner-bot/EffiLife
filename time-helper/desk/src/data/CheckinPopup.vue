@@ -130,7 +130,7 @@ onUnmounted(() => {
                 <div class="streak-display" :class="{ burst: showBurst }">
                   <Flame :size="48" class="big-flame" />
                   <div class="streak-number">{{ displayStreak }}</div>
-                  <div class="streak-unit">天</div>
+                  <div class="streak-unit">{{ t('checkin.days') }}</div>
                 </div>
                 <h2 class="anim-title">
                   {{ phase === 'done' ? t('checkin.popup.successTitle') : t('checkin.popup.inProgressTitle') }}

@@ -655,8 +655,8 @@ onMounted(async () => {
         <footer class="credits">
           <p class="version">浪兮效率时钟 v{{ appVersion }}</p>
           <p class="build-info" :class="{ dev: isDev }">{{ buildInfo }}</p>
-          <p>开发者：浪兮spinner_bot</p>
-          <p>抖音@浪兮有点浪</p>
+          <p>{{ t('settings.about.developer') }}</p>
+          <p>{{ t('settings.about.social') }}</p>
         </footer>
       </template>
 
