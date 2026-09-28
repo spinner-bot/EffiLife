@@ -9,6 +9,7 @@ import json
 import subprocess
 import webbrowser
 import shutil
+import signal
 import socket
 import threading
 import time
@@ -567,11 +568,20 @@ def terminate_process(process):
             if result.returncode != 0 and process.poll() is None:
                 process.terminate()
         else:
-            process.terminate()
+            try:
+                # POSIX children are launched in a new session, so terminate
+                # the complete Vite/Python process group instead of leaving a
+                # descendant behind on the configured port.
+                os.killpg(process.pid, signal.SIGTERM)
+            except (AttributeError, OSError):
+                process.terminate()
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            process.kill()
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except (AttributeError, OSError):
+                process.kill()
             process.wait(timeout=5)
 
 

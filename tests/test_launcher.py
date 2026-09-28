@@ -180,6 +180,25 @@ def test_launcher_groups_owned_processes_for_shutdown():
         assert options == {"start_new_session": True}
 
 
+def test_posix_shutdown_targets_the_owned_process_group(monkeypatch):
+    if launcher.os.name == "nt":
+        return
+    signals = []
+
+    class RunningProcess:
+        pid = 4242
+        def poll(self):
+            return None
+        def wait(self, timeout=None):
+            return None
+        def terminate(self):
+            raise AssertionError("process fallback should not be needed")
+
+    monkeypatch.setattr(launcher.os, "killpg", lambda pid, sig: signals.append((pid, sig)))
+    launcher.terminate_process(RunningProcess())
+    assert signals == [(4242, launcher.signal.SIGTERM)]
+
+
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
     assert "python3 launcher/start.py --unified" in script
