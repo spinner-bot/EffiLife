@@ -11,6 +11,7 @@ import { TodoService } from './services/todoService'
 import { Home, ClipboardList, ListTodo, Clock3, Settings, Search } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
+import { repairTodoTimeRecordLinks } from './services/workspaceSync'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -89,6 +90,7 @@ onMounted(async () => {
   await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
   await appStore.init()
   await TodoService.migrateLegacyLocalStorage()
+  await repairTodoTimeRecordLinks()
   applyTheme()
   runtimeReady.value = true
 

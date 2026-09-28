@@ -1,5 +1,6 @@
 import { TodoService } from './todoService'
 import type { TimeRecord } from '@/types'
+import { getRawAll, STORE_NAMES } from '@/storage'
 
 /**
  * Complete every unified todo linked to a plan task.
@@ -52,4 +53,35 @@ export async function unlinkTodoFromTimeRecord(record: TimeRecord): Promise<bool
     related_time_record_ids: todo.related_time_record_ids.filter((id) => id !== record.id),
   })
   return true
+}
+
+/**
+ * Repair stale links left by older versions. If the record store cannot be
+ * read, do nothing rather than interpreting an unavailable store as empty.
+ */
+export async function repairTodoTimeRecordLinks(): Promise<number> {
+  try {
+    const entries = await getRawAll<{ value?: unknown }>(STORE_NAMES.RECORDS)
+    const recordIds = new Set<string>()
+    for (const entry of entries) {
+      if (!Array.isArray(entry.value)) continue
+      for (const record of entry.value) {
+        if (record && typeof record === 'object' && typeof (record as TimeRecord).id === 'string') {
+          recordIds.add((record as TimeRecord).id as string)
+        }
+      }
+    }
+    const todos = await TodoService.list()
+    let repaired = 0
+    for (const todo of todos) {
+      const links = todo.related_time_record_ids || []
+      const validLinks = links.filter((id) => recordIds.has(id))
+      if (validLinks.length === links.length) continue
+      await TodoService.update(todo.id, { related_time_record_ids: validLinks })
+      repaired += 1
+    }
+    return repaired
+  } catch {
+    return 0
+  }
 }
