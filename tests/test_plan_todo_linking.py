@@ -29,3 +29,11 @@ def test_task_center_can_open_the_linked_plan_task():
     assert "path: '/plans'" in tasks
     assert "task: todo.related_plan_task_id" in tasks
     assert "@click=\"openTodoPlan(todo)\"" in tasks
+
+
+def test_editing_a_linked_todo_updates_the_source_plan_task_first():
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    assert "updatePlanTask" in tasks
+    assert "const linkedTaskChanged = Boolean" in tasks
+    assert "await updatePlanTask(todo.related_plan_id as string, todo.related_plan_task_id as string" in tasks
+    assert "errorMessage.value = t('tasks.planSyncFailed')" in tasks

@@ -14,7 +14,7 @@ import {
   type TodoSettings,
   type UnifiedTodo,
 } from '@/services/todoService'
-import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource, updatePlanTask, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
 import { useI18n } from '@/i18n'
 import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
@@ -437,6 +437,21 @@ async function saveEdit(todo: UnifiedTodo) {
   if (!editingTitle.value.trim() || isSaving.value) return
   isSaving.value = true
   try {
+    const linkedTaskChanged = Boolean(
+      todo.related_plan_id
+      && todo.related_plan_task_id
+      && editingPlanId.value === todo.related_plan_id
+      && editingPlanTaskId.value === todo.related_plan_task_id
+      && (editingTitle.value.trim() !== todo.title || Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)) !== (todo.estimated_time ?? todo.time_estimate ?? 60)),
+    )
+    if (linkedTaskChanged) {
+      try {
+        await updatePlanTask(todo.related_plan_id as string, todo.related_plan_task_id as string, editingTitle.value.trim(), Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)))
+      } catch {
+        errorMessage.value = t('tasks.planSyncFailed')
+        return
+      }
+    }
     const updated = await TodoService.update(todo.id, {
       title: editingTitle.value,
       description: editingDescription.value,
