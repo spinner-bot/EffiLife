@@ -57,6 +57,7 @@ const sectionInfo = ref('')
 const editingSectionIndex = ref<number | null>(null)
 const taskSectionIndex = ref<number | null>(null)
 const editingTaskId = ref<string | null>(null)
+const editingTaskDisplayId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
 const taskMinutes = ref(30)
@@ -311,7 +312,12 @@ async function saveTask() {
     if (editingTaskId.value) {
       await updatePlanTask(planId, editingTaskId.value, taskContent.value.trim(), minutes)
       try {
-        await syncTodosFromPlanTask(planId, [editingTaskId.value], taskContent.value.trim(), minutes)
+        await syncTodosFromPlanTask(
+          planId,
+          [editingTaskId.value, ...(editingTaskDisplayId.value && editingTaskDisplayId.value !== editingTaskId.value ? [editingTaskDisplayId.value] : [])],
+          taskContent.value.trim(),
+          minutes,
+        )
       } catch {
         errorMessage.value = t('plans.todoSyncFailed')
       }
@@ -322,6 +328,7 @@ async function saveTask() {
     taskMinutes.value = 30
     taskSectionIndex.value = null
     editingTaskId.value = null
+    editingTaskDisplayId.value = null
     editingTaskSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
   } catch (error) {
@@ -430,6 +437,7 @@ async function deleteGroup(sectionIndex: number, groupKey: string) {
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
   taskSectionIndex.value = null
   editingTaskId.value = task.internal_id
+  editingTaskDisplayId.value = task.display_id
   editingTaskSectionIndex.value = sectionIndex
   taskContent.value = task.content
   taskMinutes.value = task.time_minutes
@@ -438,6 +446,7 @@ function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number][
 function cancelTaskEdit() {
   taskSectionIndex.value = null
   editingTaskId.value = null
+  editingTaskDisplayId.value = null
   editingTaskSectionIndex.value = null
   taskContent.value = ''
   taskMinutes.value = 30

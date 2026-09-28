@@ -22,7 +22,9 @@ def test_plan_task_edit_syncs_linked_todo_title_and_duration():
     assert "export async function syncTodosFromPlanTask" in sync
     assert "time_estimate: Math.max(0, Number(minutes) || 0)" in sync
     assert "estimated_time: Math.max(0, Number(minutes) || 0)" in sync
-    assert "syncTodosFromPlanTask(planId, [editingTaskId.value]" in plans
+    assert "editingTaskDisplayId = ref<string | null>(null)" in plans
+    assert "[editingTaskId.value, ...(editingTaskDisplayId.value" in plans
+    assert "editingTaskDisplayId.value = task.display_id" in plans
 
 
 def test_plan_rename_refreshes_only_system_derived_todo_descriptions():
