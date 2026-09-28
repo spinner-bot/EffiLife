@@ -30,7 +30,7 @@ def test_legacy_todo_migration_copy_exists_in_both_locales():
         "settings.archive.legacyTodoImportConfirm",
         "settings.archive.legacyTodoImportSuccess",
         "settings.archive.legacyTodoImportFailed",
-        "settings.archive.legacyTodoInvalidJson",
-        "settings.archive.legacyTodoMissingTodos",
+        "tasks.legacyTodoInvalidJson",
+        "tasks.legacyTodoMissingTodos",
     ):
         assert source.count(f"'{key}'") == 2

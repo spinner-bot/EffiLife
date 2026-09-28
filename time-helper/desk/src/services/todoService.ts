@@ -401,14 +401,14 @@ export async function importLegacyTodoPayload(source: unknown): Promise<LegacyTo
     try {
       payload = JSON.parse(source)
     } catch {
-      throw new Error(translate('settings.archive.legacyTodoInvalidJson'))
+      throw new Error(translate('tasks.legacyTodoInvalidJson'))
     }
   }
   const rawTodos = Array.isArray(payload) ? payload : (payload && typeof payload === 'object' ? (payload as { todos?: unknown[] }).todos : undefined)
   const rawCategories = payload && typeof payload === 'object' && !Array.isArray(payload)
     ? (payload as { categories?: unknown[] }).categories
     : []
-  if (!Array.isArray(rawTodos)) throw new Error(translate('settings.archive.legacyTodoMissingTodos'))
+  if (!Array.isArray(rawTodos)) throw new Error(translate('tasks.legacyTodoMissingTodos'))
 
   const normalizedTodos: UnifiedTodo[] = []
   let warnings = 0
