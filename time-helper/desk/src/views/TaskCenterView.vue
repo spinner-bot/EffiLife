@@ -21,9 +21,28 @@ import CategoryIconPicker from '@/components/CategoryIconPicker.vue'
 
 const router = useRouter()
 const { t, locale } = useI18n()
+
+function toDateTimeLocal(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function fromDateTimeLocal(value: string): string | undefined {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
+}
+
+function toDateTimeInput(value?: string): string {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : toDateTimeLocal(date)
+}
+
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
 const priorityRank = ref(0)
+const startTime = ref(toDateTimeLocal(new Date()))
 const urgent = ref(false)
 const important = ref(false)
 const estimatedTime = ref(60)
@@ -39,6 +58,7 @@ const errorMessage = ref('')
 const editingId = ref<string | null>(null)
 const editingTitle = ref('')
 const editingPriorityRank = ref(0)
+const editingStartTime = ref('')
 const editingUrgent = ref(false)
 const editingImportant = ref(false)
 const editingEstimatedTime = ref(60)
@@ -166,6 +186,7 @@ async function addTodo() {
       title: title.value,
       priority: priorityKind(urgent.value, important.value),
       priority_rank: Math.max(0, Math.trunc(Number(priorityRank.value) || 0)),
+      start_time: fromDateTimeLocal(startTime.value),
       urgent: urgent.value,
       important: important.value,
       estimated_time: Math.max(1, Math.trunc(Number(estimatedTime.value) || 60)),
@@ -178,6 +199,7 @@ async function addTodo() {
     todos.value = [todo, ...todos.value]
     title.value = ''
     priorityRank.value = 0
+    startTime.value = toDateTimeLocal(new Date())
     urgent.value = false
     important.value = false
     estimatedTime.value = 60
@@ -335,6 +357,7 @@ function startEdit(todo: UnifiedTodo) {
   editingId.value = todo.id
   editingTitle.value = todo.title
   editingPriorityRank.value = todo.priority_rank ?? 0
+  editingStartTime.value = toDateTimeInput(todo.start_time || todo.created_at)
   editingUrgent.value = todo.urgent ?? (todo.priority === 'urgent' || todo.priority === 'urgent-important')
   editingImportant.value = todo.important ?? (todo.priority === 'important' || todo.priority === 'urgent-important')
   editingEstimatedTime.value = todo.estimated_time ?? todo.time_estimate ?? 60
@@ -351,6 +374,7 @@ function cancelEdit() {
   editingId.value = null
   editingTitle.value = ''
   editingPriorityRank.value = 0
+  editingStartTime.value = ''
   editingUrgent.value = false
   editingImportant.value = false
   editingEstimatedTime.value = 60
@@ -370,6 +394,7 @@ async function saveEdit(todo: UnifiedTodo) {
       title: editingTitle.value,
       priority: priorityKind(editingUrgent.value, editingImportant.value),
       priority_rank: Math.max(0, Math.trunc(Number(editingPriorityRank.value) || 0)),
+      start_time: fromDateTimeLocal(editingStartTime.value),
       urgent: editingUrgent.value,
       important: editingImportant.value,
       estimated_time: Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)),
@@ -610,6 +635,10 @@ watch(selectedPlanId, (planId) => {
       <section class="task-create theme-card">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
         <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
+        <label class="task-field-label" for="new-task-start-time">{{ t('tasks.startTime') }}</label>
+        <input id="new-task-start-time" v-model="startTime" class="task-date-input task-start-time-input" type="datetime-local" />
+        <label class="task-field-label" for="new-task-priority-rank">{{ t('tasks.priorityRank') }}</label>
+        <input id="new-task-priority-rank" v-model.number="priorityRank" class="task-number-input" type="number" min="0" step="1" />
         <label class="task-check-label"><input v-model="urgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
         <label class="task-check-label"><input v-model="important" type="checkbox" /> {{ t('tasks.important') }}</label>
         <label class="task-field-label" for="new-task-estimated-time">{{ t('tasks.estimatedTime') }}</label>
@@ -719,6 +748,10 @@ watch(selectedPlanId, (planId) => {
           <div v-if="editingId === todo.id" class="task-edit-form">
             <label :for="`edit-title-${todo.id}`">{{ t('tasks.editContent') }}</label>
             <input :id="`edit-title-${todo.id}`" v-model="editingTitle" class="task-edit-input" @keyup.enter="saveEdit(todo)" />
+            <label :for="`edit-start-time-${todo.id}`">{{ t('tasks.startTime') }}</label>
+            <input :id="`edit-start-time-${todo.id}`" v-model="editingStartTime" class="task-edit-select task-start-time-edit" type="datetime-local" />
+            <label :for="`edit-priority-rank-${todo.id}`">{{ t('tasks.priorityRank') }}</label>
+            <input :id="`edit-priority-rank-${todo.id}`" v-model.number="editingPriorityRank" class="task-edit-select" type="number" min="0" step="1" />
             <label class="task-edit-check"><input v-model="editingUrgent" type="checkbox" /> {{ t('tasks.urgent') }}</label>
             <label class="task-edit-check"><input v-model="editingImportant" type="checkbox" /> {{ t('tasks.important') }}</label>
             <label :for="`edit-estimated-time-${todo.id}`">{{ t('tasks.estimatedTime') }}</label>
@@ -816,6 +849,7 @@ watch(selectedPlanId, (planId) => {
 .task-input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--color-text-primary); background: transparent; font-size: 15px; }
 .task-select { border: 1px solid var(--color-border); border-radius: 10px; padding: 0 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-date-input { width: 132px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-start-time-input { width: 205px; }
 .task-number-input { width: 62px; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 8px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .focus-track-form { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--color-border); }
 .focus-track-form button { border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 10px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-size: 12px; }
@@ -865,6 +899,7 @@ watch(selectedPlanId, (planId) => {
 .task-edit-form { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto minmax(100px, 140px) auto; align-items: center; gap: 8px; min-width: 0; flex: 1; }
 .task-edit-form label { color: var(--color-text-tertiary); font-size: 12px; white-space: nowrap; }
 .task-edit-input, .task-edit-select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px 9px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
+.task-start-time-edit { min-width: 185px; }
 .task-edit-check { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
 .task-edit-input:focus, .task-edit-select:focus, .task-input:focus, .task-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .task-edit-actions { display: flex; gap: 6px; }
