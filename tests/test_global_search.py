@@ -44,6 +44,13 @@ def test_global_search_supports_keyboard_result_navigation():
     assert "class=\"search-result\" :class=\"{ selected: selectedIndex === index }\"" in source
 
 
+def test_global_search_indexes_todo_descriptions_and_tags():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "todo.description || todo.tags?.join(', ')" in source
+    assert "searchText: `${todo.description || ''} ${(todo.tags || []).join(' ')}`" in source
+    assert "result.searchText" in source
+
+
 def test_global_search_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in (

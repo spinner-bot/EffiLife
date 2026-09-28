@@ -25,6 +25,7 @@ type SearchResult = {
   kind: 'todo' | 'plan' | 'record'
   title: string
   detail: string
+  searchText: string
   route: string
 }
 
@@ -33,7 +34,8 @@ const allResults = computed<SearchResult[]>(() => [
     id: `todo:${todo.id}`,
     kind: 'todo' as const,
     title: todo.title,
-    detail: todo.deadline || t('search.todoDetail'),
+    detail: todo.description || todo.tags?.join(', ') || todo.deadline || t('search.todoDetail'),
+    searchText: `${todo.description || ''} ${(todo.tags || []).join(' ')}`,
     route: `/tasks?todo=${encodeURIComponent(todo.id)}`,
   })),
   ...plans.value.map((plan) => ({
@@ -41,6 +43,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'plan' as const,
     title: plan.name,
     detail: t('search.planDetail'),
+    searchText: '',
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
   })),
   ...records.value.map((record, index) => ({
@@ -48,6 +51,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'record' as const,
     title: record.content || record.tag,
     detail: `${record.date} · ${record.tag}`,
+    searchText: `${record.content} ${record.tag}`,
     route: `/day/${record.date}`,
   })),
 ])
@@ -56,7 +60,7 @@ const filteredResults = computed(() => {
   const normalized = query.value.trim().toLocaleLowerCase()
   if (!normalized) return []
   return allResults.value
-    .filter((result) => `${result.title} ${result.detail}`.toLocaleLowerCase().includes(normalized))
+    .filter((result) => `${result.title} ${result.detail} ${result.searchText}`.toLocaleLowerCase().includes(normalized))
     .slice(0, 12)
 })
 
