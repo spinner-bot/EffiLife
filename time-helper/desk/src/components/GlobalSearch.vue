@@ -5,7 +5,7 @@ import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-v
 import { useI18n } from '@/i18n'
 import { getRawAll, STORE_NAMES } from '@/storage'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
-import { listPlanSummaries, type PlanSummary } from '@/services/planGateway'
+import { getPlanTasks, listPlanSummaries, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import type { TimeRecord } from '@/types'
 
 const props = defineProps<{ open: boolean }>()
@@ -17,12 +17,13 @@ const isLoading = ref(false)
 const input = ref<HTMLInputElement | null>(null)
 const todos = ref<UnifiedTodo[]>([])
 const plans = ref<PlanSummary[]>([])
+const planTasks = ref<Array<{ plan: PlanSummary; task: PlanTaskSummary }>>([])
 const records = ref<TimeRecord[]>([])
 const selectedIndex = ref(0)
 
 type SearchResult = {
   id: string
-  kind: 'todo' | 'plan' | 'record'
+  kind: 'todo' | 'plan' | 'planTask' | 'record'
   title: string
   detail: string
   searchText: string
@@ -45,6 +46,14 @@ const allResults = computed<SearchResult[]>(() => [
     detail: t('search.planDetail'),
     searchText: '',
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
+  })),
+  ...planTasks.value.map(({ plan, task }) => ({
+    id: `plan-task:${plan.id}:${task.internal_id}`,
+    kind: 'planTask' as const,
+    title: task.content,
+    detail: `${t('search.planTaskDetail')} · ${plan.name} · ${task.display_id}`,
+    searchText: `${task.content} ${plan.name} ${task.display_id}`,
+    route: `/plans?plan=${encodeURIComponent(String(plan.id))}&task=${encodeURIComponent(task.internal_id)}`,
   })),
   ...records.value.map((record, index) => ({
     id: `record:${record.id || `${record.date}-${index}`}`,
@@ -78,6 +87,14 @@ async function loadIndex() {
     ])
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
     plans.value = planResult.status === 'fulfilled' ? planResult.value : []
+    planTasks.value = []
+    if (plans.value.length > 0) {
+      const taskResults = await Promise.allSettled(plans.value.map(async (plan) => {
+        const tasks = await getPlanTasks(plan.id)
+        return tasks.map((task) => ({ plan, task }))
+      }))
+      planTasks.value = taskResults.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+    }
     records.value = recordResult.status === 'fulfilled' ? recordResult.value.flat() : []
   } finally {
     isLoading.value = false
@@ -132,7 +149,7 @@ watch(() => props.open, async (open) => {
         <button v-for="(result, index) in filteredResults" :key="result.id" class="search-result" :class="{ selected: selectedIndex === index }" type="button" :aria-selected="selectedIndex === index" @click="openResult(result)">
           <span class="search-result-icon">
             <ListTodo v-if="result.kind === 'todo'" :size="16" />
-            <ClipboardList v-else-if="result.kind === 'plan'" :size="16" />
+            <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'planTask'" :size="16" />
             <Clock3 v-else :size="16" />
           </span>
           <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ result.detail }}</small></span>

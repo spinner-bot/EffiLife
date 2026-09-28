@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, ClipboardList, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
@@ -43,6 +43,7 @@ const selectedPlan = ref<PlanFull | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const searchTargetTaskId = ref<string | null>(null)
 const showCreate = ref(false)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
@@ -475,7 +476,16 @@ onMounted(async () => {
   await loadPlans()
   const targetId = String(route.query.plan || '')
   const target = targetId ? plans.value.find((plan) => String(plan.id) === targetId) : undefined
-  if (target) await openPlan(target)
+  if (target) {
+    await openPlan(target)
+    const taskId = String(route.query.task || '')
+    if (taskId && selectedPlan.value?.sections.some((section) => section.tasks.some((task) => task.internal_id === taskId))) {
+      searchTargetTaskId.value = taskId
+      await nextTick()
+      document.getElementById(`plan-task-${taskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
+    }
+  }
 })
 </script>
 
@@ -612,7 +622,7 @@ onMounted(async () => {
             <button class="plans-primary" :disabled="isLoading || !groupTitle.trim() || groupEnd <= groupStart" @click="saveGroup">{{ editingGroupKey ? t('plans.save') : t('plans.addGroup') }}</button>
           </div>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
-          <article v-for="task in section.tasks" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish }">
+          <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
             <button class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
@@ -726,6 +736,7 @@ onMounted(async () => {
 .task-todo { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .task-todo:hover { color: var(--color-primary); }
 .event-task-row.finished { opacity: .62; }
+.event-task-row.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .event-task-row.finished span { text-decoration: line-through; }
 .task-complete, .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-complete { width: 22px; height: 22px; border: 2px solid var(--color-border-hover); border-radius: 50%; }

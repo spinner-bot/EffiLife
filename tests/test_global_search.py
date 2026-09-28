@@ -51,6 +51,16 @@ def test_global_search_indexes_todo_descriptions_and_tags():
     assert "result.searchText" in source
 
 
+def test_global_search_indexes_plan_tasks_and_deep_links():
+    source = SEARCH.read_text(encoding="utf-8")
+    plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    assert "getPlanTasks" in source
+    assert "kind: 'planTask'" in source
+    assert "&task=${encodeURIComponent(task.internal_id)}" in source
+    assert "route.query.task" in plans
+    assert "plan-task-${task.internal_id}" in plans
+
+
 def test_global_search_translation_keys_exist_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     for key in (
@@ -63,5 +73,6 @@ def test_global_search_translation_keys_exist_in_both_locales():
         "search.hint",
         "search.todoDetail",
         "search.planDetail",
+        "search.planTaskDetail",
     ):
         assert source.count(f"'{key}'") == 2
