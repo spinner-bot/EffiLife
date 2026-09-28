@@ -18,3 +18,12 @@ def test_record_delete_paths_clean_linked_todo_references():
         source = source_path.read_text(encoding="utf-8")
         assert "const record = records.value[index]" in source
         assert "await unlinkTodoFromTimeRecord(record)" in source
+
+
+def test_deleted_todo_unlinks_time_records_without_deleting_history():
+    data = (ROOT / "time-helper" / "desk" / "src" / "services" / "dataService.ts").read_text(encoding="utf-8")
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+
+    assert "async unlinkTodoFromRecords(todoId: string): Promise<number>" in data
+    assert "delete nextRecord.todo_id" in data
+    assert "await DataService.unlinkTodoFromRecords(todo.id)" in tasks

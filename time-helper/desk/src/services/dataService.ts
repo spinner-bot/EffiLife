@@ -431,6 +431,31 @@ export const DataService = {
     }
   },
 
+  async unlinkTodoFromRecords(todoId: string): Promise<number> {
+    await ensureMigration()
+    if (!todoId) return 0
+    const entries = await getRawAll<{ key?: string; value?: unknown }>(STORE_NAMES.RECORDS)
+    let changed = 0
+    for (const entry of entries) {
+      if (typeof entry.key !== 'string' || !Array.isArray(entry.value)) continue
+      const records = entry.value as TimeRecord[]
+      let entryChanged = false
+      const nextRecords = records.map((record) => {
+        if (record.todo_id !== todoId) return record
+        const nextRecord = { ...record }
+        delete nextRecord.todo_id
+        entryChanged = true
+        changed += 1
+        return nextRecord
+      })
+      if (entryChanged) {
+        await idbSet(STORE_NAMES.RECORDS, entry.key, nextRecords)
+        localStorage.setItem(STORAGE_PREFIX + 'records_' + entry.key, JSON.stringify(nextRecords))
+      }
+    }
+    return changed
+  },
+
   async saveRecord(record: TimeRecord, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
     const records = await this.loadRecords(targetDay)

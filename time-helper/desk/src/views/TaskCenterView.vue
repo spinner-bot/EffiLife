@@ -480,6 +480,11 @@ async function saveEdit(todo: UnifiedTodo) {
 
 async function removeTodo(todo: UnifiedTodo) {
   try {
+    try {
+      await DataService.unlinkTodoFromRecords(todo.id)
+    } catch (error) {
+      console.warn('Failed to clean deleted todo record links', error)
+    }
     await TodoService.remove(todo.id)
     todos.value = todos.value.filter((item) => item.id !== todo.id)
   } catch (error) {
