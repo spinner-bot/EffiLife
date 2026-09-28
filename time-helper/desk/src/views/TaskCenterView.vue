@@ -202,7 +202,12 @@ async function saveTodoSettings() {
 }
 
 const planNameById = computed(() => Object.fromEntries(planSummaries.value.map((plan) => [plan.id, plan.name])))
-const planTaskById = computed(() => Object.fromEntries(planTasks.value.map((task) => [task.internal_id, task])))
+const planTaskById = computed(() => Object.fromEntries(
+  planTasks.value.flatMap((task) => [
+    [task.internal_id, task] as const,
+    [task.display_id, task] as const,
+  ]),
+))
 
 async function loadTodos() {
   isLoading.value = true

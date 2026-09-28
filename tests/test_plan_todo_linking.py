@@ -13,6 +13,7 @@ def test_plan_detail_can_create_a_linked_unified_todo_without_duplicates():
     assert "TodoService.create({" in source
     assert "related_plan_id: planId" in source
     assert "related_plan_task_id: String(task.internal_id)" in source
+    assert "todo.related_plan_task_id === String(task.display_id)" in source
     assert "todoAlreadyLinked" in source
     assert "@click=\"addTaskToTodos(task)\"" in source
 

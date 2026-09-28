@@ -483,7 +483,10 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
     const todos = await TodoService.list()
     const existing = todos.find((todo) =>
       todo.related_plan_id === planId
-      && todo.related_plan_task_id === String(task.internal_id)
+      && (
+        todo.related_plan_task_id === String(task.internal_id)
+        || todo.related_plan_task_id === String(task.display_id)
+      )
       && !['archived', 'cancelled'].includes(todo.status)
     )
     if (existing) {
