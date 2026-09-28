@@ -25,7 +25,7 @@ import {
   updatePlanGroup,
   updateEventPlan,
 } from '@/services/planGateway'
-import { completeLinkedTodos } from '@/services/workspaceSync'
+import { completeLinkedTodos, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 
@@ -420,6 +420,13 @@ async function deleteTask(taskId: string) {
   errorMessage.value = ''
   try {
     await deletePlanTask(planId, taskId)
+    try {
+      await unlinkTodosFromPlanTask(planId, taskId)
+    } catch {
+      // The plan deletion is already accepted; keep the view current and
+      // surface the secondary cleanup failure without masking the deletion.
+      errorMessage.value = t('plans.todoSyncFailed')
+    }
     selectedPlan.value = await getPlanFull(planId)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
