@@ -211,10 +211,7 @@ def release_check_command():
 
 def get_time_helper_cmd():
     """Get command for time-helper, prefer dev mode for latest features"""
-    exe_paths = [
-        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe",
-        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "debug" / "efflife-desk.exe",
-    ]
+    exe_paths = time_helper_binary_paths()
 
     # Formal installers must never unexpectedly switch to a source checkout's
     # Vite server merely because Node happens to be installed on the machine.
@@ -250,6 +247,16 @@ def get_time_helper_cmd():
             "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
         ], "http://127.0.0.1:1420", None
     return None, None, None
+
+
+def time_helper_binary_paths():
+    """Return release/debug Tauri binaries for Windows and POSIX targets."""
+    binary_names = ["efflife-desk.exe", "efflife-desk"] if os.name == "nt" else ["efflife-desk", "efflife-desk.exe"]
+    return [
+        BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / profile / name
+        for profile in ("release", "debug")
+        for name in binary_names
+    ]
 
 
 def get_todos_web_cmd():
@@ -381,6 +388,11 @@ def collect_diagnostics(modules):
         "python": sys.executable,
         "node": node,
         "npm": npm,
+        "launch_mode": "packaged" if "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged" else "development",
+        "time_helper_binaries": [
+            {"path": str(path), "exists": path.exists()}
+            for path in time_helper_binary_paths()
+        ],
         "modules": module_status,
     }
 

@@ -78,6 +78,18 @@ def test_launcher_packaged_mode_prefers_native_tauri_binary(monkeypatch, tmp_pat
     assert url is None and setup is None
 
 
+def test_launcher_discovers_posix_style_tauri_binary(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher.os, "name", "posix")
+    binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"placeholder")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+    command, url, setup = launcher.get_time_helper_cmd()
+    assert command == [str(binary)]
+    assert url is None and setup is None
+
+
 def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
@@ -362,6 +374,14 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     assert result["modules"]["1"]["service_ready"] is True
     assert result["modules"]["2"]["service_ready"] is False
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
+
+
+def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged", "--diagnose"])
+    result = launcher.collect_diagnostics({})
+    assert result["launch_mode"] == "packaged"
+    assert result["time_helper_binaries"]
+    assert all("path" in item and "exists" in item for item in result["time_helper_binaries"])
 
 
 def test_diagnose_output_uses_ascii_safe_json():
