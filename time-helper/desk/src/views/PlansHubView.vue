@@ -22,6 +22,7 @@ import {
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
+  type InitialPlanSection,
   type PlanSummary,
   updatePlanTask,
   updatePlanGroup,
@@ -52,6 +53,7 @@ const searchTargetTaskId = ref<string | null>(null)
 const showCreate = ref(false)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
+const createSections = ref<InitialPlanSection[]>([])
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -155,8 +157,27 @@ async function openEvents() {
 function openCreatePlan() {
   planName.value = ''
   planDate.value = toDateInput(new Date())
+  createSections.value = [{ name: '', info: '', tasks: [{ content: '', time_minutes: 30 }] }]
   errorMessage.value = ''
   showCreate.value = true
+}
+
+function addCreateSection() {
+  createSections.value.push({ name: '', info: '', tasks: [{ content: '', time_minutes: 30 }] })
+}
+
+function removeCreateSection(index: number) {
+  if (createSections.value.length <= 1) return
+  createSections.value.splice(index, 1)
+}
+
+function addCreateTask(section: InitialPlanSection) {
+  section.tasks.push({ content: '', time_minutes: 30 })
+}
+
+function removeCreateTask(section: InitialPlanSection, index: number) {
+  if (section.tasks.length <= 1) return
+  section.tasks.splice(index, 1)
 }
 
 function openTimePlan() {
@@ -200,13 +221,27 @@ async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
   if (!name || !planDate.value) return
+  const sections = createSections.value
+    .map((section) => ({
+      name: section.name.trim(),
+      info: section.info.trim(),
+      tasks: section.tasks
+        .filter((task) => task.content.trim())
+        .map((task) => ({ content: task.content.trim(), time_minutes: Math.max(0, Number(task.time_minutes) || 0) })),
+    }))
+    .filter((section) => section.name)
+  if (!sections.some((section) => section.tasks.length > 0)) {
+    errorMessage.value = t('plans.createTaskRequired')
+    return
+  }
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const created = await createEventPlan(name, toDateTuple(planDate.value))
+    const created = await createEventPlan(name, toDateTuple(planDate.value), sections)
     selectedPlan.value = await getPlanFull(created.id)
     showCreate.value = false
     planName.value = ''
+    createSections.value = []
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(created.id) } })
   } catch (error) {
@@ -752,6 +787,25 @@ onMounted(async () => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input v-model="planName" required autofocus /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
+        <div class="create-sections-heading">
+          <div><strong>{{ t('plans.createSections') }}</strong><small>{{ t('plans.createSectionsHint') }}</small></div>
+          <button type="button" class="plans-secondary" @click="addCreateSection"><Plus :size="15" /> {{ t('plans.addSection') }}</button>
+        </div>
+        <div class="create-sections">
+          <section v-for="(section, sectionIndex) in createSections" :key="sectionIndex" class="create-section">
+            <header><strong>{{ t('plans.section') }} {{ sectionIndex + 1 }}</strong><button v-if="createSections.length > 1" type="button" class="icon-button" :aria-label="t('plans.deleteSection')" @click="removeCreateSection(sectionIndex)"><Trash2 :size="15" /></button></header>
+            <div class="create-section-fields">
+              <input v-model="section.name" :placeholder="t('plans.sectionName')" />
+              <input v-model="section.info" :placeholder="t('plans.sectionInfo')" />
+            </div>
+            <div v-for="(task, taskIndex) in section.tasks" :key="taskIndex" class="create-task-row">
+              <input v-model="task.content" :placeholder="t('plans.taskContent')" />
+              <input v-model.number="task.time_minutes" type="number" min="0" step="1" :aria-label="t('plans.taskMinutes')" :placeholder="t('plans.taskMinutes')" />
+              <button v-if="section.tasks.length > 1" type="button" class="icon-button" :aria-label="t('plans.deleteTask')" @click="removeCreateTask(section, taskIndex)"><Trash2 :size="14" /></button>
+            </div>
+            <button type="button" class="create-add-task" @click="addCreateTask(section)"><Plus :size="14" /> {{ t('plans.addTask') }}</button>
+          </section>
+        </div>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="showCreate = false">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.create') }}</button></div>
       </form>
     </div>
@@ -768,6 +822,8 @@ onMounted(async () => {
 .plans-primary { margin-left: auto; border: 1px solid var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
 .plans-secondary { border: 1px solid var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .plans-link { border: 0; padding-left: 0; color: var(--color-primary); background: transparent; }
+.icon-button { display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
+.icon-button:hover { color: var(--color-error); border-color: var(--color-error); }
 .plans-content { max-width: 1080px; margin: 0 auto; padding: 10px 28px 50px; }
 .plan-domain-grid, .event-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .domain-card, .event-plan-card { position: relative; display: grid; gap: 9px; border: 1px solid var(--color-border); border-radius: 17px; padding: 24px; color: var(--color-text-primary); background: var(--color-bg-secondary); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s; }
@@ -796,6 +852,16 @@ onMounted(async () => {
 .meta-editor label, .section-editor label, .task-editor label, .create-modal label { display: grid; gap: 6px; color: var(--color-text-secondary); font-size: 12px; }
 .meta-editor input, .section-editor input, .task-editor input, .create-modal input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .meta-editor input:focus, .section-editor input:focus, .task-editor input:focus, .create-modal input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.create-modal { width: min(680px, calc(100vw - 32px)); max-height: min(86vh, 760px); overflow-y: auto; }
+.create-sections-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; color: var(--color-text-primary); }
+.create-sections-heading > div { display: grid; gap: 3px; }
+.create-sections-heading small { color: var(--color-text-tertiary); font-size: 11px; font-weight: 400; }
+.create-sections { display: grid; gap: 10px; }
+.create-section { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-secondary); }
+.create-section header { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-secondary); font-size: 12px; }
+.create-section-fields, .create-task-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.create-task-row { grid-template-columns: minmax(0, 1fr) 92px 32px; }
+.create-add-task { display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: fit-content; border: 0; padding: 3px 0; color: var(--color-primary); background: transparent; cursor: pointer; font-size: 12px; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }

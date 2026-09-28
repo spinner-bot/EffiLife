@@ -39,6 +39,12 @@ export interface PlanFull extends PlanSummary {
   logs: Array<{ index: number; day?: number; plan: string; time: [number, number]; content: string }>
 }
 
+export interface InitialPlanSection {
+  name: string
+  info: string
+  tasks: Array<{ content: string; time_minutes: number }>
+}
+
 export interface PlanArchiveSummary {
   file: string
   plan_id?: number
@@ -325,11 +331,25 @@ export async function getPlanFull(planId: string): Promise<PlanFull> {
   }
 }
 
-export async function createEventPlan(name: string, date: [number, number, number]): Promise<PlanSummary> {
+export async function createEventPlan(
+  name: string,
+  date: [number, number, number],
+  sections: InitialPlanSection[] = [],
+): Promise<PlanSummary> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     const plans = cloneMobilePlans(await getMobileRawPlans())
     const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
-    const plan: RawPlan = { head: { index: nextId, name, date }, main: [], log: [] }
+    const main = sections
+      .filter((section) => section.name.trim())
+      .map((section) => ({
+        name: section.name.trim(),
+        info: section.info.trim(),
+        plan: [null, ...section.tasks
+          .filter((task) => task.content.trim())
+          .map((task) => ({ is_active: true, content: task.content.trim(), t_m: Math.max(0, Number(task.time_minutes) || 0) / 6 }))],
+        group: {},
+      }))
+    const plan: RawPlan = { head: { index: nextId, name, date }, main, log: [] }
     plans.push(plan)
     await saveMobileRawPlans(plans)
     return toMobilePlanSummary(plan, plans.length - 1)
@@ -337,7 +357,7 @@ export async function createEventPlan(name: string, date: [number, number, numbe
   return request<PlanSummary>('/api/plans', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, date }),
+    body: JSON.stringify({ name, date, sections }),
   })
 }
 
