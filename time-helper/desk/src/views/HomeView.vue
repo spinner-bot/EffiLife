@@ -371,7 +371,7 @@ onUnmounted(() => {
           </button>
         </div>
         <div v-if="todayTodos.length" class="today-todos-list">
-          <button v-for="todo in todayTodos" :key="todo.id" class="today-todo-row" @click="router.push('/tasks')">
+          <button v-for="todo in todayTodos" :key="todo.id" class="today-todo-row" @click="router.push({ path: '/tasks', query: { todo: todo.id } })">
             <span class="today-todo-status"></span>
             <span class="today-todo-title">{{ todo.title }}</span>
             <span class="today-todo-deadline">{{ formatTodoDeadline(todo.deadline) }}</span>
