@@ -93,6 +93,15 @@ def startup_timeout(default=30):
         return default
 
 
+def setup_timeout(default=300):
+    """Return a bounded timeout for first-run dependency installation."""
+    raw = os.environ.get("EFFILIFE_SETUP_TIMEOUT", str(default))
+    try:
+        return max(30, min(900, int(raw)))
+    except ValueError:
+        return default
+
+
 def get_time_helper_cmd():
     """Get command for time-helper, prefer dev mode for latest features"""
     npm = find_npm()
@@ -272,7 +281,22 @@ def run_module(choice, modules):
     # Setup if needed
     if module.get("setup") and module.get("needs_setup"):
         print(f"首次运行，执行 setup: {' '.join(module['setup'])}")
-        result = subprocess.run(module["setup"], cwd=module["cwd"], shell=False, env=env)
+        try:
+            result = subprocess.run(
+                module["setup"],
+                cwd=module["cwd"],
+                shell=False,
+                env=env,
+                timeout=setup_timeout(),
+            )
+        except subprocess.TimeoutExpired:
+            print(f"\nSetup timed out after {setup_timeout()} seconds.")
+            print("Check the network/npm registry, then retry or install dependencies manually.")
+            return
+        except OSError as error:
+            print(f"\nUnable to run dependency setup: {error}")
+            print(f"Run manually in {module['cwd']}: {' '.join(module['setup'])}")
+            return
         if result.returncode != 0:
             print(f"\n❌ Setup 失败，请手动执行:")
             print(f"   cd {module['cwd']}")

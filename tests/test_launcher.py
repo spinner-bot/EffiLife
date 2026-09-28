@@ -64,6 +64,37 @@ def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
     assert launcher.startup_timeout() == 30
 
 
+def test_setup_timeout_is_bounded_and_configurable(monkeypatch):
+    monkeypatch.setenv("EFFILIFE_SETUP_TIMEOUT", "120")
+    assert launcher.setup_timeout() == 120
+    monkeypatch.setenv("EFFILIFE_SETUP_TIMEOUT", "1")
+    assert launcher.setup_timeout() == 30
+    monkeypatch.setenv("EFFILIFE_SETUP_TIMEOUT", "9999")
+    assert launcher.setup_timeout() == 900
+    monkeypatch.setenv("EFFILIFE_SETUP_TIMEOUT", "not-a-number")
+    assert launcher.setup_timeout() == 300
+
+
+def test_launcher_returns_when_dependency_setup_times_out(monkeypatch):
+    class TimeoutRun:
+        def __call__(self, *args, **kwargs):
+            assert kwargs["timeout"] == 300
+            raise launcher.subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs["timeout"])
+
+    monkeypatch.setattr(launcher.subprocess, "run", TimeoutRun())
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [])
+    module = {
+        "name": "test",
+        "available": True,
+        "cmd": ["frontend"],
+        "cwd": launcher.BASE_DIR,
+        "url": None,
+        "setup": ["npm", "install"],
+        "needs_setup": True,
+    }
+    launcher.run_module("test", {"test": module})
+
+
 def test_launcher_groups_owned_processes_for_shutdown():
     options = launcher.process_group_options()
     if launcher.os.name == "nt":
