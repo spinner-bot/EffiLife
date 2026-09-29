@@ -10,7 +10,7 @@ import {
 import {
   ArrowLeft, Plus, Pencil, Trash2, X, Check,
   Calendar, FolderKanban, RefreshCw, ClipboardList,
-  Clock, ChevronRight
+  Clock, ChevronRight, History
 } from 'lucide-vue-next'
 import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
 import EmptyState from '@/components/EmptyState.vue'
@@ -538,6 +538,11 @@ onMounted(() => {
               <button class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
                 <div class="pv-action-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #f59e0b;"><RefreshCw :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.temporaryChange') }}</span><span class="pv-action-desc">{{ t('legacyPlan.temporaryChangeDescription') }}</span></div>
+                <ChevronRight :size="16" class="pv-action-arrow" />
+              </button>
+              <button class="pv-action-card" @click="AudioManager.playSound('click'); router.push('/records')">
+                <div class="pv-action-icon" style="--icon-bg: rgba(14,165,233,0.12); --icon-color: #0ea5e9;"><History :size="22" /></div>
+                <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.historyRecords') }}</span><span class="pv-action-desc">{{ t('legacyPlan.historyRecordsDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
             </div>

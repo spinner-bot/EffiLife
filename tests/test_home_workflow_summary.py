@@ -12,7 +12,7 @@ def test_home_summary_aggregates_three_unified_workstreams():
     assert "home.recordedToday" in HOME
     assert "home.eventPlanProgress" in HOME
     assert "home.activeTodos" in HOME
-    assert "router.push('/records')" in HOME
+    assert "router.push({ path: '/plans', query: { mode: 'time' } })" in HOME
     assert "router.push('/plans')" in HOME
     assert "router.push('/tasks')" in HOME
 
@@ -20,4 +20,3 @@ def test_home_summary_aggregates_three_unified_workstreams():
 def test_home_workflow_summary_has_bilingual_copy():
     for key in ("home.workflowSummary", "home.recordedToday", "home.eventPlanProgress", "home.activeTodos"):
         assert I18N.count(f"'{key}':") == 2
-

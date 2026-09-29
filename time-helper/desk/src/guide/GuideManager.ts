@@ -303,7 +303,7 @@ MAIN_GUIDE.steps = [
   { id: 'welcome', title: '', description: '', titleKey: 'guide.welcomeTitle', descriptionKey: 'guide.welcomeDescription', isDemo: true },
   { id: 'plans', title: '', description: '', titleKey: 'guide.plansTitle', descriptionKey: 'guide.plansDescription', target: '[data-guide="plans"]', actionRequired: true, actionType: 'click', actionTarget: '[data-guide="plans"]', autoAdvance: true },
   { id: 'tasks', title: '', description: '', titleKey: 'guide.tasksTitle', descriptionKey: 'guide.tasksDescription', target: '[data-guide="tasks"]', actionRequired: true, actionType: 'click', actionTarget: '[data-guide="tasks"]', autoAdvance: true },
-  { id: 'records', title: '', description: '', titleKey: 'guide.recordsTitle', descriptionKey: 'guide.recordsDescription', target: '[data-guide="records"]', actionRequired: true, actionType: 'click', actionTarget: '[data-guide="records"]', autoAdvance: true },
+  { id: 'time-workspace', title: '', description: '', titleKey: 'guide.timeWorkspaceTitle', descriptionKey: 'guide.timeWorkspaceDescription', target: '[data-guide="plans"]', actionRequired: true, actionType: 'click', actionTarget: '[data-guide="plans"]', autoAdvance: true },
   { id: 'settings', title: '', description: '', titleKey: 'guide.settingsTitle', descriptionKey: 'guide.settingsDescription', target: '[data-guide="settings"]', actionRequired: true, actionType: 'click', actionTarget: '[data-guide="settings"]', autoAdvance: true },
   { id: 'complete', title: '', description: '', titleKey: 'guide.completeTitle', descriptionKey: 'guide.completeDescription', isDemo: true },
 ]
