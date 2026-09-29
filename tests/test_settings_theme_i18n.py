@@ -95,6 +95,20 @@ def test_theme_registry_owns_localized_display_metadata():
     assert "return t(theme.descriptionKey)" in settings
 
 
+def test_theme_categories_are_derived_from_the_registry():
+    settings = SETTINGS.read_text(encoding="utf-8")
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    assert "getAvailableThemeCategories" in engine
+    assert "new Set(getAvailableThemes().map(theme => theme.categoryKey))" in engine
+    assert "getAvailableThemeCategories" in settings
+    assert "const availableThemeCategories = getAvailableThemeCategories()" in settings
+    assert "v-for=\"category in availableThemeCategories\"" in settings
+    assert "theme.category.basic" not in settings
+    assert "theme.category.art" not in settings
+    assert "theme.category.nature" not in settings
+    assert "theme.category.tech" not in settings
+
+
 def test_locale_catalogs_have_the_same_translation_keys():
     source = I18N.read_text(encoding="utf-8")
     import re

@@ -2705,3 +2705,7 @@ export function getAvailableThemes(): ThemeDefinition[] {
     { type: 'underwater_temple', name: '海底神殿', description: '深海光线与气泡', preview: '#06243a', nameKey: 'theme.name.underwaterTemple', descriptionKey: 'theme.desc.underwaterTemple', categoryKey: 'theme.category.nature' },
   ]
 }
+
+export function getAvailableThemeCategories(): string[] {
+  return [...new Set(getAvailableThemes().map(theme => theme.categoryKey))]
+}

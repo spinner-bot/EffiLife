@@ -18,7 +18,7 @@ import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { getTodayDate } from '@/services/dataService'
-import { getAvailableThemes, type ThemeDefinition } from '@/theme/ThemeEngine'
+import { getAvailableThemes, getAvailableThemeCategories, type ThemeDefinition } from '@/theme/ThemeEngine'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -214,6 +214,7 @@ async function discardThemeChanges() {
 
 // 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
 const availableThemes = getAvailableThemes()
+const availableThemeCategories = getAvailableThemeCategories()
 
 function themeCategory(theme: ThemeDefinition): string {
   return theme.categoryKey
@@ -667,68 +668,11 @@ onMounted(async () => {
       <template v-else-if="currentView === 'theme'">
         <h2>{{ t('settings.theme.title') }}</h2>
 
-        <div class="form-section">
-          <label>{{ t('theme.category.basic') }}</label>
+        <div v-for="category in availableThemeCategories" :key="category" class="form-section">
+          <label>{{ t(category) }}</label>
           <div class="theme-list">
             <button
-              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.basic')"
-              :key="theme.type"
-              class="theme-card"
-              :class="{ active: themeType === theme.type }"
-              @click="themeType = theme.type"
-            >
-              <div class="theme-info">
-                <span class="theme-name">{{ themeName(theme) }}</span>
-                <span class="theme-desc">{{ themeDescription(theme) }}</span>
-              </div>
-              <span v-if="themeType === theme.type" class="selected">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <label>{{ t('theme.category.art') }}</label>
-          <div class="theme-list">
-            <button
-              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.art')"
-              :key="theme.type"
-              class="theme-card"
-              :class="{ active: themeType === theme.type }"
-              @click="themeType = theme.type"
-            >
-              <div class="theme-info">
-                <span class="theme-name">{{ themeName(theme) }}</span>
-                <span class="theme-desc">{{ themeDescription(theme) }}</span>
-              </div>
-              <span v-if="themeType === theme.type" class="selected">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <label>{{ t('theme.category.nature') }}</label>
-          <div class="theme-list">
-            <button
-              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.nature')"
-              :key="theme.type"
-              class="theme-card"
-              :class="{ active: themeType === theme.type }"
-              @click="themeType = theme.type"
-            >
-              <div class="theme-info">
-                <span class="theme-name">{{ themeName(theme) }}</span>
-                <span class="theme-desc">{{ themeDescription(theme) }}</span>
-              </div>
-              <span v-if="themeType === theme.type" class="selected">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <label>{{ t('theme.category.tech') }}</label>
-          <div class="theme-list">
-            <button
-              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === 'theme.category.tech')"
+              v-for="theme in availableThemes.filter(theme => themeCategory(theme) === category)"
               :key="theme.type"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
