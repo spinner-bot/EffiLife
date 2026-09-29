@@ -226,40 +226,40 @@ watch(() => appStore.todayStat, () => {
           <span>EffiLife</span>
         </RouterLink>
         <nav class="global-nav-links desktop-nav-links" :aria-label="t('nav.primary')">
-          <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }">
+          <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined">
             <Home :size="16" /> <span>{{ t('nav.home') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+          <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
             <ClipboardList :size="16" /> <span>{{ t('nav.plans') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+          <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
             <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
             <Clock3 :size="16" /> <span>{{ t('nav.records') }}</span>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }">
+          <RouterLink class="global-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }" :aria-current="isSettingsRoute ? 'page' : undefined">
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
           </RouterLink>
         </nav>
-        <button class="global-search-trigger" type="button" :aria-label="t('search.open')" @click="showGlobalSearch = true">
+        <button class="global-search-trigger" type="button" :aria-label="t('search.open')" aria-keyshortcuts="Control+K Meta+K" @click="showGlobalSearch = true">
           <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
       </header>
       <nav class="mobile-bottom-nav theme-card" :aria-label="t('nav.primary')">
-        <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }">
+        <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined">
           <Home :size="19" /> <span>{{ t('nav.home') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
           <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
           <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
           <Clock3 :size="19" /> <span>{{ t('nav.records') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }">
+        <RouterLink class="mobile-bottom-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }" :aria-current="isSettingsRoute ? 'page' : undefined">
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>
