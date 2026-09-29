@@ -2649,7 +2649,14 @@ export function getThemeCssVariables(theme: Theme | undefined): Record<string, s
     '--theme-box-shadow': style.boxShadow || 'none',
     '--theme-text-shadow': style.textShadow || 'none',
     '--theme-bg-gradient': style.bgGradient || 'none',
+    'color-scheme': getColorScheme(style.bgColor),
   }
+}
+
+function getColorScheme(color: string): 'dark' | 'light' {
+  const normalized = color.trim()
+  if (!/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(normalized)) return 'light'
+  return getLuminance(normalized) < 128 ? 'dark' : 'light'
 }
 
 // 计算颜色亮度
