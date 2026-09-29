@@ -405,8 +405,29 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
     }
   }
 
-  // 移动端 Tauri 或浏览器环境，使用浏览器下载
-  // Tauri Mobile 的 WebView 也支持 saveAs 下载
+  // Mobile WebViews do not consistently expose downloaded files. Prefer the
+  // system share sheet when it supports sharing the archive as a file.
+  if (isMobilePlatform() && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    const archiveFile = new File([blob], fileName, { type: 'application/octet-stream' })
+    const canShare = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [archiveFile] })
+    if (canShare) {
+      try {
+        await navigator.share({ title: translate('settings.archive.shareTitle'), files: [archiveFile] })
+        return {
+          success: true,
+          warning: data.planHelper.stale
+            ? data.planHelper.unavailableReason
+            : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+        }
+      } catch (error) {
+        // A deliberate user cancellation must not trigger a second download.
+        if (error instanceof DOMException && error.name === 'AbortError') return { success: false }
+        console.warn('Mobile archive sharing failed; falling back to download:', error)
+      }
+    }
+  }
+
+  // Mobile Tauri or browser environments fall back to a normal download.
   saveAs(blob, fileName)
   return {
     success: true,
