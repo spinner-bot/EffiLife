@@ -790,6 +790,27 @@ async function restoreArchiveRuntimeSnapshot(snapshot: ArchiveRuntimeSnapshot): 
   }
 }
 
+async function restoreOptionalJsonDataset(
+  localKey: string,
+  storeName: string,
+  storeKey: string,
+  value: unknown,
+  idbSet: (storeName: string, key: string, value: unknown) => Promise<unknown>,
+  idbClear: (storeName: string) => Promise<unknown>,
+): Promise<void> {
+  // Undefined means that a legacy archive did not carry this field. Keep the
+  // existing value for backward compatibility; null is an explicit empty
+  // dataset in the canonical archive and must remove stale target data.
+  if (value === undefined) return
+  if (value === null) {
+    localStorage.removeItem(localKey)
+    await idbClear(storeName)
+    return
+  }
+  writeJSON(localKey, value)
+  await idbSet(storeName, storeKey, value)
+}
+
 async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
     const data = await parseArchiveData(zip)
     const runtimeSnapshot = await captureArchiveRuntimeSnapshot()
@@ -799,46 +820,16 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
 
     try {
     // 恢复数据（同时写入 localStorage 和 IndexedDB）
-    if (data.config) {
-      writeJSON(STORAGE_KEYS.CONFIG, data.config)
-      await idbSet(STORE_NAMES.CONFIG, 'config', data.config)
-    }
-    if (data.plans) {
-      writeJSON(STORAGE_KEYS.PLANS, data.plans)
-      await idbSet(STORE_NAMES.PLANS, 'plans', data.plans)
-    }
-    if (data.scheduleRules) {
-      writeJSON(STORAGE_KEYS.SCHEDULE_RULES, data.scheduleRules)
-      await idbSet(STORE_NAMES.SCHEDULE_RULES, 'rules', data.scheduleRules)
-    }
-    if (data.manualPlans) {
-      writeJSON(STORAGE_KEYS.MANUAL_PLANS, data.manualPlans)
-      await idbSet(STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans)
-    }
-    if (data.audioSettings) {
-      writeJSON(STORAGE_KEYS.AUDIO_SETTINGS, data.audioSettings)
-      await idbSet(STORE_NAMES.AUDIO_SETTINGS, 'settings', data.audioSettings)
-    }
-    if (data.eventSettings) {
-      writeJSON(STORAGE_KEYS.EVENT_SETTINGS, data.eventSettings)
-      await idbSet(STORE_NAMES.EVENT_SETTINGS, 'settings', data.eventSettings)
-    }
-    if (data.eventInbox) {
-      writeJSON(STORAGE_KEYS.EVENT_INBOX, data.eventInbox)
-      await idbSet(STORE_NAMES.EVENT_INBOX, 'inbox', data.eventInbox)
-    }
-    if (data.warningInbox) {
-      writeJSON(STORAGE_KEYS.WARNING_INBOX, data.warningInbox)
-      await idbSet(STORE_NAMES.WARNING_INBOX, 'inbox', data.warningInbox)
-    }
-    if (data.dailyTrigger) {
-      writeJSON(STORAGE_KEYS.DAILY_TRIGGER, data.dailyTrigger)
-      await idbSet(STORE_NAMES.DAILY_TRIGGER, 'trigger', data.dailyTrigger)
-    }
-    if (data.checkin) {
-      writeJSON(STORAGE_KEYS.CHECKIN, data.checkin)
-      await idbSet(STORE_NAMES.CHECKIN, 'data', data.checkin)
-    }
+    await restoreOptionalJsonDataset(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config', data.config, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans', data.plans, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.SCHEDULE_RULES, STORE_NAMES.SCHEDULE_RULES, 'rules', data.scheduleRules, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.MANUAL_PLANS, STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings', data.audioSettings, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.EVENT_SETTINGS, STORE_NAMES.EVENT_SETTINGS, 'settings', data.eventSettings, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.EVENT_INBOX, STORE_NAMES.EVENT_INBOX, 'inbox', data.eventInbox, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.WARNING_INBOX, STORE_NAMES.WARNING_INBOX, 'inbox', data.warningInbox, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.DAILY_TRIGGER, STORE_NAMES.DAILY_TRIGGER, 'trigger', data.dailyTrigger, idbSet, idbClear)
+    await restoreOptionalJsonDataset(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data', data.checkin, idbSet, idbClear)
     await TodoSettingsService.save(data.todoSettings)
     if (data.locale === 'zh-CN' || data.locale === 'en-US') {
       localStorage.setItem('effilife_locale', data.locale)

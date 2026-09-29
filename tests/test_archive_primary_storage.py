@@ -69,3 +69,15 @@ def test_archive_import_repairs_plan_task_links_only_with_available_snapshot():
     assert "taskIdsByPlan.get(String(todo.related_plan_id))" in source
     assert "settings.archive.repairedTodoPlanTaskLinks" in source
     assert i18n.count("settings.archive.repairedTodoPlanTaskLinks") == 2
+
+
+def test_archive_import_replaces_nullable_optional_datasets_without_breaking_legacy_missing_fields():
+    source = ARCHIVE.read_text(encoding="utf-8")
+
+    assert "async function restoreOptionalJsonDataset(" in source
+    assert "if (value === undefined) return" in source
+    assert "if (value === null)" in source
+    assert "localStorage.removeItem(localKey)" in source
+    assert "await idbClear(storeName)" in source
+    assert "restoreOptionalJsonDataset(STORAGE_KEYS.CONFIG" in source
+    assert "restoreOptionalJsonDataset(STORAGE_KEYS.CHECKIN" in source
