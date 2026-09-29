@@ -21,5 +21,10 @@ def test_mobile_share_cancel_does_not_trigger_fallback_download():
     assert "saveAs(blob, fileName)" not in share_branch
 
 
+def test_mobile_share_capability_probe_is_exception_safe():
+    assert "try {\n        canShare = navigator.canShare" in ARCHIVE
+    assert "catch {\n        canShare = false" in ARCHIVE
+
+
 def test_mobile_share_title_is_localized():
     assert "'settings.archive.shareTitle':" in I18N

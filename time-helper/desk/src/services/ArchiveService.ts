@@ -409,7 +409,14 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   // system share sheet when it supports sharing the archive as a file.
   if (isMobilePlatform() && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     const archiveFile = new File([blob], fileName, { type: 'application/octet-stream' })
-    const canShare = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [archiveFile] })
+    let canShare = typeof navigator.canShare !== 'function'
+    if (typeof navigator.canShare === 'function') {
+      try {
+        canShare = navigator.canShare({ files: [archiveFile] })
+      } catch {
+        canShare = false
+      }
+    }
     if (canShare) {
       try {
         await navigator.share({ title: translate('settings.archive.shareTitle'), files: [archiveFile] })
