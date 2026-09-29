@@ -402,6 +402,37 @@ def collect_diagnostics(modules):
             "service_ready": bool(url and service_is_ready(url)),
             "needs_setup": bool(module.get("needs_setup")),
         }
+    issues = []
+    hints = []
+    workspace = module_status.get("1", {})
+    if not workspace.get("available"):
+        issues.append({
+            "code": "workspace-unavailable",
+            "severity": "error",
+            "message": workspace.get("unavailable_reason") or "The unified workspace is not available",
+            "hint": "Install Node.js/npm or provide a built Tauri binary or desk/dist/index.html",
+        })
+    for key, status in module_status.items():
+        if status.get("port_occupied") and not status.get("service_ready"):
+            issues.append({
+                "code": "port-conflict",
+                "severity": "error",
+                "module": key,
+                "message": f"Port for {status.get('name')} is occupied by an unhealthy service",
+                "hint": f"Stop the process using {status.get('url')} and run the launcher again",
+            })
+    if not cargo or not rustc:
+        hints.append({
+            "code": "rust-toolchain-missing",
+            "severity": "info",
+            "message": "Rust/Cargo is unavailable; native Tauri installer builds must run in CI or a release machine",
+        })
+    if any(status.get("needs_setup") for status in module_status.values()):
+        hints.append({
+            "code": "dependencies-pending",
+            "severity": "info",
+            "message": "One or more development modules will install npm dependencies on first launch",
+        })
     return {
         "base_dir": str(BASE_DIR),
         "version": app_version(),
@@ -420,6 +451,8 @@ def collect_diagnostics(modules):
             for path in time_helper_binary_paths()
         ],
         "modules": module_status,
+        "issues": issues,
+        "hints": hints,
     }
 
 

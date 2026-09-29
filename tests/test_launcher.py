@@ -418,6 +418,37 @@ def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypat
     }
 
 
+def test_launcher_diagnostics_explain_blockers_and_release_hints(monkeypatch):
+    modules = {
+        "1": {
+            "name": "workspace",
+            "available": False,
+            "unavailable_reason": "missing packaged artifact",
+            "url": "http://127.0.0.1:1420",
+            "needs_setup": False,
+        },
+        "2": {
+            "name": "companion",
+            "available": True,
+            "url": "http://127.0.0.1:8765",
+            "needs_setup": True,
+        },
+    }
+    monkeypatch.setattr(launcher, "find_node", lambda: None)
+    monkeypatch.setattr(launcher, "find_npm", lambda: None)
+    monkeypatch.setattr(launcher, "find_rust_tool", lambda _name: None)
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda url: url.endswith(":8765"))
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: False)
+
+    result = launcher.collect_diagnostics(modules)
+    issue_codes = {item["code"] for item in result["issues"]}
+    hint_codes = {item["code"] for item in result["hints"]}
+    assert "workspace-unavailable" in issue_codes
+    assert "port-conflict" in issue_codes
+    assert "rust-toolchain-missing" in hint_codes
+    assert "dependencies-pending" in hint_codes
+
+
 def test_diagnose_output_uses_ascii_safe_json():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
