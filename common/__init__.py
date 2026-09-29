@@ -21,4 +21,4 @@ from .data_exchange import (
     read_workspace_bundle,
     verify_workspace_bundle,
 )
-from .i18n import I18n
+from .i18n import I18n, LOCALE_FALLBACKS

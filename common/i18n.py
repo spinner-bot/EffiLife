@@ -12,7 +12,10 @@ from typing import Any, Mapping
 
 
 DEFAULT_LOCALE = "zh-CN"
-FALLBACK_LOCALE = "en-US"
+LOCALE_FALLBACKS: dict[str, str] = {
+    "zh-CN": "zh-CN",
+    "en-US": "zh-CN",
+}
 
 
 class I18n:
@@ -43,7 +46,8 @@ class I18n:
     def set_locale(self, locale: str) -> str:
         candidate = str(locale or "").strip()
         if candidate not in self.catalogs:
-            candidate = DEFAULT_LOCALE if DEFAULT_LOCALE in self.catalogs else FALLBACK_LOCALE
+            fallback = LOCALE_FALLBACKS.get(DEFAULT_LOCALE, DEFAULT_LOCALE)
+            candidate = DEFAULT_LOCALE if DEFAULT_LOCALE in self.catalogs else fallback
         self.locale = candidate
         return self.locale
 
@@ -59,8 +63,9 @@ class I18n:
     def translate(self, key: str, locale: str | None = None, **params: Any) -> str:
         requested = locale or self.locale
         value = self._lookup(self.catalogs.get(requested, {}), key)
-        if value is None and requested != FALLBACK_LOCALE:
-            value = self._lookup(self.catalogs.get(FALLBACK_LOCALE, {}), key)
+        fallback = LOCALE_FALLBACKS.get(requested, DEFAULT_LOCALE)
+        if value is None and requested != fallback:
+            value = self._lookup(self.catalogs.get(fallback, {}), key)
         if value is None:
             value = key
         if not isinstance(value, str):
