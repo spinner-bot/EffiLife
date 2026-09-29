@@ -66,6 +66,7 @@ const createTaskMinutes = ref(30)
 const planTemplates = ref<PlanTemplateSummary[]>([])
 const selectedTemplateId = ref('')
 const templatesLoading = ref(false)
+const selectedTemplate = computed(() => planTemplates.value.find((template) => template.id === selectedTemplateId.value) || null)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -964,7 +965,11 @@ onUnmounted(() => {
             <option v-for="template in planTemplates" :key="template.id" :value="template.id">{{ template.name }}</option>
           </select>
         </label>
-        <p v-if="selectedTemplateId" class="create-template-note">{{ t('plans.templateSelected') }}</p>
+        <div v-if="selectedTemplate" class="create-template-note">
+          <strong>{{ selectedTemplate.name }}</strong>
+          <span>{{ selectedTemplate.description }}</span>
+          <small>{{ t('plans.templateType') }} · {{ selectedTemplate.type }}</small>
+        </div>
         <div v-if="!selectedTemplateId" class="create-first-action">
           <strong>{{ t('plans.firstActionTitle') }}</strong>
           <span>{{ t('plans.firstActionHint') }}</span>
@@ -1032,7 +1037,9 @@ onUnmounted(() => {
 .create-first-action > span { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
 .create-first-action label { font-size: 11px; }
 .create-template-field select { border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
-.create-template-note { margin: 0; border-left: 3px solid var(--color-primary); padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; line-height: 1.45; }
+.create-template-note { display: grid; gap: 3px; margin: 0; border-left: 3px solid var(--color-primary); padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; line-height: 1.45; }
+.create-template-note strong { color: var(--color-text-primary); }
+.create-template-note small { color: var(--color-text-tertiary); font-size: 11px; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }

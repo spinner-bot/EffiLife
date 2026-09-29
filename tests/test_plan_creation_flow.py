@@ -13,6 +13,9 @@ def test_plan_creation_requires_a_first_action_then_opens_full_editor():
     assert "createEventPlanFromTemplate(selectedTemplateId.value" in view
     assert "void loadPlanTemplates()" in view
     assert "v-model=\"selectedTemplateId\"" in view
+    assert "const selectedTemplate = computed" in view
+    assert "selectedTemplate.description" in view
+    assert "selectedTemplate.type" in view
     assert "createSectionName.value.trim()" in view
     assert "createTaskContent.value.trim()" in view
     assert "createTaskMinutes.value" in view
