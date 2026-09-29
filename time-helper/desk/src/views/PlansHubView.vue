@@ -63,6 +63,7 @@ const createSectionName = ref('')
 const createSectionInfo = ref('')
 const createTaskContent = ref('')
 const createTaskMinutes = ref(30)
+const createTodosOnCreate = ref(false)
 const planTemplates = ref<PlanTemplateSummary[]>([])
 const selectedTemplateId = ref('')
 const templatesLoading = ref(false)
@@ -224,6 +225,7 @@ function openCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  createTodosOnCreate.value = false
   selectedTemplateId.value = ''
   void loadPlanTemplates()
   errorMessage.value = ''
@@ -237,6 +239,7 @@ function closeCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  createTodosOnCreate.value = false
   selectedTemplateId.value = ''
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
@@ -301,6 +304,7 @@ async function createPlan() {
   isLoading.value = true
   errorMessage.value = ''
   try {
+    const linkTodosAfterCreate = createTodosOnCreate.value
     let createdId: string | number
     if (selectedTemplateId.value) {
       const created = await createEventPlanFromTemplate(selectedTemplateId.value, name, toDateTuple(planDate.value))
@@ -314,6 +318,17 @@ async function createPlan() {
       }])
       createdId = created.id
       selectedPlan.value = await getPlanFull(created.id)
+    }
+    if (linkTodosAfterCreate && selectedPlan.value) {
+      try {
+        const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
+        if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+        if (result.created > 0) notifyToast(t('plans.todosBulkCreated', { count: result.created }), 'success')
+      } catch {
+        // The plan is already created; keep it usable and let the detail page
+        // expose the existing bulk-link action for a later retry.
+        notifyToast(t('plans.todoSyncFailed'), 'error')
+      }
     }
     closeCreatePlan()
     planName.value = ''
@@ -635,43 +650,47 @@ async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number
   }
 }
 
+async function linkPendingPlanTasksToTodos(plan: PlanFull): Promise<{ created: number; failed: number }> {
+  const existingTodos = await TodoService.list()
+  const activeLinks = new Set(
+    existingTodos
+      .filter((todo) => todo.related_plan_id === String(plan.id) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
+      .map((todo) => String(todo.related_plan_task_id)),
+  )
+  const pendingTasks = plan.sections
+    .flatMap((section) => section.tasks)
+    .filter((task) => !task.finish && !activeLinks.has(String(task.internal_id)) && !activeLinks.has(String(task.display_id)))
+  let created = 0
+  let failed = 0
+  for (const task of pendingTasks) {
+    try {
+      await TodoService.create({
+        title: task.content,
+        description: plan.name,
+        related_plan_id: String(plan.id),
+        related_plan_task_id: String(task.internal_id),
+        time_estimate: task.time_minutes,
+        estimated_time: task.time_minutes,
+      })
+      activeLinks.add(String(task.internal_id))
+      created += 1
+    } catch {
+      failed += 1
+    }
+  }
+  await refreshPlanTodoLinks(plan.id)
+  return { created, failed }
+}
+
 async function addAllTasksToTodos() {
   if (isLoading.value || !selectedPlan.value) return
-  const plan = selectedPlan.value
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const existingTodos = await TodoService.list()
-    const activeLinks = new Set(
-      existingTodos
-        .filter((todo) => todo.related_plan_id === String(plan.id) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
-        .map((todo) => String(todo.related_plan_task_id)),
-    )
-    const pendingTasks = plan.sections
-      .flatMap((section) => section.tasks)
-      .filter((task) => !task.finish && !activeLinks.has(String(task.internal_id)) && !activeLinks.has(String(task.display_id)))
-    let created = 0
-    let failed = 0
-    for (const task of pendingTasks) {
-      try {
-        await TodoService.create({
-          title: task.content,
-          description: plan.name,
-          related_plan_id: String(plan.id),
-          related_plan_task_id: String(task.internal_id),
-          time_estimate: task.time_minutes,
-          estimated_time: task.time_minutes,
-        })
-        activeLinks.add(String(task.internal_id))
-        created += 1
-      } catch {
-        failed += 1
-      }
-    }
-    await refreshPlanTodoLinks(plan.id)
-    if (created > 0) notifyToast(t('plans.todosBulkCreated', { count: created }), 'success')
-    if (failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
-    if (created === 0 && failed === 0) notifyToast(t('plans.todosAllLinked'), 'info')
+    const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
+    if (result.created > 0) notifyToast(t('plans.todosBulkCreated', { count: result.created }), 'success')
+    if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+    if (result.created === 0 && result.failed === 0) notifyToast(t('plans.todosAllLinked'), 'info')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
   } finally {
@@ -970,6 +989,10 @@ onUnmounted(() => {
           <span>{{ selectedTemplate.description }}</span>
           <small>{{ t('plans.templateType') }} · {{ selectedTemplate.type }}</small>
         </div>
+        <label class="create-todos-option">
+          <input v-model="createTodosOnCreate" type="checkbox" />
+          <span><strong>{{ t('plans.createTodos') }}</strong><small>{{ t('plans.createTodosHint') }}</small></span>
+        </label>
         <div v-if="!selectedTemplateId" class="create-first-action">
           <strong>{{ t('plans.firstActionTitle') }}</strong>
           <span>{{ t('plans.firstActionHint') }}</span>
@@ -1040,6 +1063,11 @@ onUnmounted(() => {
 .create-template-note { display: grid; gap: 3px; margin: 0; border-left: 3px solid var(--color-primary); padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; line-height: 1.45; }
 .create-template-note strong { color: var(--color-text-primary); }
 .create-template-note small { color: var(--color-text-tertiary); font-size: 11px; }
+.create-todos-option { display: flex !important; align-items: flex-start; gap: 8px; border: 1px solid var(--color-border); border-radius: 10px; padding: 9px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
+.create-todos-option input { margin-top: 2px; accent-color: var(--color-primary); }
+.create-todos-option span { display: grid; gap: 2px; }
+.create-todos-option strong { color: var(--color-text-primary); font-size: 12px; }
+.create-todos-option small { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.4; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }

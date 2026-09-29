@@ -28,6 +28,10 @@ def test_plan_creation_requires_a_first_action_then_opens_full_editor():
     assert "v-model=\"createSectionName\"" in view
     assert "v-model=\"createTaskContent\"" in view
     assert "plans.templateManual" in view
+    assert "const createTodosOnCreate = ref(false)" in view
+    assert "linkPendingPlanTasksToTodos(selectedPlan.value)" in view
+    assert "v-model=\"createTodosOnCreate\"" in view
+    assert "plans.createTodosHint" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 
