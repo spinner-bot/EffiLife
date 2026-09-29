@@ -9,7 +9,10 @@ def test_plan_creation_requires_a_first_action_then_opens_full_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [{" in view
+    assert "await createEventPlan(name, toDateTuple(planDate.value), [{" in view
+    assert "createEventPlanFromTemplate(selectedTemplateId.value" in view
+    assert "void loadPlanTemplates()" in view
+    assert "v-model=\"selectedTemplateId\"" in view
     assert "createSectionName.value.trim()" in view
     assert "createTaskContent.value.trim()" in view
     assert "createTaskMinutes.value" in view
@@ -21,6 +24,7 @@ def test_plan_creation_requires_a_first_action_then_opens_full_editor():
     assert "v-model=\"planDate\"" in view
     assert "v-model=\"createSectionName\"" in view
     assert "v-model=\"createTaskContent\"" in view
+    assert "plans.templateManual" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 

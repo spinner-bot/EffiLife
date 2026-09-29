@@ -14,15 +14,18 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
+  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
   listPlanSummaries,
+  listPlanTemplates,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
+  type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
@@ -60,6 +63,9 @@ const createSectionName = ref('')
 const createSectionInfo = ref('')
 const createTaskContent = ref('')
 const createTaskMinutes = ref(30)
+const planTemplates = ref<PlanTemplateSummary[]>([])
+const selectedTemplateId = ref('')
+const templatesLoading = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -217,6 +223,8 @@ function openCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  selectedTemplateId.value = ''
+  void loadPlanTemplates()
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -228,11 +236,23 @@ function closeCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  selectedTemplateId.value = ''
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
+}
+
+async function loadPlanTemplates(): Promise<void> {
+  templatesLoading.value = true
+  try {
+    planTemplates.value = await listPlanTemplates()
+  } catch {
+    planTemplates.value = []
+  } finally {
+    templatesLoading.value = false
+  }
 }
 
 function openTimePlan() {
@@ -275,20 +295,29 @@ async function retryPlanService() {
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
-  if (!name || !planDate.value || !createSectionName.value.trim() || !createTaskContent.value.trim()) return
+  if (!name || !planDate.value) return
+  if (!selectedTemplateId.value && (!createSectionName.value.trim() || !createTaskContent.value.trim())) return
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const created = await createEventPlan(name, toDateTuple(planDate.value), [{
-      name: createSectionName.value.trim(),
-      info: createSectionInfo.value.trim(),
-      tasks: [{ content: createTaskContent.value.trim(), time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
-    }])
-    selectedPlan.value = await getPlanFull(created.id)
+    let createdId: string | number
+    if (selectedTemplateId.value) {
+      const created = await createEventPlanFromTemplate(selectedTemplateId.value, name, toDateTuple(planDate.value))
+      createdId = created.id
+      selectedPlan.value = created
+    } else {
+      const created = await createEventPlan(name, toDateTuple(planDate.value), [{
+        name: createSectionName.value.trim(),
+        info: createSectionInfo.value.trim(),
+        tasks: [{ content: createTaskContent.value.trim(), time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
+      }])
+      createdId = created.id
+      selectedPlan.value = await getPlanFull(created.id)
+    }
     closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
-    await router.replace({ path: '/plans', query: { plan: String(created.id) } })
+    await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -929,7 +958,14 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
-        <div class="create-first-action">
+        <label v-if="planTemplates.length" class="create-template-field">{{ t('plans.template') }}
+          <select v-model="selectedTemplateId" :disabled="templatesLoading">
+            <option value="">{{ t('plans.templateManual') }}</option>
+            <option v-for="template in planTemplates" :key="template.id" :value="template.id">{{ template.name }}</option>
+          </select>
+        </label>
+        <p v-if="selectedTemplateId" class="create-template-note">{{ t('plans.templateSelected') }}</p>
+        <div v-if="!selectedTemplateId" class="create-first-action">
           <strong>{{ t('plans.firstActionTitle') }}</strong>
           <span>{{ t('plans.firstActionHint') }}</span>
           <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" required /></label>
@@ -995,6 +1031,8 @@ onUnmounted(() => {
 .create-first-action > strong { color: var(--color-text-primary); font-size: 13px; }
 .create-first-action > span { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
 .create-first-action label { font-size: 11px; }
+.create-template-field select { border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
+.create-template-note { margin: 0; border-left: 3px solid var(--color-primary); padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; line-height: 1.45; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
