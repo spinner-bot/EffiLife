@@ -346,7 +346,7 @@ class AudioManagerClass {
   removeCustomBgm(id: string) {
     this.settings.value.customBgmList = this.settings.value.customBgmList.filter(b => b.id !== id)
     if (this.settings.value.currentBgm === id) {
-      this.settings.value.currentBgm = 'default'
+      this.settings.value.currentBgm = DEFAULT_AUDIO_SETTINGS.currentBgm
       this.updateBgm()
     }
     this.saveSettings()
