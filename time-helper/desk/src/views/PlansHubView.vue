@@ -825,18 +825,18 @@ onUnmounted(() => {
             <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>
-        <section v-if="editingMeta && canEditPlan" class="meta-editor theme-card">
+        <form v-if="editingMeta && canEditPlan" class="meta-editor theme-card" @submit.prevent="savePlanMeta">
           <label>{{ t('plans.name') }}<input v-model="planName" /></label>
           <label>{{ t('plans.date') }}<input v-model="planDate" type="date" /></label>
-          <div><button class="plans-secondary" @click="editingMeta = false">{{ t('plans.cancel') }}</button><button class="plans-primary" @click="savePlanMeta">{{ t('plans.save') }}</button></div>
-        </section>
+          <div><button type="button" class="plans-secondary" @click="editingMeta = false">{{ t('plans.cancel') }}</button><button type="submit" class="plans-primary">{{ t('plans.save') }}</button></div>
+        </form>
         <section class="plan-detail-summary theme-card">
           <div><span>{{ t('plans.date') }}</span><strong>{{ formatPlanDate(selectedPlan.date) }}</strong></div>
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
           <div><span>{{ t('plans.completed') }}</span><strong>{{ completedTaskCount }}</strong></div>
           <div class="plan-detail-progress"><span>{{ t('plans.progress') }}</span><strong>{{ selectedPlanProgress }}%</strong><div class="plan-progress-track"><span :style="{ width: `${selectedPlanProgress}%` }" /></div></div>
         </section>
-        <section v-if="canEditPlan" class="log-editor theme-card">
+        <form v-if="canEditPlan" class="log-editor theme-card" @submit.prevent="saveLog">
           <div class="log-editor-heading"><div><strong>{{ t('plans.recordProgress') }}</strong><small>{{ t('plans.recordProgressHint') }}</small></div></div>
           <label>{{ t('plans.logTask') }}
             <select v-model="logTaskId">
@@ -848,9 +848,9 @@ onUnmounted(() => {
           </label>
           <label>{{ t('plans.logDay') }}<input v-model.number="logDay" type="number" min="0" max="31" /></label>
           <label for="plan-log-content">{{ t('plans.logContent') }}</label>
-          <input id="plan-log-content" v-model="logContent" class="log-content-input" :placeholder="t('plans.logContentPlaceholder')" @keyup.enter="saveLog" />
-          <button class="plans-primary" :disabled="isLoading || !logContent.trim()" @click="saveLog">{{ t('plans.record') }}</button>
-        </section>
+          <input id="plan-log-content" v-model="logContent" class="log-content-input" :placeholder="t('plans.logContentPlaceholder')" />
+          <button type="submit" class="plans-primary" :disabled="isLoading || !logContent.trim()">{{ t('plans.record') }}</button>
+        </form>
         <section v-if="selectedPlan.logs.length" class="log-list theme-card">
           <header><strong>{{ t('plans.progressHistory') }}</strong><small>{{ selectedPlan.logs.length }}</small></header>
           <article v-for="log in [...selectedPlan.logs].reverse()" :key="log.index" class="log-row">
@@ -858,30 +858,30 @@ onUnmounted(() => {
             <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
-        <section v-if="canEditPlan" class="section-editor theme-card">
+        <form v-if="canEditPlan" class="section-editor theme-card" @submit.prevent="saveSection">
           <label for="plan-section-name">{{ t('plans.sectionName') }}</label>
           <input id="plan-section-name" v-model="sectionName" :placeholder="t('plans.sectionName')" />
           <label for="plan-section-info">{{ t('plans.sectionInfo') }}</label>
           <input id="plan-section-info" v-model="sectionInfo" :placeholder="t('plans.sectionInfo')" />
-          <div class="section-editor-actions"><button v-if="editingSectionIndex !== null" class="plans-secondary" :disabled="isLoading" @click="cancelSectionEdit">{{ t('plans.cancel') }}</button><button class="plans-secondary" :disabled="isLoading" @click="saveSection"><Pencil v-if="editingSectionIndex !== null" :size="15" /><Plus v-else :size="15" /> {{ editingSectionIndex !== null ? t('plans.saveSection') : t('plans.addSection') }}</button></div>
-        </section>
+          <div class="section-editor-actions"><button v-if="editingSectionIndex !== null" type="button" class="plans-secondary" :disabled="isLoading" @click="cancelSectionEdit">{{ t('plans.cancel') }}</button><button type="submit" class="plans-secondary" :disabled="isLoading"><Pencil v-if="editingSectionIndex !== null" :size="15" /><Plus v-else :size="15" /> {{ editingSectionIndex !== null ? t('plans.saveSection') : t('plans.addSection') }}</button></div>
+        </form>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
           <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
-          <div v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor">
+          <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" autofocus /></label>
             <label class="task-minutes-field">{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
-            <button class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
-            <button class="plans-primary" @click="saveTask">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
-          </div>
-          <div v-if="canEditPlan && groupSectionIndex === section.index" class="group-editor">
+            <button type="button" class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
+            <button type="submit" class="plans-primary">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
+          </form>
+          <form v-if="canEditPlan && groupSectionIndex === section.index" class="group-editor" @submit.prevent="saveGroup">
             <label>{{ t('plans.groupTitle') }}<input v-model="groupTitle" autofocus /></label>
             <label>{{ t('plans.groupDescription') }}<input v-model="groupDescription" /></label>
             <label>{{ t('plans.groupStart') }}<select v-model.number="groupStart"><option v-for="task in section.tasks" :key="`start-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
             <label>{{ t('plans.groupEnd') }}<select v-model.number="groupEnd"><option v-for="task in section.tasks" :key="`end-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
-            <button class="plans-secondary" @click="cancelGroupEdit">{{ t('plans.cancel') }}</button>
-            <button class="plans-primary" :disabled="isLoading || !groupTitle.trim() || groupEnd <= groupStart" @click="saveGroup">{{ editingGroupKey ? t('plans.save') : t('plans.addGroup') }}</button>
-          </div>
+            <button type="button" class="plans-secondary" @click="cancelGroupEdit">{{ t('plans.cancel') }}</button>
+            <button type="submit" class="plans-primary" :disabled="isLoading || !groupTitle.trim() || groupEnd <= groupStart">{{ editingGroupKey ? t('plans.save') : t('plans.addGroup') }}</button>
+          </form>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
             <button class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
