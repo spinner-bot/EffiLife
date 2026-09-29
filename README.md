@@ -199,7 +199,7 @@ python scripts/run_integration.py dashboard
 
 | 模块 | 版本 | 说明 |
 |------|------|------|
-| time-helper | 1.6.1 | 时间记录与统一工作台 |
+| time-helper | 1.7.0 | 时间记录与统一工作台 |
 | plan-helper | 0.3.0 | 计划制定与日程管理 |
 | to-dos | 0.4.0 | 任务清单与待办追踪 |
 | common | 1.0.0 | 跨模块集成层 |
