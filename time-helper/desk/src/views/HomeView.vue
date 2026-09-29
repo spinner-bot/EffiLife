@@ -243,7 +243,6 @@ const overallDashOffset = computed(() => {
 })
 
 onMounted(async () => {
-  await appStore.init()
   await refreshTodoSummary()
   await refreshEventPlanSummary()
   updateTime()

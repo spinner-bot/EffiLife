@@ -15,6 +15,7 @@ export const useAppStore = defineStore('app', () => {
   const todayPlan = ref<DayPlanInfo>({ name: '工作日', type: '切分制' })
   const todayStat = ref<RealTimeStat | null>(null)
   const isLoading = ref(false)
+  let initPromise: Promise<void> | null = null
 
   // 计算属性
   const overtimeThreshold = computed(() => config.value.overtime_threshold)
@@ -23,8 +24,9 @@ export const useAppStore = defineStore('app', () => {
 
   // 初始化
   async function init() {
+    if (initPromise) return initPromise
     isLoading.value = true
-    try {
+    initPromise = (async () => {
       // 执行数据迁移（首次启动时）
       await DataService.init()
 
@@ -48,6 +50,12 @@ export const useAppStore = defineStore('app', () => {
       }
 
       await refreshTodayData()
+    })()
+    try {
+      await initPromise
+    } catch (error) {
+      initPromise = null
+      throw error
     } finally {
       isLoading.value = false
     }
