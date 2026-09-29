@@ -5,16 +5,22 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_uses_a_lightweight_modal_then_opens_full_editor():
+def test_plan_creation_requires_a_first_action_then_opens_full_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const created = await createEventPlan(name, toDateTuple(planDate.value))" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [{" in view
+    assert "createSectionName.value.trim()" in view
+    assert "createTaskContent.value.trim()" in view
+    assert "createTaskMinutes.value" in view
     assert "plans.createEditorHint" in view
+    assert "plans.firstActionTitle" in view
+    assert "plans.firstActionHint" in view
     assert "plans.createAndEdit" in view
-    assert "createSections" not in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view
+    assert "v-model=\"createSectionName\"" in view
+    assert "v-model=\"createTaskContent\"" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 

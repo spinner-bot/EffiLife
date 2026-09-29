@@ -56,6 +56,10 @@ const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
+const createSectionName = ref('')
+const createSectionInfo = ref('')
+const createTaskContent = ref('')
+const createTaskMinutes = ref(30)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -209,6 +213,10 @@ function openCreatePlan() {
   createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
+  createSectionName.value = ''
+  createSectionInfo.value = ''
+  createTaskContent.value = ''
+  createTaskMinutes.value = 30
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -216,6 +224,10 @@ function openCreatePlan() {
 
 function closeCreatePlan() {
   showCreate.value = false
+  createSectionName.value = ''
+  createSectionInfo.value = ''
+  createTaskContent.value = ''
+  createTaskMinutes.value = 30
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
@@ -263,12 +275,15 @@ async function retryPlanService() {
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
-  if (!name || !planDate.value) return
+  if (!name || !planDate.value || !createSectionName.value.trim() || !createTaskContent.value.trim()) return
   isLoading.value = true
   errorMessage.value = ''
   try {
-    // Keep creation lightweight; the detail view is the full-screen editor.
-    const created = await createEventPlan(name, toDateTuple(planDate.value))
+    const created = await createEventPlan(name, toDateTuple(planDate.value), [{
+      name: createSectionName.value.trim(),
+      info: createSectionInfo.value.trim(),
+      tasks: [{ content: createTaskContent.value.trim(), time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
+    }])
     selectedPlan.value = await getPlanFull(created.id)
     closeCreatePlan()
     planName.value = ''
@@ -914,6 +929,14 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
+        <div class="create-first-action">
+          <strong>{{ t('plans.firstActionTitle') }}</strong>
+          <span>{{ t('plans.firstActionHint') }}</span>
+          <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" required /></label>
+          <label>{{ t('plans.sectionInfo') }}<input v-model="createSectionInfo" /></label>
+          <label>{{ t('plans.taskContent') }}<input v-model="createTaskContent" required /></label>
+          <label>{{ t('plans.taskMinutes') }}<input v-model.number="createTaskMinutes" type="number" min="0" step="1" required /></label>
+        </div>
         <p class="create-editor-note">{{ t('plans.createEditorHint') }}</p>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
@@ -968,6 +991,10 @@ onUnmounted(() => {
 .meta-editor input, .section-editor input, .task-editor input, .create-modal input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .meta-editor input:focus, .section-editor input:focus, .task-editor input:focus, .create-modal input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .create-modal { width: min(440px, calc(100vw - 32px)); }
+.create-first-action { display: grid; gap: 8px; margin-top: 4px; border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; background: var(--color-bg-secondary); }
+.create-first-action > strong { color: var(--color-text-primary); font-size: 13px; }
+.create-first-action > span { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
+.create-first-action label { font-size: 11px; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
