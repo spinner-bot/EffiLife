@@ -41,6 +41,10 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow does not pass the matrix bundle target to Tauri")
     if "scripts/verify_release_artifacts.py" not in workflow:
         errors.append("release workflow has no packaged installer artifact verification step")
+    if "actions/download-artifact@v4" not in workflow or "gh release create" not in workflow:
+        errors.append("release workflow has no tagged GitHub Release publication step")
+    if "needs:" not in workflow or "compatibility" not in workflow or "build" not in workflow:
+        errors.append("release publication does not wait for compatibility and desktop builds")
     for runner, bundle, extension, artifact in (
         ("windows-latest", "nsis", ".exe", "bundle/nsis/*.exe"),
         ("ubuntu-22.04", "deb", ".deb", "bundle/deb/*.deb"),

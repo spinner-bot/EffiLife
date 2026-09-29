@@ -133,3 +133,30 @@ jobs:
             ${{ matrix.artifact }}
             release-checksums/EffiLife-${{ matrix.name }}.sha256
           if-no-files-found: error
+
+  publish:
+    name: publish tagged release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - compatibility
+      - build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: EffiLife-*-installer
+          merge-multiple: true
+          path: release-assets
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t assets < <(find release-assets -type f -print)
+          test "${#assets[@]}" -gt 0
+          gh release create "${GITHUB_REF_NAME}" "${assets[@]}" \
+            --title "EffiLife ${GITHUB_REF_NAME}" \
+            --generate-notes
