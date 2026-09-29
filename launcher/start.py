@@ -456,6 +456,42 @@ def collect_diagnostics(modules):
     }
 
 
+def print_doctor_report(report):
+    """Render the read-only diagnostic report for people, not parsers."""
+    print("EffiLife launcher doctor")
+    print(f"Version: {report.get('version') or 'unknown'}")
+    print(f"Mode: {report.get('launch_mode')}")
+    print(f"Python: {report.get('python')}")
+    print(f"Node: {report.get('node') or 'missing'}")
+    print(f"npm: {report.get('npm') or 'missing'}")
+    print()
+
+    workspace = report.get("modules", {}).get("1", {})
+    workspace_state = "ready" if workspace.get("available") else "blocked"
+    if workspace.get("service_ready"):
+        workspace_state = "already running"
+    print(f"Unified workspace: {workspace_state}")
+    if workspace.get("url"):
+        print(f"Workspace URL: {workspace['url']}")
+
+    issues = report.get("issues", [])
+    hints = report.get("hints", [])
+    if issues:
+        print("\nBlocking issues:")
+        for issue in issues:
+            print(f"  [ERROR] {issue.get('message')}")
+            if issue.get("hint"):
+                print(f"          Next: {issue['hint']}")
+    else:
+        print("\nBlocking issues: none")
+    if hints:
+        print("\nInformation:")
+        for hint in hints:
+            print(f"  [INFO] {hint.get('message')}")
+    print("\nResult: " + ("BLOCKED" if issues else "READY"))
+    return not issues
+
+
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -808,6 +844,10 @@ def main():
         # Keep diagnostics copyable across Windows code pages. JSON consumers
         # decode the escaped Unicode path back to its original value.
         print(json.dumps(collect_diagnostics(modules), ensure_ascii=True, indent=2))
+        return
+    if "--doctor" in sys.argv:
+        if not print_doctor_report(collect_diagnostics(modules)):
+            raise SystemExit(1)
         return
     if "--unified" in sys.argv or "--legacy-menu" not in sys.argv:
         run_module("1", modules, open_browser="--no-browser" not in sys.argv)

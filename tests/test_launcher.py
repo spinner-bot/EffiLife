@@ -454,6 +454,31 @@ def test_diagnose_output_uses_ascii_safe_json():
     assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
 
 
+def test_launcher_doctor_renders_actionable_human_output(capsys):
+    report = {
+        "version": "1.7.0",
+        "launch_mode": "development",
+        "python": "python.exe",
+        "node": None,
+        "npm": None,
+        "modules": {"1": {"available": False, "url": "http://127.0.0.1:1420"}},
+        "issues": [{"message": "workspace missing", "hint": "Install Node.js/npm"}],
+        "hints": [{"message": "Rust is only needed for installers"}],
+    }
+    assert launcher.print_doctor_report(report) is False
+    output = capsys.readouterr().out
+    assert "EffiLife launcher doctor" in output
+    assert "Blocking issues:" in output
+    assert "Next: Install Node.js/npm" in output
+    assert "Result: BLOCKED" in output
+
+
+def test_launcher_doctor_is_wired_before_normal_startup():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+    assert 'if "--doctor" in sys.argv:' in source
+    assert "print_doctor_report(collect_diagnostics(modules))" in source
+
+
 def test_launcher_exposes_a_scriptable_version_command():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert 'if "--version" in sys.argv:' in source
