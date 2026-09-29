@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { useI18n } from '@/i18n'
 
-const { locale, setLocale, t, localeOptions } = useI18n()
+const { locale, setLocale, t, localeDefinitions } = useI18n()
 </script>
 
 <template>
   <label class="locale-switcher">
     <span>{{ t('locale.label') }}</span>
     <select v-model="locale" @change="setLocale(locale)">
-      <option v-for="option in localeOptions" :key="option" :value="option">{{ t(`locale.${option}`) }}</option>
+      <option v-for="option in localeDefinitions" :key="option.code" :value="option.code">{{ t(option.labelKey) }}</option>
     </select>
   </label>
 </template>

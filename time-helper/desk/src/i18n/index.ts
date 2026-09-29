@@ -2,8 +2,18 @@ import { ref } from 'vue'
 
 export type Locale = 'zh-CN' | 'en-US'
 
+export interface LocaleDefinition {
+  code: Locale
+  labelKey: string
+  fallback: Locale
+}
+
 const STORAGE_KEY = 'efflife_locale'
-export const SUPPORTED_LOCALES: readonly Locale[] = ['zh-CN', 'en-US']
+export const LOCALE_DEFINITIONS: readonly LocaleDefinition[] = [
+  { code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN' },
+  { code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN' },
+]
+export const SUPPORTED_LOCALES: readonly Locale[] = LOCALE_DEFINITIONS.map(({ code }) => code)
 
 const catalogs: Record<Locale, Record<string, string>> = {
   'zh-CN': {
@@ -2319,7 +2329,7 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
 }
 
 export function setLocale(next: string): void {
-  currentLocale.value = next === 'en-US' ? 'en-US' : 'zh-CN'
+  currentLocale.value = LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'
   syncDocumentLocale(currentLocale.value)
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, currentLocale.value)
@@ -2339,5 +2349,6 @@ export function useI18n() {
     setLocale,
     t: translate,
     localeOptions: [...SUPPORTED_LOCALES],
+    localeDefinitions: [...LOCALE_DEFINITIONS],
   }
 }
