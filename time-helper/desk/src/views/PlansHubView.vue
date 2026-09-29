@@ -120,6 +120,11 @@ function openLinkedTodo(task: PlanFull['sections'][number]['tasks'][number]): vo
   if (todoId) router.push({ path: '/tasks', query: { todo: todoId } })
 }
 
+function openLinkedTaskRecord(task: PlanFull['sections'][number]['tasks'][number]): void {
+  const todoId = linkedTodoIdsByTask.value.get(String(task.internal_id)) || linkedTodoIdsByTask.value.get(String(task.display_id))
+  if (todoId) router.push({ path: '/records', query: { todo: todoId } })
+}
+
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (isLoading.value) return
   void refreshFromWorkspace(source).catch((error) => {
@@ -957,6 +962,7 @@ onUnmounted(() => {
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
             <button v-if="canEditPlan && !task.finish" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading" :aria-label="isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" @click="isTaskLinkedToTodo(task) ? openLinkedTodo(task) : addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo') }}</button>
+            <button v-if="isTaskLinkedToTodo(task)" class="task-time" :disabled="isLoading" :aria-label="t('plans.recordTodoTime')" @click="openLinkedTaskRecord(task)"><Clock3 :size="14" /><span>{{ t('plans.recordTodoTime') }}</span></button>
             <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
             <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
           </article>
@@ -1112,6 +1118,8 @@ onUnmounted(() => {
 .task-todo { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .task-todo:hover { color: var(--color-primary); }
 .task-todo.linked { color: var(--color-success, #16a34a); background: color-mix(in srgb, var(--color-success, #16a34a) 12%, var(--color-bg-secondary)); cursor: default; }
+.task-time { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
+.task-time:hover { filter: brightness(1.05); }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .event-task-row.finished span { text-decoration: line-through; }
@@ -1140,5 +1148,5 @@ onUnmounted(() => {
 .create-editor-note { border: 1px solid var(--color-primary-muted); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); line-height: 1.5; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>
