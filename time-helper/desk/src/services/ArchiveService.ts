@@ -109,7 +109,7 @@ export interface ArchiveData {
   dailyTrigger: Record<string, unknown> | null
   checkin: Record<string, unknown> | null
   locale?: string
-  records: Record<string, unknown[]>
+  records?: Record<string, unknown[]>
   todos: UnifiedTodo[]
   categories: TodoCategory[]
   todoSettings: TodoSettings
@@ -145,7 +145,7 @@ function summarizeArchive(data: ArchiveData): ArchivePreview {
     exportDate: data.exportDate,
     planCount: Array.isArray(data.planHelper?.plans) ? data.planHelper.plans.length : 0,
     todoCount: data.todos.length,
-    recordCount: Object.values(data.records).reduce((total, records) => total + records.length, 0),
+    recordCount: Object.values(data.records || {}).reduce((total, records) => total + records.length, 0),
     categoryCount: data.categories.length,
     repairedLinkCount: (data.importRepairs?.todoRecordLinks || 0) + (data.importRepairs?.todoPlanTaskLinks || 0),
     planStatus,
@@ -600,14 +600,14 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   if (importedTodos.some((todo) => todo === null)) {
     throw new Error(translate('settings.archive.legacyTodoInvalid'))
   }
-  const records = normalizeImportedRecords(legacy.records)
-  const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], records)
+  const legacyRecords = legacy.records === undefined ? undefined : normalizeImportedRecords(legacy.records)
+  const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], legacyRecords || {})
   const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, legacy.planHelper)
   const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
     ...legacy,
     archiveIntegrity: 'legacy',
-    records,
+    records: legacyRecords,
     locale: legacy.locale || 'zh-CN',
     todos: repairedPlanLinks.todos,
     categories,

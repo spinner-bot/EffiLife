@@ -61,3 +61,11 @@ def test_archive_import_rejects_partial_canonical_bundles_before_writing():
     assert "const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter" in source
     assert "settings.archive.missingDatasets" in source
     assert i18n.count("'settings.archive.missingDatasets'") == 2
+
+
+def test_legacy_archive_missing_records_preserves_current_data():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "records?: Record<string, unknown[]>" in source
+    assert "const legacyRecords = legacy.records === undefined ? undefined" in source
+    assert "records: legacyRecords" in source
+    assert "if (data.records)" in source
