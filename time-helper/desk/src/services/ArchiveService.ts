@@ -117,13 +117,15 @@ export interface ArchiveData {
     todoRecordLinks: number
     todoPlanTaskLinks: number
   }
-  planHelper: {
-    available: boolean
-    plans: unknown[]
-    unavailableReason?: string
-    stale?: boolean
-  }
+  planHelper?: PlanHelperData
   archiveIntegrity?: 'verified' | 'legacy'
+}
+
+type PlanHelperData = {
+  available: boolean
+  plans: unknown[]
+  unavailableReason?: string
+  stale?: boolean
 }
 
 export interface ArchivePreview {
@@ -243,7 +245,7 @@ async function readCachedPlanHelperData(): Promise<unknown[] | null> {
   }
 }
 
-async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
+async function collectPlanHelperData(): Promise<PlanHelperData> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     try {
       const { get, STORE_NAMES } = await import('@/storage')
@@ -278,7 +280,7 @@ async function collectPlanHelperData(): Promise<ArchiveData['planHelper']> {
 }
 
 // 收集所有数据
-async function collectPlanHelperDataWithCache(): Promise<ArchiveData['planHelper']> {
+async function collectPlanHelperDataWithCache(): Promise<PlanHelperData> {
   const live = await collectPlanHelperData()
   if (live.available || getPlanRuntime() === 'mobile-unavailable') return live
   const cachedPlans = await readCachedPlanHelperData()
@@ -322,7 +324,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const zip = new JSZip()
 
   // 使用公共层约定的 manifest + datasets 协议导出。
-  const { records, todos, categories, planHelper, ...app } = data
+  const { records, todos, categories, planHelper = { available: false, plans: [] }, ...app } = data
   const datasets = [...CANONICAL_ARCHIVE_DATASETS]
   const datasetPayloads = {
     app: canonicalJson(app),
@@ -400,9 +402,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
       return {
         success: true,
         path: filePath,
-        warning: data.planHelper.stale
-          ? data.planHelper.unavailableReason
-          : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+        warning: planHelper.stale
+          ? planHelper.unavailableReason
+          : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
       }
     } catch (e) {
       // Tauri API 失败，回退到浏览器下载
@@ -427,9 +429,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
         await navigator.share({ title: translate('settings.archive.shareTitle'), files: [archiveFile] })
         return {
           success: true,
-          warning: data.planHelper.stale
-            ? data.planHelper.unavailableReason
-            : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+          warning: planHelper.stale
+            ? planHelper.unavailableReason
+            : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
         }
       } catch (error) {
         // A deliberate user cancellation must not trigger a second download.
@@ -443,9 +445,9 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   saveAs(blob, fileName)
   return {
     success: true,
-    warning: data.planHelper.stale
-      ? data.planHelper.unavailableReason
-      : data.planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+    warning: planHelper.stale
+      ? planHelper.unavailableReason
+      : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
   }
 }
 
@@ -613,7 +615,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     categories,
     todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
     importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
-    planHelper: legacy.planHelper || { available: false, plans: [] },
+    planHelper: legacy.planHelper,
   }
 }
 
@@ -889,7 +891,10 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
       }
     }
-    if (getPlanRuntime() === 'mobile-unavailable') {
+    if (data.planHelper === undefined) {
+      // Legacy archives may not contain plan-helper data. Preserve the
+      // current snapshot instead of treating an absent field as an empty one.
+    } else if (getPlanRuntime() === 'mobile-unavailable') {
       if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
         await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
       } else {
