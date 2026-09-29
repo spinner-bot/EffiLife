@@ -28,6 +28,7 @@ const todoOptions = computed(() => {
   return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
 })
 const todoTitleById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo.title])))
+const todoById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo])))
 const linkedTodoFromQuery = computed(() => {
   const value = route.query.todo
   return typeof value === 'string' ? value : ''
@@ -45,6 +46,18 @@ let stopWorkspaceListener: (() => void) | null = null
 
 function openLinkedTodo(todoId: string) {
   router.push({ path: '/tasks', query: { todo: todoId } })
+}
+
+function openLinkedPlan(todoId: string): void {
+  const todo = todoById.value.get(todoId)
+  if (!todo?.related_plan_id) return
+  router.push({
+    path: '/plans',
+    query: {
+      plan: todo.related_plan_id,
+      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
+    },
+  })
 }
 
 function preselectLinkedTodo(): void {
@@ -375,6 +388,15 @@ onUnmounted(() => {
           >
             {{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}
           </button>
+          <button
+            v-if="record.todo_id && todoById.get(record.todo_id)?.related_plan_id"
+            type="button"
+            class="record-plan-link"
+            :title="t('records.openPlan')"
+            @click="openLinkedPlan(record.todo_id)"
+          >
+            {{ t('records.linkedPlan') }}
+          </button>
           <div class="record-actions">
             <button class="icon-btn" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
@@ -608,7 +630,8 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-sm);
 }
 
-.record-todo-link {
+.record-todo-link,
+.record-plan-link {
   display: inline-block;
   margin-bottom: var(--spacing-sm);
   border: 0;
@@ -620,7 +643,8 @@ onUnmounted(() => {
   color: var(--color-primary);
   font-size: 0.75rem;
 }
-.record-todo-link:hover { text-decoration: underline; }
+.record-todo-link:hover,
+.record-plan-link:hover { text-decoration: underline; }
 
 .record-actions {
   display: flex;
