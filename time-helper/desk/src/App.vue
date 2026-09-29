@@ -49,8 +49,14 @@ const searchShortcut = computed(() => {
   return /Mac|iPhone|iPad/.test(platform) ? '⌘K' : 'Ctrl K'
 })
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+}
+
 function onGlobalKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    if (isEditableTarget(event.target)) return
     event.preventDefault()
     showGlobalSearch.value = true
   } else if (event.key === 'Escape') {
