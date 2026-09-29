@@ -58,6 +58,19 @@ def test_integration_explicit_root_is_forwarded_to_auth(monkeypatch, tmp_path):
     AuthManager.reset_instance()
 
 
+def test_integration_environment_root_is_forwarded_to_auth(monkeypatch, tmp_path):
+    root = tmp_path / "workspace"
+    monkeypatch.setenv("EFFILIFE_DATA_DIR", str(root))
+    DataManager.reset_instance()
+    AuthManager.reset_instance()
+
+    integration = EffiLifeIntegration()
+
+    assert integration.auth_manager.data_dir == root / "user"
+    DataManager.reset_instance()
+    AuthManager.reset_instance()
+
+
 def test_integration_registers_modules_under_configured_root(monkeypatch, tmp_path):
     root = tmp_path / "workspace"
     monkeypatch.setenv("EFFILIFE_DATA_DIR", str(root))

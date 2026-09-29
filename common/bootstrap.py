@@ -45,8 +45,10 @@ class EffiLifeIntegration:
         # 核心组件
         self.event_bus = EventBus.get_instance()
         self.data_manager = DataManager.get_instance(data_root)
-        auth_data_dir = Path(data_root) / 'user' if data_root is not None else None
-        self.auth_manager = AuthManager.get_instance(auth_data_dir)
+        # DataManager resolves explicit roots and EFFILIFE_DATA_DIR alike;
+        # reuse that resolved directory so authentication cannot drift to a
+        # different default when only the environment is configured.
+        self.auth_manager = AuthManager.get_instance(str(self.data_manager.user_dir))
         self.gateway = APIGateway.get_instance()
 
         # 事件处理器
