@@ -17,3 +17,9 @@ def test_all_static_frontend_translation_calls_exist_in_both_locales():
 
     missing = sorted(key for key in used if catalog.count(f"'{key}'") < 2)
     assert not missing, f"missing bilingual frontend translation keys: {missing}"
+
+
+def test_runtime_event_service_localizes_missed_checkin_copy():
+    event_system = (SRC / "audio" / "EventSystem.ts").read_text(encoding="utf-8")
+    assert "entry.title = translate('settings.events.runtime.missedCheckinTitle')" in event_system
+    assert "entry.message = translate('settings.events.runtime.missedCheckinMessage', { date, planName })" in event_system
