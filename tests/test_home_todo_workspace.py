@@ -51,6 +51,21 @@ def test_home_todo_summary_survives_category_storage_failure():
     assert "TodoCategoryService.list().catch(() => [])" in source
 
 
+def test_home_linked_todos_can_return_to_their_plan_task():
+    source = HOME.read_text(encoding="utf-8")
+    assert "function openTodoPlan(todo: UnifiedTodo)" in source
+    assert "plan: todo.related_plan_id" in source
+    assert "task: todo.related_plan_task_id" in source
+    assert 'class="today-todo-plan"' in source
+    assert "home.openPlanReference" in source
+
+
+def test_home_plan_reference_copy_is_bilingual():
+    source = I18N.read_text(encoding="utf-8")
+    for key in ("home.openPlanReference", "home.linkedPlan"):
+        assert source.count(f"'{key}'") == 2
+
+
 def test_home_refreshes_unified_summaries_after_workspace_changes():
     source = HOME.read_text(encoding="utf-8")
     assert "onWorkspaceChanged" in source

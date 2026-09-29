@@ -108,6 +108,17 @@ function openTodoRecord(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
+function openTodoPlan(todo: UnifiedTodo) {
+  if (!todo.related_plan_id) return
+  router.push({
+    path: '/plans',
+    query: {
+      plan: todo.related_plan_id,
+      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
+    },
+  })
+}
+
 async function refreshEventPlanSummary() {
   eventPlanState.value = 'loading'
   try {
@@ -131,6 +142,7 @@ const stopWorkspaceListener = onWorkspaceChanged(scheduleWorkspaceSummaryRefresh
 
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
+const planNameById = computed(() => Object.fromEntries(eventPlans.value.map((plan) => [plan.id, plan.name])))
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
@@ -457,6 +469,17 @@ onUnmounted(() => {
                   <span v-if="formatTodoTime(todo)" class="today-todo-time">{{ formatTodoTime(todo) }}</span>
                 </span>
               </span>
+            </button>
+            <button
+              v-if="todo.related_plan_id"
+              class="today-todo-plan"
+              type="button"
+              :aria-label="t('home.openPlanReference')"
+              :title="t('home.openPlanReference')"
+              @click.stop="openTodoPlan(todo)"
+            >
+              <ClipboardList :size="14" />
+              <span>{{ planNameById[todo.related_plan_id] || t('home.linkedPlan') }}</span>
             </button>
             <button class="today-todo-record" type="button" :aria-label="t('home.recordTodoTime')" :title="t('home.recordTodoTime')" @click.stop="openTodoRecord(todo)">
               <Clock3 :size="14" />
@@ -964,7 +987,7 @@ onUnmounted(() => {
 .today-todos-eyebrow { margin: 0 0 4px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .today-todos-link { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; color: var(--color-primary); font-size: 12px; }
 .today-todos-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
-.today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
+.today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
 .today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
 .today-todo-complete:disabled { cursor: wait; opacity: .65; }
@@ -973,6 +996,9 @@ onUnmounted(() => {
 .today-todo-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .today-todo-meta { display: flex; flex-wrap: wrap; gap: 8px; color: var(--color-text-tertiary); font-size: 11px; }
 .today-todo-deadline, .today-todo-time { white-space: nowrap; }
+.today-todo-plan { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; padding: 5px 8px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
+.today-todo-plan span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.today-todo-plan:hover, .today-todo-plan:focus-visible { border-color: var(--color-primary); outline: 0; }
 .today-todo-record { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
 .today-todo-record:hover, .today-todo-record:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
 .today-todos-more { margin: 3px 0 0 29px; color: var(--color-text-tertiary); font-size: 11px; }
@@ -982,6 +1008,8 @@ onUnmounted(() => {
   .event-overview-card { min-height: 180px; }
   .today-todos-header { align-items: center; }
   .today-todo-deadline { display: none; }
+  .today-todo-plan { max-width: 32px; padding: 5px; }
+  .today-todo-plan span { display: none; }
 }
 
 .stats-header-row {
