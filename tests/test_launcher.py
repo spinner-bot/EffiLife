@@ -406,10 +406,16 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
 
 def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["start.py", "--packaged", "--diagnose"])
+    monkeypatch.setattr(launcher, "find_rust_tool", lambda name: f"{name}.exe")
     result = launcher.collect_diagnostics({})
     assert result["launch_mode"] == "packaged"
     assert result["time_helper_binaries"]
     assert all("path" in item and "exists" in item for item in result["time_helper_binaries"])
+    assert result["rust_toolchain"] == {
+        "cargo": "cargo.exe",
+        "rustc": "rustc.exe",
+        "available": True,
+    }
 
 
 def test_diagnose_output_uses_ascii_safe_json():

@@ -90,6 +90,11 @@ def find_node():
     return next((str(path) for path in candidates if path.exists()), None)
 
 
+def find_rust_tool(name):
+    """Find a Rust toolchain executable for release diagnostics."""
+    return shutil.which(name) or shutil.which(f"{name}.exe")
+
+
 def node_environment():
     """Build an environment that can run npm and its child processes."""
     env = os.environ.copy()
@@ -380,6 +385,8 @@ def collect_diagnostics(modules):
     """Collect startup facts without starting or mutating any process."""
     node = find_node()
     npm = find_npm()
+    cargo = find_rust_tool("cargo")
+    rustc = find_rust_tool("rustc")
     module_status = {}
     for key, module in modules.items():
         url = module.get("url")
@@ -402,6 +409,11 @@ def collect_diagnostics(modules):
         "python": sys.executable,
         "node": node,
         "npm": npm,
+        "rust_toolchain": {
+            "cargo": cargo,
+            "rustc": rustc,
+            "available": bool(cargo and rustc),
+        },
         "launch_mode": "packaged" if packaged_mode() else "development",
         "time_helper_binaries": [
             {"path": str(path), "exists": path.exists()}
