@@ -8,6 +8,7 @@
     "build": "vue-tsc && vite build",
     "build:sidecar": "python ../../scripts/build_plan_helper_sidecar.py",
     "release:check": "python ../../scripts/check_release_config.py",
+    "release:mobile-check": "python ../../scripts/check_mobile_release_config.py",
     "preview": "vite preview",
     "tauri": "tauri"
   },
