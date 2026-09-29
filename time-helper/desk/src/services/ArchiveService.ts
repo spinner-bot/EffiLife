@@ -139,6 +139,10 @@ export interface ArchivePreview {
   integrity: 'verified' | 'legacy'
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
 function summarizeArchive(data: ArchiveData): ArchivePreview {
   const planStatus = data.planHelper?.available
     ? data.planHelper.stale ? 'stale' : 'available'
@@ -544,6 +548,18 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
         if (error instanceof Error && error.message === checksumError) throw error
           throw new Error(translate('settings.archive.datasetInvalid', { name }))
       }
+    }
+
+    if (!isObjectRecord(datasets.app)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'app' }))
+    if (!Array.isArray(datasets.todos)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'todos' }))
+    if (!Array.isArray(datasets.todo_categories)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'todo_categories' }))
+    if (!isObjectRecord(datasets.records)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'records' }))
+    for (const records of Object.values(datasets.records)) {
+      if (!Array.isArray(records)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'records' }))
+    }
+    if (!isObjectRecord(datasets.plan_helper)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'plan_helper' }))
+    if ('plans' in datasets.plan_helper && !Array.isArray(datasets.plan_helper.plans)) {
+      throw new Error(translate('settings.archive.datasetInvalid', { name: 'plan_helper' }))
     }
 
     const app = (datasets.app && typeof datasets.app === 'object') ? datasets.app as Partial<ArchiveData> : {}

@@ -69,3 +69,13 @@ def test_legacy_archive_missing_records_preserves_current_data():
     assert "const legacyRecords = legacy.records === undefined ? undefined" in source
     assert "records: legacyRecords" in source
     assert "if (data.records)" in source
+
+
+def test_frontend_rejects_invalid_canonical_dataset_shapes():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "function isObjectRecord(value: unknown)" in source
+    assert "datasetInvalid', { name: 'app' }" in source
+    assert "datasetInvalid', { name: 'todos' }" in source
+    assert "datasetInvalid', { name: 'todo_categories' }" in source
+    assert "datasetInvalid', { name: 'records' }" in source
+    assert "datasetInvalid', { name: 'plan_helper' }" in source
