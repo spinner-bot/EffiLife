@@ -51,7 +51,7 @@ function preselectLinkedTodo(): void {
   const todoId = linkedTodoFromQuery.value
   if (!todoId || !todos.value.some((todo) => todo.id === todoId)) return
   openAddForm()
-  selectedTodoId.value = todoId
+  selectedTodoId.value = linkedTodoFromQuery.value
 }
 
 // 获取当前计划的标签列表
