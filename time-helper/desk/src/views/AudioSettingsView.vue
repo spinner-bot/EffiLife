@@ -61,6 +61,12 @@ function selectBgm(bgmId: string) {
   updateAudioSetting('currentBgm', bgmId)
 }
 
+function selectBgmFromKeyboard(event: KeyboardEvent, bgmId: string) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  selectBgm(bgmId)
+}
+
 function addCustomBgm() {
   const input = document.createElement('input')
   input.type = 'file'
@@ -176,12 +182,12 @@ const currentTab = ref<SettingTab>('audio')
               {{ t('settings.audio.custom') }}
               <button class="add-bgm-btn" @click="addCustomBgm"><Plus :size="14" /></button>
             </div>
-            <button v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
+            <div v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" role="button" tabindex="0" @click="selectBgm(bgm.id)" @keydown="selectBgmFromKeyboard($event, bgm.id)">
               <Music :size="16" />
               <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
               <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
-            </button>
+            </div>
             <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">{{ t('settings.audio.addHint') }}</div>
           </div>
         </section>
