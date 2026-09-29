@@ -133,10 +133,14 @@ export interface ArchivePreview {
   recordCount: number
   categoryCount: number
   repairedLinkCount: number
+  planStatus: 'available' | 'stale' | 'unavailable'
   integrity: 'verified' | 'legacy'
 }
 
 function summarizeArchive(data: ArchiveData): ArchivePreview {
+  const planStatus = data.planHelper?.available
+    ? data.planHelper.stale ? 'stale' : 'available'
+    : 'unavailable'
   return {
     exportDate: data.exportDate,
     planCount: Array.isArray(data.planHelper?.plans) ? data.planHelper.plans.length : 0,
@@ -144,6 +148,7 @@ function summarizeArchive(data: ArchiveData): ArchivePreview {
     recordCount: Object.values(data.records).reduce((total, records) => total + records.length, 0),
     categoryCount: data.categories.length,
     repairedLinkCount: (data.importRepairs?.todoRecordLinks || 0) + (data.importRepairs?.todoPlanTaskLinks || 0),
+    planStatus,
     integrity: data.archiveIntegrity || 'legacy',
   }
 }

@@ -476,7 +476,12 @@ function formatArchivePreview(preview: ArchivePreview): string {
   const integrity = preview.integrity === 'verified'
     ? t('settings.archive.integrityVerified')
     : t('settings.archive.integrityLegacy')
-  return `${summary}\n${integrity}`
+  const planStatus = preview.planStatus === 'available'
+    ? t('settings.archive.planSnapshotLive')
+    : preview.planStatus === 'stale'
+      ? t('settings.archive.planSnapshotStale')
+      : t('settings.archive.planSnapshotUnavailable')
+  return `${summary}\n${planStatus}\n${integrity}`
 }
 
 function openLegacyTodoImport() {

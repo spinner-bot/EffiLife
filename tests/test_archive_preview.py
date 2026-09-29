@@ -40,6 +40,20 @@ def test_archive_preview_exposes_integrity_status_to_confirmation():
     assert "settings.archive.integrityLegacy" in settings
 
 
+def test_archive_preview_discloses_plan_snapshot_status():
+    service = SERVICE.read_text(encoding="utf-8")
+    settings = SETTINGS.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+
+    assert "planStatus: 'available' | 'stale' | 'unavailable'" in service
+    assert "data.planHelper.stale ? 'stale' : 'available'" in service
+    assert "preview.planStatus === 'available'" in settings
+    assert "settings.archive.planSnapshotLive" in settings
+    assert "settings.archive.planSnapshotStale" in settings
+    assert i18n.count("'settings.archive.planSnapshotLive'") == 2
+    assert i18n.count("'settings.archive.planSnapshotStale'") == 2
+
+
 def test_archive_import_rejects_partial_canonical_bundles_before_writing():
     source = SERVICE.read_text(encoding="utf-8")
     i18n = I18N.read_text(encoding="utf-8")
