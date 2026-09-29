@@ -838,6 +838,15 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     const data = await parseArchiveData(zip)
     const runtimeSnapshot = await captureArchiveRuntimeSnapshot()
 
+    // Keep a persistent recovery point in addition to the in-process rollback.
+    // This remains available after the import succeeds and the page reloads.
+    try {
+      const { createBackup } = await import('@/storage')
+      await createBackup('archive_import', runtimeSnapshot)
+    } catch (error) {
+      console.warn('Failed to persist archive import checkpoint:', error)
+    }
+
     // 导入存储模块
     const { set: idbSet, putRaw, STORE_NAMES, clear: idbClear } = await import('@/storage')
 

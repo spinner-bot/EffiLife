@@ -1,6 +1,6 @@
 // 自动备份模块 - 数据变更时自动备份
 
-import { set, STORE_NAMES } from './indexedDB'
+import { clear, putRaw, set, STORE_NAMES } from './indexedDB'
 import { isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
 import { notifyWorkspaceChanged, type WorkspaceChangeSource } from '@/services/workspaceEvents'
 
@@ -16,6 +16,11 @@ export interface BackupData {
   module: string
   timestamp: string
   data: unknown
+}
+
+interface ArchiveImportSnapshot {
+  localStorage: Record<string, string>
+  stores: Record<string, unknown[]>
 }
 
 // 防抖计时器
@@ -176,6 +181,35 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
 
   // 根据模块类型恢复数据
   switch (backup.module) {
+    case 'archive_import': {
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Invalid archive import backup')
+      }
+      const snapshot = data as unknown as Partial<ArchiveImportSnapshot>
+      if (!snapshot.localStorage || typeof snapshot.localStorage !== 'object' || Array.isArray(snapshot.localStorage)) {
+        throw new Error('Invalid archive import localStorage snapshot')
+      }
+      if (!snapshot.stores || typeof snapshot.stores !== 'object' || Array.isArray(snapshot.stores)) {
+        throw new Error('Invalid archive import IndexedDB snapshot')
+      }
+
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i)
+        if (key) localStorage.removeItem(key)
+      }
+      for (const [key, value] of Object.entries(snapshot.localStorage)) {
+        if (typeof value === 'string') localStorage.setItem(key, value)
+      }
+
+      for (const storeName of Object.values(STORE_NAMES)) {
+        await clear(storeName)
+        const entries = snapshot.stores[storeName]
+        if (!Array.isArray(entries)) continue
+        for (const entry of entries) await putRaw(storeName, entry)
+      }
+      changeSource = 'archive'
+      break
+    }
     case 'config':
       await set(STORE_NAMES.CONFIG, 'config', data)
       changeSource = 'settings'
