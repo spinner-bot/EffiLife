@@ -147,6 +147,7 @@ const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
 const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache')
+const todayRecordHours = computed(() => appStore.todayRecords.reduce((total, record) => total + Number(record.duration || 0), 0))
 
 const updateTime = () => {
   const now = new Date()
@@ -354,6 +355,24 @@ onUnmounted(() => {
         </div>
       </section>
 
+      <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
+        <button class="workflow-summary-item" type="button" @click="router.push('/records')">
+          <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
+          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours) }}</strong><small>{{ t('home.recordedToday') }}</small></span>
+          <ChevronRight :size="16" />
+        </button>
+        <button class="workflow-summary-item" type="button" @click="router.push('/plans')">
+          <span class="workflow-summary-icon"><ClipboardList :size="17" /></span>
+          <span class="workflow-summary-copy"><strong>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }}</strong><small>{{ t('home.eventPlanProgress') }}</small></span>
+          <ChevronRight :size="16" />
+        </button>
+        <button class="workflow-summary-item" type="button" @click="router.push('/tasks')">
+          <span class="workflow-summary-icon"><ListTodo :size="17" /></span>
+          <span class="workflow-summary-copy"><strong>{{ activeTodoCount }}</strong><small>{{ t('home.activeTodos') }}</small></span>
+          <ChevronRight :size="16" />
+        </button>
+      </section>
+
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
         <div class="overview-grid">
@@ -545,6 +564,16 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   letter-spacing: -0.02em;
 }
+
+.workflow-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 auto 20px; width: min(860px, 100%); }
+.workflow-summary-item { display: flex; align-items: center; gap: 10px; min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 14px); padding: 12px 13px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; text-align: left; transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast); }
+.workflow-summary-item:hover { border-color: var(--color-border-hover); background: var(--color-bg-tertiary); transform: translateY(-1px); }
+.workflow-summary-icon { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; color: var(--color-primary); background: var(--color-primary-muted); }
+.workflow-summary-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.workflow-summary-copy strong { color: var(--color-text-primary); font-size: 15px; font-variant-numeric: tabular-nums; }
+.workflow-summary-copy small { overflow: hidden; color: var(--color-text-tertiary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .workflow-summary-item { transition: none; } }
+@media (max-width: 680px) { .workflow-summary { grid-template-columns: 1fr; } }
 
 /* 收件箱容器 */
 .inbox-wrapper {
