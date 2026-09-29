@@ -18,7 +18,7 @@ import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { getTodayDate } from '@/services/dataService'
-import { getAvailableThemes } from '@/theme/ThemeEngine'
+import { getAvailableThemes, type ThemeDefinition } from '@/theme/ThemeEngine'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -215,45 +215,16 @@ async function discardThemeChanges() {
 // 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
 const availableThemes = getAvailableThemes()
 
-const themeMeta: Partial<Record<ThemeType, { nameKey: string; descriptionKey: string; categoryKey: string }>> = {
-  solid: { nameKey: 'theme.name.solid', descriptionKey: 'theme.desc.solid', categoryKey: 'theme.category.basic' },
-  gradient: { nameKey: 'theme.name.gradient', descriptionKey: 'theme.desc.gradient', categoryKey: 'theme.category.basic' },
-  glass: { nameKey: 'theme.name.glass', descriptionKey: 'theme.desc.glass', categoryKey: 'theme.category.basic' },
-  neon: { nameKey: 'theme.name.neon', descriptionKey: 'theme.desc.neon', categoryKey: 'theme.category.basic' },
-  ink: { nameKey: 'theme.name.ink', descriptionKey: 'theme.desc.ink', categoryKey: 'theme.category.art' },
-  vintage: { nameKey: 'theme.name.vintage', descriptionKey: 'theme.desc.vintage', categoryKey: 'theme.category.art' },
-  pixel: { nameKey: 'theme.name.pixel', descriptionKey: 'theme.desc.pixel', categoryKey: 'theme.category.art' },
-  midnight_library: { nameKey: 'theme.name.midnightLibrary', descriptionKey: 'theme.desc.midnightLibrary', categoryKey: 'theme.category.art' },
-  japanese_garden: { nameKey: 'theme.name.japaneseGarden', descriptionKey: 'theme.desc.japaneseGarden', categoryKey: 'theme.category.art' },
-  victorian_study: { nameKey: 'theme.name.victorianStudy', descriptionKey: 'theme.desc.victorianStudy', categoryKey: 'theme.category.art' },
-  aurora: { nameKey: 'theme.name.aurora', descriptionKey: 'theme.desc.aurora', categoryKey: 'theme.category.nature' },
-  sakura: { nameKey: 'theme.name.sakura', descriptionKey: 'theme.desc.sakura', categoryKey: 'theme.category.nature' },
-  ocean: { nameKey: 'theme.name.ocean', descriptionKey: 'theme.desc.ocean', categoryKey: 'theme.category.nature' },
-  forest: { nameKey: 'theme.name.forest', descriptionKey: 'theme.desc.forest', categoryKey: 'theme.category.nature' },
-  rainy_city: { nameKey: 'theme.name.rainyCity', descriptionKey: 'theme.desc.rainyCity', categoryKey: 'theme.category.nature' },
-  desert_dusk: { nameKey: 'theme.name.desertDusk', descriptionKey: 'theme.desc.desertDusk', categoryKey: 'theme.category.nature' },
-  bamboo_dawn: { nameKey: 'theme.name.bambooDawn', descriptionKey: 'theme.desc.bambooDawn', categoryKey: 'theme.category.nature' },
-  nordic_polar_night: { nameKey: 'theme.name.nordicPolarNight', descriptionKey: 'theme.desc.nordicPolarNight', categoryKey: 'theme.category.nature' },
-  underwater_temple: { nameKey: 'theme.name.underwaterTemple', descriptionKey: 'theme.desc.underwaterTemple', categoryKey: 'theme.category.nature' },
-  cyberpunk: { nameKey: 'theme.name.cyberpunk', descriptionKey: 'theme.desc.cyberpunk', categoryKey: 'theme.category.tech' },
-  star_voyage: { nameKey: 'theme.name.starVoyage', descriptionKey: 'theme.desc.starVoyage', categoryKey: 'theme.category.tech' },
-  tech: { nameKey: 'theme.name.tech', descriptionKey: 'theme.desc.tech', categoryKey: 'theme.category.tech' },
+function themeCategory(theme: ThemeDefinition): string {
+  return theme.categoryKey
 }
 
-function themeMetaFor(theme: { type: ThemeType }) {
-  return themeMeta[theme.type] || { nameKey: theme.type, descriptionKey: theme.type, categoryKey: 'theme.category.basic' }
+function themeName(theme: ThemeDefinition): string {
+  return t(theme.nameKey)
 }
 
-function themeCategory(theme: { type: ThemeType }): string {
-  return themeMetaFor(theme).categoryKey
-}
-
-function themeName(theme: { type: ThemeType }): string {
-  return t(themeMetaFor(theme).nameKey)
-}
-
-function themeDescription(theme: { type: ThemeType }): string {
-  return t(themeMetaFor(theme).descriptionKey)
+function themeDescription(theme: ThemeDefinition): string {
+  return t(theme.descriptionKey)
 }
 
 async function saveTheme() {

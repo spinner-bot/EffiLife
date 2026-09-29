@@ -73,9 +73,26 @@ def test_selectable_tech_theme_has_a_theme_engine_preset():
 
 def test_settings_uses_theme_engine_registry():
     source = SETTINGS.read_text(encoding="utf-8")
-    assert "import { getAvailableThemes } from '@/theme/ThemeEngine'" in source
+    assert "getAvailableThemes" in source
+    assert "type ThemeDefinition" in source
     assert "const availableThemes = getAvailableThemes()" in source
     assert "const availableThemes = [" not in source
+
+
+def test_theme_registry_owns_localized_display_metadata():
+    settings = SETTINGS.read_text(encoding="utf-8")
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    index = (ROOT / "time-helper" / "desk" / "src" / "theme" / "index.ts").read_text(encoding="utf-8")
+    assert "export interface ThemeDefinition" in engine
+    assert "nameKey: string" in engine
+    assert "descriptionKey: string" in engine
+    assert "categoryKey: string" in engine
+    assert "getAvailableThemes(): ThemeDefinition[]" in engine
+    assert "export type { ThemeDefinition, ThemeStyle }" in index
+    assert "const themeMeta" not in settings
+    assert "return theme.categoryKey" in settings
+    assert "return t(theme.nameKey)" in settings
+    assert "return t(theme.descriptionKey)" in settings
 
 
 def test_locale_catalogs_have_the_same_translation_keys():
