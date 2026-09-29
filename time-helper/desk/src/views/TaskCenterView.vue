@@ -852,9 +852,9 @@ watch(() => route.query.todo, () => {
     </header>
 
     <main class="task-content">
-      <section class="task-create theme-card">
+      <form class="task-create theme-card" @submit.prevent="AudioManager.playSound('click'); addTodo()">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
-        <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" @keyup.enter="addTodo" />
+        <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" />
         <details class="task-create-advanced">
           <summary>{{ t('tasks.advancedOptions') }}</summary>
         <label class="task-field-label task-description-label" for="new-task-description">{{ t('tasks.description') }}</label>
@@ -886,10 +886,10 @@ watch(() => route.query.todo, () => {
           <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
         </select>
         </details>
-        <button class="task-add" :disabled="creatingTodo || !title.trim()" @click="AudioManager.playSound('click'); addTodo()">
+        <button type="submit" class="task-add" :disabled="creatingTodo || !title.trim()">
           <Plus :size="17" /> {{ t('tasks.add') }}
         </button>
-      </section>
+      </form>
 
       <section class="task-toolbar">
         <div class="task-tabs" role="tablist" :aria-label="t('tasks.title')">
