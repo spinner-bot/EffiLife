@@ -368,9 +368,12 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     modules = {
         "1": {
             "name": "workspace",
+            "cwd": Path("F:/workspace"),
+            "cmd": ["npm", "run", "dev"],
+            "setup": ["npm", "install"],
             "available": True,
             "url": "http://127.0.0.1:1420",
-            "needs_setup": False,
+            "needs_setup": True,
         },
         "2": {
             "name": "legacy",
@@ -390,8 +393,15 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     assert result["version"] == (Path(launcher.BASE_DIR) / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     assert result["modules"]["1"]["port_occupied"] is True
     assert result["modules"]["1"]["service_ready"] is True
+    assert result["modules"]["1"]["cwd"] == str(Path("F:/workspace"))
+    assert result["modules"]["1"]["command"] == ["npm", "run", "dev"]
+    assert result["modules"]["1"]["setup"] == ["npm", "install"]
+    assert result["modules"]["1"]["needs_setup"] is True
     assert result["modules"]["2"]["service_ready"] is False
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
+    assert result["modules"]["2"]["cwd"] is None
+    assert result["modules"]["2"]["command"] == []
+    assert result["modules"]["2"]["setup"] == []
 
 
 def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypatch):

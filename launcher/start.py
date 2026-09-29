@@ -385,6 +385,9 @@ def collect_diagnostics(modules):
         url = module.get("url")
         module_status[key] = {
             "name": module.get("name"),
+            "cwd": str(module.get("cwd")) if module.get("cwd") else None,
+            "command": [str(item) for item in module.get("cmd") or []],
+            "setup": [str(item) for item in module.get("setup") or []],
             "available": bool(module.get("available")),
             "unavailable_reason": module.get("unavailable_reason"),
             "url": url,
