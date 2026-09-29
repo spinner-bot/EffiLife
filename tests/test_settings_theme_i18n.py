@@ -109,6 +109,20 @@ def test_theme_categories_are_derived_from_the_registry():
     assert "theme.category.tech" not in settings
 
 
+def test_theme_registry_translation_keys_exist_in_every_locale():
+    import re
+
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    catalog = I18N.read_text(encoding="utf-8")
+    registry = engine.split("export function getAvailableThemes(): ThemeDefinition[]", 1)[1]
+    keys = set(re.findall(r"(?:nameKey|descriptionKey|categoryKey): '([^']+)'", registry))
+    types = re.findall(r"\{ type: '([^']+)'", registry)
+    assert keys
+    assert len(types) == len(set(types))
+    for key in sorted(keys):
+        assert catalog.count(f"'{key}':") == 2, f"theme translation key is not present in both locales: {key}"
+
+
 def test_locale_catalogs_have_the_same_translation_keys():
     source = I18N.read_text(encoding="utf-8")
     import re
