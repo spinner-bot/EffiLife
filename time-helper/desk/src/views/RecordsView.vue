@@ -396,9 +396,10 @@ onUnmounted(() => {
     <!-- 表单弹窗 -->
     <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
       <div class="modal" @keydown.esc="showForm = false">
+        <form class="modal-form" @submit.prevent="saveRecord">
         <div class="modal-header">
           <h2>{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
-          <button class="close-btn" @click="showForm = false">
+          <button type="button" class="close-btn" @click="showForm = false">
             <X :size="20" />
           </button>
         </div>
@@ -407,12 +408,14 @@ onUnmounted(() => {
           <!-- 输入模式切换 -->
           <div class="mode-switch">
             <button
+              type="button"
               :class="['mode-btn', { active: formMode === 'time' }]"
               @click="formMode = 'time'"
             >
               {{ t('records.modeTime') }}
             </button>
             <button
+              type="button"
               :class="['mode-btn', { active: formMode === 'duration' }]"
               @click="formMode = 'duration'"
             >
@@ -492,12 +495,13 @@ onUnmounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button class="btn secondary" @click="showForm = false">{{ t('records.cancel') }}</button>
-          <button class="btn primary" :disabled="isSaving" @click="saveRecord">
+          <button type="button" class="btn secondary" @click="showForm = false">{{ t('records.cancel') }}</button>
+          <button type="submit" class="btn primary" :disabled="isSaving">
             <Check :size="16" />
             <span>{{ t('records.save') }}</span>
           </button>
         </div>
+        </form>
       </div>
     </div>
   </div>
@@ -682,6 +686,13 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   animation: slideUp var(--transition-normal);
+}
+
+.modal-form {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
