@@ -790,6 +790,26 @@ function formatDeadline(deadline?: string): string {
   return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
 }
 
+type DeadlineState = 'overdue' | 'today' | 'upcoming'
+
+function getDeadlineState(deadline?: string): DeadlineState | null {
+  if (!deadline) return null
+  const date = new Date(deadline)
+  if (Number.isNaN(date.getTime())) return null
+  const now = new Date()
+  if (date.getTime() < now.getTime()) return 'overdue'
+  const localDay = (value: Date) => `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`
+  return localDay(date) === localDay(now) ? 'today' : 'upcoming'
+}
+
+function deadlineStateLabel(deadline?: string): string {
+  const state = getDeadlineState(deadline)
+  if (state === 'overdue') return t('tasks.deadlineOverdue')
+  if (state === 'today') return t('tasks.deadlineToday')
+  if (state === 'upcoming') return t('tasks.deadlineUpcoming')
+  return t('tasks.deadline')
+}
+
 async function revealSearchTarget(): Promise<void> {
   const targetId = String(route.query.todo || '')
   if (!targetId || !todos.value.some((todo) => todo.id === targetId)) return
@@ -1085,7 +1105,7 @@ watch(() => route.query.todo, () => {
             <button v-if="todo.related_time_record_ids?.length" type="button" class="task-record-link" @click="openTodoRecords(todo)">
               {{ t('tasks.viewTimeRecords') }} ({{ todo.related_time_record_ids.length }})
             </button>
-            <span v-if="todo.deadline" class="task-deadline">{{ t('tasks.deadlinePrefix') }} {{ formatDeadline(todo.deadline) }}</span>
+            <span v-if="todo.deadline" class="task-deadline" :class="getDeadlineState(todo.deadline)">{{ deadlineStateLabel(todo.deadline) }} · {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
             <button v-if="todo.related_plan_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}</button>
             <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}</button>
@@ -1225,6 +1245,9 @@ watch(() => route.query.todo, () => {
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-record-link { display: inline-block; margin: 7px 0 0 10px; border: 0; padding: 0; color: var(--color-primary); background: transparent; cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
+.task-deadline.overdue { color: var(--color-error); font-weight: 600; }
+.task-deadline.today { color: var(--color-primary); font-weight: 600; }
+.task-deadline.upcoming { color: var(--color-text-secondary); }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-plan-link { border: 0; padding: 0; background: transparent; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
