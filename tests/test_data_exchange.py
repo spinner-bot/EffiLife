@@ -60,6 +60,34 @@ def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
         read_workspace_bundle(bundle)
 
 
+def test_workspace_bundle_rejects_invalid_core_dataset_shapes(tmp_path):
+    bundle = tmp_path / "invalid-shapes.efl"
+    export_bundle(bundle, {
+        "app": [],
+        "records": {},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": {"plans": []},
+    })
+
+    with pytest.raises(ValueError, match="invalid shape: app"):
+        read_workspace_bundle(bundle)
+
+
+def test_workspace_bundle_rejects_invalid_record_bucket_shape(tmp_path):
+    bundle = tmp_path / "invalid-records.efl"
+    export_bundle(bundle, {
+        "app": {},
+        "records": {"2026-09-29": {}},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": {"plans": []},
+    })
+
+    with pytest.raises(ValueError, match="2026-09-29"):
+        read_workspace_bundle(bundle)
+
+
 def test_bundle_rejects_valid_json_dataset_tampering(tmp_path):
     bundle = tmp_path / "tampered.efl"
     export_bundle(bundle, {"app": {"version": "one"}})

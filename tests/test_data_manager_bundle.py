@@ -28,7 +28,7 @@ def test_data_manager_workspace_bundle_uses_canonical_contract(tmp_path):
     written = manager.export_workspace_bundle(
         str(bundle),
         app={"version": "dev"},
-        records=[],
+        records={},
         todos=[],
         todo_categories=[],
         plan_helper={"plans": []},

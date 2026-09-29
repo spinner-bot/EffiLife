@@ -31,6 +31,29 @@ CANONICAL_WORKSPACE_DATASETS = (
 )
 
 
+def _validate_workspace_dataset_shapes(datasets: Mapping[str, Any]) -> None:
+    """Validate the cross-runtime container shapes before migration writes."""
+    if not isinstance(datasets.get("app"), Mapping):
+        raise ValueError("Workspace dataset has invalid shape: app")
+
+    records = datasets.get("records")
+    if not isinstance(records, Mapping):
+        raise ValueError("Workspace dataset has invalid shape: records")
+    for date, bucket in records.items():
+        if not isinstance(bucket, list):
+            raise ValueError(f"Workspace records bucket is invalid: {date}")
+
+    for name in ("todos", "todo_categories"):
+        if not isinstance(datasets.get(name), list):
+            raise ValueError(f"Workspace dataset has invalid shape: {name}")
+
+    plan_helper = datasets.get("plan_helper")
+    if not isinstance(plan_helper, Mapping):
+        raise ValueError("Workspace dataset has invalid shape: plan_helper")
+    if "plans" in plan_helper and not isinstance(plan_helper["plans"], list):
+        raise ValueError("Workspace plan_helper plans must be an array")
+
+
 def _json_bytes(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
 
@@ -235,6 +258,7 @@ def read_workspace_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, di
     missing = [name for name in CANONICAL_WORKSPACE_DATASETS if name not in datasets]
     if missing:
         raise ValueError(f"Workspace bundle is missing datasets: {', '.join(missing)}")
+    _validate_workspace_dataset_shapes(datasets)
     return manifest, datasets
 
 
