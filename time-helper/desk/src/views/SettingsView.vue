@@ -361,6 +361,7 @@ const dataStats = ref({
   hasConfig: false,
   hasPlans: false,
   eventPlanCount: 0,
+  eventPlanSource: 'unavailable' as 'live' | 'cache' | 'snapshot' | 'unavailable',
   hasAudioSettings: false,
   hasEventSettings: false,
   hasCheckin: false,
@@ -946,7 +947,7 @@ onMounted(async () => {
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.eventPlanCount }}</span>
-              <span class="stat-label">{{ t('settings.archive.eventPlanSnapshots') }}</span>
+              <span class="stat-label">{{ t('settings.archive.eventPlanSnapshots') }} · {{ t(`settings.archive.planSource.${dataStats.eventPlanSource}`) }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.todoCount }}</span>

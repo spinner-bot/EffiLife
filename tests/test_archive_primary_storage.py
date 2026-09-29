@@ -25,6 +25,16 @@ def test_archive_stats_read_primary_values_from_indexeddb():
         assert f"STORE_NAMES.{store_key}" in stats
 
 
+def test_archive_stats_use_unified_plan_gateway_fallback_and_expose_source():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    stats = source.split("export async function getDataStats", 1)[1]
+
+    assert "const eventPlanData = await collectPlanHelperDataWithCache()" in stats
+    assert "eventPlanCount: eventPlanData.plans.length" in stats
+    assert "eventPlanSource: !eventPlanData.available" in stats
+    assert "'live' | 'cache' | 'snapshot' | 'unavailable'" in stats
+
+
 def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():
     source = ARCHIVE.read_text(encoding="utf-8")
     records = source.split("async function getAllRecords", 1)[1]

@@ -1062,6 +1062,7 @@ export async function getDataStats(): Promise<{
   hasConfig: boolean
   hasPlans: boolean
   eventPlanCount: number
+  eventPlanSource: 'live' | 'cache' | 'snapshot' | 'unavailable'
   hasAudioSettings: boolean
   hasEventSettings: boolean
   hasCheckin: boolean
@@ -1072,7 +1073,7 @@ export async function getDataStats(): Promise<{
     totalRecords += dateRecords.length
   }
   const { getRawAll, STORE_NAMES } = await import('@/storage')
-  const cachedEventPlans = await readCachedPlanHelperData()
+  const eventPlanData = await collectPlanHelperDataWithCache()
   const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
   const categories = await getRawAll<TodoCategory>(STORE_NAMES.TODO_CATEGORIES)
 
@@ -1084,7 +1085,12 @@ export async function getDataStats(): Promise<{
     todoCategoryCount: categories.length,
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
-    eventPlanCount: cachedEventPlans?.length || 0,
+    eventPlanCount: eventPlanData.plans.length,
+    eventPlanSource: !eventPlanData.available
+      ? 'unavailable'
+      : eventPlanData.stale
+        ? 'cache'
+        : getPlanRuntime() === 'mobile-unavailable' ? 'snapshot' : 'live',
     // All settings and check-in data now have IndexedDB primaries with
     // compatibility mirrors.
     hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
