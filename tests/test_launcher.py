@@ -99,6 +99,24 @@ def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     assert url is None and setup is None
 
 
+def test_launcher_reports_actionable_reason_when_packaged_artifact_is_missing(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    modules = launcher.build_modules()
+
+    assert modules["1"]["available"] is False
+    assert modules["1"]["unavailable_reason"] == "Packaged mode requires a Tauri binary or built dist/index.html"
+
+
+def test_launcher_packaged_mode_can_also_be_selected_by_environment(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["start.py"])
+    monkeypatch.setenv("EFFILIFE_LAUNCH_MODE", "packaged")
+
+    assert launcher.packaged_mode() is True
+
+
 def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     modules = launcher.build_modules()
     assert modules["1"]["name"] == "EffiLife unified workspace"

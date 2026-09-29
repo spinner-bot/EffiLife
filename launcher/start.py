@@ -129,6 +129,11 @@ def setup_timeout(default=300):
         return default
 
 
+def packaged_mode():
+    """Return whether the launcher must use packaged artifacts only."""
+    return "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged"
+
+
 def app_version():
     """Read the desktop version without importing frontend or build tooling."""
     try:
@@ -215,7 +220,7 @@ def get_time_helper_cmd():
 
     # Formal installers must never unexpectedly switch to a source checkout's
     # Vite server merely because Node happens to be installed on the machine.
-    if "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged":
+    if packaged_mode():
         for exe_path in exe_paths:
             if exe_path.exists():
                 return [str(exe_path)], None, None
@@ -355,6 +360,12 @@ def build_modules():
     for key, mod in modules.items():
         if mod["cmd"] is None:
             mod["available"] = False
+            if key == "1":
+                mod["unavailable_reason"] = (
+                    "Packaged mode requires a Tauri binary or built dist/index.html"
+                    if packaged_mode()
+                    else "Unified workspace requires Node.js/npm, a built dist, or a Tauri binary"
+                )
         else:
             mod["available"] = True
         if mod["setup"] and not node_available:
@@ -388,7 +399,7 @@ def collect_diagnostics(modules):
         "python": sys.executable,
         "node": node,
         "npm": npm,
-        "launch_mode": "packaged" if "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged" else "development",
+        "launch_mode": "packaged" if packaged_mode() else "development",
         "time_helper_binaries": [
             {"path": str(path), "exists": path.exists()}
             for path in time_helper_binary_paths()
