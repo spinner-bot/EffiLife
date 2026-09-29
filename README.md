@@ -1,10 +1,24 @@
 <img src="assets/hero.svg" alt="EffiLife — Unified Personal Time Management" width="100%">
 
-# EffiLife · 浪兮效率工具集
+<p align="center">
+  <strong>EffiLife · 浪兮效率工具集</strong><br>
+  <em>Capture time · Organize plans · Move tasks forward</em>
+</p>
+
+<p align="center">
+  <a href="#统一工作台">统一工作台</a> ·
+  <a href="#快速开始">快速开始</a> ·
+  <a href="docs/INTEGRATION.md">集成文档</a> ·
+  <a href="docs/进展报告/0000-报告与文档管理规范.txt">进展记录</a>
+</p>
+
+> 一个把时间记录、计划编排与待办推进放在同一条工作流中的个人时间管理工具。
+
+动画封面支持 `prefers-reduced-motion` 降级；正式用户应使用 Tauri 安装包，仓库内 launcher 仅用于开发、测试、迁移与回归。
+
+## 统一工作台
 
 一站式个人效率管理工具集，涵盖时间记录、计划管理与任务追踪三大场景。
-
-## 当前统一工作台
 
 ### 当前启动与发布边界
 
@@ -151,7 +165,7 @@ data/（兼容运行时目录）
 
 当前工作台已经是开发集成版，但正式安装包和多端真机验收仍未完成。`launcher/start.py` 仅用于开发、测试、迁移和回归；Windows NSIS、Linux、macOS 的 Tauri 构建链已配置，需在具备 Rust/Cargo 的发布环境完成最终编译、安装和数据迁移验收。
 
-**快速开始**
+## 快速开始
 
 ```bash
 # 运行集成测试（55 个测试用例）
