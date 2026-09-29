@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
@@ -45,6 +45,13 @@ let stopWorkspaceListener: (() => void) | null = null
 
 function openLinkedTodo(todoId: string) {
   router.push({ path: '/tasks', query: { todo: todoId } })
+}
+
+function preselectLinkedTodo(): void {
+  const todoId = linkedTodoFromQuery.value
+  if (!todoId || !todos.value.some((todo) => todo.id === todoId)) return
+  openAddForm()
+  selectedTodoId.value = todoId
 }
 
 // 获取当前计划的标签列表
@@ -318,10 +325,11 @@ onMounted(async () => {
   await loadTodoOptions()
   // A task with no existing record opens the record form with its relation
   // preselected, completing the task -> time-record workflow.
-  if (linkedTodoFromQuery.value && todos.value.some((todo) => todo.id === linkedTodoFromQuery.value)) {
-    openAddForm()
-    selectedTodoId.value = linkedTodoFromQuery.value
-  }
+  preselectLinkedTodo()
+})
+
+watch(linkedTodoFromQuery, () => {
+  if (todos.value.length > 0) preselectLinkedTodo()
 })
 
 onUnmounted(() => {
