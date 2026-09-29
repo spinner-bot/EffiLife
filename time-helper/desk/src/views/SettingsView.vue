@@ -658,14 +658,15 @@ onMounted(async () => {
 
       <!-- 自定义设置 -->
       <template v-else-if="currentView === 'custom'">
+        <form class="custom-settings-form" @submit.prevent="saveCustomSettings">
         <h2>{{ t('settings.customTitle') }}</h2>
 
         <div class="form-section">
           <label>{{ t('settings.threshold') }}</label>
           <div class="threshold-control">
-            <button class="threshold-btn" @click="subThreshold">-</button>
+            <button type="button" class="threshold-btn" @click="subThreshold">-</button>
             <span class="threshold-value">{{ t('settings.currentThreshold') }}：{{ overtimeThreshold }}%</span>
-            <button class="threshold-btn" @click="addThreshold">+</button>
+            <button type="button" class="threshold-btn" @click="addThreshold">+</button>
           </div>
         </div>
 
@@ -679,9 +680,10 @@ onMounted(async () => {
         </div>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
-          <button class="btn primary" @click="saveCustomSettings">{{ t('settings.save') }}</button>
+          <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
+          <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
         </div>
+        </form>
       </template>
 
       <!-- 主题设置 -->
