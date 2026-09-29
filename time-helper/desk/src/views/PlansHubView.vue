@@ -691,10 +691,14 @@ async function revealSearchTarget(): Promise<void> {
   if (!target) return
   if (String(selectedPlan.value?.id) !== targetId) await openPlan(target)
   const taskId = String(route.query.task || '')
-  if (!taskId || !selectedPlan.value?.sections.some((section) => section.tasks.some((task) => task.internal_id === taskId))) return
-  searchTargetTaskId.value = taskId
+  const task = selectedPlan.value?.sections
+    .flatMap((section) => section.tasks)
+    .find((item) => item.internal_id === taskId || item.display_id === taskId)
+  if (!task) return
+  const internalTaskId = task.internal_id
+  searchTargetTaskId.value = internalTaskId
   await nextTick()
-  document.getElementById(`plan-task-${taskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  document.getElementById(`plan-task-${internalTaskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
 }
 
