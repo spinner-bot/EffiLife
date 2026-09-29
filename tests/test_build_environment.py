@@ -32,6 +32,31 @@ def test_android_report_requires_sdk_root_in_addition_to_tool_binaries(monkeypat
     assert "ANDROID_HOME or ANDROID_SDK_ROOT" in report["missing"]
 
 
+def test_android_report_exposes_missing_generated_tauri_project(monkeypatch, tmp_path):
+    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setenv("ANDROID_HOME", str(tmp_path / "android-sdk"))
+    monkeypatch.setattr(MODULE, "ROOT", tmp_path)
+
+    report = MODULE.build_report("android")
+
+    assert report["mobile_project"] == str(tmp_path / "time-helper/desk/src-tauri/gen/android")
+    assert report["mobile_project_exists"] is False
+    assert "Tauri android project (run tauri android init)" in report["missing"]
+
+
+def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monkeypatch, tmp_path):
+    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setenv("ANDROID_HOME", str(tmp_path / "android-sdk"))
+    project = tmp_path / "time-helper/desk/src-tauri/gen/android"
+    project.mkdir(parents=True)
+
+    report = MODULE.build_report("android", tmp_path)
+
+    assert report["ready"] is True
+    assert report["mobile_project_exists"] is True
+    assert report["missing"] == []
+
+
 def test_node_tool_path_prefers_configured_custom_directory(monkeypatch, tmp_path):
     custom_dir = tmp_path / "node"
     custom_dir.mkdir()

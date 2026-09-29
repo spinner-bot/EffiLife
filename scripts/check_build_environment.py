@@ -9,10 +9,17 @@ import shutil
 from pathlib import Path
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
 TARGET_REQUIREMENTS = {
     "desktop": ("node", "npm", "cargo", "rustc"),
     "android": ("node", "npm", "cargo", "rustc", "java", "adb"),
     "ios": ("node", "npm", "cargo", "rustc", "xcodebuild"),
+}
+
+MOBILE_PROJECTS = {
+    "android": Path("time-helper/desk/src-tauri/gen/android"),
+    "ios": Path("time-helper/desk/src-tauri/gen/ios"),
 }
 
 
@@ -41,7 +48,7 @@ def node_tool_path(name: str) -> str | None:
     return executable_path(name)
 
 
-def build_report(target: str) -> dict[str, object]:
+def build_report(target: str, root: Path | None = None) -> dict[str, object]:
     requirements = TARGET_REQUIREMENTS[target]
     tools = {
         name: node_tool_path(name) if name in {"node", "npm"} else executable_path(name)
@@ -54,11 +61,18 @@ def build_report(target: str) -> dict[str, object]:
     missing = [name for name, path in tools.items() if not path]
     if target == "android" and not any(sdk_roots.values()):
         missing.append("ANDROID_HOME or ANDROID_SDK_ROOT")
+    mobile_project = None
+    if target in MOBILE_PROJECTS:
+        mobile_project = (root or ROOT) / MOBILE_PROJECTS[target]
+        if not mobile_project.is_dir():
+            missing.append(f"Tauri {target} project (run tauri {target} init)")
     return {
         "target": target,
         "ready": not missing,
         "tools": tools,
         "sdk_roots": sdk_roots,
+        "mobile_project": str(mobile_project) if mobile_project else None,
+        "mobile_project_exists": mobile_project.is_dir() if mobile_project else None,
         "missing": missing,
     }
 
