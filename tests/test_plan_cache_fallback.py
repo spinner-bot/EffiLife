@@ -30,3 +30,12 @@ def test_cached_plan_mode_is_localized():
     source = I18N.read_text(encoding="utf-8")
     assert source.count("'plans.cachedTitle':") == 2
     assert source.count("'plans.cachedDescription':") == 2
+
+
+def test_task_center_exposes_archived_plan_state_without_removing_the_link():
+    tasks = TASKS.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "listPlanArchives" in tasks
+    assert "const archivedPlanById = computed" in tasks
+    assert "tasks.archivedPlan" in tasks
+    assert i18n.count("'tasks.archivedPlan':") == 2
