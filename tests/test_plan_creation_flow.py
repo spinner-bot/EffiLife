@@ -12,8 +12,8 @@ def test_plan_creation_uses_a_short_identity_form_then_opens_empty_editor():
     assert "const created = await createEventPlan(name, toDateTuple(planDate.value))" in view
     assert "selectedPlan.value = await getPlanFull(createdId)" in view
     assert "view.value = 'detail'" in view
-    assert "createEventPlanFromTemplate" not in view
-    assert "listPlanTemplates" not in view
+    assert "createEventPlanFromTemplate" in view
+    assert "listPlanTemplates" in view
     assert "createSectionName" not in view
     assert "createTaskContent" not in view
     assert "createTodos" not in view
@@ -71,7 +71,19 @@ def test_template_creation_uses_the_existing_plan_helper_endpoint():
     assert "template_id: templateId" in gateway
     assert "locale = 'zh-CN'" in gateway
     assert "locale })" in gateway
-    assert "createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)" not in view
+    assert "createEventPlanFromTemplate(" in view
+
+
+def test_template_entry_stays_outside_the_basic_create_modal():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    modal = view.split('<div v-if="showCreate"', 1)[1].split('</div>\n    </div>', 1)[0]
+
+    assert "template-workspace" in view
+    assert "openTemplatePicker" in view
+    assert "v-model=\"planName\"" in modal
+    assert "v-model=\"planDate\"" in modal
+    assert "templateDraftId" not in modal
+    assert "listPlanTemplates" not in modal
 
 
 def test_detail_editor_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():

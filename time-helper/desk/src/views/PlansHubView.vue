@@ -14,15 +14,18 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
+  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
+  listPlanTemplates,
   listPlanSummaries,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
+  type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
@@ -52,10 +55,16 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const searchTargetTaskId = ref<string | null>(null)
 const showCreate = ref(false)
+const showTemplatePicker = ref(false)
 const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
+const templateDraftName = ref('')
+const templateDraftDate = ref(toDateInput(new Date()))
+const templateDraftId = ref('')
+const templateOptions = ref<PlanTemplateSummary[]>([])
+const templateLoading = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -148,6 +157,22 @@ function formatLogTime(time?: [number, number]): string {
   return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
 }
 
+function templateDisplayName(template: PlanTemplateSummary): string {
+  if (!template.built_in) return template.name
+  if (template.type === 'workday') return t('plans.templateTypes.workdayName')
+  if (template.type === 'weekend') return t('plans.templateTypes.weekendName')
+  if (template.type === 'exam') return t('plans.templateTypes.examName')
+  return template.name
+}
+
+function templateDisplayDescription(template: PlanTemplateSummary): string {
+  if (!template.built_in) return template.description
+  if (template.type === 'workday') return t('plans.templateTypes.workdayDescription')
+  if (template.type === 'weekend') return t('plans.templateTypes.weekendDescription')
+  if (template.type === 'exam') return t('plans.templateTypes.examDescription')
+  return template.description
+}
+
 async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
@@ -226,6 +251,52 @@ function closeCreatePlan() {
   void nextTick(() => {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
+}
+
+function closeTemplatePicker() {
+  showTemplatePicker.value = false
+  templateDraftId.value = ''
+  templateOptions.value = []
+}
+
+function openTemplatePicker() {
+  templateDraftName.value = ''
+  templateDraftDate.value = toDateInput(new Date())
+  templateDraftId.value = ''
+  templateOptions.value = []
+  templateLoading.value = true
+  showTemplatePicker.value = true
+  void listPlanTemplates()
+    .then((templates) => {
+      templateOptions.value = templates
+      if (templates.length === 1) templateDraftId.value = templates[0].id
+    })
+    .catch(() => { templateOptions.value = [] })
+    .finally(() => { templateLoading.value = false })
+}
+
+async function createFromTemplate() {
+  if (isLoading.value || templateLoading.value) return
+  const name = templateDraftName.value.trim()
+  if (!name || !templateDraftDate.value || !templateDraftId.value) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    selectedPlan.value = await createEventPlanFromTemplate(
+      templateDraftId.value,
+      name,
+      toDateTuple(templateDraftDate.value),
+      locale.value,
+    )
+    const createdId = selectedPlan.value.id
+    closeTemplatePicker()
+    view.value = 'detail'
+    await router.replace({ path: '/plans', query: { plan: String(createdId) } })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 function openTimePlan() {
@@ -735,11 +806,26 @@ onUnmounted(() => {
         <p class="plans-eyebrow">{{ t('plans.center') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
       </div>
-      <button v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+      <div v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plan-entry-actions"><button class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
     <main class="plans-content" :class="{ 'plans-content-hub': view === 'hub' }">
       <DailyPlanView v-if="view === 'time'" />
+
+      <section v-if="showTemplatePicker && (view === 'hub' || view === 'events')" class="template-workspace theme-card">
+        <header class="template-workspace-header">
+          <div><p class="plans-eyebrow">{{ t('plans.template') }}</p><h2>{{ t('plans.templateWorkspaceTitle') }}</h2><p>{{ t('plans.templateWorkspaceHint') }}</p></div>
+          <button type="button" class="plans-secondary" @click="closeTemplatePicker">{{ t('plans.cancel') }}</button>
+        </header>
+        <div v-if="templateLoading" class="plans-empty template-workspace-empty">{{ t('plans.templateLoading') }}</div>
+        <div v-else-if="templateOptions.length === 0" class="plans-empty template-workspace-empty">{{ t('plans.templateEmpty') }}</div>
+        <form v-else class="template-workspace-form" @submit.prevent="createFromTemplate">
+          <label>{{ t('plans.templateChoose') }}<select v-model="templateDraftId" required><option value="" disabled>{{ t('plans.templateChoose') }}</option><option v-for="template in templateOptions" :key="template.id" :value="template.id">{{ templateDisplayName(template) }} · {{ templateDisplayDescription(template) }}</option></select></label>
+          <label>{{ t('plans.name') }}<input v-model="templateDraftName" required /></label>
+          <label>{{ t('plans.date') }}<input v-model="templateDraftDate" type="date" required /></label>
+          <div class="template-workspace-actions"><button type="button" class="plans-secondary" @click="closeTemplatePicker">{{ t('plans.cancel') }}</button><button type="submit" class="plans-primary" :disabled="isLoading || !templateDraftId">{{ isLoading ? t('plans.loading') : t('plans.templateCreate') }}</button></div>
+        </form>
+      </section>
 
       <template v-else-if="view === 'hub'">
         <section class="unified-plan-section">
@@ -940,6 +1026,8 @@ onUnmounted(() => {
 .plans-header h1 { margin: 0; font-size: 25px; }
 .plans-primary, .plans-secondary, .plans-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
 .plans-primary { margin-left: auto; border: 1px solid var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
+.plan-entry-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.plan-entry-actions .plans-primary { margin-left: 0; }
 .plans-secondary { border: 1px solid var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .plans-link { border: 0; padding-left: 0; color: var(--color-primary); background: transparent; }
 .icon-button { display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
@@ -949,6 +1037,16 @@ onUnmounted(() => {
 .unified-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 .unified-section-heading h2 { margin: 0; font-size: 21px; letter-spacing: -.02em; }
 .unified-section-heading .plans-eyebrow { margin-bottom: 5px; }
+.template-workspace { display: grid; gap: 18px; margin-bottom: 20px; padding: 20px; border: 1px solid var(--color-border); border-radius: 16px; }
+.template-workspace-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.template-workspace-header h2, .template-workspace-header p { margin: 0; }
+.template-workspace-header h2 { font-size: 20px; }
+.template-workspace-header p:last-child { margin-top: 5px; color: var(--color-text-secondary); font-size: 12px; }
+.template-workspace-form { display: grid; grid-template-columns: minmax(220px, 1.6fr) minmax(160px, 1fr) minmax(150px, .8fr) auto; align-items: end; gap: 10px; }
+.template-workspace-form label { display: grid; gap: 6px; color: var(--color-text-secondary); font-size: 12px; }
+.template-workspace-form input, .template-workspace-form select { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
+.template-workspace-actions { display: flex; gap: 8px; }
+.template-workspace-empty { min-height: 90px; }
 .event-plans-section { border-top: 1px solid var(--color-border); padding-top: 26px; }
 .event-plans-section .archives-panel { margin-top: 20px; }
 .plan-domain-grid, .event-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -1066,5 +1164,5 @@ onUnmounted(() => {
   .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>
