@@ -868,8 +868,9 @@ watch(() => route.query.todo, () => {
         <ArrowLeft :size="18" />
       </button>
       <div>
-        <p class="task-eyebrow">{{ t('tasks.workspace') }}</p>
+        <p class="task-eyebrow">{{ t('tasks.moduleLabel') }}</p>
         <h1><ListTodo :size="24" /> {{ t('tasks.title') }}</h1>
+        <p class="task-module-description">{{ t('tasks.moduleDescription') }}</p>
       </div>
       <div class="task-counts">
         <span>{{ activeTodos.length }} {{ t('tasks.pending') }}</span>
@@ -1169,6 +1170,7 @@ watch(() => route.query.todo, () => {
 .task-header { display: flex; align-items: center; gap: 16px; max-width: 980px; margin: 0 auto; padding: 32px 28px 20px; }
 .task-back { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
 .task-eyebrow { margin: 0 0 3px; color: var(--color-text-tertiary); font-size: 12px; letter-spacing: .08em; }
+.task-module-description { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .task-header h1 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 25px; }
 .task-counts { display: flex; gap: 8px; margin-left: auto; color: var(--color-text-secondary); font-size: 13px; }
 .task-counts span { padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-bg-secondary); }

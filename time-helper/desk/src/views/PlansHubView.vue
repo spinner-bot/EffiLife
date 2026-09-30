@@ -811,8 +811,9 @@ onUnmounted(() => {
         <ArrowLeft :size="18" />
       </button>
       <div>
-        <p class="plans-eyebrow">{{ t('plans.center') }}</p>
+        <p class="plans-eyebrow">{{ t('plans.moduleLabel') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
+        <p v-if="view !== 'detail'" class="plans-module-description">{{ t('plans.moduleDescription') }}</p>
       </div>
       <div v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plan-entry-actions"><button class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
@@ -1031,6 +1032,7 @@ onUnmounted(() => {
 .plans-header { display: flex; align-items: center; gap: 15px; max-width: 1080px; margin: 0 auto; padding: 30px 28px 20px; }
 .plans-back { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
 .plans-eyebrow { margin: 0 0 4px; color: var(--color-text-tertiary); font-size: 12px; letter-spacing: .08em; }
+.plans-module-description { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .plans-header h1 { margin: 0; font-size: 25px; }
 .plans-primary, .plans-secondary, .plans-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
 .plans-primary { margin-left: auto; border: 1px solid var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
