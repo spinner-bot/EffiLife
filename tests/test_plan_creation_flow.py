@@ -5,21 +5,19 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_uses_a_short_identity_form_then_opens_empty_editor():
+def test_plan_creation_collects_initial_content_then_opens_full_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const created = await createEventPlan(name, toDateTuple(planDate.value))" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), sections)" in view
     assert "selectedPlan.value = await getPlanFull(createdId)" in view
     assert "view.value = 'detail'" in view
     assert "createEventPlanFromTemplate" in view
     assert "listPlanTemplates" in view
-    assert "createSectionName" not in view
-    assert "createTaskContent" not in view
-    assert "createTodos" not in view
+    assert "const createSections = ref<InitialPlanSection[]>([])" in view
+    assert "v-for=\"(task, taskIndex) in section.tasks\"" in view
     assert "v-model=\"createTemplateId\"" not in view
-    assert "plans.firstActionTitle" not in view
-    assert "plans.createTaskRequired" not in view
+    assert "plans.createTaskRequired" in view
     assert "plans.createAndEdit" in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view

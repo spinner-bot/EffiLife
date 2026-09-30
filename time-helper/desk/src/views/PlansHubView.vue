@@ -24,6 +24,7 @@ import {
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
+  type InitialPlanSection,
   type PlanSummary,
   type PlanTemplateSummary,
   updatePlanTask,
@@ -60,6 +61,7 @@ const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
+const createSections = ref<InitialPlanSection[]>([])
 const templateDraftName = ref('')
 const templateDraftDate = ref(toDateInput(new Date()))
 const templateDraftId = ref('')
@@ -255,6 +257,7 @@ function openCreatePlan() {
   createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
+  createSections.value = [{ name: '', info: '', tasks: [{ content: '', time_minutes: 0 }] }]
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -262,11 +265,28 @@ function openCreatePlan() {
 
 function closeCreatePlan() {
   showCreate.value = false
+  createSections.value = []
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
+}
+
+function addCreateSection(): void {
+  createSections.value.push({ name: '', info: '', tasks: [{ content: '', time_minutes: 0 }] })
+}
+
+function removeCreateSection(index: number): void {
+  createSections.value.splice(index, 1)
+}
+
+function addCreateTask(section: InitialPlanSection): void {
+  section.tasks.push({ content: '', time_minutes: 0 })
+}
+
+function removeCreateTask(section: InitialPlanSection, index: number): void {
+  section.tasks.splice(index, 1)
 }
 
 function closeTemplatePicker() {
@@ -355,11 +375,24 @@ async function retryPlanService() {
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
-  if (!name || !planDate.value) return
+  const sections = createSections.value
+    .map((section) => ({
+      ...section,
+      name: section.name.trim(),
+      info: section.info.trim(),
+      tasks: section.tasks
+        .map((task) => ({ content: task.content.trim(), time_minutes: Math.max(0, Number(task.time_minutes) || 0) }))
+        .filter((task) => task.content),
+    }))
+    .filter((section) => section.name && section.tasks.length > 0)
+  if (!name || !planDate.value || sections.length === 0) {
+    errorMessage.value = t('plans.createTaskRequired')
+    return
+  }
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const created = await createEventPlan(name, toDateTuple(planDate.value))
+    const created = await createEventPlan(name, toDateTuple(planDate.value), sections)
     const createdId = created.id
     selectedPlan.value = await getPlanFull(createdId)
     closeCreatePlan()
@@ -1055,6 +1088,27 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
+        <div class="create-editor-note">
+          <strong>{{ t('plans.createSections') }}</strong>
+          <span>{{ t('plans.createSectionsHint') }}</span>
+        </div>
+        <div class="create-sections">
+          <div v-for="(section, sectionIndex) in createSections" :key="sectionIndex" class="create-section">
+            <div class="create-section-header">
+              <strong>{{ t('plans.section') }} {{ String.fromCharCode(65 + sectionIndex) }}</strong>
+              <button v-if="createSections.length > 1" type="button" class="plans-link danger" @click="removeCreateSection(sectionIndex)">{{ t('plans.deleteSection') }}</button>
+            </div>
+            <label>{{ t('plans.sectionName') }}<input v-model="section.name" required /></label>
+            <label>{{ t('plans.sectionInfo') }}<input v-model="section.info" /></label>
+            <div v-for="(task, taskIndex) in section.tasks" :key="taskIndex" class="create-task-row">
+              <label>{{ t('plans.taskContent') }}<input v-model="task.content" required /></label>
+              <label class="create-task-minutes">{{ t('plans.taskMinutes') }}<input v-model.number="task.time_minutes" type="number" min="0" step="1" /></label>
+              <button v-if="section.tasks.length > 1" type="button" class="plans-link danger" @click="removeCreateTask(section, taskIndex)">{{ t('plans.deleteTask') }}</button>
+            </div>
+            <button type="button" class="plans-link" @click="addCreateTask(section)"><Plus :size="14" /> {{ t('plans.addTask') }}</button>
+          </div>
+          <button type="button" class="plans-secondary create-add-section" @click="addCreateSection"><Plus :size="14" /> {{ t('plans.addSection') }}</button>
+        </div>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>
@@ -1195,6 +1249,17 @@ onUnmounted(() => {
 .create-modal h2, .create-modal p { margin: 0; }
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .create-editor-note { border: 1px solid var(--color-primary-muted); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); line-height: 1.5; }
+.create-editor-note span { display: block; margin-top: 3px; font-size: 12px; }
+.create-sections { display: grid; gap: 10px; max-height: min(42vh, 360px); overflow-y: auto; padding-right: 2px; }
+.create-section { display: grid; gap: 8px; border: 1px solid var(--color-border); border-radius: 11px; padding: 11px; background: var(--color-bg-secondary); }
+.create-section-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.create-section label, .create-task-row label { display: grid; gap: 4px; color: var(--color-text-secondary); font-size: 11px; }
+.create-section input { min-width: 0; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
+.create-task-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px auto; align-items: end; gap: 7px; }
+.create-task-minutes input { width: 100%; box-sizing: border-box; }
+.create-section .plans-link { justify-self: start; margin: 0; padding: 4px 0; }
+.create-section .plans-link.danger, .create-section-header .plans-link.danger { color: var(--color-error); }
+.create-add-section { justify-self: start; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (min-width: 1100px) {
   .plans-content-hub {
@@ -1217,5 +1282,5 @@ onUnmounted(() => {
   .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; }
   .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; }
 }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
 </style>

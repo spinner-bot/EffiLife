@@ -37,3 +37,11 @@ def test_plan_hub_explains_and_restores_archived_plan_deep_links():
     assert "plans.archivedTargetTitle" in HUB
     assert "@click=\"restoreArchive(archivedPlanTarget)\"" in HUB
     assert "await revealSearchTarget()" in HUB
+
+
+def test_plan_creation_collects_initial_sections_and_tasks_before_writing():
+    assert "const createSections = ref<InitialPlanSection[]>([])" in HUB
+    assert "createSections.value = [{ name: '', info: '', tasks: [{ content: '', time_minutes: 0 }] }]" in HUB
+    assert "createEventPlan(name, toDateTuple(planDate.value), sections)" in HUB
+    assert "plans.createTaskRequired" in HUB
+    assert "v-for=\"(task, taskIndex) in section.tasks\"" in HUB
