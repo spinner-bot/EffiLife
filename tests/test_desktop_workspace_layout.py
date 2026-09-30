@@ -43,7 +43,7 @@ def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
     assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
     assert ".detail-actions { display: flex; flex-wrap: wrap;" in plans
     assert ".plan-section > header { display: flex; flex-wrap: wrap;" in plans
-    assert "@media (max-width: 900px)" in plans
+    assert "@media (max-width: 1099px)" in plans
 
 
 def test_plan_detail_uses_a_desktop_summary_sidebar_and_mobile_single_column():

@@ -1308,7 +1308,10 @@ onUnmounted(() => {
   .plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 900px) {
+/* The two-column detail workspace starts at 1100px. Below that width keep
+   task actions in a compact flow so fixed action buttons never squeeze the
+   task title into an overlapping row. */
+@media (max-width: 1099px) {
   .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; }
   .log-editor, .group-editor { display: flex; }
   /* Keep PH task actions usable on tablets before the mobile breakpoint. */
