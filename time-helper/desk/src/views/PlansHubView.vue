@@ -812,6 +812,7 @@ async function deleteTask(taskId: string, displayTaskId = taskId) {
   if (!selectedPlan.value || !(await requestConfirm(`${t('plans.delete')}?`, { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
+  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await deletePlanTask(planId, taskId)
@@ -823,10 +824,11 @@ async function deleteTask(taskId: string, displayTaskId = taskId) {
     } catch {
       // The plan deletion is already accepted; keep the view current and
       // surface the secondary cleanup failure without masking the deletion.
+      todoSyncFailed = true
       errorMessage.value = t('plans.todoSyncFailed')
     }
     selectedPlan.value = await getPlanFull(planId)
-    showPlanSaved()
+    if (!todoSyncFailed) showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
