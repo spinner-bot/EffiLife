@@ -200,3 +200,104 @@ export const VERSION_HISTORY = [
     ]
   }
 ]
+
+// Release notes are product metadata rather than runtime state. Keep the
+// original Chinese history for compatibility and provide a parallel English
+// catalog with the same release/bullet shape for the settings view.
+const VERSION_HISTORY_EN: Record<string, string[]> = {
+  '1.5.0': [
+    'Added four flagship quality themes: Nordic Polar Night, Japanese Garden, Victorian Study, and Underwater Temple',
+    'Each theme includes layered Canvas effects, a dedicated particle system, and ambient lighting',
+    'Applied color psychology, physics-inspired particles, and organic animation rather than mechanical loops',
+  ],
+  '1.4.0': [
+    'Added five high-quality themes: Midnight Library, Star Voyage, Rainy City, Desert Dusk, and Bamboo Dawn',
+    'Each theme includes a unique Canvas background animation, particle effects, and a designed color palette',
+  ],
+  '1.3.0': [
+    'Rebuilt primary navigation by combining records and management into the new Plans view',
+    'Introduced the PlanView interface with tabs, card layouts, and glass-morphism dialogs',
+    'Updated the onboarding system for the new navigation structure',
+  ],
+  '1.1.0': [
+    'Added a visual dashboard with an SVG completion ring and category progress bars',
+    'Added an inbox panel with one-click message previews from the home page',
+    'Added a GitHub-style 26-week activity heatmap',
+    'Added date details with completion rings and category statistics',
+    'Added animated month transitions',
+    'Added a 26-week check-in heatmap with a flame theme',
+    'Added inbox filtering for achievements, events, and reminders',
+    'Added a dedicated check-in page with streaks, levels, and particle animation',
+    'Expanded the event system with seven event types and trigger mechanisms',
+    'Added a complete API layer with seven module interfaces and API documentation',
+    'Added the reusable ContributionHeatmap component',
+  ],
+  '1.0.15': [
+    'Paused Android development after repeated APK startup crashes; related work was archived under archive/android/',
+    'Returned the primary project focus to desktop development',
+  ],
+  '1.0.11': [
+    'Added validation for warning rules: hours 0–23, minutes 0–59, and thresholds 0–100',
+    'Added plan validation to prevent negative or over-24-hour category durations',
+  ],
+  '1.0.10': [
+    'Added complete validation for record creation, including time ranges, boundaries, and duration limits',
+    'Prevented invalid records whose end time precedes their start time',
+  ],
+  '1.0.9': [
+    'Fixed records failing to save after editing their time',
+    'Fixed a numeric input type issue that caused padStart to fail',
+  ],
+  '1.0.8': [
+    'Fixed check-in logic so only 100% completed tasks can be checked in',
+    'Preserved manual make-up check-in from the inbox after a streak breaks',
+    'Validated that completed task records exist before make-up check-in',
+  ],
+  '1.0.7': [
+    'Added automatic make-up check-in when yesterday was completed but not checked in',
+    'Added inbox make-up check-in for missed check-ins',
+    'Styled missed check-in reminders as actionable inbox entries',
+  ],
+  '1.0.6': [
+    'Added a native save-path dialog for archive export in Tauri',
+    'Added a native file picker for archive import in Tauri',
+    'Added browser fallbacks for downloads and file selection',
+  ],
+  '1.0.5': [
+    'Rebuilt the archive system around the compressed .efl format',
+    'Added data statistics such as record days and record count',
+    'Rebuilt recovery with separate reset scopes for all, records, plans, and settings',
+    'Fixed archive operations in non-Tauri environments',
+  ],
+  '1.0.4': [
+    'Added hierarchical back navigation to settings instead of always returning home',
+    'Improved the More Settings layout to match the main settings page',
+    'Moved recovery into More Settings and moved More Settings to the bottom of the main settings page',
+  ],
+  '1.0.3': [
+    'Moved less-used options into More Settings',
+    'Added a version information page with the current version and release history',
+  ],
+  '1.0.1': [
+    'Changed the default background music to jazz',
+  ],
+  '1.0.0': [
+    'First official release',
+    'Core features: time records, history statistics, and plan management',
+    'Twelve visual themes including ink, cyberpunk, and sakura',
+    'Nine background music tracks plus custom music',
+    'Motion settings with 30/60/90/120 FPS options',
+    'Event warning system',
+    'Check-in streak statistics',
+    'Onboarding guide system',
+  ],
+}
+
+export function getVersionChanges(
+  release: (typeof VERSION_HISTORY)[number],
+  locale: string,
+): string[] {
+  return locale.toLowerCase().startsWith('en')
+    ? VERSION_HISTORY_EN[release.version] || release.changes
+    : release.changes
+}

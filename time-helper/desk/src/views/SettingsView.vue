@@ -5,7 +5,7 @@ import { useAppStore } from '@/stores/app'
 import { AlertTriangle, ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
-import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
+import { APP_VERSION, getBuildInfo, getVersionChanges, isDevVersion, VERSION_HISTORY } from '@/version'
 import { exportArchive, importArchive, importArchiveWithDialog, previewArchive, resetData, getDataStats, type ArchivePreview, type ResetType } from '@/services/ArchiveService'
 import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData, type DataStatus } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
@@ -1042,7 +1042,7 @@ onUnmounted(() => {
             <div v-if="VERSION_HISTORY[0]" class="current-version-changes">
               <p class="changes-label">{{ t('settings.version.latestChanges') }}</p>
               <ul>
-                <li v-for="(change, i) in VERSION_HISTORY[0].changes" :key="i">{{ change }}</li>
+                <li v-for="(change, i) in getVersionChanges(VERSION_HISTORY[0], locale)" :key="i">{{ change }}</li>
               </ul>
             </div>
           </div>
@@ -1057,7 +1057,7 @@ onUnmounted(() => {
                   <span class="history-date">{{ release.date }}</span>
                 </div>
                 <ul class="history-changes">
-                  <li v-for="(change, i) in release.changes" :key="i">{{ change }}</li>
+                  <li v-for="(change, i) in getVersionChanges(release, locale)" :key="i">{{ change }}</li>
                 </ul>
               </div>
             </div>
