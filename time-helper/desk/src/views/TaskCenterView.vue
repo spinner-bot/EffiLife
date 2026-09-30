@@ -1220,7 +1220,7 @@ watch(() => route.query.todo, () => {
 .task-ranking-settings label { display: inline-flex; align-items: center; gap: 6px; }
 .task-ranking-settings select { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-list { display: grid; gap: 10px; }
-.task-item { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
+.task-item { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 13px; padding: 16px; border: 1px solid var(--color-border); border-radius: 14px; transition: border-color .2s, transform .2s; }
 .task-select-checkbox { width: 16px; height: 16px; flex: 0 0 16px; accent-color: var(--color-primary); }
 .task-item:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }
 .task-item.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
@@ -1238,7 +1238,7 @@ watch(() => route.query.todo, () => {
 .task-rank-control span { min-width: 12px; text-align: center; }
 .task-score { min-width: 42px; padding: 3px 7px; border-radius: 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .task-score.expired { color: var(--color-text-tertiary); background: var(--color-bg-secondary); }
-.task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+.task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; align-self: flex-start; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-tag { display: inline-block; margin: 7px 0 0 6px; border-radius: 999px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
