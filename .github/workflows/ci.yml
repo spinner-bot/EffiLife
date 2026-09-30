@@ -36,7 +36,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: time-helper/desk/package-lock.json
+          cache-dependency-path: |
+            time-helper/desk/package-lock.json
+            to-dos/ui/package-lock.json
 
       - name: Install desktop dependencies
         working-directory: time-helper/desk
@@ -45,6 +47,19 @@ jobs:
       - name: Run full Python test suite
         run: python -m pytest -q
 
+      - name: Validate desktop and mobile release contracts
+        run: |
+          python scripts/check_release_config.py
+          python scripts/check_mobile_release_config.py
+
       - name: Build desktop frontend
         working-directory: time-helper/desk
+        run: npm run build
+
+      - name: Install compatibility UI dependencies
+        working-directory: to-dos/ui
+        run: npm ci
+
+      - name: Build compatibility UI
+        working-directory: to-dos/ui
         run: npm run build

@@ -15,9 +15,12 @@ def test_general_ci_runs_on_main_push_and_pull_request():
 def test_general_ci_covers_full_python_suite_and_desktop_build():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "python -m pytest -q" in source
+    assert "python scripts/check_release_config.py" in source
+    assert "python scripts/check_mobile_release_config.py" in source
     assert "working-directory: time-helper/desk" in source
     assert "run: npm ci" in source
     assert "run: npm run build" in source
+    assert "working-directory: to-dos/ui" in source
 
 
 def test_general_ci_uses_pinned_current_action_majors_and_cancellation():
