@@ -124,5 +124,19 @@ def test_global_search_translation_keys_exist_in_both_locales():
         "search.todoDetail",
         "search.planDetail",
         "search.planTaskDetail",
+        "search.module.todo",
+        "search.module.plan",
+        "search.module.planTask",
+        "search.module.record",
     ):
         assert source.count(f"'{key}'") == 2
+
+
+def test_global_search_labels_each_result_with_its_source_module():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "function searchModuleLabel(kind: SearchResult['kind'])" in source
+    assert "search.module.todo" in source
+    assert "search.module.plan" in source
+    assert "search.module.planTask" in source
+    assert "search.module.record" in source
+    assert "searchModuleLabel(result.kind)" in source

@@ -32,6 +32,15 @@ type SearchResult = {
   route: string
 }
 
+function searchModuleLabel(kind: SearchResult['kind']): string {
+  return t({
+    todo: 'search.module.todo',
+    plan: 'search.module.plan',
+    planTask: 'search.module.planTask',
+    record: 'search.module.record',
+  }[kind])
+}
+
 const allResults = computed<SearchResult[]>(() => [
   ...todos.value.map((todo) => ({
     id: `todo:${todo.id}`,
@@ -196,7 +205,7 @@ watch(() => props.open, async (open) => {
             <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'planTask'" :size="16" />
             <Clock3 v-else :size="16" />
           </span>
-          <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ result.detail }}</small></span>
+          <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ searchModuleLabel(result.kind) }} · {{ result.detail }}</small></span>
           <ArrowRight :size="15" class="search-result-arrow" />
         </button>
       </div>
