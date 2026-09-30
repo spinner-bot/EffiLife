@@ -821,8 +821,9 @@ onMounted(async () => {
         </template>
 
         <div class="form-actions">
-          <button class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
+          <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
           <span class="theme-preview-status">{{ t('settings.theme.previewStatus') }}</span>
+          <button type="button" class="btn primary" :disabled="!themeDirty" @click="saveTheme">{{ t('settings.save') }}</button>
         </div>
       </template>
 

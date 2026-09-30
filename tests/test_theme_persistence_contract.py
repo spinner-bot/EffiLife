@@ -20,6 +20,8 @@ def test_theme_save_refreshes_persistent_snapshot():
     assert "await appStore.saveConfig(newConfig)" in source
     assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
     assert "function discardThemeChanges()" in source
+    assert ':disabled="!themeDirty"' in source
+    assert '@click="saveTheme"' in source
 
 
 def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
