@@ -24,6 +24,14 @@ def test_home_event_plan_summary_has_aggregate_progress_visual():
     assert "eventPlanProgress}%`" in source
 
 
+def test_home_event_plan_summary_avoids_nested_interactive_containers():
+    source = HOME.read_text(encoding="utf-8")
+    assert '<section class="event-overview-card">' in source
+    assert 'class="event-overview-header event-overview-header-action"' in source
+    assert 'role="link" tabindex="0"' not in source
+    assert "activateEventOverview" not in source
+
+
 def test_home_event_plan_summary_discloses_cached_source():
     source = HOME.read_text(encoding="utf-8")
     assert "planDataSource" in source

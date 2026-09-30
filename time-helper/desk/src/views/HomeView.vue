@@ -44,12 +44,6 @@ function openEventPlan(plan: PlanSummary) {
   router.push({ path: '/plans', query: { plan: plan.id } })
 }
 
-function activateEventOverview(event: KeyboardEvent) {
-  if (event.key !== 'Enter' && event.key !== ' ') return
-  event.preventDefault()
-  router.push('/plans')
-}
-
 function activateDailyPlan(event: KeyboardEvent) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault()
@@ -548,8 +542,10 @@ onUnmounted(() => {
             />
           </div>
         </div>
-        <div class="event-overview-card" role="link" tabindex="0" @click="router.push('/plans')" @keydown="activateEventOverview">
-          <div class="event-overview-header"><h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" /></div>
+        <section class="event-overview-card">
+          <button type="button" class="event-overview-header event-overview-header-action" @click="router.push('/plans')">
+            <h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" />
+          </button>
           <template v-if="eventPlanState === 'ready'">
             <strong class="event-overview-count">{{ eventPlans.length }}</strong>
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
@@ -569,7 +565,7 @@ onUnmounted(() => {
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
-        </div>
+        </section>
         </div>
       </section>
 
@@ -1089,7 +1085,6 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   background: var(--color-bg-secondary);
   text-align: left;
-  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
@@ -1100,6 +1095,8 @@ onUnmounted(() => {
 }
 
 .event-overview-header { display: flex; align-items: center; justify-content: space-between; width: 100%; color: var(--color-text-tertiary); }
+.event-overview-header-action { border: 0; padding: 0; background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.event-overview-header-action:hover, .event-overview-header-action:focus-visible { color: var(--color-text-primary); outline: 0; }
 .event-overview-header svg { color: var(--color-primary); }
 .event-overview-count { margin-top: var(--spacing-xl); color: var(--color-primary); font-size: 2.4rem; line-height: 1; }
 .event-overview-label { margin-top: 7px; color: var(--color-text-secondary); font-size: 13px; }
