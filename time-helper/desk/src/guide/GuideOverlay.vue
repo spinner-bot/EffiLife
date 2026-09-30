@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { GuideManager, guideState } from './GuideManager'
 import { X, MousePointer } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
+import { requestConfirm } from '@/services/confirmService'
 
 const currentStep = computed(() => GuideManager.getCurrentStep())
 const progress = computed(() => GuideManager.getProgress())
@@ -164,8 +165,8 @@ function startActionValidation() {
   }
 }
 
-function skipGuide() {
-  if (confirm(t('guide.skipConfirm'))) {
+async function skipGuide() {
+  if (await requestConfirm(t('guide.skipConfirm'))) {
     GuideManager.skipGuide()
   }
 }
