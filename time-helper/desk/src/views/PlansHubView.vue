@@ -60,6 +60,7 @@ const createSectionName = ref('')
 const createSectionInfo = ref('')
 const createTaskContent = ref('')
 const createTaskMinutes = ref(30)
+const createTodos = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -222,6 +223,7 @@ function openCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  createTodos.value = false
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -233,6 +235,7 @@ function closeCreatePlan() {
   createSectionInfo.value = ''
   createTaskContent.value = ''
   createTaskMinutes.value = 30
+  createTodos.value = false
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
@@ -296,6 +299,11 @@ async function createPlan() {
     }])
     const createdId = created.id
     selectedPlan.value = await getPlanFull(created.id)
+    if (createTodos.value) {
+      const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
+      if (result.created > 0) notifyToast(t('plans.todosCreated', { count: result.created }), 'success')
+      if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+    }
     closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
@@ -952,6 +960,7 @@ onUnmounted(() => {
           <label>{{ t('plans.sectionInfo') }}<input v-model="createSectionInfo" :placeholder="t('plans.sectionInfo')" /></label>
           <label>{{ t('plans.taskContent') }}<input v-model="createTaskContent" :placeholder="t('plans.taskContent')" required /></label>
           <label>{{ t('plans.taskMinutes') }}<input v-model.number="createTaskMinutes" type="number" min="0" step="1" /></label>
+          <label class="create-todos-option"><input v-model="createTodos" type="checkbox" /> <span><strong>{{ t('plans.createTodos') }}</strong><small>{{ t('plans.createTodosHint') }}</small></span></label>
         </div>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
