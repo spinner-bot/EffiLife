@@ -1183,6 +1183,13 @@ onUnmounted(() => {
   .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 900px) { .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .log-editor, .group-editor { display: flex; } }
+@media (max-width: 900px) {
+  .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; }
+  .log-editor, .group-editor { display: flex; }
+  /* Keep PH task actions usable on tablets before the mobile breakpoint. */
+  .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; }
+  .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; }
+}
 @media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>
