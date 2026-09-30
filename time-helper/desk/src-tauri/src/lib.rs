@@ -197,6 +197,15 @@ fn save_config(config: Config) -> bool {
 }
 
 #[cfg(all(not(debug_assertions), desktop))]
+fn plan_helper_port_is_occupied() -> bool {
+    let address: SocketAddr = match "127.0.0.1:8765".parse() {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    TcpStream::connect_timeout(&address, Duration::from_millis(100)).is_ok()
+}
+
+#[cfg(all(not(debug_assertions), desktop))]
 fn plan_helper_is_ready() -> bool {
     let address: SocketAddr = match "127.0.0.1:8765".parse() {
         Ok(value) => value,
@@ -225,6 +234,12 @@ fn plan_helper_is_ready() -> bool {
 #[cfg(all(not(debug_assertions), desktop))]
 fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box<dyn std::error::Error>> {
     use tauri_plugin_shell::ShellExt;
+
+    // Never attach the new desktop shell to a stale sidecar or unrelated
+    // service that already owns the fixed compatibility port.
+    if plan_helper_port_is_occupied() {
+        return Err("plan-helper port 8765 is already occupied".into());
+    }
 
     // Plan Helper preserves its legacy on-disk layout: the runtime root owns
     // both `plan/` and `data/system/registry/`. Tauri's shared data helper

@@ -65,5 +65,8 @@ def test_release_sidecar_must_pass_health_check_before_app_startup():
     assert "plan_helper_is_ready" in source
     assert 'GET /api/health HTTP/1.1' in source
     assert 'response.contains("plan-helper")' in source
+    assert "fn plan_helper_port_is_occupied() -> bool" in source
+    assert 'if plan_helper_port_is_occupied() {' in source
+    assert 'plan-helper port 8765 is already occupied' in source
     assert 'path == "/api/health"' in server
     assert "plan-helper sidecar did not pass its health check" in source
