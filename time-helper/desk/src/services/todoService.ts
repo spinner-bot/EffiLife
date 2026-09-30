@@ -34,6 +34,10 @@ export const DEFAULT_TODO_SETTINGS: TodoSettings = {
   expandCount: 5,
 }
 
+const TODO_STATUSES: readonly TodoStatus[] = ['pending', 'in-progress', 'completed', 'archived', 'cancelled']
+const TODO_PRIORITIES: readonly TodoPriority[] = ['urgent-important', 'important', 'urgent', 'normal']
+const TODO_RECURRENCES: readonly TodoRecurrence[] = ['none', 'daily', 'weekly', 'monthly', 'custom']
+
 const TODO_SETTINGS_KEY = 'todo_settings'
 
 function normalizeTodoSettings(value: Partial<TodoSettings> | null | undefined): TodoSettings {
@@ -112,15 +116,18 @@ function makeSubtaskId(): string {
 
 function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): UnifiedTodo {
   const timestamp = now()
+  const status = TODO_STATUSES.includes(todo.status as TodoStatus) ? todo.status as TodoStatus : 'pending'
+  const priority = TODO_PRIORITIES.includes(todo.priority as TodoPriority) ? todo.priority as TodoPriority : 'normal'
+  const recurrence = TODO_RECURRENCES.includes(todo.recurrence as TodoRecurrence) ? todo.recurrence as TodoRecurrence : 'none'
   return {
     id: todo.id || makeId(),
     title: todo.title.trim(),
     description: todo.description?.trim() || undefined,
     created_at: todo.created_at || timestamp,
     updated_at: timestamp,
-    priority: todo.priority || 'normal',
+    priority,
     category: todo.category || 'default',
-    status: todo.status || 'pending',
+    status,
     deadline: todo.deadline,
     completed_at: todo.completed_at,
     tags: todo.tags || [],
@@ -130,7 +137,7 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     time_estimate: todo.time_estimate,
     time_spent: todo.time_spent,
     notes: todo.notes,
-    recurrence: todo.recurrence || 'none',
+    recurrence,
     deadline_warning_days: todo.deadline_warning_days ?? 3,
     sort_order: todo.sort_order ?? 0,
     pinned: todo.pinned || false,

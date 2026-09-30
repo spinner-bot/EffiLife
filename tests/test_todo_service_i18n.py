@@ -17,3 +17,12 @@ def test_todo_service_domain_errors_use_localized_keys():
     for key in keys:
         assert re.search(rf"'{re.escape(key)}':", catalog), f"missing todo i18n key: {key}"
 
+
+def test_imported_todo_enums_are_normalized_before_storage():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "const TODO_STATUSES: readonly TodoStatus[]" in source
+    assert "const TODO_PRIORITIES: readonly TodoPriority[]" in source
+    assert "const TODO_RECURRENCES: readonly TodoRecurrence[]" in source
+    assert "TODO_STATUSES.includes(todo.status as TodoStatus)" in source
+    assert "TODO_PRIORITIES.includes(todo.priority as TodoPriority)" in source
+    assert "TODO_RECURRENCES.includes(todo.recurrence as TodoRecurrence)" in source
