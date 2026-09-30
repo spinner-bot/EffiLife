@@ -21,11 +21,12 @@
 - `to-dos/ui` 的 `npm ci --dry-run --ignore-scripts` 与 `npm run build` 成功。
 - `python scripts/check_release_config.py` 成功。
 - `python scripts/check_mobile_release_config.py` 成功。
-- GitHub API 请求返回 403，当前无法读取具体失败 job 的错误行。
+- GitHub REST API 请求曾返回 403 限流；改用公开 Actions 页面核对后，确认最新主 CI Run 79、80、81 均成功，移动端边界 Run 95、96 均成功。
+- 可见的失败通知对应较早的主 CI Run 70（提交 `fix(a11y): separate home plan overview actions`），失败步骤为当时的 `Run full Python test suite`，后续提交已连续通过同一检查。
 
 ## 结论与后续
 
-当前本地证据不足以证明最近提交导致工作流失败。需要邮件中的 Actions run URL、run 编号或失败 job 的最后一段日志，才能进行定点修复；不能仅凭“run fail”通知修改发布流程。
+当前证据表明，最近提交没有导致持续性的工作流失败；用户收到的通知很可能是旧失败 run 的邮件提醒。若仍有新的通知，需要对应的 Actions run URL 或 run 编号才能继续定点核对。
 
 受保护的 `time-helper/desk/package-lock.json` 与 `docs/HOTL/` 未被提交或修改。
 
