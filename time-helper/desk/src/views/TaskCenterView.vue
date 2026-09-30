@@ -932,9 +932,9 @@ watch(() => route.query.todo, () => {
 
       <section class="task-toolbar">
         <div class="task-tabs" role="tablist" :aria-label="t('tasks.title')">
-          <button :class="{ active: filter === 'active' }" @click="filter = 'active'">{{ t('tasks.active') }}</button>
-          <button :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ t('tasks.all') }}</button>
-          <button :class="{ active: filter === 'completed' }" @click="filter = 'completed'">{{ t('tasks.completedTab') }}</button>
+          <button type="button" role="tab" id="tasks-tab-active" aria-controls="task-list-panel" :aria-selected="filter === 'active'" :tabindex="filter === 'active' ? 0 : -1" :class="{ active: filter === 'active' }" @click="filter = 'active'">{{ t('tasks.active') }}</button>
+          <button type="button" role="tab" id="tasks-tab-all" aria-controls="task-list-panel" :aria-selected="filter === 'all'" :tabindex="filter === 'all' ? 0 : -1" :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ t('tasks.all') }}</button>
+          <button type="button" role="tab" id="tasks-tab-completed" aria-controls="task-list-panel" :aria-selected="filter === 'completed'" :tabindex="filter === 'completed' ? 0 : -1" :class="{ active: filter === 'completed' }" @click="filter = 'completed'">{{ t('tasks.completedTab') }}</button>
         </div>
         <select v-model="categoryFilter" class="task-filter-select" :aria-label="t('tasks.categoryFilter')">
           <option value="">{{ t('tasks.allCategories') }}</option>
@@ -1071,7 +1071,7 @@ watch(() => route.query.todo, () => {
         <strong>{{ filter === 'completed' ? t('tasks.emptyCompleted') : t('tasks.emptyActive') }}</strong>
         <span>{{ t('tasks.emptyHint') }}</span>
       </section>
-      <section v-else class="task-list">
+      <section v-else id="task-list-panel" class="task-list" role="tabpanel" aria-live="polite" :aria-labelledby="`tasks-tab-${filter}`">
         <article v-for="todo in visibleTodos" :id="`todo-${todo.id}`" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed', 'search-target': searchTargetTodoId === todo.id }">
           <input class="task-select-checkbox" type="checkbox" :checked="selectedTodoIds.has(todo.id)" :aria-label="t('tasks.selectTask', { title: todo.title })" :disabled="bulkWorking" @click.stop @change="toggleTodoSelection(todo.id)" />
           <button class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
