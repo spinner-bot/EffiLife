@@ -214,6 +214,34 @@ def archive_plan(plan_id, archive_dir=None, linked_todos=None):
         return error_response(str(e))
 
 
+def _serialize_raw_archive_tasks(plan_data):
+    """Project active archive tasks for read-only search/navigation metadata."""
+    tasks = []
+    for section_index, section in enumerate(plan_data.get("main", []) or []):
+        raw_tasks = section.get("plan", []) if isinstance(section, dict) else []
+        display_index = 0
+        for internal_index, task in enumerate(raw_tasks):
+            if internal_index == 0 or not isinstance(task, dict) or task.get("is_active") is False:
+                continue
+            display_index += 1
+            internal_id = plan_module.Plan.syn_index(section_index, internal_index)
+            display_id = plan_module.Plan.syn_index(section_index, display_index)
+            try:
+                time_minutes = round(float(task.get("t_m", 0) or 0) * 6, 1)
+            except (TypeError, ValueError):
+                time_minutes = 0
+            tasks.append({
+                "display_id": display_id,
+                "internal_id": internal_id,
+                "internal_index": internal_index,
+                "content": str(task.get("content", "")),
+                "time_minutes": time_minutes,
+                "is_active": True,
+                "finish": task.get("finish"),
+            })
+    return tasks
+
+
 def list_archives(archive_dir=None):
     """List recoverable archived plans."""
     try:
@@ -239,6 +267,7 @@ def list_archives(archive_dir=None):
                         for link in payload.get("linked_todos", [])
                         if isinstance(link, dict) and link.get("id")
                     ],
+                    "tasks": _serialize_raw_archive_tasks(plan_data),
                 })
             except (OSError, ValueError, json.JSONDecodeError):
                 continue

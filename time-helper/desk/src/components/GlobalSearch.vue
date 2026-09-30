@@ -68,6 +68,14 @@ const allResults = computed<SearchResult[]>(() => [
     searchText: `${plan.name || ''} ${plan.plan_id || ''} ${plan.file}`,
     route: `/plans?archive=${encodeURIComponent(plan.file)}`,
   })),
+  ...archivedPlans.value.flatMap((plan) => (plan.tasks || []).map((task) => ({
+    id: `archived-plan-task:${plan.file}:${task.internal_id}`,
+    kind: 'planTask' as const,
+    title: task.content,
+    detail: `${t('search.planTaskDetail')} · ${plan.name || plan.file} · ${task.display_id} · ${t('search.archivedPlanDetail')}`,
+    searchText: `${task.content} ${plan.name || ''} ${task.display_id} ${plan.file}`,
+    route: `/plans?archive=${encodeURIComponent(plan.file)}&task=${encodeURIComponent(task.internal_id)}`,
+  }))),
   ...planTasks.value.map(({ plan, task }) => ({
     id: `plan-task:${plan.id}:${task.internal_id}`,
     kind: 'planTask' as const,

@@ -61,6 +61,7 @@ export interface PlanArchiveSummary {
   date?: [number, number, number]
   archived_at?: string
   linked_todo_ids?: string[]
+  tasks?: PlanTaskSummary[]
 }
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
@@ -458,6 +459,7 @@ export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
         linked_todo_ids: Array.isArray(archive.payload?.linked_todos)
           ? archive.payload.linked_todos.map((link) => String(link.id || '')).filter(Boolean)
           : [],
+        tasks: toMobilePlanFull(plan, archives.indexOf(archive)).sections.flatMap((section) => section.tasks),
       }]
     }).filter((archive) => archive.file)
   }
