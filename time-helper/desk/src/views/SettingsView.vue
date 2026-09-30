@@ -584,7 +584,13 @@ watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], preview
 
 // 初始化完成后关闭加载状态
 onMounted(async () => {
-  dataStats.value = await getDataStats()
+  try {
+    dataStats.value = await getDataStats()
+  } catch (error) {
+    // Statistics are supplementary; an IndexedDB read failure must not keep
+    // the entire settings page in its loading state.
+    console.warn('Failed to load settings data statistics:', error)
+  }
   // 短暂延迟以展示骨架屏过渡效果
   setTimeout(() => {
     isLoading.value = false
