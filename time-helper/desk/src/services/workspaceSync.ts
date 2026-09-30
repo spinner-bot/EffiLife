@@ -147,6 +147,10 @@ export async function repairTodoPlanTaskLinks(): Promise<number> {
       }
       try {
         const tasks = await getPlanTasks(planId)
+        // A task request may fall back to the local snapshot after the
+        // summary request succeeded. That snapshot is not authoritative for
+        // destructive link repair; leave all relations untouched.
+        if (String(planDataSource.value) === 'cache') return 0
         taskIdsByPlan.set(planId, new Set(tasks.flatMap((task) => [String(task.internal_id), String(task.display_id)])))
       } catch {
         // A single plan may be temporarily unavailable; do not repair it.

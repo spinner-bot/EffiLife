@@ -29,7 +29,8 @@ def test_startup_repairs_only_provably_stale_plan_task_links():
     assert "listPlanSummaries" in source
     assert "getPlanTasks" in source
     assert "planDataSource" in source
-    assert "if (planDataSource.value === 'cache') return 0" in source
+    assert "if (String(planDataSource.value) === 'cache') return 0" in source
+    assert "A task request may fall back to the local snapshot" in source
     assert "An absent active summary is not proof that the plan was deleted" in source
     assert "taskIdsByPlan.set(planId, new Set())" not in source
     assert "taskIds.has(String(todo.related_plan_task_id))" in source
