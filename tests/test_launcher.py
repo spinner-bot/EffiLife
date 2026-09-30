@@ -306,6 +306,31 @@ def test_launcher_reports_port_conflict_without_starting_main(monkeypatch):
     assert opened == []
 
 
+def test_launcher_reports_companion_port_conflict_before_starting_it(monkeypatch):
+    terminated = []
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: False)
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: True)
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
+
+    class UnexpectedPopen:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("the launcher must not start on a companion port conflict")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
+    result = launcher.start_companions({
+        "companions": [{
+            "name": "plan-helper API",
+            "cmd": ["python", "web/server.py"],
+            "cwd": launcher.BASE_DIR,
+            "url": "http://127.0.0.1:8765",
+            "health_url": "http://127.0.0.1:8765/api/health",
+        }],
+    }, {})
+
+    assert result is None
+    assert terminated == []
+
+
 def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
     monkeypatch.setenv("EFFILIFE_STARTUP_TIMEOUT", "90")
     assert launcher.startup_timeout() == 90

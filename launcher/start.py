@@ -907,6 +907,19 @@ def start_companions(module, env):
             print(f"使用已运行的 {companion['name']}: {companion['url']}")
             continue
 
+        companion_url = companion.get("url")
+        if companion_url and local_port_is_occupied(companion_url):
+            record_launcher_event(
+                "companion_port_conflict",
+                companion=companion.get("name"),
+                url=companion_url,
+            )
+            print(f"\nPort conflict: {companion_url} is occupied by another service.")
+            print("Stop the conflicting process or verify that the existing service is plan-helper, then retry.")
+            for started in managed:
+                terminate_process(started)
+            return None
+
         print(f"启动配套服务: {companion['name']}")
         try:
             process = subprocess.Popen(
