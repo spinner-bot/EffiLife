@@ -39,6 +39,19 @@ def test_day_detail_delete_cleans_linked_todo_reference():
     assert "notifyWorkspaceChanged('records')" in source
 
 
+def test_time_record_actions_have_accessible_names_and_button_types():
+    records = RECORDS.read_text(encoding="utf-8")
+    day = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+    i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+
+    assert 'type="button" class="icon-btn" :aria-label="t(\'records.edit\')"' in records
+    assert 'type="button" class="icon-btn danger" :aria-label="t(\'records.delete\')"' in records
+    assert 'type="button" class="delete-btn" :aria-label="t(\'dayDetail.delete\')"' in day
+    assert 'type="button" class="close-btn" :aria-label="t(\'dayDetail.close\')"' in day
+    assert i18n.count("'dayDetail.delete':") == 2
+    assert i18n.count("'dayDetail.close':") == 2
+
+
 def test_record_save_confirms_success_in_both_locales():
     source = RECORDS.read_text(encoding="utf-8")
     i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")

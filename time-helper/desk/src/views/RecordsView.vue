@@ -419,10 +419,10 @@ onUnmounted(() => {
             {{ t('records.linkedPlan') }}
           </button>
           <div class="record-actions">
-            <button class="icon-btn" @click="openEditForm(index)" :title="t('records.edit')">
+            <button type="button" class="icon-btn" :aria-label="t('records.edit')" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
             </button>
-            <button class="icon-btn danger" @click="deleteRecord(index)" :title="t('records.delete')">
+            <button type="button" class="icon-btn danger" :aria-label="t('records.delete')" @click="deleteRecord(index)" :title="t('records.delete')">
               <Trash2 :size="14" />
             </button>
           </div>

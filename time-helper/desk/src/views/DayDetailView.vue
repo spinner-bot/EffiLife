@@ -155,7 +155,7 @@ onMounted(loadData)
             </div>
             <div class="record-content">{{ record.content }}</div>
             <button v-if="record.todo_id" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>
-            <button class="delete-btn" @click="deleteRecord(index)">
+            <button type="button" class="delete-btn" :aria-label="t('dayDetail.delete')" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
           </div>
@@ -173,7 +173,7 @@ onMounted(loadData)
           <div class="modal">
             <div class="modal-header">
               <h3>{{ t('dayDetail.switchPlan') }}</h3>
-              <button class="close-btn" @click="showPlanSelector = false">
+              <button type="button" class="close-btn" :aria-label="t('dayDetail.close')" @click="showPlanSelector = false">
                 <X :size="20" />
               </button>
             </div>
@@ -193,7 +193,7 @@ onMounted(loadData)
                 <Check v-if="name === dayPlanName" :size="18" class="check-icon" />
               </button>
             </div>
-            <button class="btn secondary full" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
+            <button type="button" class="btn secondary full" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
           </div>
         </div>
       </Transition>
