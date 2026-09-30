@@ -56,6 +56,10 @@ const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
+const createSectionName = ref('')
+const createSectionInfo = ref('')
+const createTaskContent = ref('')
+const createTaskMinutes = ref(30)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -214,6 +218,10 @@ function openCreatePlan() {
   createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
+  createSectionName.value = ''
+  createSectionInfo.value = ''
+  createTaskContent.value = ''
+  createTaskMinutes.value = 30
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -221,6 +229,10 @@ function openCreatePlan() {
 
 function closeCreatePlan() {
   showCreate.value = false
+  createSectionName.value = ''
+  createSectionInfo.value = ''
+  createTaskContent.value = ''
+  createTaskMinutes.value = 30
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
@@ -268,11 +280,20 @@ async function retryPlanService() {
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
-  if (!name || !planDate.value) return
+  const section = createSectionName.value.trim()
+  const task = createTaskContent.value.trim()
+  if (!name || !planDate.value || !section || !task) {
+    errorMessage.value = t('plans.createTaskRequired')
+    return
+  }
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const created = await createEventPlan(name, toDateTuple(planDate.value), [])
+    const created = await createEventPlan(name, toDateTuple(planDate.value), [{
+      name: section,
+      info: createSectionInfo.value.trim(),
+      tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
+    }])
     const createdId = created.id
     selectedPlan.value = await getPlanFull(created.id)
     closeCreatePlan()
@@ -924,7 +945,14 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
-        <p class="create-editor-note">{{ t('plans.createEmptyHint') }}</p>
+        <div class="create-first-action">
+          <strong>{{ t('plans.firstActionTitle') }}</strong>
+          <span>{{ t('plans.firstActionHint') }}</span>
+          <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" :placeholder="t('plans.sectionName')" required /></label>
+          <label>{{ t('plans.sectionInfo') }}<input v-model="createSectionInfo" :placeholder="t('plans.sectionInfo')" /></label>
+          <label>{{ t('plans.taskContent') }}<input v-model="createTaskContent" :placeholder="t('plans.taskContent')" required /></label>
+          <label>{{ t('plans.taskMinutes') }}<input v-model.number="createTaskMinutes" type="number" min="0" step="1" /></label>
+        </div>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>

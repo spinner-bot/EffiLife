@@ -5,16 +5,20 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_only_collects_name_and_date_then_opens_full_editor():
+def test_plan_creation_collects_a_first_section_and_task_before_opening_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [])" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [{" in view
+    assert "name: section," in view
+    assert "tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }]," in view
     assert "createEventPlanFromTemplate" not in view
-    assert "createSectionName" not in view
-    assert "createTaskContent" not in view
-    assert "createTaskMinutes" not in view
-    assert "plans.createEmptyHint" in view
+    assert "const createSectionName = ref('')" in view
+    assert "const createTaskContent = ref('')" in view
+    assert "const createTaskMinutes = ref(30)" in view
+    assert "plans.firstActionTitle" in view
+    assert "plans.firstActionHint" in view
+    assert "plans.createTaskRequired" in view
     assert "plans.createAndEdit" in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view
