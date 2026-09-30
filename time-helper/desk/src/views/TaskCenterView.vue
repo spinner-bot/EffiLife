@@ -212,13 +212,6 @@ const archivedPlanById = computed(() => Object.fromEntries(
       && !planSummaries.value.some((activePlan) => String(activePlan.id) === String(archive.plan_id)))
     .map((archive) => [String(archive.plan_id), archive] as const),
 ))
-const planTaskById = computed(() => Object.fromEntries(
-  planTasks.value.flatMap((task) => [
-    [task.internal_id, task] as const,
-    [task.display_id, task] as const,
-  ]),
-))
-
 async function loadTodos() {
   isLoading.value = true
   errorMessage.value = ''
@@ -1136,7 +1129,7 @@ watch(() => route.query.todo, () => {
             <span v-if="todo.deadline" class="task-deadline" :class="getDeadlineState(todo.deadline)">{{ deadlineStateLabel(todo.deadline) }} · {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
             <button v-if="todo.related_plan_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}<small v-if="archivedPlanById[todo.related_plan_id]"> · {{ t('tasks.archivedPlan') }}</small></button>
-            <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: {{ planTaskById[todo.related_plan_task_id]?.display_id || `#${todo.related_plan_task_id}` }}<small v-if="todo.related_plan_id && archivedPlanById[todo.related_plan_id]"> · {{ t('tasks.archivedPlan') }}</small></button>
+            <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: #{{ todo.related_plan_task_id }}<small v-if="todo.related_plan_id && archivedPlanById[todo.related_plan_id]"> · {{ t('tasks.archivedPlan') }}</small></button>
           </div>
           <div v-if="editingId !== todo.id" class="task-item-actions">
             <div class="task-rank-control" :title="t('tasks.priorityRank')">
