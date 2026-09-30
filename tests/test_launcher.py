@@ -193,6 +193,20 @@ def test_launcher_packaged_mode_can_also_be_selected_by_environment(monkeypatch)
     assert launcher.packaged_mode() is True
 
 
+def test_launcher_does_not_start_external_plan_helper_for_native_tauri(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"native-binary")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    modules = launcher.build_modules()
+
+    assert modules["1"]["cmd"] == [str(binary)]
+    assert modules["1"]["url"] is None
+    assert modules["1"]["companions"] == []
+
+
 def test_launcher_keeps_unified_workspace_as_first_menu_entry():
     modules = launcher.build_modules()
     assert modules["1"]["name"] == "EffiLife unified workspace"

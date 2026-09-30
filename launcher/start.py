@@ -362,6 +362,14 @@ def build_modules():
     th_cmd, th_url, th_setup = get_time_helper_cmd()
     td_cmd, td_url, td_setup = get_todos_web_cmd()
 
+    plan_helper_companion = [{
+        "name": "plan-helper API",
+        "cmd": plan_helper_command(),
+        "cwd": BASE_DIR / "plan-helper",
+        "url": "http://127.0.0.1:8765",
+        "health_url": "http://127.0.0.1:8765/api/health",
+    }] if th_url else []
+
     modules = {
         "1": {
             "name": "EffiLife 统一工作台",
@@ -370,13 +378,10 @@ def build_modules():
             "cwd": BASE_DIR / "time-helper" / "desk",
             "url": th_url,
             "setup": th_setup,
-            "companions": [{
-                "name": "plan-helper API",
-                "cmd": plan_helper_command(),
-                "cwd": BASE_DIR / "plan-helper",
-                "url": "http://127.0.0.1:8765",
-                "health_url": "http://127.0.0.1:8765/api/health",
-            }],
+            # A native Tauri build owns its Plan Helper sidecar. Only the
+            # browser-based development/static-server modes need the external
+            # compatibility API managed by this launcher.
+            "companions": plan_helper_companion,
         },
         "2": {
             "name": "plan-helper（兼容入口）",
