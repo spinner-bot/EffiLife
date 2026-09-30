@@ -5,7 +5,7 @@ import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-v
 import { useI18n } from '@/i18n'
 import { getAll, STORE_NAMES } from '@/storage'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
-import { getPlanTasks, listPlanSummaries, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { getPlanTasks, listPlanArchives, listPlanSummaries, type PlanArchiveSummary, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import type { TimeRecord } from '@/types'
 
@@ -18,6 +18,7 @@ const isLoading = ref(false)
 const input = ref<HTMLInputElement | null>(null)
 const todos = ref<UnifiedTodo[]>([])
 const plans = ref<PlanSummary[]>([])
+const archivedPlans = ref<PlanArchiveSummary[]>([])
 const planTasks = ref<Array<{ plan: PlanSummary; task: PlanTaskSummary }>>([])
 const records = ref<TimeRecord[]>([])
 const selectedIndex = ref(0)
@@ -25,7 +26,7 @@ let searchRequestId = 0
 
 type SearchResult = {
   id: string
-  kind: 'todo' | 'plan' | 'planTask' | 'record'
+  kind: 'todo' | 'plan' | 'archivedPlan' | 'planTask' | 'record'
   title: string
   detail: string
   searchText: string
@@ -36,6 +37,7 @@ function searchModuleLabel(kind: SearchResult['kind']): string {
   return t({
     todo: 'search.module.todo',
     plan: 'search.module.plan',
+    archivedPlan: 'search.module.archivedPlan',
     planTask: 'search.module.planTask',
     record: 'search.module.record',
   }[kind])
@@ -57,6 +59,14 @@ const allResults = computed<SearchResult[]>(() => [
     detail: t('search.planDetail'),
     searchText: '',
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
+  })),
+  ...archivedPlans.value.map((plan) => ({
+    id: `archived-plan:${plan.file}`,
+    kind: 'archivedPlan' as const,
+    title: plan.name || plan.file,
+    detail: t('search.archivedPlanDetail'),
+    searchText: `${plan.name || ''} ${plan.plan_id || ''} ${plan.file}`,
+    route: `/plans?plan=${encodeURIComponent(String(plan.plan_id ?? ''))}`,
   })),
   ...planTasks.value.map(({ plan, task }) => ({
     id: `plan-task:${plan.id}:${task.internal_id}`,
@@ -133,14 +143,16 @@ async function loadIndex() {
   const requestId = ++searchRequestId
   isLoading.value = true
   try {
-    const [todoResult, planResult, recordResult] = await Promise.allSettled([
+  const [todoResult, planResult, archiveResult, recordResult] = await Promise.allSettled([
       TodoService.list(),
       listPlanSummaries(),
+      listPlanArchives(),
       getAll<TimeRecord[]>(STORE_NAMES.RECORDS),
     ])
     if (requestId !== searchRequestId) return
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
     plans.value = planResult.status === 'fulfilled' ? planResult.value : []
+    archivedPlans.value = archiveResult.status === 'fulfilled' ? archiveResult.value : []
     planTasks.value = []
     records.value = recordResult.status === 'fulfilled' ? recordResult.value.flat() : []
     // Keep the primary index usable even when the plan service is slow or offline.
@@ -202,7 +214,7 @@ watch(() => props.open, async (open) => {
         <button v-for="(result, index) in filteredResults" :id="resultDomId(result)" :key="result.id" class="search-result" :class="{ selected: selectedIndex === index }" type="button" role="option" :aria-selected="selectedIndex === index" @click="openResult(result)">
           <span class="search-result-icon">
             <ListTodo v-if="result.kind === 'todo'" :size="16" />
-            <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'planTask'" :size="16" />
+            <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'archivedPlan' || result.kind === 'planTask'" :size="16" />
             <Clock3 v-else :size="16" />
           </span>
           <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ searchModuleLabel(result.kind) }} · {{ result.detail }}</small></span>

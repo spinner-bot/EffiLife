@@ -22,6 +22,9 @@ def test_global_search_indexes_all_unified_data_domains():
     source = SEARCH.read_text(encoding="utf-8")
     assert "TodoService.list()" in source
     assert "listPlanSummaries()" in source
+    assert "listPlanArchives()" in source
+    assert "kind: 'archivedPlan'" in source
+    assert "search.archivedPlanDetail" in source
     assert "STORE_NAMES.RECORDS" in source
     assert "router.push(result.route)" in source
     assert "tasks?todo=" in source
@@ -123,9 +126,11 @@ def test_global_search_translation_keys_exist_in_both_locales():
         "search.results",
         "search.todoDetail",
         "search.planDetail",
+        "search.archivedPlanDetail",
         "search.planTaskDetail",
         "search.module.todo",
         "search.module.plan",
+        "search.module.archivedPlan",
         "search.module.planTask",
         "search.module.record",
     ):
@@ -137,6 +142,7 @@ def test_global_search_labels_each_result_with_its_source_module():
     assert "function searchModuleLabel(kind: SearchResult['kind'])" in source
     assert "search.module.todo" in source
     assert "search.module.plan" in source
+    assert "search.module.archivedPlan" in source
     assert "search.module.planTask" in source
     assert "search.module.record" in source
     assert "searchModuleLabel(result.kind)" in source
