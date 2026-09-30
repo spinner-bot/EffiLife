@@ -5,7 +5,7 @@ import { parseLocalDate } from '@/services/dataService'
 
 /**
  * GitHub 风格贡献热力图
- * 可复用于日历视图和打卡视图
+ * 可复用于时间统计和打卡反馈视图，不提供独立日历入口
  */
 
 interface HeatmapCell {
@@ -191,13 +191,13 @@ const stats = computed(() => {
 })
 
 const weekDays = computed(() => [
-  t('calendar.weekday.sun'),
-  t('calendar.weekday.mon'),
-  t('calendar.weekday.tue'),
-  t('calendar.weekday.wed'),
-  t('calendar.weekday.thu'),
-  t('calendar.weekday.fri'),
-  t('calendar.weekday.sat'),
+  t('heatmap.weekday.sun'),
+  t('heatmap.weekday.mon'),
+  t('heatmap.weekday.tue'),
+  t('heatmap.weekday.wed'),
+  t('heatmap.weekday.thu'),
+  t('heatmap.weekday.fri'),
+  t('heatmap.weekday.sat'),
 ])
 
 function formatDate(d: Date): string {

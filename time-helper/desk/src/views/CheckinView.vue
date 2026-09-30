@@ -278,7 +278,7 @@ const last7Days = computed(() => {
         <div class="section-header-row">
           <div class="section-title-row">
             <BarChart3 :size="16" class="section-icon" />
-            <h3 class="section-title">{{ t('checkin.calendar') }}</h3>
+            <h3 class="section-title">{{ t('checkin.heatmap') }}</h3>
           </div>
         </div>
         <ContributionHeatmap
