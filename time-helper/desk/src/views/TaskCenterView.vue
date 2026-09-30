@@ -385,6 +385,12 @@ async function loadPlanTasks(planId: string) {
   }
 }
 
+async function retryPlanGateway(): Promise<void> {
+  if (planGatewayState.value === 'loading') return
+  await loadPlanSummaries()
+  if (selectedPlanId.value) await loadPlanTasks(selectedPlanId.value)
+}
+
 async function refreshFromWorkspace(source?: string): Promise<void> {
   if (!source || !['todos', 'plans', 'records', 'archive', 'settings'].includes(source)) return
   if (source === 'settings') {
@@ -953,7 +959,10 @@ watch(() => route.query.todo, () => {
           <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
-        <span v-else-if="planGatewayState === 'unavailable'" class="task-plan-status">{{ t('tasks.serviceUnavailable') }}</span>
+        <div v-else-if="planGatewayState === 'unavailable'" class="task-plan-status task-plan-status-action">
+          <span>{{ t('tasks.serviceUnavailable') }}</span>
+          <button type="button" class="task-plan-retry" @click="retryPlanGateway">{{ t('tasks.retryPlanService') }}</button>
+        </div>
       </section>
 
       <section v-if="categories.length" class="task-category-nav theme-card">
@@ -1224,6 +1233,9 @@ watch(() => route.query.todo, () => {
 .task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
+.task-plan-status-action { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.task-plan-retry { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
+.task-plan-retry:disabled { cursor: not-allowed; opacity: .55; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
 .task-category-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .task-category-nav-header > div { display: grid; gap: 3px; }

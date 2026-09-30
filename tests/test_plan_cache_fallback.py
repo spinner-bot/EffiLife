@@ -24,12 +24,15 @@ def test_cached_plan_snapshot_is_read_only_in_desktop_ui():
     assert "plans-list-source-note" in plans
     assert "@click=\"retryPlanService\"" in plans
     assert ":disabled=\"planGatewayState !== 'ready'\"" in tasks
+    assert "async function retryPlanGateway(): Promise<void>" in tasks
+    assert '@click="retryPlanGateway"' in tasks
 
 
 def test_cached_plan_mode_is_localized():
     source = I18N.read_text(encoding="utf-8")
     assert source.count("'plans.cachedTitle':") == 2
     assert source.count("'plans.cachedDescription':") == 2
+    assert source.count("'tasks.retryPlanService':") == 2
 
 
 def test_task_center_exposes_archived_plan_state_without_removing_the_link():
