@@ -120,6 +120,32 @@ def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     assert url is None and setup is None
 
 
+def test_compatibility_todos_web_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    command, url, setup = launcher.get_todos_web_cmd()
+
+    assert command is None
+    assert url is None and setup is None
+
+
+def test_compatibility_todos_web_packaged_mode_uses_valid_static_build(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    dist = tmp_path / "to-dos" / "ui" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html></html>", encoding="utf-8")
+    monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    command, url, setup = launcher.get_todos_web_cmd()
+
+    assert command[:2] == [sys.executable, str(tmp_path / "launcher" / "static_server.py")]
+    assert url == "http://127.0.0.1:1421"
+    assert setup is None
+
+
 def test_launcher_ignores_empty_packaged_artifacts(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe"

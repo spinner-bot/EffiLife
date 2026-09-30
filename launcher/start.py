@@ -339,12 +339,17 @@ def installer_artifacts():
 
 
 def get_todos_web_cmd():
-    """Get command for to-dos web, checking for npm"""
-    npm = find_npm()
-    if npm:
-        return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1421", "--strictPort"], "http://127.0.0.1:1421", [npm, "install"]
+    """Get the compatibility Web command without leaking dev mode into packages."""
     dist_path = BASE_DIR / "to-dos" / "ui" / "dist"
-    if (dist_path / "index.html").exists():
+    if packaged_mode():
+        if not is_non_empty_file(dist_path / "index.html"):
+            return None, None, None
+    else:
+        npm = find_npm()
+        if npm:
+            return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1421", "--strictPort"], "http://127.0.0.1:1421", [npm, "install"]
+
+    if is_non_empty_file(dist_path / "index.html"):
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", "1421", "--bind", "127.0.0.1", "--directory", str(dist_path),
