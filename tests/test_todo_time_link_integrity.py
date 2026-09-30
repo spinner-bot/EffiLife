@@ -9,3 +9,8 @@ def test_tracking_time_deduplicates_related_record_ids():
     assert "const relatedTimeRecordIds = recordIds.length > 0" in SERVICE
     assert "[...new Set([...(current.related_time_record_ids || []), ...recordIds])]" in SERVICE
     assert "related_time_record_ids: relatedTimeRecordIds" in SERVICE
+
+
+def test_todo_normalization_deduplicates_imported_record_ids():
+    assert "const relatedTimeRecordIds = Array.isArray(todo.related_time_record_ids)" in SERVICE
+    assert "new Set(todo.related_time_record_ids.filter" in SERVICE

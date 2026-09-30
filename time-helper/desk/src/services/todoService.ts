@@ -119,6 +119,9 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
   const status = TODO_STATUSES.includes(todo.status as TodoStatus) ? todo.status as TodoStatus : 'pending'
   const priority = TODO_PRIORITIES.includes(todo.priority as TodoPriority) ? todo.priority as TodoPriority : 'normal'
   const recurrence = TODO_RECURRENCES.includes(todo.recurrence as TodoRecurrence) ? todo.recurrence as TodoRecurrence : 'none'
+  const relatedTimeRecordIds = Array.isArray(todo.related_time_record_ids)
+    ? [...new Set(todo.related_time_record_ids.filter((id): id is string => typeof id === 'string' && Boolean(id)))]
+    : undefined
   return {
     id: todo.id || makeId(),
     title: todo.title.trim(),
@@ -148,7 +151,7 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     // Legacy imports without it still fall back to their creation timestamp.
     start_time: todo.start_time || todo.created_at || timestamp,
     estimated_time: todo.estimated_time,
-    related_time_record_ids: todo.related_time_record_ids,
+    related_time_record_ids: relatedTimeRecordIds,
   }
 }
 
