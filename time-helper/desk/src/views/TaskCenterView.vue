@@ -863,7 +863,11 @@ onUnmounted(() => {
   stopWorkspaceListener = null
   if (focusTodoId.value) {
     const activeFocusTodo = todos.value.find((todo) => todo.id === focusTodoId.value)
-    if (activeFocusTodo) void stopFocus(activeFocusTodo)
+    if (activeFocusTodo) {
+      void stopFocus(activeFocusTodo).catch((error) => {
+        console.warn('Failed to persist focus time during task-center cleanup:', error)
+      })
+    }
   }
   if (priorityTimer !== null) window.clearInterval(priorityTimer)
   clearFocusTimer()
