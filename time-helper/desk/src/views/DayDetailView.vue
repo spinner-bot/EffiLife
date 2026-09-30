@@ -89,7 +89,11 @@ async function selectPlan(planName: string) {
   notifyWorkspaceChanged('plans')
 }
 
-onMounted(loadData)
+onMounted(() => {
+  void loadData().catch((error) => {
+    console.warn('Failed to load day detail:', error)
+  })
+})
 </script>
 
 <template>

@@ -344,7 +344,9 @@ onMounted(async () => {
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
   refreshTimer = window.setInterval(() => {
-    appStore.refreshTodayData()
+    void appStore.refreshTodayData().catch((error) => {
+      console.warn('Failed to refresh home statistics:', error)
+    })
     refreshTodoSummary()
     refreshEventPlanSummary()
   }, 60000)
