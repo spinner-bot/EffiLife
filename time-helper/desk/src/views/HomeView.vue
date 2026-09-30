@@ -182,7 +182,10 @@ const planNameById = computed(() => Object.fromEntries(eventPlans.value.map((pla
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
-const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache')
+const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache' || planDataSource.value === 'mobile')
+const eventPlanSnapshotLabel = computed(() => planDataSource.value === 'mobile'
+  ? t('plans.mobileLocalTitle')
+  : t('plans.cachedTitle'))
 const todayRecordHours = computed(() => appStore.todayRecords.reduce((total, record) => total + Number(record.duration || 0), 0))
 
 const updateTime = () => {
@@ -493,7 +496,7 @@ onUnmounted(() => {
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
             <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
-            <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ t('plans.cachedTitle') }}</span>
+            <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>

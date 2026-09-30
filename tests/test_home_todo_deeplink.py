@@ -29,3 +29,9 @@ def test_home_event_plan_summary_discloses_cached_source():
     assert "planDataSource" in source
     assert "isEventPlanSnapshot" in source
     assert "plans.cachedTitle" in source
+
+
+def test_home_event_plan_summary_discloses_mobile_snapshot_source():
+    source = HOME.read_text(encoding="utf-8")
+    assert "planDataSource.value === 'mobile'" in source
+    assert "plans.mobileLocalTitle" in source
