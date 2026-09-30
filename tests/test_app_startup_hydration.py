@@ -43,3 +43,12 @@ def test_automatic_checkin_maintenance_has_a_recoverable_error_boundary():
     assert "await CheckinSystem.autoCheckinIfMissed()" in maintenance
     assert "await CheckinSystem.getYesterdayCompletedRecords()" in maintenance
     assert "Failed to complete automatic check-in maintenance:" in maintenance
+
+
+def test_legacy_migration_summary_is_shown_after_workspace_hydration():
+    app = APP.read_text(encoding="utf-8")
+    source = I18N.read_text(encoding="utf-8")
+    assert "legacyMigrationSummary = await TodoService.migrateLegacyLocalStorage()" in app
+    assert "legacyMigrationSummary && (legacyMigrationSummary.migrated > 0 || legacyMigrationSummary.categories > 0)" in app
+    assert "notifyToast(t('app.legacyMigrationSummary', legacyMigrationSummary), 'success')" in app
+    assert source.count("'app.legacyMigrationSummary'") == 2

@@ -13,6 +13,7 @@ import { refreshLocaleFromStorage, useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
 import ConfirmHost from './components/ConfirmHost.vue'
+import { notifyToast } from '@/services/toastService'
 import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
 import { onWorkspaceChanged } from './services/workspaceEvents'
 
@@ -45,6 +46,7 @@ const startupError = ref(false)
 const startupErrorMessage = ref('')
 const showGlobalSearch = ref(false)
 let stopWorkspaceListener: (() => void) | null = null
+let legacyMigrationSummary: { migrated: number; categories: number; skipped: number } | null = null
 const searchShortcut = computed(() => {
   const platform = typeof navigator === 'undefined' ? '' : navigator.platform
   return /Mac|iPhone|iPad/.test(platform) ? '⌘K' : 'Ctrl K'
@@ -143,7 +145,7 @@ onMounted(async () => {
   try {
     await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
     await appStore.init()
-    await TodoService.migrateLegacyLocalStorage()
+    legacyMigrationSummary = await TodoService.migrateLegacyLocalStorage()
     try {
       await repairTodoTimeRecordLinks()
     } catch (error) {
@@ -158,6 +160,9 @@ onMounted(async () => {
   }
   applyTheme()
   runtimeReady.value = true
+  if (legacyMigrationSummary && (legacyMigrationSummary.migrated > 0 || legacyMigrationSummary.categories > 0)) {
+    notifyToast(t('app.legacyMigrationSummary', legacyMigrationSummary), 'success')
+  }
   // Plan-helper may need network retries; do not delay the first usable frame.
   void repairTodoPlanTaskLinks().catch((error) => {
     // Link repair is recoverable maintenance; it must not create an
