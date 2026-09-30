@@ -868,12 +868,38 @@ def _legacy_main():
         input("\n按 Enter 继续...")
 
 
+def print_help():
+    """Print the launcher command reference without starting any service."""
+    print(
+        "EffiLife launcher\n"
+        "\n"
+        "Usage: python launcher/start.py [option]\n"
+        "\n"
+        "Default:\n"
+        "  Start the unified EffiLife workspace.\n"
+        "\n"
+        "Options:\n"
+        "  --help, -h       Show this help and exit\n"
+        "  --no-browser     Start without opening the browser\n"
+        "  --diagnose       Print machine-readable launcher diagnostics\n"
+        "  --doctor         Print a human-readable readiness report\n"
+        "  --release-check  Validate desktop release configuration\n"
+        "  --verify-bundle  Verify a release bundle path\n"
+        "  --packaged       Require a packaged Tauri binary or built dist\n"
+        "  --legacy-menu    Open the legacy module launcher\n"
+        "  --version        Print the application version\n"
+    )
+
+
 def main():
     """Launch the unified workspace by default.
 
     The old module menu remains available explicitly through
     ``--legacy-menu`` for migration and debugging.
     """
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print_help()
+        return
     if "--version" in sys.argv:
         print(app_version() or "unknown")
         return

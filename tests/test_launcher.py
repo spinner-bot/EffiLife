@@ -14,6 +14,17 @@ def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     assert calls == [("1", modules, {"open_browser": True})]
 
 
+def test_launcher_help_does_not_start_workspace(monkeypatch, capsys):
+    monkeypatch.setattr(launcher, "build_modules", lambda: (_ for _ in ()).throw(AssertionError("must not start modules")))
+    monkeypatch.setattr(sys, "argv", ["start.py", "--help"])
+
+    launcher.main()
+
+    output = capsys.readouterr().out
+    assert "EffiLife launcher" in output
+    assert "--diagnose" in output
+
+
 def test_release_check_is_read_only_and_short_circuits_startup(monkeypatch, capsys):
     monkeypatch.setattr(launcher, "build_modules", lambda: (_ for _ in ()).throw(AssertionError("must not start modules")))
     monkeypatch.setattr(launcher, "release_check_command", lambda: True)
