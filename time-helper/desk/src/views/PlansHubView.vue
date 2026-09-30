@@ -14,18 +14,15 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
-  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
-  listPlanTemplates,
   listPlanSummaries,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
-  type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
@@ -59,14 +56,6 @@ const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
-const createSectionName = ref('')
-const createSectionInfo = ref('')
-const createTaskContent = ref('')
-const createTaskMinutes = ref(30)
-const createTodos = ref(false)
-const createTemplates = ref<PlanTemplateSummary[]>([])
-const createTemplateId = ref('')
-const createTemplatesLoading = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -159,22 +148,6 @@ function formatLogTime(time?: [number, number]): string {
   return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
 }
 
-function templateName(template: PlanTemplateSummary): string {
-  if (!template.built_in) return template.name
-  if (template.type === 'workday') return t('plans.templateTypes.workdayName')
-  if (template.type === 'weekend') return t('plans.templateTypes.weekendName')
-  if (template.type === 'exam') return t('plans.templateTypes.examName')
-  return template.name
-}
-
-function templateDescription(template: PlanTemplateSummary): string {
-  if (!template.built_in) return template.description
-  if (template.type === 'workday') return t('plans.templateTypes.workdayDescription')
-  if (template.type === 'weekend') return t('plans.templateTypes.weekendDescription')
-  if (template.type === 'exam') return t('plans.templateTypes.examDescription')
-  return template.description
-}
-
 async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
@@ -241,33 +214,13 @@ function openCreatePlan() {
   createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
-  createSectionName.value = ''
-  createSectionInfo.value = ''
-  createTaskContent.value = ''
-  createTaskMinutes.value = 30
-  createTodos.value = false
-  createTemplateId.value = ''
-  createTemplates.value = []
-  createTemplatesLoading.value = true
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
-  void listPlanTemplates()
-    .then((templates) => { createTemplates.value = templates })
-    .catch(() => { createTemplates.value = [] })
-    .finally(() => { createTemplatesLoading.value = false })
 }
 
 function closeCreatePlan() {
   showCreate.value = false
-  createSectionName.value = ''
-  createSectionInfo.value = ''
-  createTaskContent.value = ''
-  createTaskMinutes.value = 30
-  createTodos.value = false
-  createTemplateId.value = ''
-  createTemplates.value = []
-  createTemplatesLoading.value = false
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
@@ -315,40 +268,13 @@ async function retryPlanService() {
 async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
-  const section = createSectionName.value.trim()
-  const task = createTaskContent.value.trim()
   if (!name || !planDate.value) return
-  if (!createTemplateId.value && (!section || !task)) {
-    errorMessage.value = t('plans.createTaskRequired')
-    return
-  }
   isLoading.value = true
   errorMessage.value = ''
   try {
-    let createdId: string
-    if (createTemplateId.value) {
-      selectedPlan.value = await createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)
-      createdId = selectedPlan.value.id
-    } else {
-      const created = await createEventPlan(name, toDateTuple(planDate.value), [{
-        name: section,
-        info: createSectionInfo.value.trim(),
-        tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
-      }])
-      createdId = created.id
-    }
-    if (!selectedPlan.value || String(selectedPlan.value.id) !== String(createdId)) {
-      selectedPlan.value = await getPlanFull(createdId)
-    }
-    if (createTodos.value) {
-      try {
-        const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
-        if (result.created > 0) notifyToast(t('plans.todosCreated', { count: result.created }), 'success')
-        if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
-      } catch {
-        notifyToast(t('plans.todoSyncFailed'), 'error')
-      }
-    }
+    const created = await createEventPlan(name, toDateTuple(planDate.value))
+    const createdId = created.id
+    selectedPlan.value = await getPlanFull(createdId)
     closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
@@ -1000,23 +926,6 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
-        <label v-if="createTemplatesLoading || createTemplates.length" class="create-template-field">
-          {{ t('plans.template') }}
-          <select v-model="createTemplateId" :disabled="createTemplatesLoading">
-            <option value="">{{ t('plans.templateManual') }}</option>
-            <option v-for="template in createTemplates" :key="template.id" :value="template.id">{{ templateName(template) }} · {{ templateDescription(template) }}</option>
-          </select>
-        </label>
-        <p v-if="createTemplateId" class="create-template-note"><strong>{{ t('plans.templateSelected') }}</strong><small>{{ t('plans.templateHint') }}</small></p>
-        <div v-if="!createTemplateId" class="create-first-action">
-          <strong>{{ t('plans.firstActionTitle') }}</strong>
-          <span>{{ t('plans.firstActionHint') }}</span>
-          <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" :placeholder="t('plans.sectionName')" required /></label>
-          <label>{{ t('plans.sectionInfo') }}<input v-model="createSectionInfo" :placeholder="t('plans.sectionInfo')" /></label>
-          <label>{{ t('plans.taskContent') }}<input v-model="createTaskContent" :placeholder="t('plans.taskContent')" required /></label>
-          <label>{{ t('plans.taskMinutes') }}<input v-model.number="createTaskMinutes" type="number" min="0" step="1" /></label>
-          <label class="create-todos-option"><input v-model="createTodos" type="checkbox" /> <span><strong>{{ t('plans.createTodos') }}</strong><small>{{ t('plans.createTodosHint') }}</small></span></label>
-        </div>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>
@@ -1070,19 +979,6 @@ onUnmounted(() => {
 .meta-editor input, .section-editor input, .task-editor input, .create-modal input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .meta-editor input:focus, .section-editor input:focus, .task-editor input:focus, .create-modal input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .create-modal { width: min(440px, calc(100vw - 32px)); }
-.create-first-action { display: grid; gap: 8px; margin-top: 4px; border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; background: var(--color-bg-secondary); }
-.create-first-action > strong { color: var(--color-text-primary); font-size: 13px; }
-.create-first-action > span { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
-.create-first-action label { font-size: 11px; }
-.create-template-field select { border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
-.create-template-note { display: grid; gap: 3px; margin: 0; border-left: 3px solid var(--color-primary); padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; line-height: 1.45; }
-.create-template-note strong { color: var(--color-text-primary); }
-.create-template-note small { color: var(--color-text-tertiary); font-size: 11px; }
-.create-todos-option { display: flex !important; align-items: flex-start; gap: 8px; border: 1px solid var(--color-border); border-radius: 10px; padding: 9px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
-.create-todos-option input { margin-top: 2px; accent-color: var(--color-primary); }
-.create-todos-option span { display: grid; gap: 2px; }
-.create-todos-option strong { color: var(--color-text-primary); font-size: 12px; }
-.create-todos-option small { color: var(--color-text-tertiary); font-size: 11px; line-height: 1.4; }
 .plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }

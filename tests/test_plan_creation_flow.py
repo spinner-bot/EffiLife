@@ -5,28 +5,21 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_collects_a_first_section_and_task_before_opening_editor():
+def test_plan_creation_uses_a_short_identity_form_then_opens_empty_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [{" in view
-    assert "name: section," in view
-    assert "tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }]," in view
-    assert "createEventPlanFromTemplate" in view
-    assert "listPlanTemplates" in view
-    assert "const createSectionName = ref('')" in view
-    assert "const createTaskContent = ref('')" in view
-    assert "const createTaskMinutes = ref(30)" in view
-    assert "const createTodos = ref(false)" in view
-    assert "plans.firstActionTitle" in view
-    assert "plans.firstActionHint" in view
-    assert "plans.createTaskRequired" in view
-    assert "v-model=\"createTemplateId\"" in view
-    assert "plans.templateManual" in view
-    assert "plans.templateSelected" in view
-    assert "v-model=\"createTodos\"" in view
-    assert "linkPendingPlanTasksToTodos(selectedPlan.value)" in view
-    assert "catch {\n        notifyToast(t('plans.todoSyncFailed'), 'error')\n      }" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value))" in view
+    assert "selectedPlan.value = await getPlanFull(createdId)" in view
+    assert "view.value = 'detail'" in view
+    assert "createEventPlanFromTemplate" not in view
+    assert "listPlanTemplates" not in view
+    assert "createSectionName" not in view
+    assert "createTaskContent" not in view
+    assert "createTodos" not in view
+    assert "v-model=\"createTemplateId\"" not in view
+    assert "plans.firstActionTitle" not in view
+    assert "plans.createTaskRequired" not in view
     assert "plans.createAndEdit" in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view
@@ -67,7 +60,7 @@ def test_template_creation_uses_the_existing_plan_helper_endpoint():
     assert "template_id: templateId" in gateway
     assert "locale = 'zh-CN'" in gateway
     assert "locale })" in gateway
-    assert "createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)" in view
+    assert "createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)" not in view
 
 
 def test_detail_editor_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
