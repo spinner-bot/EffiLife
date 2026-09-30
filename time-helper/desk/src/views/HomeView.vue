@@ -190,11 +190,17 @@ function scheduleWorkspaceSummaryRefresh() {
   if (workspaceRefreshTimer !== null) return
   workspaceRefreshTimer = window.setTimeout(async () => {
     workspaceRefreshTimer = null
-    await Promise.all([
-      appStore.refreshTodayData(),
-      refreshTodoSummary(),
-      refreshEventPlanSummary(),
-    ])
+    try {
+      await Promise.all([
+        appStore.refreshTodayData(),
+        refreshTodoSummary(),
+        refreshEventPlanSummary(),
+      ])
+    } catch (error) {
+      // A cross-window refresh is recoverable. Keep the dashboard mounted and
+      // let the next workspace event or periodic refresh retry the read.
+      console.warn('Failed to refresh home workspace summary:', error)
+    }
   }, 80)
 }
 

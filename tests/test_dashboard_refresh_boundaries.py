@@ -13,6 +13,13 @@ def test_home_periodic_statistics_refresh_has_error_boundary():
     assert "Failed to refresh home statistics:" in refresh_block
 
 
+def test_home_cross_window_summary_refresh_has_error_boundary():
+    refresh_block = HOME.split("workspaceRefreshTimer = window.setTimeout(async () =>", 1)[1].split("}, 80)", 1)[0]
+    assert "await Promise.all([" in refresh_block
+    assert "catch (error)" in refresh_block
+    assert "Failed to refresh home workspace summary:" in refresh_block
+
+
 def test_day_detail_initial_load_has_error_boundary():
     assert "void loadData().catch((error) =>" in DAY
     assert "Failed to load day detail:" in DAY
