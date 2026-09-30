@@ -52,9 +52,25 @@ async function refreshTodoSummary() {
     ])
     const categoryById = new Map(categories.map((category) => [category.id, category]))
     const active = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status))
+    const today = new Date()
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+    const urgency = (todo: UnifiedTodo): { rank: number; timestamp: number } => {
+      if (!todo.deadline) return { rank: 3, timestamp: Number.POSITIVE_INFINITY }
+      const deadline = parseStoredDate(todo.deadline)
+      if (Number.isNaN(deadline.getTime())) return { rank: 3, timestamp: Number.POSITIVE_INFINITY }
+      const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime()
+      if (deadlineStart < todayStart) return { rank: 0, timestamp: deadlineStart }
+      if (deadlineStart === todayStart) return { rank: 1, timestamp: deadlineStart }
+      return { rank: 2, timestamp: deadlineStart }
+    }
     activeTodoCount.value = active.length
     todayTodos.value = [...active]
       .sort((a, b) => {
+        const urgencyDelta = urgency(a).rank - urgency(b).rank
+        if (urgencyDelta !== 0) return urgencyDelta
+        const aDeadline = urgency(a).timestamp
+        const bDeadline = urgency(b).timestamp
+        if (aDeadline !== bDeadline) return aDeadline - bDeadline
         if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1
         const scoreDelta = getPriorityScore(b, categoryById.get(b.category)).score - getPriorityScore(a, categoryById.get(a.category)).score
         if (scoreDelta !== 0) return scoreDelta
