@@ -738,7 +738,7 @@ onUnmounted(() => {
       <button v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
     </header>
 
-    <main class="plans-content">
+    <main class="plans-content" :class="{ 'plans-content-hub': view === 'hub' }">
       <DailyPlanView v-if="view === 'time'" />
 
       <template v-else-if="view === 'hub'">
@@ -1064,6 +1064,18 @@ onUnmounted(() => {
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .create-editor-note { border: 1px solid var(--color-primary-muted); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); line-height: 1.5; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (min-width: 1100px) {
+  .plans-content-hub {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr);
+    align-items: start;
+    gap: 28px;
+    max-width: 1280px;
+  }
+  .plans-content-hub .unified-plan-section { min-width: 0; margin-bottom: 0; }
+  .plans-content-hub .event-plans-section { border-top: 0; padding-top: 0; }
+  .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
 @media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>

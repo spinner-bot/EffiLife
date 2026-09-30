@@ -8,7 +8,14 @@ DAILY = Path("time-helper/desk/src/views/PlanView.vue").read_text(encoding="utf-
 def test_default_plan_hub_embeds_daily_workspace_and_event_workspace_together():
     assert '<DailyPlanView :embedded="true" />' in HUB
     assert 'unified-plan-section event-plans-section' in HUB
+    assert "'plans-content-hub': view === 'hub'" in HUB
     assert 'class="plan-domain-grid"' not in HUB
+
+
+def test_desktop_plan_hub_uses_two_columns_without_changing_domain_components():
+    assert "@media (min-width: 1100px)" in HUB
+    assert "grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr)" in HUB
+    assert ".plans-content-hub .event-plans-section" in HUB
 
 
 def test_daily_plan_supports_embedded_mode_without_duplicate_header():
