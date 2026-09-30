@@ -93,6 +93,17 @@ def test_global_search_trigger_and_dialog_are_explicitly_linked():
     assert 'id="global-search-title"' in source
 
 
+def test_global_search_traps_tab_focus_and_restores_trigger_focus():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "const dialog = ref<HTMLElement | null>(null)" in source
+    assert "let returnFocus: HTMLElement | null = null" in source
+    assert "function handleDialogKeydown(event: KeyboardEvent)" in source
+    assert "event.key !== 'Tab'" in source
+    assert "returnFocus?.isConnected" in source
+    assert 'ref="dialog"' in source
+    assert '@keydown="handleDialogKeydown"' in source
+
+
 def test_global_search_indexes_todo_descriptions_and_tags():
     source = SEARCH.read_text(encoding="utf-8")
     assert "todo.description || todo.tags?.join(', ')" in source

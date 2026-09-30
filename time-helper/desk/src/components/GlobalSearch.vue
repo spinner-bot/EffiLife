@@ -16,6 +16,7 @@ const { t } = useI18n()
 const query = ref('')
 const isLoading = ref(false)
 const input = ref<HTMLInputElement | null>(null)
+const dialog = ref<HTMLElement | null>(null)
 const todos = ref<UnifiedTodo[]>([])
 const plans = ref<PlanSummary[]>([])
 const archivedPlans = ref<PlanArchiveSummary[]>([])
@@ -23,6 +24,7 @@ const planTasks = ref<Array<{ plan: PlanSummary; task: PlanTaskSummary }>>([])
 const records = ref<TimeRecord[]>([])
 const selectedIndex = ref(0)
 let searchRequestId = 0
+let returnFocus: HTMLElement | null = null
 
 type SearchResult = {
   id: string
@@ -197,8 +199,36 @@ function handleSearchKeydown(event: KeyboardEvent) {
   }
 }
 
+function handleDialogKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    close()
+    return
+  }
+  if (event.key !== 'Tab') return
+  const focusable = Array.from(dialog.value?.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+  ) || [])
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 watch(() => props.open, async (open) => {
-  if (!open) return
+  if (!open) {
+    await nextTick()
+    if (returnFocus?.isConnected) returnFocus.focus()
+    returnFocus = null
+    return
+  }
+  returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   query.value = ''
   selectedIndex.value = 0
   await loadIndex()
@@ -209,7 +239,7 @@ watch(() => props.open, async (open) => {
 
 <template>
   <div v-if="open" class="search-backdrop" @click.self="close">
-    <section id="global-search-dialog" class="search-dialog theme-card" role="dialog" aria-modal="true" aria-labelledby="global-search-title" @keydown.esc="close">
+    <section ref="dialog" id="global-search-dialog" class="search-dialog theme-card" role="dialog" aria-modal="true" aria-labelledby="global-search-title" @keydown="handleDialogKeydown">
       <header class="search-header">
         <div class="search-heading"><Search :size="18" /><strong id="global-search-title">{{ t('search.title') }}</strong></div>
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
