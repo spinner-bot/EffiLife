@@ -14,18 +14,15 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
-  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
   listPlanSummaries,
-  listPlanTemplates,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
-  type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
@@ -59,15 +56,6 @@ const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
-const createSectionName = ref('')
-const createSectionInfo = ref('')
-const createTaskContent = ref('')
-const createTaskMinutes = ref(30)
-const createTodosOnCreate = ref(false)
-const planTemplates = ref<PlanTemplateSummary[]>([])
-const selectedTemplateId = ref('')
-const templatesLoading = ref(false)
-const selectedTemplate = computed(() => planTemplates.value.find((template) => template.id === selectedTemplateId.value) || null)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -226,13 +214,6 @@ function openCreatePlan() {
   createReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   planName.value = ''
   planDate.value = toDateInput(new Date())
-  createSectionName.value = ''
-  createSectionInfo.value = ''
-  createTaskContent.value = ''
-  createTaskMinutes.value = 30
-  createTodosOnCreate.value = false
-  selectedTemplateId.value = ''
-  void loadPlanTemplates()
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
@@ -240,28 +221,11 @@ function openCreatePlan() {
 
 function closeCreatePlan() {
   showCreate.value = false
-  createSectionName.value = ''
-  createSectionInfo.value = ''
-  createTaskContent.value = ''
-  createTaskMinutes.value = 30
-  createTodosOnCreate.value = false
-  selectedTemplateId.value = ''
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
-}
-
-async function loadPlanTemplates(): Promise<void> {
-  templatesLoading.value = true
-  try {
-    planTemplates.value = await listPlanTemplates()
-  } catch {
-    planTemplates.value = []
-  } finally {
-    templatesLoading.value = false
-  }
 }
 
 function openTimePlan() {
@@ -305,36 +269,12 @@ async function createPlan() {
   if (isLoading.value) return
   const name = planName.value.trim()
   if (!name || !planDate.value) return
-  if (!selectedTemplateId.value && (!createSectionName.value.trim() || !createTaskContent.value.trim())) return
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const linkTodosAfterCreate = createTodosOnCreate.value
-    let createdId: string | number
-    if (selectedTemplateId.value) {
-      const created = await createEventPlanFromTemplate(selectedTemplateId.value, name, toDateTuple(planDate.value))
-      createdId = created.id
-      selectedPlan.value = created
-    } else {
-      const created = await createEventPlan(name, toDateTuple(planDate.value), [{
-        name: createSectionName.value.trim(),
-        info: createSectionInfo.value.trim(),
-        tasks: [{ content: createTaskContent.value.trim(), time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
-      }])
-      createdId = created.id
-      selectedPlan.value = await getPlanFull(created.id)
-    }
-    if (linkTodosAfterCreate && selectedPlan.value) {
-      try {
-        const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
-        if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
-        if (result.created > 0) notifyToast(t('plans.todosBulkCreated', { count: result.created }), 'success')
-      } catch {
-        // The plan is already created; keep it usable and let the detail page
-        // expose the existing bulk-link action for a later retry.
-        notifyToast(t('plans.todoSyncFailed'), 'error')
-      }
-    }
+    const created = await createEventPlan(name, toDateTuple(planDate.value), [])
+    const createdId = created.id
+    selectedPlan.value = await getPlanFull(created.id)
     closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
@@ -984,30 +924,7 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
-        <label v-if="planTemplates.length" class="create-template-field">{{ t('plans.template') }}
-          <select v-model="selectedTemplateId" :disabled="templatesLoading">
-            <option value="">{{ t('plans.templateManual') }}</option>
-            <option v-for="template in planTemplates" :key="template.id" :value="template.id">{{ template.name }}</option>
-          </select>
-        </label>
-        <div v-if="selectedTemplate" class="create-template-note">
-          <strong>{{ selectedTemplate.name }}</strong>
-          <span>{{ selectedTemplate.description }}</span>
-          <small>{{ t('plans.templateType') }} · {{ selectedTemplate.type }}</small>
-        </div>
-        <label class="create-todos-option">
-          <input v-model="createTodosOnCreate" type="checkbox" />
-          <span><strong>{{ t('plans.createTodos') }}</strong><small>{{ t('plans.createTodosHint') }}</small></span>
-        </label>
-        <div v-if="!selectedTemplateId" class="create-first-action">
-          <strong>{{ t('plans.firstActionTitle') }}</strong>
-          <span>{{ t('plans.firstActionHint') }}</span>
-          <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" required /></label>
-          <label>{{ t('plans.sectionInfo') }}<input v-model="createSectionInfo" /></label>
-          <label>{{ t('plans.taskContent') }}<input v-model="createTaskContent" required /></label>
-          <label>{{ t('plans.taskMinutes') }}<input v-model.number="createTaskMinutes" type="number" min="0" step="1" required /></label>
-        </div>
-        <p class="create-editor-note">{{ t('plans.createEditorHint') }}</p>
+        <p class="create-editor-note">{{ t('plans.createEmptyHint') }}</p>
         <div class="modal-actions"><button type="button" class="plans-secondary" @click="closeCreatePlan">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>

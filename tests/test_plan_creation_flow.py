@@ -5,33 +5,19 @@ ROOT = Path(__file__).resolve().parents[1]
 DESK = ROOT / "time-helper" / "desk" / "src"
 
 
-def test_plan_creation_requires_a_first_action_then_opens_full_editor():
+def test_plan_creation_only_collects_name_and_date_then_opens_full_editor():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
-    assert "await createEventPlan(name, toDateTuple(planDate.value), [{" in view
-    assert "createEventPlanFromTemplate(selectedTemplateId.value" in view
-    assert "void loadPlanTemplates()" in view
-    assert "v-model=\"selectedTemplateId\"" in view
-    assert "const selectedTemplate = computed" in view
-    assert "selectedTemplate.description" in view
-    assert "selectedTemplate.type" in view
-    assert "createSectionName.value.trim()" in view
-    assert "createTaskContent.value.trim()" in view
-    assert "createTaskMinutes.value" in view
-    assert "plans.createEditorHint" in view
-    assert "plans.firstActionTitle" in view
-    assert "plans.firstActionHint" in view
+    assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [])" in view
+    assert "createEventPlanFromTemplate" not in view
+    assert "createSectionName" not in view
+    assert "createTaskContent" not in view
+    assert "createTaskMinutes" not in view
+    assert "plans.createEmptyHint" in view
     assert "plans.createAndEdit" in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view
-    assert "v-model=\"createSectionName\"" in view
-    assert "v-model=\"createTaskContent\"" in view
-    assert "plans.templateManual" in view
-    assert "const createTodosOnCreate = ref(false)" in view
-    assert "linkPendingPlanTasksToTodos(selectedPlan.value)" in view
-    assert "v-model=\"createTodosOnCreate\"" in view
-    assert "plans.createTodosHint" in view
     assert "sections: InitialPlanSection[] = []" in gateway
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 
