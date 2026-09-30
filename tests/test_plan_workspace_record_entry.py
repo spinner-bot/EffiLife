@@ -6,9 +6,10 @@ APP = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="ut
 PLAN = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlanView.vue").read_text(encoding="utf-8")
 
 
-def test_primary_navigation_no_longer_splits_time_records_from_plans():
-    assert 'data-guide="records"' not in APP
-    assert 'to="/records"' not in APP
+def test_primary_navigation_exposes_time_records_without_replacing_the_time_workspace():
+    assert 'data-guide="records"' in APP
+    assert 'to="/records"' in APP
+    assert 'to="/time"' in APP
 
 
 def test_plan_workspace_keeps_history_as_a_secondary_entry():
