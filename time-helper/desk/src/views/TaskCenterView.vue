@@ -715,10 +715,11 @@ async function openTodoRecords(todo: UnifiedTodo) {
 
 function openTodoPlan(todo: UnifiedTodo) {
   if (!todo.related_plan_id) return
+  const archivedPlan = archivedPlanById.value[String(todo.related_plan_id)]
   router.push({
     path: '/plans',
     query: {
-      plan: todo.related_plan_id,
+      ...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id }),
       ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
     },
   })
