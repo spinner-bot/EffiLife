@@ -24,3 +24,8 @@ def test_i18n_can_refresh_locale_written_by_another_workspace_window():
     assert "export function refreshLocaleFromStorage(): void" in SOURCE
     assert "const next = readLocale()" in SOURCE
     assert "if (next === currentLocale.value) return" in SOURCE
+
+
+def test_manual_locale_changes_broadcast_a_workspace_settings_event():
+    assert "import { notifyWorkspaceChanged } from '@/services/workspaceEvents'" in SOURCE
+    assert "if (changed) notifyWorkspaceChanged('settings')" in SOURCE

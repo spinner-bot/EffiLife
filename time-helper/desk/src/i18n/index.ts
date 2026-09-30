@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
 export type Locale = 'zh-CN' | 'en-US'
 
@@ -2437,13 +2438,16 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
 }
 
 export function setLocale(next: string): void {
-  currentLocale.value = LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'
+  const resolved = LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'
+  const changed = currentLocale.value !== resolved
+  currentLocale.value = resolved
   syncDocumentLocale(currentLocale.value)
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, currentLocale.value)
   } catch {
     // Locale remains active for this session when persistence is unavailable.
   }
+  if (changed) notifyWorkspaceChanged('settings')
 }
 
 /** Apply a locale written by another workspace window without writing it back. */
