@@ -1,6 +1,7 @@
 // 打卡系统 - 记录用户连续完成计划的天数
 import { ref, reactive } from 'vue'
 import { formatDate, parseLocalDate } from '@/services/dataService'
+import { translate } from '@/i18n'
 
 const STORAGE_KEY = 'efflife_checkin_data'
 
@@ -256,7 +257,7 @@ class CheckinSystemClass {
     }
 
     // 执行补打卡（使用昨天的第一个完成记录的计划名）
-    const planName = yesterdayRecords[0]?.planName || '自动补打卡'
+    const planName = yesterdayRecords[0]?.planName || translate('settings.events.runtime.autoCheckinTitle')
     const streak = await this.checkinForDate(yesterday, planName, 100)
 
     if (streak !== null) {
@@ -337,7 +338,7 @@ class CheckinSystemClass {
         return records
           .filter((r: { progress?: number }) => r.progress === 100)
           .map((r: { plan_name?: string; planName?: string; progress?: number }) => ({
-            planName: r.plan_name || r.planName || '未知计划',
+            planName: r.plan_name || r.planName || translate('settings.events.runtime.unknownPlan'),
             progress: r.progress ?? 0
           }))
       }
