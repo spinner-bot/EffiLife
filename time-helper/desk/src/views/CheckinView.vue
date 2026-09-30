@@ -93,7 +93,7 @@ const recentRecords = computed(() => {
 // 格式化日期
 function formatDate(dateStr: string): string {
   const d = parseLocalDate(dateStr)
-  return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+  return new Intl.DateTimeFormat(locale.value, { month: '2-digit', day: '2-digit' }).format(d)
 }
 
 function formatWeekday(dateStr: string): string {
