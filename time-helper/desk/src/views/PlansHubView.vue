@@ -851,7 +851,8 @@ onUnmounted(() => {
           </section>
           <section class="archives-panel theme-card">
             <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
-            <p v-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
+            <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
+            <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
             <div v-for="archive in archives" :key="archive.file" class="archive-row">
               <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
               <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
@@ -884,7 +885,8 @@ onUnmounted(() => {
         </section>
         <section class="archives-panel theme-card">
           <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
-          <p v-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
+          <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
+          <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
           <div v-for="archive in archives" :key="archive.file" class="archive-row">
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
             <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
