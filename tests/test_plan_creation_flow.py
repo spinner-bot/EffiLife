@@ -40,6 +40,8 @@ def test_mobile_plan_creation_preserves_section_and_task_shape():
     assert "plan: [null, ...section.tasks" in gateway
     assert "t_m: Math.max(0, Number(task.time_minutes) || 0) / 6" in gateway
     assert "group: {}," in gateway
+    assert "planDataSource.value = 'mobile'" in gateway
+    assert "planDataSource.value = 'service'" in gateway
 
 
 def test_template_creation_uses_the_existing_plan_helper_endpoint():

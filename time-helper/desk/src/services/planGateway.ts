@@ -369,13 +369,16 @@ export async function createEventPlan(
     const plan: RawPlan = { head: { index: nextId, name, date }, main, log: [] }
     plans.push(plan)
     await saveMobileRawPlans(plans)
+    planDataSource.value = 'mobile'
     return toMobilePlanSummary(plan, plans.length - 1)
   }
-  return request<PlanSummary>('/api/plans', {
+  const result = await request<PlanSummary>('/api/plans', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, date, sections }),
   })
+  planDataSource.value = 'service'
+  return result
 }
 
 export async function listPlanTemplates(): Promise<PlanTemplateSummary[]> {
@@ -392,11 +395,13 @@ export async function createEventPlanFromTemplate(
   if (getPlanRuntime() === 'mobile-unavailable') {
     throw new Error(getPlanRuntimeUnavailableReason())
   }
-  return request<PlanFull>('/api/plans/from-template', {
+  const result = await request<PlanFull>('/api/plans/from-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ template_id: templateId, name, date }),
   })
+  planDataSource.value = 'service'
+  return result
 }
 
 export async function updateEventPlan(planId: string, name: string, date: [number, number, number]): Promise<PlanFull> {
