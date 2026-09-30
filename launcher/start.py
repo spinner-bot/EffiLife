@@ -147,6 +147,14 @@ def app_version():
         return None
 
 
+def is_non_empty_file(path):
+    """Return whether a candidate runtime artifact is a usable file."""
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
 def launcher_log_path():
     """Return the per-user JSONL log path used for startup diagnostics."""
     override = os.environ.get("EFFILIFE_LOG_DIR")
@@ -227,10 +235,10 @@ def get_time_helper_cmd():
     # Vite server merely because Node happens to be installed on the machine.
     if packaged_mode():
         for exe_path in exe_paths:
-            if exe_path.exists():
+            if is_non_empty_file(exe_path):
                 return [str(exe_path)], None, None
         dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
-        if (dist_path / "index.html").exists():
+        if is_non_empty_file(dist_path / "index.html"):
             return [
                 sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
                 "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -244,14 +252,14 @@ def get_time_helper_cmd():
 
     # Fall back to compiled exe
     for exe_path in exe_paths:
-        if exe_path.exists():
+        if is_non_empty_file(exe_path):
             return [str(exe_path)], None, None  # cmd, url, setup
 
     # A checked-in/CI-produced static build remains usable on machines that
     # do not have Node.js. This is a test-launcher fallback; packaged Tauri
     # binaries still take precedence above it.
     dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
-    if (dist_path / "index.html").exists():
+    if is_non_empty_file(dist_path / "index.html"):
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),

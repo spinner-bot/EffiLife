@@ -99,6 +99,22 @@ def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     assert url is None and setup is None
 
 
+def test_launcher_ignores_empty_packaged_artifacts(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"")
+    dist = tmp_path / "time-helper" / "desk" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_bytes(b"")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    command, url, setup = launcher.get_time_helper_cmd()
+
+    assert command is None
+    assert url is None and setup is None
+
+
 def test_launcher_reports_actionable_reason_when_packaged_artifact_is_missing(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
