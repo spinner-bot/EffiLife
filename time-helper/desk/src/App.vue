@@ -365,6 +365,16 @@ watch(() => appStore.todayStat, () => {
 
 @media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
 
+/* Keep tablet navigation horizontal while reserving room for every module. */
+@media (min-width: 681px) and (max-width: 820px) {
+  .global-nav { gap: 8px; padding-left: 10px; }
+  .global-brand > span:last-child { display: none; }
+  .global-nav-links { gap: 1px; }
+  .global-nav-link { gap: 4px; padding: 7px 6px; font-size: 11px; }
+  .global-search-trigger { margin-left: 0; padding: 7px; }
+  .global-search-trigger span, .global-search-trigger kbd { display: none; }
+}
+
 /* 全局主题效果 */
 .theme-card {
   backdrop-filter: var(--theme-backdrop-filter, none);

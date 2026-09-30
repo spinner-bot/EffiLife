@@ -13,6 +13,14 @@ def test_home_uses_wide_desktop_console_layout():
     assert "grid-template-columns: minmax(150px, 190px) minmax(0, 1fr)" in HOME
 
 
+def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
+    app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
+    assert "@media (min-width: 681px) and (max-width: 820px)" in app
+    tablet_block = app.split("@media (min-width: 681px) and (max-width: 820px)", 1)[1].split("/* ", 1)[0]
+    assert ".global-nav-link { gap: 4px; padding: 7px 6px; font-size: 11px; }" in tablet_block
+    assert ".global-search-trigger span, .global-search-trigger kbd { display: none; }" in tablet_block
+
+
 def test_time_workspace_has_a_wide_screen_content_budget():
     assert "@media (min-width: 1100px)" in TIME
     assert "max-width: 1180px" in TIME
