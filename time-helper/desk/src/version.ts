@@ -9,7 +9,7 @@ export const BUILD_MODE = '__BUILD_MODE__'
 export const GIT_COMMIT_HASH = '__GIT_COMMIT_HASH__'
 export const GIT_COMMIT_COUNT = '__GIT_COMMIT_COUNT__'
 
-export const APP_NAME = '浪兮效率时钟'
+export const APP_NAME = 'EffiLife'
 
 // 是否是开发版本
 export const isDevVersion = (BUILD_MODE as string) === 'development' || APP_VERSION.includes('-dev') || APP_VERSION.startsWith('__')
