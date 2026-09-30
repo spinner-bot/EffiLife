@@ -27,6 +27,17 @@ def test_plan_creation_uses_a_short_identity_form_then_opens_empty_editor():
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 
 
+def test_plan_task_duration_is_explicitly_optional():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    i18n = (DESK / "i18n" / "index.ts").read_text(encoding="utf-8")
+
+    assert "const taskMinutes = ref(0)" in view
+    assert "plans.taskMinutesHint" in view
+    assert "taskMinutes.value = task.time_minutes" in view
+    assert "'plans.taskMinutesHint': '不确定时可以留为 0'" in i18n
+    assert "'plans.taskMinutesHint': 'Leave it at 0 when you are not sure'" in i18n
+
+
 def test_mobile_plan_creation_preserves_section_and_task_shape():
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 

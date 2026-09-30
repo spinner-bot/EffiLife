@@ -65,7 +65,7 @@ const editingTaskId = ref<string | null>(null)
 const editingTaskDisplayId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
-const taskMinutes = ref(30)
+const taskMinutes = ref(0)
 const groupSectionIndex = ref<number | null>(null)
 const editingGroupKey = ref<string | null>(null)
 const groupTitle = ref('')
@@ -404,7 +404,7 @@ async function saveTask() {
       await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
     }
     taskContent.value = ''
-    taskMinutes.value = 30
+    taskMinutes.value = 0
     taskSectionIndex.value = null
     editingTaskId.value = null
     editingTaskDisplayId.value = null
@@ -532,7 +532,7 @@ function cancelTaskEdit() {
   editingTaskDisplayId.value = null
   editingTaskSectionIndex.value = null
   taskContent.value = ''
-  taskMinutes.value = 30
+  taskMinutes.value = 0
 }
 
 async function completeTask(taskId: string, displayTaskId = taskId) {
@@ -885,7 +885,7 @@ onUnmounted(() => {
           <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" required autofocus /></label>
-            <label class="task-minutes-field">{{ t('plans.taskMinutes') }}<input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
+            <label class="task-minutes-field"><span>{{ t('plans.taskMinutes') }}</span><small>{{ t('plans.taskMinutesHint') }}</small><input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
             <button type="button" class="plans-secondary" @click="cancelTaskEdit">{{ t('plans.cancel') }}</button>
             <button type="submit" class="plans-primary">{{ editingTaskId ? t('plans.editTask') : t('plans.save') }}</button>
           </form>
@@ -1009,6 +1009,7 @@ onUnmounted(() => {
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-editor label:first-child { flex: 1; }
 .task-minutes-field { flex: 0 0 110px; }
+.task-minutes-field small { color: var(--color-text-tertiary); font-size: 10px; line-height: 1.3; }
 .task-minutes-field input { width: 100%; box-sizing: border-box; }
 .group-editor { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(160px, 1.4fr) 110px 110px auto auto; align-items: end; gap: 8px; margin: 10px 0; padding: 10px; border: 1px dashed var(--color-border); border-radius: 10px; background: var(--color-bg-secondary); }
 .group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
