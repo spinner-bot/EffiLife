@@ -30,3 +30,12 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     assert "notifyToast(t('settings.saved'), 'success')" in source
     assert "notifyToast(t('settings.saveFailed'), 'error')" in source
     assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
+
+
+def test_theme_snapshot_tracks_external_settings_and_archive_changes():
+    source = SETTINGS.read_text(encoding="utf-8")
+
+    assert "onWorkspaceChanged" in source
+    assert "source !== 'settings' && source !== 'archive'" in source
+    assert "savedThemeSnapshot.value = cloneTheme(appStore.config.theme)" in source
+    assert "stopWorkspaceListener()" in source

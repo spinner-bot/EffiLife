@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AlertTriangle, ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
@@ -19,6 +19,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { getTodayDate } from '@/services/dataService'
 import { getAvailableThemes, getAvailableThemeCategories, type ThemeDefinition } from '@/theme/ThemeEngine'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -180,6 +181,11 @@ function cloneTheme(theme: Config['theme']): Config['theme'] {
 }
 
 const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
+
+const stopWorkspaceListener = onWorkspaceChanged((source) => {
+  if (source !== 'settings' && source !== 'archive') return
+  savedThemeSnapshot.value = cloneTheme(appStore.config.theme)
+})
 
 function buildDraftTheme(): Config['theme'] {
   return {
@@ -569,6 +575,10 @@ onMounted(async () => {
   } catch {
     // ignore
   }
+})
+
+onUnmounted(() => {
+  stopWorkspaceListener()
 })
 </script>
 
