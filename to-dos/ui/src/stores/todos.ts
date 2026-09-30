@@ -14,116 +14,22 @@ function localDateKey(date: Date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-// 模拟数据 (v0.5.0: 新增字段)
-const mockTodos: Todo[] = [
-  {
-    id: 'TODO-20260920-0001',
-    title: '完成项目文档',
-    description: '编写 API 文档和用户手册',
-    created_at: '2026-09-18T10:00:00',
-    updated_at: '2026-09-20T09:30:00',
-    deadline: '2026-09-22T18:00:00',
-    priority: 'urgent-important',
-    category: 'work',
-    status: 'in-progress',
-    tags: ['文档', '紧急'],
-    subtasks: [
-      { id: 'SUB-001', title: '编写目录结构', completed: true, completed_at: '2026-09-19T15:00:00' },
-      { id: 'SUB-002', title: '编写 API 规范', completed: true, completed_at: '2026-09-20T10:00:00' },
-      { id: 'SUB-003', title: '编写使用说明', completed: false },
-    ],
-    time_estimate: 120,
-    time_spent: 60,
-    sort_order: 1,
-    deadline_warning_days: 3,
-    // v0.5.0 新增
-    priority_rank: 2,
-    urgent: true,
-    important: true,
-    start_time: '2026-09-18T10:00:00',
-    estimated_time: 120,
-  },
-  {
-    id: 'TODO-20260920-0002',
-    title: '学习 Vue 3 Composition API',
-    description: '完成官方教程',
-    created_at: '2026-09-17T14:00:00',
-    updated_at: '2026-09-20T08:00:00',
-    deadline: '2026-09-25T23:59:59',
-    priority: 'important',
-    category: 'study',
-    status: 'pending',
-    tags: ['Vue', '学习'],
-    subtasks: [],
-    time_estimate: 180,
-    recurrence: 'daily',
-    sort_order: 2,
-    // v0.5.0 新增
-    priority_rank: 1,
-    urgent: false,
-    important: true,
-    start_time: '2026-09-17T14:00:00',
-    estimated_time: 180,
-  },
-  {
-    id: 'TODO-20260920-0003',
-    title: '买菜做饭',
-    created_at: '2026-09-20T07:00:00',
-    updated_at: '2026-09-20T07:00:00',
-    deadline: '2026-09-20T19:00:00',
-    priority: 'normal',
-    category: 'life',
-    status: 'completed',
-    completed_at: '2026-09-20T12:00:00',
-    tags: ['生活'],
-    subtasks: [
-      { id: 'SUB-004', title: '去超市', completed: true, completed_at: '2026-09-20T10:00:00' },
-      { id: 'SUB-005', title: '准备晚餐', completed: true, completed_at: '2026-09-20T12:00:00' },
-    ],
-    sort_order: 3,
-    // v0.5.0 新增
-    priority_rank: 0,
-    urgent: false,
-    important: false,
-    start_time: '2026-09-20T07:00:00',
-    estimated_time: 60,
-  },
-  {
-    id: 'TODO-20260920-0004',
-    title: '回复客户邮件',
-    created_at: '2026-09-19T16:00:00',
-    updated_at: '2026-09-19T16:00:00',
-    deadline: '2026-09-19T18:00:00',
-    priority: 'urgent',
-    category: 'work',
-    status: 'pending',
-    tags: ['邮件', '客户'],
-    subtasks: [],
-    sort_order: 4,
-    deadline_warning_days: 1,
-    // v0.5.0 新增
-    priority_rank: 3,
-    urgent: true,
-    important: false,
-    start_time: '2026-09-19T16:00:00',
-    estimated_time: 30,
-  },
-]
-
-const mockCategories: Category[] = [
-  { id: 'default', name: '默认', color: '#6366f1', icon: 'circle', created_at: '2026-09-01T00:00:00', difficulty: 5 },
-  { id: 'work', name: '工作', color: '#3b82f6', icon: 'briefcase', created_at: '2026-09-01T00:00:00', difficulty: 7 },
-  { id: 'study', name: '学习', color: '#22c55e', icon: 'book-open', created_at: '2026-09-01T00:00:00', difficulty: 5 },
-  { id: 'life', name: '生活', color: '#f59e0b', icon: 'home', created_at: '2026-09-01T00:00:00', difficulty: 3 },
-  { id: 'health', name: '健康', color: '#ef4444', icon: 'heart', created_at: '2026-09-01T00:00:00', difficulty: 4 },
-]
+// 首次启动保持真实空状态；默认分类只是新建待办所需的系统元数据。
+const defaultCategory: Category = {
+  id: 'default',
+  name: '默认',
+  color: '#6366f1',
+  icon: 'circle',
+  created_at: '2026-09-01T00:00:00',
+  difficulty: 5,
+}
 
 const STORAGE_KEY = 'to-dos-data'
 
 export const useTodosStore = defineStore('todos', () => {
   // 状态
-  const todos = ref<Todo[]>([...mockTodos])
-  const categories = ref<Category[]>([...mockCategories])
+  const todos = ref<Todo[]>([])
+  const categories = ref<Category[]>([{ ...defaultCategory }])
   const filters = ref<FilterState>({
     status: null,
     priority: null,
@@ -149,7 +55,9 @@ export const useTodosStore = defineStore('todos', () => {
       if (saved) {
         const data = JSON.parse(saved)
         if (data.todos) todos.value = data.todos
-        if (data.categories) categories.value = data.categories
+        if (Array.isArray(data.categories)) {
+          categories.value = data.categories.length ? data.categories : [{ ...defaultCategory }]
+        }
         if (data.filters) filters.value = { ...filters.value, ...data.filters }
         if (data.sortBy) sortBy.value = data.sortBy
         if (data.darkMode) darkMode.value = data.darkMode
