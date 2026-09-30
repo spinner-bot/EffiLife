@@ -787,7 +787,13 @@ async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
 function formatDeadline(deadline?: string): string {
   if (!deadline) return ''
   const date = new Date(deadline)
-  return Number.isNaN(date.getTime()) ? deadline : date.toLocaleDateString(locale.value)
+  return Number.isNaN(date.getTime())
+    ? deadline
+    : new Intl.DateTimeFormat(locale.value, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date)
 }
 
 type DeadlineState = 'overdue' | 'today' | 'upcoming'
