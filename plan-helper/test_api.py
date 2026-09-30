@@ -33,6 +33,7 @@ def test_api_plan_crud():
     resp = api.create_plan(name="API Test Plan", date_tuple=(2026, 9, 20))
     assert resp.success, f"Create failed: {resp.error}"
     plan_id = resp.data["id"]
+    assert resp.data["sections_count"] == 0, "A newly created plan must start empty"
     print(f"  ✅ Created plan {plan_id}")
 
     # Read
