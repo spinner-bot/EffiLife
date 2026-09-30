@@ -25,4 +25,7 @@ def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources()
     assert "plans.value = await DataService.loadPlans()" in source
     assert "notifyWorkspaceChanged('settings')" in source
     assert "notifyWorkspaceChanged('plans')" in source
+    assert "async function changeTodayPlan(planName: string)" in source
+    assert "await DataService.saveDayPlan(planName, today)" in source
+    assert "notifyWorkspaceChanged('plans')" in source.split("async function changeTodayPlan", 1)[1]
     assert "refreshWorkspaceData," in source

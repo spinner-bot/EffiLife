@@ -134,6 +134,7 @@ export const useAppStore = defineStore('app', () => {
     const today = getTodayDate()
     await DataService.saveDayPlan(planName, today)
     await refreshTodayData()
+    notifyWorkspaceChanged('plans')
   }
 
   return {
