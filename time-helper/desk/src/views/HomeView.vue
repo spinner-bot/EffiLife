@@ -424,17 +424,17 @@ onUnmounted(() => {
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
         <button class="workflow-summary-item" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.recordedToday') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.timeModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" type="button" @click="router.push('/plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }}</strong><small>{{ t('home.eventPlanProgress') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }}</strong><small>{{ t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" type="button" @click="router.push('/tasks')">
           <span class="workflow-summary-icon"><ListTodo :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ activeTodoCount }}</strong><small>{{ t('home.activeTodos') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ activeTodoCount }}</strong><small>{{ t('home.todoModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
       </section>
