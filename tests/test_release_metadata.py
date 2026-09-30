@@ -116,3 +116,4 @@ def test_release_workflow_verifies_non_empty_platform_installer():
     assert "extension: .deb" in workflow
     assert "extension: .AppImage" in workflow
     assert "extension: .dmg" in workflow
+    assert "--version-file time-helper/VERSION" in workflow

@@ -118,6 +118,7 @@ jobs:
           python scripts/verify_release_artifacts.py
           --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
           --extension ${{ matrix.extension }}
+          --version-file time-helper/VERSION
 
       - name: Generate installer checksums
         run: >-

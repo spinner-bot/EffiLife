@@ -31,3 +31,19 @@ def test_verifier_rejects_missing_or_empty_artifact(tmp_path, verifier):
     (bundle / "empty.exe").write_bytes(b"")
     with pytest.raises(FileNotFoundError):
         verifier.verify(bundle, ".exe")
+
+
+def test_verifier_accepts_artifact_matching_expected_version(tmp_path, verifier):
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    artifact = bundle / "EffiLife_1.7.0_x64-setup.exe"
+    artifact.write_bytes(b"installer")
+    assert verifier.verify(bundle, ".exe", "1.7.0") == [artifact]
+
+
+def test_verifier_rejects_stale_artifact_version(tmp_path, verifier):
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "EffiLife_1.0.11_x64-setup.exe").write_bytes(b"installer")
+    with pytest.raises(ValueError, match="version mismatch"):
+        verifier.verify(bundle, ".exe", "1.7.0")
