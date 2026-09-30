@@ -13,6 +13,7 @@ import signal
 import socket
 import threading
 import time
+import re
 from datetime import datetime, timezone
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -287,8 +288,15 @@ def installer_artifact_patterns():
     return [bundle_root / "deb" / "*.deb", bundle_root / "appimage" / "*.AppImage"]
 
 
+def installer_artifact_version(path):
+    """Extract a semantic version from a Tauri bundle filename when present."""
+    match = re.search(r"(?<!\d)(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)(?!\d)", path.name)
+    return match.group(1) if match else None
+
+
 def installer_artifacts():
     """Describe non-empty installer files without creating or mutating anything."""
+    current_version = app_version()
     artifacts = []
     for pattern in installer_artifact_patterns():
         matches = sorted(path for path in pattern.parent.glob(pattern.name) if path.is_file())
@@ -299,11 +307,24 @@ def installer_artifacts():
                     "exists": True,
                     "non_empty": path.stat().st_size > 0,
                     "size": path.stat().st_size,
+                    "artifact_version": installer_artifact_version(path),
+                    "version_matches": (
+                        installer_artifact_version(path) is None
+                        or current_version is None
+                        or installer_artifact_version(path) == current_version
+                    ),
                 }
                 for path in matches
             )
         else:
-            artifacts.append({"path": str(pattern), "exists": False, "non_empty": False, "size": 0})
+            artifacts.append({
+                "path": str(pattern),
+                "exists": False,
+                "non_empty": False,
+                "size": 0,
+                "artifact_version": None,
+                "version_matches": False,
+            })
     return artifacts
 
 
@@ -466,12 +487,26 @@ def collect_diagnostics(modules):
             "message": "Rust/Cargo is unavailable; native Tauri installer builds must run in CI or a release machine",
         })
     installer_status = installer_artifacts()
-    if not any(item["exists"] and item["non_empty"] for item in installer_status):
+    usable_installers = [
+        item for item in installer_status
+        if item["exists"] and item["non_empty"] and item.get("version_matches", True)
+    ]
+    if not usable_installers:
         hints.append({
             "code": "installer-artifact-missing",
             "severity": "info",
             "message": "No non-empty native installer was found; a Tauri binary is not the same as an installable release",
             "hint": "Run the desktop release workflow or build the platform bundle on a release machine",
+        })
+    if any(
+        item["exists"] and item["non_empty"] and not item.get("version_matches", True)
+        for item in installer_status
+    ):
+        hints.append({
+            "code": "installer-artifact-stale",
+            "severity": "info",
+            "message": "A native installer exists, but its embedded filename version does not match the current application version",
+            "hint": "Build a new installer before distributing this checkout",
         })
     if any(status.get("needs_setup") for status in module_status.values()):
         hints.append({
@@ -512,7 +547,10 @@ def print_doctor_report(report):
     print(f"Node: {report.get('node') or 'missing'}")
     print(f"npm: {report.get('npm') or 'missing'}")
     installer_status = report.get("installer_artifacts", [])
-    installers_ready = any(item.get("exists") and item.get("non_empty") for item in installer_status)
+    installers_ready = any(
+        item.get("exists") and item.get("non_empty") and item.get("version_matches", True)
+        for item in installer_status
+    )
     print(f"Native installer: {'available' if installers_ready else 'not found (binary-only or source checkout)'}")
     print()
 

@@ -475,8 +475,27 @@ def test_launcher_diagnostics_distinguish_binary_from_installer(monkeypatch, tmp
         "exists": True,
         "non_empty": True,
         "size": len(b"installer"),
+        "artifact_version": None,
+        "version_matches": True,
     }]
     assert not any(item["code"] == "installer-artifact-missing" for item in result["hints"])
+
+
+def test_launcher_marks_old_version_installer_as_stale(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
+    bundle.mkdir(parents=True)
+    installer = bundle / "EffiLife_1.0.11_x64-setup.exe"
+    installer.write_bytes(b"installer")
+
+    result = launcher.collect_diagnostics({})
+
+    artifact = result["installer_artifacts"][0]
+    assert artifact["artifact_version"] == "1.0.11"
+    assert artifact["version_matches"] is False
+    assert any(item["code"] == "installer-artifact-stale" for item in result["hints"])
+    assert any(item["code"] == "installer-artifact-missing" for item in result["hints"])
 
 
 def test_launcher_reports_missing_installer_without_blocking_workspace(monkeypatch, tmp_path):
