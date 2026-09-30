@@ -51,6 +51,14 @@ def output_path(triple: str) -> Path:
     return BINARIES_DIR / f"efflife-plan-helper-{triple}{suffix}"
 
 
+def is_non_empty_file(path: Path) -> bool:
+    """Return whether a generated sidecar is a usable regular file."""
+    try:
+        return path.is_file() and path.stat().st_size > 0
+    except OSError:
+        return False
+
+
 def build(triple: str, dry_run: bool = False) -> Path:
     if not SERVER.exists():
         raise FileNotFoundError(f"Plan Helper server not found: {SERVER}")
@@ -91,10 +99,12 @@ def build(triple: str, dry_run: bool = False) -> Path:
         return destination
 
     subprocess.run(command, cwd=ROOT, check=True)
-    if not generated.exists():
-        raise FileNotFoundError(f"PyInstaller output not found: {generated}")
+    if not is_non_empty_file(generated):
+        raise FileNotFoundError(f"PyInstaller output is missing or empty: {generated}")
     BINARIES_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copy2(generated, destination)
+    if not is_non_empty_file(destination):
+        raise FileNotFoundError(f"Sidecar copy is missing or empty: {destination}")
     print(f"Sidecar ready: {destination}")
     return destination
 

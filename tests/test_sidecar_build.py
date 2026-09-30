@@ -26,6 +26,17 @@ def test_sidecar_output_uses_tauri_target_suffix():
     )
 
 
+def test_sidecar_builder_rejects_empty_runtime_artifacts(tmp_path):
+    builder = load_builder()
+    empty = tmp_path / "efflife-plan-helper"
+    empty.write_bytes(b"")
+    non_empty = tmp_path / "efflife-plan-helper-non-empty"
+    non_empty.write_bytes(b"sidecar")
+
+    assert builder.is_non_empty_file(empty) is False
+    assert builder.is_non_empty_file(non_empty) is True
+
+
 def test_tauri_release_declares_sidecar_and_build_hook():
     config = json.loads(
         (ROOT / "time-helper/desk/src-tauri/tauri.conf.json").read_text(encoding="utf-8")
