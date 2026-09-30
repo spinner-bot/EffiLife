@@ -81,6 +81,12 @@ def test_archive_import_repairs_plan_task_links_only_with_available_snapshot():
     assert i18n.count("settings.archive.repairedTodoPlanTaskLinks") == 2
 
 
+def test_archive_import_does_not_write_mobile_plan_snapshot_twice():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    restore = source.split("const warnings: string[] = []", 1)[1].split("notifyWorkspaceChanged('archive')", 1)[0]
+    assert restore.count("await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)") == 1
+
+
 def test_archive_import_replaces_nullable_optional_datasets_without_breaking_legacy_missing_fields():
     source = ARCHIVE.read_text(encoding="utf-8")
 

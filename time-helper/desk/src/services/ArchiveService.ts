@@ -921,9 +921,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       // Legacy archives may not contain plan-helper data. Preserve the
       // current snapshot instead of treating an absent field as an empty one.
     } else if (getPlanRuntime() === 'mobile-unavailable') {
-      if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
-        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
-      } else {
+      if (!(data.planHelper?.available && Array.isArray(data.planHelper.plans))) {
         await idbClear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)
         warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planSnapshotMissing') }))
       }
