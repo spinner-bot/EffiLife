@@ -97,6 +97,13 @@ const archivedPlanTarget = computed(() => {
   if (!targetId || selectedPlan.value) return null
   return archives.value.find((archive) => String(archive.plan_id ?? '') === targetId) || null
 })
+const archivedTaskTargetId = computed(() => String(route.query.task || ''))
+
+function isArchivedTaskTarget(task: PlanTaskSummary): boolean {
+  return Boolean(archivedTaskTargetId.value && (
+    task.internal_id === archivedTaskTargetId.value || task.display_id === archivedTaskTargetId.value
+  ))
+}
 
 function showPlanSaved(): void {
   successMessage.value = t('plans.saved')
@@ -931,6 +938,11 @@ onUnmounted(() => {
           <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
             <strong>{{ t('plans.archivedTargetTitle') }}</strong>
             <span>{{ t('plans.archivedTargetDescription') }}</span>
+            <div v-if="archivedPlanTarget.tasks?.length" class="archive-task-preview">
+              <div v-for="task in archivedPlanTarget.tasks" :key="task.internal_id" class="archive-task-preview-row" :class="{ 'search-target': isArchivedTaskTarget(task) }">
+                <span>{{ task.display_id }}</span><strong>{{ task.content }}</strong><small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
+              </div>
+            </div>
             <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
           </div>
           <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
@@ -970,6 +982,11 @@ onUnmounted(() => {
         <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
           <strong>{{ t('plans.archivedTargetTitle') }}</strong>
           <span>{{ t('plans.archivedTargetDescription') }}</span>
+          <div v-if="archivedPlanTarget.tasks?.length" class="archive-task-preview">
+            <div v-for="task in archivedPlanTarget.tasks" :key="task.internal_id" class="archive-task-preview-row" :class="{ 'search-target': isArchivedTaskTarget(task) }">
+              <span>{{ task.display_id }}</span><strong>{{ task.content }}</strong><small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
+            </div>
+          </div>
           <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
         </div>
         <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
@@ -1277,6 +1294,12 @@ onUnmounted(() => {
 .archive-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .archive-row > div { display: grid; gap: 4px; min-width: 0; }
 .archive-row span { color: var(--color-text-tertiary); font-size: 12px; }
+.archive-task-preview { display: grid; gap: 5px; margin-top: 10px; width: 100%; }
+.archive-task-preview-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 6px 8px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
+.archive-task-preview-row > span { color: var(--color-primary); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+.archive-task-preview-row strong { min-width: 0; overflow: hidden; color: var(--color-text-primary); text-overflow: ellipsis; white-space: nowrap; }
+.archive-task-preview-row small { color: var(--color-text-tertiary); white-space: nowrap; }
+.archive-task-preview-row.search-target { border-color: var(--color-primary); background: var(--color-primary-muted); box-shadow: 0 0 0 2px var(--color-primary-muted); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.3); }
 .create-modal { display: grid; gap: 14px; width: min(440px, 100%); padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-bg); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.2)); }
 .create-modal h2, .create-modal p { margin: 0; }
