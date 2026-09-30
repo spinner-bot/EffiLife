@@ -15,3 +15,10 @@ def test_todo_settings_broadcast_and_refresh_across_workspace_windows():
     assert "if (source === 'settings')" in tasks
     assert "await loadTodoSettings()" in tasks
 
+
+def test_task_center_settings_load_has_a_recoverable_error_boundary():
+    tasks = TASKS.read_text(encoding="utf-8")
+    load_block = tasks.split("async function loadTodoSettings()", 1)[1].split("async function saveTodoSettings", 1)[0]
+    assert "try {" in load_block
+    assert "TodoSettingsService.get()" in load_block
+    assert "tasks.error.settings" in load_block

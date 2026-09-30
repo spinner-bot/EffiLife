@@ -186,8 +186,14 @@ function restartPriorityTimer() {
 }
 
 async function loadTodoSettings() {
-  todoSettings.value = await TodoSettingsService.get()
-  restartPriorityTimer()
+  try {
+    todoSettings.value = await TodoSettingsService.get()
+    restartPriorityTimer()
+  } catch (error) {
+    // Settings are recoverable workspace state; a read failure must not
+    // become an unhandled rejection during task-center startup.
+    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.settings')
+  }
 }
 
 async function saveTodoSettings() {
