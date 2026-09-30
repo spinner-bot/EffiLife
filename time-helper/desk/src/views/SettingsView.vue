@@ -346,6 +346,7 @@ const dataStats = ref({
   hasConfig: false,
   hasPlans: false,
   eventPlanCount: 0,
+  archivedEventPlanCount: 0,
   eventPlanSource: 'unavailable' as 'live' | 'cache' | 'snapshot' | 'unavailable',
   hasAudioSettings: false,
   hasEventSettings: false,
@@ -880,8 +881,8 @@ onUnmounted(() => {
               <span class="stat-label">{{ t('settings.archive.planData') }}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value">{{ dataStats.eventPlanCount }}</span>
-              <span class="stat-label">{{ t('settings.archive.eventPlanSnapshots') }} · {{ t(`settings.archive.planSource.${dataStats.eventPlanSource}`) }}</span>
+              <span class="stat-value">{{ dataStats.eventPlanCount }} / {{ dataStats.archivedEventPlanCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.eventPlanSnapshotsBreakdown', { active: dataStats.eventPlanCount, archived: dataStats.archivedEventPlanCount }) }} · {{ t(`settings.archive.planSource.${dataStats.eventPlanSource}`) }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.todoCount }}</span>

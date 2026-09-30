@@ -1112,6 +1112,7 @@ export async function getDataStats(): Promise<{
   hasConfig: boolean
   hasPlans: boolean
   eventPlanCount: number
+  archivedEventPlanCount: number
   eventPlanSource: 'live' | 'cache' | 'snapshot' | 'unavailable'
   hasAudioSettings: boolean
   hasEventSettings: boolean
@@ -1136,6 +1137,7 @@ export async function getDataStats(): Promise<{
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
     eventPlanCount: eventPlanData.plans.length,
+    archivedEventPlanCount: eventPlanData.archives?.length || 0,
     eventPlanSource: !eventPlanData.available
       ? 'unavailable'
       : eventPlanData.stale

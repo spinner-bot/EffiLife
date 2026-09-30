@@ -31,6 +31,7 @@ def test_archive_stats_use_unified_plan_gateway_fallback_and_expose_source():
 
     assert "const eventPlanData = await collectPlanHelperDataWithCache()" in stats
     assert "eventPlanCount: eventPlanData.plans.length" in stats
+    assert "archivedEventPlanCount: eventPlanData.archives?.length || 0" in stats
     assert "eventPlanSource: !eventPlanData.available" in stats
     assert "'live' | 'cache' | 'snapshot' | 'unavailable'" in stats
 
