@@ -451,7 +451,7 @@ def detect_conflicts(plan_id):
         warnings = []
 
         for sec_idx, sec in enumerate(p.plan["main"]):
-            section_letter = chr(ord('A') + sec_idx)
+            section_letter = plan_module.Plan.num2char(sec_idx)
             section_tasks = []
             task_contents = {}
 

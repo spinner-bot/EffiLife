@@ -6,6 +6,7 @@
 
 import json
 import os
+from . import plan as plan_module
 
 
 def _format_time(time_list):
@@ -48,7 +49,7 @@ def _build_sections(main, logs):
     total_minutes = 0
 
     for sec_idx, section in enumerate(main):
-        sec_letter = chr(ord('A') + sec_idx)
+        sec_letter = plan_module.Plan.num2char(sec_idx)
         sec_name = section.get('name', '未命名章节')
         sec_info = section.get('info')
 

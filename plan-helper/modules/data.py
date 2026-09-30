@@ -330,7 +330,7 @@ def validate_plan(plan_id):
             issues.append({"level": "critical", "message": "'main' must be a list"})
         else:
             for sec_idx, sec in enumerate(main):
-                letter = chr(ord('A') + sec_idx)
+                letter = plan_module.Plan.num2char(sec_idx)
                 if sec is None:
                     continue
                 if not isinstance(sec, dict):

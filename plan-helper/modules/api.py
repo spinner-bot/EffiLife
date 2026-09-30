@@ -314,7 +314,7 @@ def get_sections(plan_id):
                 "name": sec.get("name", ""),
                 "info": sec.get("info", ""),
                 "task_count": sum(1 for t in sec.get("plan", []) if t and t.get("is_active", False)),
-                "letter": chr(ord('A') + i),
+                "letter": plan_module.Plan.num2char(i),
             })
         return success_response(data={"plan_id": plan_id, "sections": sections})
     except Exception as e:
@@ -450,7 +450,7 @@ def get_tasks(plan_id, section_index=None):
                     "internal_id": internal_id,
                     "display_id": display_id,
                     "section_index": sec_idx,
-                    "section_letter": chr(ord('A') + sec_idx),
+                    "section_letter": plan_module.Plan.num2char(sec_idx),
                     "task_index": display_idx,
                     "internal_index": task_idx,
                     "content": task.get("content", ""),
@@ -883,7 +883,7 @@ def _serialize_plan_full(p):
 
         sections.append({
             "index": sec_idx,
-            "letter": chr(ord('A') + sec_idx),
+            "letter": plan_module.Plan.num2char(sec_idx),
             "name": sec.get("name", ""),
             "info": sec.get("info", ""),
             "tasks": tasks,
