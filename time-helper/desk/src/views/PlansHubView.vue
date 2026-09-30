@@ -361,6 +361,7 @@ async function savePlanMeta() {
   if (isLoading.value) return
   if (!selectedPlan.value || !planName.value.trim() || !planDate.value) return
   isLoading.value = true
+  let todoSyncFailed = false
   try {
     const planId = selectedPlan.value.id
     const previousName = selectedPlan.value.name
@@ -368,11 +369,12 @@ async function savePlanMeta() {
     try {
       await syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())
     } catch {
+      todoSyncFailed = true
       errorMessage.value = t('plans.todoSyncFailed')
     }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
-    showPlanSaved()
+    if (!todoSyncFailed) showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -427,6 +429,7 @@ async function deleteSection(section: PlanFull['sections'][number]) {
   if (isLoading.value || !selectedPlan.value || !(await requestConfirm(t('plans.deleteSectionConfirm'), { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
+  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await deletePlanSection(planId, section.index)
@@ -437,12 +440,13 @@ async function deleteSection(section: PlanFull['sections'][number]) {
           await unlinkTodosFromPlanTask(planId, task.display_id)
         }
       } catch {
+        todoSyncFailed = true
         errorMessage.value = t('plans.todoSyncFailed')
       }
     }
     cancelSectionEdit()
     selectedPlan.value = await getPlanFull(planId)
-    showPlanSaved()
+    if (!todoSyncFailed) showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.sectionUnavailable')
   } finally {
@@ -457,6 +461,7 @@ async function saveTask() {
   const minutes = Math.max(0, Number(taskMinutes.value) || 0)
   if (!editingTaskId.value && taskSectionIndex.value === null) return
   isLoading.value = true
+  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     if (editingTaskId.value) {
@@ -469,6 +474,7 @@ async function saveTask() {
           minutes,
         )
       } catch {
+        todoSyncFailed = true
         errorMessage.value = t('plans.todoSyncFailed')
       }
     } else if (taskSectionIndex.value !== null) {
@@ -481,7 +487,7 @@ async function saveTask() {
     editingTaskDisplayId.value = null
     editingTaskSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
-    showPlanSaved()
+    if (!todoSyncFailed) showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -619,16 +625,18 @@ async function completeTask(taskId: string, displayTaskId = taskId) {
   if (!selectedPlan.value) return
   const planId = selectedPlan.value.id
   isLoading.value = true
+  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
     try {
       await completeLinkedTodos(planId, [taskId, displayTaskId])
     } catch {
+      todoSyncFailed = true
       errorMessage.value = t('plans.todoSyncFailed')
     }
     selectedPlan.value = await getPlanFull(planId)
-    showPlanSaved()
+    if (!todoSyncFailed) showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
