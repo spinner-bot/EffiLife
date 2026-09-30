@@ -749,11 +749,17 @@ function planLetter(index: number): string {
 
 function repairImportedTodoPlanLinks(todos: UnifiedTodo[], rawPlanHelper: unknown): { todos: UnifiedTodo[]; repaired: number } {
   if (!rawPlanHelper || typeof rawPlanHelper !== 'object') return { todos, repaired: 0 }
-  const snapshot = rawPlanHelper as { available?: unknown; plans?: unknown }
+  const snapshot = rawPlanHelper as { available?: unknown; plans?: unknown; archives?: unknown }
   if (snapshot.available !== true || !Array.isArray(snapshot.plans)) return { todos, repaired: 0 }
 
   const taskIdsByPlan = new Map<string, Set<string>>()
-  snapshot.plans.forEach((raw, planIndex) => {
+  const rawPlans = [
+    ...snapshot.plans,
+    ...(Array.isArray(snapshot.archives)
+      ? snapshot.archives.map((entry) => entry && typeof entry === 'object' ? (entry as { payload?: { plan?: unknown } }).payload?.plan : undefined)
+      : []),
+  ]
+  rawPlans.forEach((raw, planIndex) => {
     if (!raw || typeof raw !== 'object') return
     const plan = raw as { head?: { index?: unknown }; main?: unknown }
     const planId = String(plan.head?.index ?? planIndex)

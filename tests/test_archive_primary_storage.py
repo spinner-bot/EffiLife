@@ -81,6 +81,14 @@ def test_archive_import_repairs_plan_task_links_only_with_available_snapshot():
     assert i18n.count("settings.archive.repairedTodoPlanTaskLinks") == 2
 
 
+def test_archive_import_repairs_plan_task_links_against_archived_snapshots():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "archives?: unknown" in source
+    assert "snapshot.archives" in source
+    assert "payload?.plan" in source
+    assert "const rawPlans = [" in source
+
+
 def test_archive_import_does_not_write_mobile_plan_snapshot_twice():
     source = ARCHIVE.read_text(encoding="utf-8")
     restore = source.split("const warnings: string[] = []", 1)[1].split("notifyWorkspaceChanged('archive')", 1)[0]
