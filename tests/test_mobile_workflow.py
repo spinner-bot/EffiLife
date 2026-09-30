@@ -22,7 +22,8 @@ def test_mobile_boundary_workflow_does_not_claim_to_publish_installers():
 def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     workflow = (ROOT / ".github" / "workflows" / "tauri-mobile-build.yml").read_text(encoding="utf-8")
     assert "workflow_dispatch:" in workflow
-    assert workflow.count("actions/setup-python@v5") == 2
+    assert workflow.count("actions/setup-python@v6") == 2
+    assert workflow.count("python -m pip install --disable-pip-version-check pytest") == 2
     assert workflow.count("python scripts/check_mobile_release_config.py") == 2
     assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 2
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
