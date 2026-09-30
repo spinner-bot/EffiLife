@@ -159,6 +159,22 @@ function formatLogTime(time?: [number, number]): string {
   return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
 }
 
+function templateName(template: PlanTemplateSummary): string {
+  if (!template.built_in) return template.name
+  if (template.type === 'workday') return t('plans.templateTypes.workdayName')
+  if (template.type === 'weekend') return t('plans.templateTypes.weekendName')
+  if (template.type === 'exam') return t('plans.templateTypes.examName')
+  return template.name
+}
+
+function templateDescription(template: PlanTemplateSummary): string {
+  if (!template.built_in) return template.description
+  if (template.type === 'workday') return t('plans.templateTypes.workdayDescription')
+  if (template.type === 'weekend') return t('plans.templateTypes.weekendDescription')
+  if (template.type === 'exam') return t('plans.templateTypes.examDescription')
+  return template.description
+}
+
 async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
@@ -986,7 +1002,7 @@ onUnmounted(() => {
           {{ t('plans.template') }}
           <select v-model="createTemplateId" :disabled="createTemplatesLoading">
             <option value="">{{ t('plans.templateManual') }}</option>
-            <option v-for="template in createTemplates" :key="template.id" :value="template.id">{{ template.name }} · {{ template.description }}</option>
+            <option v-for="template in createTemplates" :key="template.id" :value="template.id">{{ templateName(template) }} · {{ templateDescription(template) }}</option>
           </select>
         </label>
         <p v-if="createTemplateId" class="create-template-note"><strong>{{ t('plans.templateSelected') }}</strong><small>{{ t('plans.templateHint') }}</small></p>
