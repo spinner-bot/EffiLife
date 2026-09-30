@@ -224,6 +224,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
                 plan_name=data.get("name"),
                 plan_date=tuple(data["date"]) if data.get("date") else None,
                 plan_id=data.get("plan_id"),
+                locale=data.get("locale"),
             )
         elif path == "/api/plans/copy-yesterday":
             resp = tmpl.copy_yesterday_plan()

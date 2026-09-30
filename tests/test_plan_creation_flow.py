@@ -47,11 +47,15 @@ def test_mobile_plan_creation_preserves_section_and_task_shape():
 
 
 def test_template_creation_uses_the_existing_plan_helper_endpoint():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
     assert "request<{ templates?: PlanTemplateSummary[] }>('/api/templates')" in gateway
     assert "request<PlanFull>('/api/plans/from-template'" in gateway
     assert "template_id: templateId" in gateway
+    assert "locale = 'zh-CN'" in gateway
+    assert "locale })" in gateway
+    assert "createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)" in view
 
 
 def test_detail_editor_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():

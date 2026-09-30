@@ -327,7 +327,7 @@ async function createPlan() {
   try {
     let createdId: string
     if (createTemplateId.value) {
-      selectedPlan.value = await createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value))
+      selectedPlan.value = await createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value), locale.value)
       createdId = selectedPlan.value.id
     } else {
       const created = await createEventPlan(name, toDateTuple(planDate.value), [{

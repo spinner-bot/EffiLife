@@ -148,6 +148,90 @@ TEMPLATES = {
 CUSTOM_TEMPLATES = {}
 
 
+# Built-in template content is domain data, not UI copy.  Keep the localized
+# variants here and apply them to a deep copy only when a new plan is created.
+BUILTIN_TEMPLATE_EN = {
+    "workday": {
+        "工作日计划": "Workday plan",
+        "标准工作日计划模板，包含学习、工作、休息时间段": "A standard workday template with study, work and rest periods",
+        "上午 - 核心工作": "Morning - Deep work",
+        "高效时间段，安排重要任务": "A high-focus period for important tasks",
+        "晨间规划与回顾": "Morning planning and review",
+        "核心任务 1（深度工作）": "Core task 1 (deep work)",
+        "短暂休息": "Short break",
+        "核心任务 2（深度工作）": "Core task 2 (deep work)",
+        "上午深度工作": "Morning deep work",
+        "集中精力完成核心任务": "Focus on completing core tasks",
+        "下午 - 协作与执行": "Afternoon - Collaboration and execution",
+        "适合会议、沟通、常规工作": "Suitable for meetings, communication and routine work",
+        "午餐与休息": "Lunch and rest",
+        "常规任务处理": "Routine task handling",
+        "会议/沟通时间": "Meetings and communication",
+        "项目推进": "Project progress",
+        "晚间 - 学习与复盘": "Evening - Learning and review",
+        "低强度但高价值的活动": "Low-intensity, high-value activities",
+        "学习新技能/阅读": "Learn a skill or read",
+        "当日复盘与明日规划": "Daily review and tomorrow's plan",
+    },
+    "weekend": {
+        "休息日计划": "Rest day plan",
+        "休息日计划模板，注重平衡与充电": "A balanced rest-day template focused on recovery and recharge",
+        "上午 - 个人成长": "Morning - Personal growth",
+        "利用清醒头脑进行自我提升": "Use your clearest hours for self-improvement",
+        "运动/锻炼": "Exercise",
+        "阅读/学习": "Reading and learning",
+        "个人项目": "Personal project",
+        "下午 - 休闲与社交": "Afternoon - Leisure and social time",
+        "放松身心，保持社交": "Relax and stay connected",
+        "休闲活动": "Leisure activity",
+        "社交/家庭时间": "Social or family time",
+        "晚间 - 放松": "Evening - Unwind",
+        "为新一周做准备": "Prepare for the new week",
+        "轻松娱乐": "Light entertainment",
+        "下周计划预览": "Preview next week's plan",
+    },
+    "exam": {
+        "备考冲刺计划": "Exam sprint plan",
+        "考试冲刺阶段高强度复习计划": "An intensive revision plan for an exam preparation sprint",
+        "上午 - 重点突破": "Morning - Key breakthroughs",
+        "攻克薄弱科目": "Strengthen weaker subjects",
+        "知识点回顾": "Review key concepts",
+        "专题训练 1": "Focused practice 1",
+        "休息": "Rest",
+        "专题训练 2": "Focused practice 2",
+        "上午冲刺": "Morning sprint",
+        "高强度专题训练": "High-intensity focused practice",
+        "下午 - 模拟练习": "Afternoon - Mock practice",
+        "真题模拟与错题分析": "Mock exam and error analysis",
+        "模拟考试": "Mock exam",
+        "错题分析": "Error analysis",
+        "晚间 - 巩固": "Evening - Consolidation",
+        "轻量复习，保证睡眠": "Light review while protecting sleep",
+        "轻松复习笔记": "Review notes lightly",
+        "整理明日重点": "Organize tomorrow's priorities",
+    },
+}
+
+
+def localized_builtin_template(template_id, template, locale=None):
+    """Return a localized copy of a built-in template without mutating it."""
+    if not locale or not str(locale).lower().startswith("en") or template_id not in BUILTIN_TEMPLATE_EN:
+        return copy.deepcopy(template)
+
+    replacements = BUILTIN_TEMPLATE_EN[template_id]
+
+    def replace(value):
+        if isinstance(value, str):
+            return replacements.get(value, value)
+        if isinstance(value, list):
+            return [replace(item) for item in value]
+        if isinstance(value, dict):
+            return {key: replace(item) for key, item in value.items()}
+        return value
+
+    return replace(copy.deepcopy(template))
+
+
 def list_templates():
     """List all available templates."""
     result = []
@@ -208,7 +292,7 @@ def delete_custom_template(template_id):
 # Apply Template
 # ==========================================
 
-def apply_template(template_id, plan_name=None, plan_date=None, plan_id=None):
+def apply_template(template_id, plan_name=None, plan_date=None, plan_id=None, locale=None):
     """
     Create a new plan from a template.
     Returns APIResponse with the created plan data.
@@ -216,9 +300,9 @@ def apply_template(template_id, plan_name=None, plan_date=None, plan_id=None):
     try:
         # Get template
         if template_id in TEMPLATES:
-            tmpl = TEMPLATES[template_id]
+            tmpl = localized_builtin_template(template_id, TEMPLATES[template_id], locale)
         elif template_id in CUSTOM_TEMPLATES:
-            tmpl = CUSTOM_TEMPLATES[template_id]
+            tmpl = copy.deepcopy(CUSTOM_TEMPLATES[template_id])
         else:
             return api.error_response(f"Template '{template_id}' not found", code=404)
 

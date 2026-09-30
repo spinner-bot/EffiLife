@@ -394,6 +394,7 @@ export async function createEventPlanFromTemplate(
   templateId: string,
   name: string,
   date: [number, number, number],
+  locale = 'zh-CN',
 ): Promise<PlanFull> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     throw new Error(getPlanRuntimeUnavailableReason())
@@ -401,7 +402,7 @@ export async function createEventPlanFromTemplate(
   const result = await request<PlanFull>('/api/plans/from-template', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ template_id: templateId, name, date }),
+    body: JSON.stringify({ template_id: templateId, name, date, locale }),
   })
   planDataSource.value = 'service'
   return result
