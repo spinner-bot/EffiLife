@@ -7,6 +7,8 @@ WORKFLOW = ROOT / ".github" / "workflows" / "tauri-mobile-boundary.yml"
 
 def test_mobile_boundary_workflow_runs_configuration_and_frontend_contracts():
     source = WORKFLOW.read_text(encoding="utf-8")
+    assert "cancel-in-progress: true" in source
+    assert "effilife-mobile-boundary-${{ github.ref }}" in source
     assert "python scripts/check_mobile_release_config.py" in source
     assert "tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py" in source
     assert "working-directory: time-helper/desk" in source

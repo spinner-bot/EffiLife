@@ -10,6 +10,11 @@ on:
       - 'time-helper/desk/src-tauri/tauri.mobile.conf.json'
       - 'scripts/check_mobile_release_config.py'
       - 'tests/test_mobile_*.py'
+      - '.github/workflows/tauri-mobile-boundary.yml'
+
+concurrency:
+  group: effilife-mobile-boundary-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   contract:
