@@ -45,3 +45,9 @@ def test_plan_creation_collects_initial_sections_and_tasks_before_writing():
     assert "createEventPlan(name, toDateTuple(planDate.value), sections)" in HUB
     assert "plans.createTaskRequired" in HUB
     assert "v-for=\"(task, taskIndex) in section.tasks\"" in HUB
+
+
+def test_plan_creation_uses_ph_section_lettering_beyond_z():
+    assert "function sectionDisplayLetter(index: number): string" in HUB
+    assert "value = Math.floor(value / 26) - 1" in HUB
+    assert "sectionDisplayLetter(sectionIndex)" in HUB

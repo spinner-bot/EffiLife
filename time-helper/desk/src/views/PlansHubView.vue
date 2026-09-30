@@ -149,6 +149,16 @@ function toDateTuple(value: string): [number, number, number] {
   return [year, month, day]
 }
 
+function sectionDisplayLetter(index: number): string {
+  let value = Math.max(0, Math.trunc(index))
+  let result = ''
+  do {
+    result = String.fromCharCode(65 + (value % 26)) + result
+    value = Math.floor(value / 26) - 1
+  } while (value >= 0)
+  return result
+}
+
 function formatPlanDate(date?: [number, number, number]): string {
   if (!date) return ''
   const [year, month, day] = date
@@ -1095,7 +1105,7 @@ onUnmounted(() => {
         <div class="create-sections">
           <div v-for="(section, sectionIndex) in createSections" :key="sectionIndex" class="create-section">
             <div class="create-section-header">
-              <strong>{{ t('plans.section') }} {{ String.fromCharCode(65 + sectionIndex) }}</strong>
+              <strong>{{ t('plans.section') }} {{ sectionDisplayLetter(sectionIndex) }}</strong>
               <button v-if="createSections.length > 1" type="button" class="plans-link danger" @click="removeCreateSection(sectionIndex)">{{ t('plans.deleteSection') }}</button>
             </div>
             <label>{{ t('plans.sectionName') }}<input v-model="section.name" required /></label>
