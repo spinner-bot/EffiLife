@@ -115,6 +115,19 @@ def test_launcher_ignores_empty_packaged_artifacts(monkeypatch, tmp_path):
     assert url is None and setup is None
 
 
+def test_launcher_diagnostics_distinguish_existing_and_usable_binary(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk.exe"
+    binary.parent.mkdir(parents=True)
+    binary.write_bytes(b"")
+
+    result = launcher.collect_diagnostics({})
+    candidate = next(item for item in result["time_helper_binaries"] if item["path"] == str(binary))
+
+    assert candidate["exists"] is True
+    assert candidate["usable"] is False
+
+
 def test_launcher_reports_actionable_reason_when_packaged_artifact_is_missing(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
@@ -426,7 +439,7 @@ def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypat
     result = launcher.collect_diagnostics({})
     assert result["launch_mode"] == "packaged"
     assert result["time_helper_binaries"]
-    assert all("path" in item and "exists" in item for item in result["time_helper_binaries"])
+    assert all("path" in item and "exists" in item and "usable" in item for item in result["time_helper_binaries"])
     assert result["rust_toolchain"] == {
         "cargo": "cargo.exe",
         "rustc": "rustc.exe",

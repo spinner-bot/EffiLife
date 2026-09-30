@@ -493,7 +493,7 @@ def collect_diagnostics(modules):
         },
         "launch_mode": "packaged" if packaged_mode() else "development",
         "time_helper_binaries": [
-            {"path": str(path), "exists": path.exists()}
+            {"path": str(path), "exists": path.exists(), "usable": is_non_empty_file(path)}
             for path in time_helper_binary_paths()
         ],
         "installer_artifacts": installer_status,
