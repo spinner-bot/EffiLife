@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, parseStoredDate } from '@/services/dataService'
-import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
+import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo, Plus } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -28,6 +28,8 @@ let refreshTimer: number | null = null
 let workspaceRefreshTimer: number | null = null
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
+const quickTodoTitle = ref('')
+const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
@@ -105,6 +107,22 @@ async function completeHomeTodo(todo: UnifiedTodo) {
     notifyToast(error instanceof Error ? error.message : t('tasks.error.update'), 'error')
   } finally {
     completingTodoId.value = null
+  }
+}
+
+async function addQuickTodo() {
+  const title = quickTodoTitle.value.trim()
+  if (!title || quickTodoSaving.value) return
+  quickTodoSaving.value = true
+  try {
+    await TodoService.create({ title })
+    quickTodoTitle.value = ''
+    await refreshTodoSummary()
+    notifyToast(t('home.quickTodoAdded'), 'success')
+  } catch (error) {
+    notifyToast(error instanceof Error ? error.message : t('tasks.error.create'), 'error')
+  } finally {
+    quickTodoSaving.value = false
   }
 }
 
@@ -523,6 +541,10 @@ onUnmounted(() => {
             {{ t('home.viewTodos') }} <ChevronRight :size="16" />
           </button>
         </div>
+        <form class="today-todo-capture" @submit.prevent="addQuickTodo">
+          <input v-model="quickTodoTitle" type="text" :placeholder="t('home.quickTodoPlaceholder')" :disabled="quickTodoSaving" :aria-label="t('home.quickTodoPlaceholder')" />
+          <button type="submit" :disabled="quickTodoSaving || !quickTodoTitle.trim()"><Plus :size="14" /> {{ t('home.quickAddTodo') }}</button>
+        </form>
         <div v-if="todayTodos.length" class="today-todos-list">
           <div v-for="todo in todayTodos" :key="todo.id" class="today-todo-row">
             <button class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabel')" @click="completeHomeTodo(todo)">
@@ -1056,6 +1078,11 @@ onUnmounted(() => {
 .today-todos-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
 .today-todos-eyebrow { margin: 0 0 4px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .today-todos-link { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; color: var(--color-primary); font-size: 12px; }
+.today-todo-capture { display: flex; gap: 8px; margin-top: var(--spacing-md); }
+.today-todo-capture input { min-width: 0; flex: 1; border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg); font: inherit; font-size: 12px; }
+.today-todo-capture input:focus-visible { border-color: var(--color-primary); outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); outline-offset: 1px; }
+.today-todo-capture button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; border: 1px solid var(--color-primary); border-radius: 9px; padding: 8px 11px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
+.today-todo-capture button:disabled { cursor: not-allowed; opacity: .5; }
 .today-todos-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
 .today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
@@ -1079,6 +1106,8 @@ onUnmounted(() => {
   .overview-grid { grid-template-columns: 1fr; }
   .event-overview-card { min-height: 180px; }
   .today-todos-header { align-items: center; }
+  .today-todo-capture { flex-direction: column; }
+  .today-todo-capture button { width: 100%; }
   .today-todo-deadline { display: none; }
   .today-todo-plan { max-width: 32px; padding: 5px; }
   .today-todo-plan span { display: none; }
