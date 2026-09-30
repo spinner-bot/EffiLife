@@ -249,6 +249,12 @@ function markInboxRead(entryId: string) {
   EventSystem.markAsRead(entryId)
 }
 
+function activateInboxEntry(event: KeyboardEvent, entryId: string) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  markInboxRead(entryId)
+}
+
 function formatInboxTime(isoStr: string): string {
   const d = new Date(isoStr)
   const now = new Date()
@@ -348,7 +354,10 @@ onUnmounted(() => {
               :key="entry.id"
               class="inbox-panel-item"
               :class="{ unread: !entry.read }"
+              role="button"
+              tabindex="0"
               @click="markInboxRead(entry.id)"
+              @keydown="activateInboxEntry($event, entry.id)"
             >
               <span class="inbox-panel-icon"><component :is="getNotificationIcon(entry.type)" :size="16" :stroke-width="2" /></span>
               <div class="inbox-panel-content">
@@ -778,6 +787,11 @@ onUnmounted(() => {
 
 .inbox-panel-item:hover {
   background: var(--color-bg-secondary);
+}
+
+.inbox-panel-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .inbox-panel-item.unread {

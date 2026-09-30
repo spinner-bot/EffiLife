@@ -182,6 +182,12 @@ function markAsRead(entry: InboxEntry) {
   EventSystem.markAsRead(entry.id)
 }
 
+function activateInboxEntry(event: KeyboardEvent, entry: InboxEntry) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  markAsRead(entry)
+}
+
 function markAllAsRead() {
   EventSystem.markAllAsRead()
 }
@@ -406,7 +412,10 @@ function testWarning(rule: WarningRule) {
               :key="entry.id"
               class="inbox-item"
               :class="[getEventStyle(entry.type), { unread: !entry.read, checkinable: entry.checkinPlanName }]"
+              role="button"
+              tabindex="0"
               @click="markAsRead(entry)"
+              @keydown="activateInboxEntry($event, entry)"
             >
               <div class="inbox-icon">
                 <component :is="getNotificationIcon(entry.type)" :size="18" :stroke-width="2" />
@@ -830,6 +839,11 @@ function testWarning(rule: WarningRule) {
 
 .inbox-item:hover {
   border-color: var(--color-border-hover);
+}
+
+.inbox-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .inbox-item.unread {
