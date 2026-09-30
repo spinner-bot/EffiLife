@@ -19,4 +19,8 @@ def test_todo_deadline_uses_local_calendar_date_parser_for_display_and_state():
     assert "const date = parseStoredDate(deadline)" in TASKS
 
     home = (ROOT / "time-helper/desk/src/views/HomeView.vue").read_text(encoding="utf-8")
-    assert "parseStoredDate(deadline).toLocaleDateString" in home
+    assert "const date = parseStoredDate(deadline)" in home
+    assert "date.toLocaleDateString(locale.value" in home
+    assert "getTodoDeadlineState" in home
+    assert "home.overdue" in home
+    assert "home.dueToday" in home

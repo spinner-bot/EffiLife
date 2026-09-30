@@ -108,9 +108,29 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   }
 }
 
+type TodoDeadlineState = 'overdue' | 'today' | 'upcoming' | 'invalid' | null
+
+function getTodoDeadlineState(deadline?: string): TodoDeadlineState {
+  if (!deadline) return null
+  const date = parseStoredDate(deadline)
+  if (Number.isNaN(date.getTime())) return 'invalid'
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const deadlineStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  if (deadlineStart < todayStart) return 'overdue'
+  if (deadlineStart === todayStart) return 'today'
+  return 'upcoming'
+}
+
 function formatTodoDeadline(deadline?: string): string {
   if (!deadline) return t('home.noDeadline')
-  return parseStoredDate(deadline).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
+  const date = parseStoredDate(deadline)
+  if (Number.isNaN(date.getTime())) return t('home.noDeadline')
+  const formatted = date.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
+  const state = getTodoDeadlineState(deadline)
+  if (state === 'overdue') return `${t('home.overdue')} · ${formatted}`
+  if (state === 'today') return t('home.dueToday')
+  return formatted
 }
 
 function formatTodoTime(todo: UnifiedTodo): string {
@@ -500,7 +520,11 @@ onUnmounted(() => {
               <span class="today-todo-copy">
                 <span class="today-todo-title">{{ todo.title }}</span>
                 <span class="today-todo-meta">
-                  <span v-if="todo.deadline" class="today-todo-deadline">{{ formatTodoDeadline(todo.deadline) }}</span>
+                  <span
+                    v-if="todo.deadline"
+                    class="today-todo-deadline"
+                    :class="{ 'is-overdue': getTodoDeadlineState(todo.deadline) === 'overdue', 'is-today': getTodoDeadlineState(todo.deadline) === 'today' }"
+                  >{{ formatTodoDeadline(todo.deadline) }}</span>
                   <span v-if="formatTodoTime(todo)" class="today-todo-time">{{ formatTodoTime(todo) }}</span>
                 </span>
               </span>
@@ -1041,6 +1065,8 @@ onUnmounted(() => {
 .today-todo-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .today-todo-meta { display: flex; flex-wrap: wrap; gap: 8px; color: var(--color-text-tertiary); font-size: 11px; }
 .today-todo-deadline, .today-todo-time { white-space: nowrap; }
+.today-todo-deadline.is-overdue { color: var(--color-error); font-weight: 700; }
+.today-todo-deadline.is-today { color: var(--color-primary); font-weight: 700; }
 .today-todo-plan { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; padding: 5px 8px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
 .today-todo-plan span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .today-todo-plan:hover, .today-todo-plan:focus-visible { border-color: var(--color-primary); outline: 0; }
