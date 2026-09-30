@@ -72,7 +72,7 @@ const cells = computed(() => {
     result.push({
       date: dateStr,
       value: level,
-      label: `${dateStr}: ${Math.round(value)}${props.colorMode === 'hours' ? 'h' : '%'}`,
+      label: `${new Intl.DateTimeFormat(locale.value, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(current)}: ${Math.round(value)}${props.colorMode === 'hours' ? 'h' : '%'}`,
       isFuture,
       isToday
     })
