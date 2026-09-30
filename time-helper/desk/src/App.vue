@@ -262,6 +262,9 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
             <Clock3 :size="19" /> <span>{{ t('nav.time') }}</span>
           </RouterLink>
+          <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
+            <History :size="19" /> <span>{{ t('nav.records') }}</span>
+          </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
           <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
         </RouterLink>
@@ -422,7 +425,7 @@ watch(() => appStore.todayStat, () => {
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border);
