@@ -526,22 +526,22 @@ onMounted(() => {
             </div>
             <div class="pv-action-cards">
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openPlanList()">
-                <div class="pv-action-icon" style="--icon-bg: rgba(99,102,241,0.12); --icon-color: #6366f1;"><FolderKanban :size="22" /></div>
+                <div class="pv-action-icon pv-action-icon-plan"><FolderKanban :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.planManagement') }}</span><span class="pv-action-desc">{{ t('legacyPlan.planManagementDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
               <button class="pv-action-card" @click="AudioManager.playSound('click'); openRuleList()">
-                <div class="pv-action-icon" style="--icon-bg: rgba(34,197,94,0.12); --icon-color: #22c55e;"><Calendar :size="22" /></div>
+                <div class="pv-action-icon pv-action-icon-schedule"><Calendar :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.scheduleRules') }}</span><span class="pv-action-desc">{{ t('legacyPlan.scheduleRulesDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
               <button class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
-                <div class="pv-action-icon" style="--icon-bg: rgba(245,158,11,0.12); --icon-color: #f59e0b;"><RefreshCw :size="22" /></div>
+                <div class="pv-action-icon pv-action-icon-temporary"><RefreshCw :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.temporaryChange') }}</span><span class="pv-action-desc">{{ t('legacyPlan.temporaryChangeDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
               <button class="pv-action-card" @click="AudioManager.playSound('click'); router.push('/records')">
-                <div class="pv-action-icon" style="--icon-bg: rgba(14,165,233,0.12); --icon-color: #0ea5e9;"><History :size="22" /></div>
+                <div class="pv-action-icon pv-action-icon-history"><History :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.historyRecords') }}</span><span class="pv-action-desc">{{ t('legacyPlan.historyRecordsDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
@@ -1366,6 +1366,10 @@ onMounted(() => {
   color: var(--icon-color);
   flex-shrink: 0;
 }
+.pv-action-icon-plan { --icon-bg: var(--color-primary-muted); --icon-color: var(--color-primary); }
+.pv-action-icon-schedule { --icon-bg: var(--color-success-bg); --icon-color: var(--color-success); }
+.pv-action-icon-temporary { --icon-bg: var(--color-warning-bg); --icon-color: var(--color-warning); }
+.pv-action-icon-history { --icon-bg: var(--color-info-bg); --icon-color: var(--color-info); }
 .pv-action-text {
   flex: 1;
   display: flex;
