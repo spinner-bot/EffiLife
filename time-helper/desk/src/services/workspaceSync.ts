@@ -111,7 +111,7 @@ export async function repairTodoTimeRecordLinks(): Promise<number> {
     let repaired = 0
     for (const todo of todos) {
       const links = todo.related_time_record_ids || []
-      const validLinks = links.filter((id) => recordIds.has(id))
+      const validLinks = [...new Set(links.filter((id) => recordIds.has(id)))]
       if (validLinks.length === links.length) continue
       await TodoService.update(todo.id, { related_time_record_ids: validLinks })
       repaired += 1

@@ -21,3 +21,8 @@ def test_tracking_same_record_batch_is_idempotent_for_time_spent():
     assert "const hasNewRecordId = recordIds.some((id) => !existingRecordIds.includes(id))" in SERVICE
     assert "const addedMinutes = recordIds.length > 0 && !hasNewRecordId ? 0 : minutes" in SERVICE
     assert "time_spent: (current.time_spent || 0) + addedMinutes" in SERVICE
+
+
+def test_startup_record_link_repair_removes_duplicate_ids():
+    sync = (ROOT / "time-helper/desk/src/services/workspaceSync.ts").read_text(encoding="utf-8")
+    assert "const validLinks = [...new Set(links.filter((id) => recordIds.has(id)))]" in sync
