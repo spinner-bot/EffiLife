@@ -597,7 +597,14 @@ def print_doctor_report(report):
         item.get("exists") and item.get("non_empty") and item.get("version_matches", True)
         for item in installer_status
     )
-    print(f"Native installer: {'available' if installers_ready else 'not found (binary-only or source checkout)'}")
+    installers_stale = any(
+        item.get("exists") and item.get("non_empty") and not item.get("version_matches", True)
+        for item in installer_status
+    )
+    installer_state = "available" if installers_ready else (
+        "stale (version mismatch)" if installers_stale else "not found (binary-only or source checkout)"
+    )
+    print(f"Native installer: {installer_state}")
     print()
 
     workspace = report.get("modules", {}).get("1", {})

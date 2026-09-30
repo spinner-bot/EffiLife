@@ -643,6 +643,22 @@ def test_launcher_doctor_renders_actionable_human_output(capsys):
     assert "Result: BLOCKED" in output
 
 
+def test_launcher_doctor_distinguishes_stale_installer(capsys):
+    report = {
+        "version": "1.7.0",
+        "launch_mode": "development",
+        "python": "python.exe",
+        "node": "node.exe",
+        "npm": "npm.cmd",
+        "installer_artifacts": [{"exists": True, "non_empty": True, "version_matches": False}],
+        "modules": {"1": {"available": True, "url": "http://127.0.0.1:1420"}},
+        "issues": [],
+        "hints": [],
+    }
+    assert launcher.print_doctor_report(report) is True
+    assert "Native installer: stale (version mismatch)" in capsys.readouterr().out
+
+
 def test_launcher_doctor_is_wired_before_normal_startup():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert 'if "--doctor" in sys.argv:' in source
