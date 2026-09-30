@@ -6,6 +6,8 @@ import type { Config, Plans, ScheduleRule, TimeRecord, DayPlanInfo, RealTimeStat
 import { DataService, DEFAULT_CONFIG, DEFAULT_PLANS, DEFAULT_SCHEDULE_RULES, getTodayDate } from '@/services/dataService'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
+const ENABLE_SAMPLE_DATA = import.meta.env.VITE_EFFILIFE_DEMO_DATA === 'true'
+
 export const useAppStore = defineStore('app', () => {
   // 状态
   const config = ref<Config>(DEFAULT_CONFIG)
@@ -40,7 +42,7 @@ export const useAppStore = defineStore('app', () => {
         // 检查 IndexedDB 中是否有任何记录
         const { isEmpty, STORE_NAMES: SN } = await import('@/storage')
         const recordsEmpty = await isEmpty(SN.RECORDS)
-        if (recordsEmpty) {
+        if (recordsEmpty && ENABLE_SAMPLE_DATA) {
           await DataService.generateSampleData()
           // 重新加载数据
           config.value = await DataService.loadConfig()
