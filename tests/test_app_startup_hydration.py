@@ -34,3 +34,12 @@ def test_checkin_refresh_has_a_recoverable_error_boundary():
     checkin_block = app.split("function onCheckinComplete()", 1)[1].split("function onCheckinClose", 1)[0]
     assert "void appStore.refreshTodayData().catch((error) =>" in checkin_block
     assert "Failed to refresh today data after check-in:" in checkin_block
+
+
+def test_automatic_checkin_maintenance_has_a_recoverable_error_boundary():
+    app = APP.read_text(encoding="utf-8")
+    maintenance = app.split("// 自动补打卡检查", 1)[1].split("// result === 'no-record'", 1)[0]
+    assert "try {" in maintenance
+    assert "await CheckinSystem.autoCheckinIfMissed()" in maintenance
+    assert "await CheckinSystem.getYesterdayCompletedRecords()" in maintenance
+    assert "Failed to complete automatic check-in maintenance:" in maintenance
