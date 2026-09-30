@@ -1956,6 +1956,17 @@ h2 {
   padding-left: var(--spacing-lg);
 }
 
+@media (min-width: 900px) {
+  .settings-view { padding: 24px 32px; }
+  .settings-view > .main-content { max-width: 920px; }
+  .settings-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .settings-item { min-height: 58px; }
+}
+
 .history-changes li {
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
