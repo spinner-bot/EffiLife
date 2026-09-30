@@ -9,6 +9,7 @@ import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
 import { requestConfirm } from '@/services/confirmService'
+import { notifyToast } from '@/services/toastService'
 
 const router = useRouter()
 const route = useRoute()
@@ -92,6 +93,7 @@ async function selectPlan(planName: string) {
 onMounted(() => {
   void loadData().catch((error) => {
     console.warn('Failed to load day detail:', error)
+    notifyToast(t('dayDetail.loadFailed'), 'error')
   })
 })
 </script>
