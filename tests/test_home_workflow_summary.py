@@ -12,7 +12,7 @@ def test_home_summary_aggregates_three_unified_workstreams():
     assert "home.recordedToday" in HOME
     assert "home.eventPlanProgress" in HOME
     assert "home.activeTodos" in HOME
-    assert "router.push({ path: '/plans', query: { mode: 'time' } })" in HOME
+    assert "router.push('/time')" in HOME
     assert "router.push('/plans')" in HOME
     assert "router.push('/tasks')" in HOME
 

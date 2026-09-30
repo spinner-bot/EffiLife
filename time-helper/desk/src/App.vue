@@ -8,7 +8,7 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
-import { Home, ClipboardList, ListTodo, Settings, Search } from 'lucide-vue-next'
+import { Home, ClipboardList, Clock3, ListTodo, Settings, Search } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
@@ -26,6 +26,7 @@ const pageTitle = computed(() => {
   const path = route.path
   if (path === '/') return t('nav.home')
   if (path.startsWith('/plans') || path === '/plan') return t('nav.plans')
+  if (path.startsWith('/time')) return t('nav.time')
   if (path.startsWith('/tasks')) return t('nav.tasks')
   if (path.startsWith('/records') || path.startsWith('/day')) return t('nav.records')
   if (path.startsWith('/checkin')) return t('nav.checkin')
@@ -232,6 +233,9 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
             <ClipboardList :size="16" /> <span>{{ t('nav.plans') }}</span>
           </RouterLink>
+          <RouterLink class="global-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
+            <Clock3 :size="16" /> <span>{{ t('nav.time') }}</span>
+          </RouterLink>
           <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
             <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span>
           </RouterLink>
@@ -247,10 +251,13 @@ watch(() => appStore.todayStat, () => {
         <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined">
           <Home :size="19" /> <span>{{ t('nav.home') }}</span>
         </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
-          <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
-        </RouterLink>
-        <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
+          <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
+            <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
+          </RouterLink>
+          <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
+            <Clock3 :size="19" /> <span>{{ t('nav.time') }}</span>
+          </RouterLink>
+          <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
           <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
         </RouterLink>
         <RouterLink class="mobile-bottom-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }" :aria-current="isSettingsRoute ? 'page' : undefined">

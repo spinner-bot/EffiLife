@@ -8,6 +8,7 @@ APP = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="ut
 def test_desktop_and_mobile_navigation_expose_current_page_semantics():
     assert APP.count(':aria-current="route.path === \'/\' ? \'page\' : undefined"') == 2
     assert APP.count(":aria-current=\"route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined\"") == 2
+    assert APP.count(":aria-current=\"route.path.startsWith('/time') ? 'page' : undefined\"") == 2
     assert APP.count(":aria-current=\"route.path.startsWith('/tasks') ? 'page' : undefined\"") == 2
     assert APP.count(":aria-current=\"route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined\"") == 0
     assert APP.count(':aria-current="isSettingsRoute ? \'page\' : undefined"') == 2

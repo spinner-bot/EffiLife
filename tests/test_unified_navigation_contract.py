@@ -26,6 +26,7 @@ def test_unified_shell_updates_document_title_for_route_and_locale():
     assert "document.title = t('app.documentTitle', { page: pageTitle.value })" in APP
     assert "'app.documentTitle': '{page} · EffiLife'" in (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert "path.startsWith('/tasks')" in APP
+    assert "path.startsWith('/time')" in APP
     assert "path.startsWith('/day')" in APP
 
 

@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import('@/views/PlansHubView.vue'),
     },
     {
+      path: '/time',
+      name: 'timeWorkspace',
+      component: () => import('@/views/PlanView.vue'),
+    },
+    {
       path: '/plan',
       name: 'plan',
       redirect: { path: '/plans', query: { mode: 'time' } },

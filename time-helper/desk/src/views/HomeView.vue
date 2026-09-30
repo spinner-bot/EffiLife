@@ -34,7 +34,7 @@ const eventPlanState = ref<PlanGatewayState>('idle')
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
 function openDailyPlan() {
-  router.push({ path: '/plans', query: { mode: 'time' } })
+  router.push('/time')
 }
 
 function activateDailyPlan(event: KeyboardEvent) {
@@ -356,7 +356,7 @@ onUnmounted(() => {
       </section>
 
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
-        <button class="workflow-summary-item" type="button" @click="router.push({ path: '/plans', query: { mode: 'time' } })">
+        <button class="workflow-summary-item" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
           <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours) }}</strong><small>{{ t('home.recordedToday') }}</small></span>
           <ChevronRight :size="16" />
@@ -516,7 +516,7 @@ onUnmounted(() => {
           <ClipboardList :size="22" />
           <span>{{ t('nav.plan') }}</span>
         </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push({ path: '/plans', query: { mode: 'time' } })">
+        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/time')">
           <Clock3 :size="22" />
           <span>{{ t('nav.records') }}</span>
         </button>
