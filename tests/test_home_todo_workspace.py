@@ -79,7 +79,9 @@ def test_home_refreshes_unified_summaries_after_workspace_changes():
     source = HOME.read_text(encoding="utf-8")
     assert "onWorkspaceChanged" in source
     assert "scheduleWorkspaceSummaryRefresh" in source
-    assert "Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])" in source
+    assert "appStore.refreshTodayData()" in source
+    assert "refreshTodoSummary()" in source
+    assert "refreshEventPlanSummary()" in source
     assert "workspaceRefreshTimer" in source
     assert "stopWorkspaceListener()" in source
 

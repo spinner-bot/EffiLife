@@ -203,7 +203,11 @@ function scheduleWorkspaceSummaryRefresh() {
   if (workspaceRefreshTimer !== null) return
   workspaceRefreshTimer = window.setTimeout(async () => {
     workspaceRefreshTimer = null
-    await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
+    await Promise.all([
+      appStore.refreshTodayData(),
+      refreshTodoSummary(),
+      refreshEventPlanSummary(),
+    ])
   }, 80)
 }
 
