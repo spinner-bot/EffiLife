@@ -461,6 +461,22 @@ def collect_diagnostics(modules):
             "service_ready": bool(url and service_is_ready(url)),
             "needs_setup": bool(module.get("needs_setup")),
         }
+    companion_status = {}
+    for module_key, module in modules.items():
+        for index, companion in enumerate(module.get("companions", [])):
+            companion_key = f"{module_key}.{index + 1}"
+            url = companion.get("url")
+            health_url = companion.get("health_url", url)
+            companion_status[companion_key] = {
+                "name": companion.get("name"),
+                "parent_module": module_key,
+                "cwd": str(companion.get("cwd")) if companion.get("cwd") else None,
+                "command": [str(item) for item in companion.get("cmd") or []],
+                "url": url,
+                "health_url": health_url,
+                "port_occupied": bool(health_url and local_port_is_occupied(health_url)),
+                "service_ready": bool(health_url and service_is_ready(health_url)),
+            }
     issues = []
     hints = []
     workspace = module_status.get("1", {})
@@ -479,6 +495,15 @@ def collect_diagnostics(modules):
                 "module": key,
                 "message": f"Port for {status.get('name')} is occupied by an unhealthy service",
                 "hint": f"Stop the process using {status.get('url')} and run the launcher again",
+            })
+    for key, status in companion_status.items():
+        if status.get("port_occupied") and not status.get("service_ready"):
+            issues.append({
+                "code": "companion-port-conflict",
+                "severity": "error",
+                "module": key,
+                "message": f"Port for {status.get('name')} is occupied by an unhealthy companion service",
+                "hint": f"Stop the process using {status.get('health_url')} and run the launcher again",
             })
     if not cargo or not rustc:
         hints.append({
@@ -533,6 +558,7 @@ def collect_diagnostics(modules):
         ],
         "installer_artifacts": installer_status,
         "modules": module_status,
+        "companions": companion_status,
         "issues": issues,
         "hints": hints,
     }
@@ -561,6 +587,15 @@ def print_doctor_report(report):
     print(f"Unified workspace: {workspace_state}")
     if workspace.get("url"):
         print(f"Workspace URL: {workspace['url']}")
+
+    companions = report.get("companions", {})
+    if companions:
+        print("\nCompanion services:")
+        for companion in companions.values():
+            state = "ready" if companion.get("service_ready") else (
+                "port conflict" if companion.get("port_occupied") else "stopped"
+            )
+            print(f"  {companion.get('name')}: {state}")
 
     issues = report.get("issues", [])
     hints = report.get("hints", [])

@@ -444,6 +444,35 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     assert result["modules"]["2"]["setup"] == []
 
 
+def test_launcher_diagnostics_include_nested_companion_health(monkeypatch):
+    modules = {
+        "1": {
+            "name": "workspace",
+            "available": True,
+            "url": "http://127.0.0.1:1420",
+            "companions": [{
+                "name": "plan-helper API",
+                "cwd": Path("F:/plan-helper"),
+                "cmd": ["python", "web/server.py"],
+                "url": "http://127.0.0.1:8765",
+                "health_url": "http://127.0.0.1:8765/api/health",
+            }],
+        },
+    }
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda url: url.endswith(":8765/api/health"))
+    monkeypatch.setattr(launcher, "service_is_ready", lambda _url: False)
+
+    result = launcher.collect_diagnostics(modules)
+
+    companion = result["companions"]["1.1"]
+    assert companion["name"] == "plan-helper API"
+    assert companion["parent_module"] == "1"
+    assert companion["health_url"].endswith("/api/health")
+    assert companion["port_occupied"] is True
+    assert companion["service_ready"] is False
+    assert any(item["code"] == "companion-port-conflict" for item in result["issues"])
+
+
 def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["start.py", "--packaged", "--diagnose"])
     monkeypatch.setattr(launcher, "find_rust_tool", lambda name: f"{name}.exe")
