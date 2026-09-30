@@ -124,6 +124,7 @@ export interface ArchiveData {
 type PlanHelperData = {
   available: boolean
   plans: unknown[]
+  archives?: unknown[]
   unavailableReason?: string
   stale?: boolean
 }
@@ -239,13 +240,17 @@ async function requestPlanHelper(path: string, options: RequestInit = {}): Promi
   }
 }
 
-async function readCachedPlanHelperData(): Promise<unknown[] | null> {
+async function readCachedPlanHelperData(): Promise<{ plans: unknown[] | null; archives: unknown[] | null }> {
   try {
     const { get, STORE_NAMES } = await import('@/storage')
     const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
-    return Array.isArray(plans) ? plans : null
+    const archives = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives')
+    return {
+      plans: Array.isArray(plans) ? plans : null,
+      archives: Array.isArray(archives) ? archives : null,
+    }
   } catch {
-    return null
+    return { plans: null, archives: null }
   }
 }
 
@@ -254,7 +259,8 @@ async function collectPlanHelperData(): Promise<PlanHelperData> {
     try {
       const { get, STORE_NAMES } = await import('@/storage')
       const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
-      if (Array.isArray(plans)) return { available: true, plans }
+      const archives = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives')
+      if (Array.isArray(plans)) return { available: true, plans, archives: Array.isArray(archives) ? archives : [] }
     } catch {
       // Fall through to the explicit unavailable result.
     }
@@ -268,16 +274,17 @@ async function collectPlanHelperData(): Promise<PlanHelperData> {
     if (!response.ok) throw new Error(translate('settings.archive.planServiceResponse', { status: response.status }))
     const payload = await response.json() as {
       success?: boolean
-      data?: { plans?: unknown[] }
+      data?: { plans?: unknown[]; archives?: unknown[] }
     }
     if (!payload.success || !Array.isArray(payload.data?.plans)) throw new Error(translate('settings.archive.planExportInvalid'))
     try {
       const { set, STORE_NAMES } = await import('@/storage')
       await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', payload.data.plans)
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', Array.isArray(payload.data.archives) ? payload.data.archives : [])
     } catch {
       // The HTTP export remains valid even if the optional cache is unavailable.
     }
-    return { available: true, plans: payload.data.plans }
+    return { available: true, plans: payload.data.plans, archives: Array.isArray(payload.data.archives) ? payload.data.archives : [] }
   } catch {
     return { available: false, plans: [], unavailableReason: translate('settings.archive.planServiceUnavailable') }
   }
@@ -287,11 +294,12 @@ async function collectPlanHelperData(): Promise<PlanHelperData> {
 async function collectPlanHelperDataWithCache(): Promise<PlanHelperData> {
   const live = await collectPlanHelperData()
   if (live.available || getPlanRuntime() === 'mobile-unavailable') return live
-  const cachedPlans = await readCachedPlanHelperData()
-  if (!cachedPlans) return live
+  const cached = await readCachedPlanHelperData()
+  if (!cached.plans) return live
   return {
     available: true,
-    plans: cachedPlans,
+    plans: cached.plans,
+    archives: cached.archives || [],
     stale: true,
     unavailableReason: live.unavailableReason || translate('settings.archive.usingCachedPlanSnapshot'),
   }
@@ -560,6 +568,9 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     }
     if (!isObjectRecord(datasets.plan_helper)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'plan_helper' }))
     if ('plans' in datasets.plan_helper && !Array.isArray(datasets.plan_helper.plans)) {
+      throw new Error(translate('settings.archive.datasetInvalid', { name: 'plan_helper' }))
+    }
+    if ('archives' in datasets.plan_helper && !Array.isArray(datasets.plan_helper.archives)) {
       throw new Error(translate('settings.archive.datasetInvalid', { name: 'plan_helper' }))
     }
 
@@ -913,6 +924,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
       try {
         await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
+        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', Array.isArray(data.planHelper.archives) ? data.planHelper.archives : [])
       } catch (error) {
         warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
       }
@@ -930,7 +942,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         const response = await requestPlanHelper('/api/data/import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ plans: data.planHelper.plans, replace: true }),
+          body: JSON.stringify({ plans: data.planHelper.plans, archives: Array.isArray(data.planHelper.archives) ? data.planHelper.archives : [], replace: true }),
         })
         const payload = await response.json() as { success?: boolean; error?: string }
         if (!response.ok || !payload.success) throw new Error(payload.error || translate('settings.archive.planRestoreResponse', { status: response.status }))
@@ -968,6 +980,7 @@ async function clearPlanHelperData(): Promise<void> {
   try {
     const { set, STORE_NAMES } = await import('@/storage')
     await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', [])
+    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', [])
   } catch {
     // Continue with the service reset attempt when local storage is unavailable.
   }
@@ -981,7 +994,7 @@ async function clearPlanHelperData(): Promise<void> {
     await requestPlanHelper('/api/data/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plans: [], replace: true }),
+      body: JSON.stringify({ plans: [], archives: [], replace: true }),
     })
     clearPlanHelperResetPending()
   } catch {

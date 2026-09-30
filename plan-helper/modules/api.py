@@ -9,6 +9,7 @@
 import json
 import copy
 import os
+import shutil
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from . import plan as plan_module
@@ -682,13 +683,26 @@ def get_plan_full(plan_id):
 
 
 def export_registry():
-    """Export raw Plan.plan snapshots without compacting or reshaping them."""
+    """Export active and archived raw plan snapshots without reshaping them."""
     try:
         plans = [copy.deepcopy(plan_obj.plan) for plan_obj in plan_module.Plan.registry.values()]
+        archives = []
+        archive_root = _archive_dir()
+        if archive_root.exists():
+            for archive_file in sorted(archive_root.glob("plan_*.json"), reverse=True):
+                try:
+                    with open(archive_file, "r", encoding="utf-8") as handle:
+                        payload = json.load(handle)
+                    if isinstance(payload, dict) and isinstance(payload.get("plan"), dict):
+                        archives.append({"file": archive_file.name, "payload": payload})
+                except (OSError, ValueError, json.JSONDecodeError):
+                    continue
         return success_response(data={
             "format": "plan-helper.raw.v1",
             "plans": plans,
             "count": len(plans),
+            "archives": archives,
+            "archive_count": len(archives),
         })
     except Exception as e:
         return error_response(str(e))
@@ -765,7 +779,7 @@ def delete_group(plan_id, section_index, group_key):
         return error_response(str(e), code=400)
 
 
-def import_registry(plans, replace=True):
+def import_registry(plans, archives=None, replace=True):
     """Restore raw Plan.plan snapshots atomically.
 
     The raw structure is validated before touching the live registry.  This
@@ -794,9 +808,32 @@ def import_registry(plans, replace=True):
     except (TypeError, ValueError) as e:
         return error_response(f"Invalid plan ID: {e}")
 
+    prepared_archives = None
+    if archives is not None:
+        if not isinstance(archives, list):
+            return error_response("archives must be a list")
+        prepared_archives = []
+        seen_archive_files = set()
+        for entry in archives:
+            if not isinstance(entry, dict):
+                return error_response("Each archive snapshot must be an object")
+            raw_filename = str(entry.get("file", ""))
+            filename = Path(raw_filename).name
+            payload = entry.get("payload")
+            if not raw_filename or filename != raw_filename or not filename.endswith(".json"):
+                return error_response("Invalid archive filename")
+            if filename in seen_archive_files:
+                return error_response(f"Duplicate archive filename: {filename}")
+            if not isinstance(payload, dict) or not isinstance(payload.get("plan"), dict):
+                return error_response("Invalid archive snapshot")
+            seen_archive_files.add(filename)
+            prepared_archives.append((filename, copy.deepcopy(payload)))
+
     backup = plan_module.Plan.registry.copy()
     imported = []
     skipped = []
+    archive_backup = None
+    written_archives = []
     try:
         if replace:
             plan_module.Plan.registry.clear()
@@ -807,7 +844,28 @@ def import_registry(plans, replace=True):
                 continue
             plan_module.Plan.load_from_json(json.dumps(raw_plan, ensure_ascii=False), new_id=plan_id)
             imported.append(plan_id)
+
+        if prepared_archives is not None:
+            archive_root = _archive_dir()
+            archive_root.mkdir(parents=True, exist_ok=True)
+            archive_backup = archive_root / f".effilife-archive-backup-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+            archive_backup.mkdir()
+            for existing in archive_root.glob("plan_*.json"):
+                existing.replace(archive_backup / existing.name)
+            for filename, payload in prepared_archives:
+                destination = archive_root / filename
+                with open(destination, "w", encoding="utf-8") as handle:
+                    json.dump(payload, handle, ensure_ascii=False, indent=2)
+                written_archives.append(destination)
+            shutil.rmtree(archive_backup)
+            archive_backup = None
     except Exception as e:
+        for destination in written_archives:
+            destination.unlink(missing_ok=True)
+        if archive_backup is not None and archive_backup.exists():
+            for previous in archive_backup.glob("plan_*.json"):
+                previous.replace(_archive_dir() / previous.name)
+            archive_backup.rmdir()
         plan_module.Plan.registry.clear()
         plan_module.Plan.registry.update(backup)
         return error_response(f"Plan import rolled back: {e}")
@@ -818,6 +876,7 @@ def import_registry(plans, replace=True):
         "skipped": skipped,
         "count": len(imported),
         "replaced": bool(replace),
+        "archives": len(prepared_archives) if prepared_archives is not None else None,
     })
 
 

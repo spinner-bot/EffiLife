@@ -29,6 +29,14 @@ def test_unified_archive_import_restores_todos_records_and_plan_snapshot():
     assert "await idbClear(STORE_NAMES.TODOS)" in source
     assert "STORE_NAMES.PLAN_HELPER_SNAPSHOT" in source
     assert "requestPlanHelper('/api/data/import'" in source
+    assert "data.planHelper.archives" in source
+    assert "archives: Array.isArray(data.planHelper.archives)" in source
+
+
+def test_unified_archive_carries_archived_plan_snapshots():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives'" in source
+    assert "data?: { plans?: unknown[]; archives?: unknown[] }" in source
 
 
 def test_unified_archive_repairs_todo_record_links_in_both_directions():

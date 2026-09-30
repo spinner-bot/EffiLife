@@ -38,6 +38,33 @@ def test_raw_plan_registry_round_trip_preserves_slots_groups_and_logs():
         Plan.registry.pop(plan_id, None)
 
 
+def test_registry_exchange_round_trip_preserves_archived_plan_payloads(tmp_path, monkeypatch):
+    monkeypatch.setenv("EFFILIFE_PLAN_ARCHIVE_DIR", str(tmp_path / "archives"))
+    plan_id = Plan.request_id()
+    created = api.create_plan(name="Archived exchange", plan_id=plan_id)
+    assert created.success
+    try:
+        archived = api.archive_plan(plan_id)
+        assert archived.success
+        exported = api.export_registry()
+        assert exported.success
+        assert exported.data["plans"] == []
+        assert len(exported.data["archives"]) == 1
+
+        imported = api.import_registry(
+            exported.data["plans"],
+            archives=exported.data["archives"],
+            replace=True,
+        )
+        assert imported.success
+        listed = api.list_archives()
+        assert listed.success
+        assert listed.data["count"] == 1
+        assert listed.data["archives"][0]["name"] == "Archived exchange"
+    finally:
+        Plan.registry.pop(plan_id, None)
+
+
 def test_soft_deleted_task_is_renumbered_only_in_the_display_projection():
     plan_id = Plan.request_id()
     created = api.create_plan(name="Display numbering", plan_id=plan_id)

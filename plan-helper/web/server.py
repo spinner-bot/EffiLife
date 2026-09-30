@@ -208,7 +208,11 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
 
     def _handle_api_post(self, path, data):
         if path == "/api/data/import":
-            resp = api.import_registry(data.get("plans", []), replace=data.get("replace", True))
+            resp = api.import_registry(
+                data.get("plans", []),
+                archives=data.get("archives"),
+                replace=data.get("replace", True),
+            )
         elif path == "/api/plans":
             resp = api.create_plan(
                 name=data.get("name"),
