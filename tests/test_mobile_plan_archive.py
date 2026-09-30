@@ -15,6 +15,9 @@ def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "const sourceIdIsFree = Number.isInteger(sourceId)" in GATEWAY
     assert "const nextId = sourceIdIsFree" in GATEWAY
     assert "restored.head = { ...(restored.head || {}), index: nextId }" in GATEWAY
+    assert "linked_todos: linkedTodos" in GATEWAY
+    assert "archive.payload?.linked_todos" in GATEWAY
+    assert "related_plan_id: String(nextId)" in GATEWAY
 
 
 def test_mobile_archive_copy_is_localized_as_snapshot_capability():

@@ -4,6 +4,7 @@ import { syncPendingPlanHelperReset } from './planReset'
 import { translate } from '@/i18n'
 import { ref } from 'vue'
 import { notifyWorkspaceChanged } from './workspaceEvents'
+import { TodoService } from './todoService'
 
 export interface PlanSummary {
   id: string
@@ -76,7 +77,11 @@ type RawPlan = {
 type RawSection = NonNullable<RawPlan['main']>[number]
 type RawArchive = {
   file?: string
-  payload?: { archived_at?: string; plan?: RawPlan }
+  payload?: {
+    archived_at?: string
+    plan?: RawPlan
+    linked_todos?: Array<{ id?: string; task_id?: string }>
+  }
 }
 
 type MobileTemplateDefinition = {
@@ -606,12 +611,16 @@ export async function archivePlan(planId: string): Promise<void> {
     const index = plans.findIndex((plan, fallbackIndex) => String(plan.head?.index ?? fallbackIndex) === String(planId))
     if (index < 0) throw new Error(translate('plans.mobileSnapshotMissing'))
     const [plan] = plans.splice(index, 1)
+    const archivedPlanId = String(plan.head?.index ?? planId)
+    const linkedTodos = (await TodoService.list())
+      .filter((todo) => todo.related_plan_id === archivedPlanId)
+      .map((todo) => ({ id: todo.id, task_id: todo.related_plan_task_id }))
     const archives = await getMobileRawArchives()
     const timestamp = new Date()
     const stamp = `${timestamp.getTime()}${String(timestamp.getMilliseconds()).padStart(3, '0')}`
     archives.push({
       file: `plan_${String(plan.head?.index ?? planId)}_${stamp}.json`,
-      payload: { archived_at: timestamp.toISOString(), plan },
+      payload: { archived_at: timestamp.toISOString(), plan, linked_todos: linkedTodos },
     })
     const { set, STORE_NAMES } = await import('@/storage')
     await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
@@ -641,6 +650,19 @@ export async function restorePlanArchive(file: string): Promise<void> {
     plans.push(restored)
     const { set, STORE_NAMES } = await import('@/storage')
     await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+    if (nextId !== sourceId && Array.isArray(archive.payload?.linked_todos)) {
+      const todoIds = new Set(
+        archive.payload.linked_todos
+          .map((link) => link?.id)
+          .filter((id): id is string => typeof id === 'string' && Boolean(id)),
+      )
+      const todos = await TodoService.list()
+      for (const todo of todos) {
+        if (todoIds.has(todo.id) && todo.related_plan_id === String(sourceId)) {
+          await TodoService.update(todo.id, { related_plan_id: String(nextId) })
+        }
+      }
+    }
     planDataSource.value = 'mobile'
     notifyWorkspaceChanged('plans')
     return
