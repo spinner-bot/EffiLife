@@ -203,12 +203,13 @@ async function saveTodoSettings() {
 }
 
 const planNameById = computed(() => Object.fromEntries([
-  ...planSummaries.value.map((plan) => [plan.id, plan.name] as const),
   ...planArchives.value.filter((archive) => archive.plan_id !== undefined).map((archive) => [String(archive.plan_id), archive.name || `#${archive.plan_id}`] as const),
+  ...planSummaries.value.map((plan) => [plan.id, plan.name] as const),
 ]))
 const archivedPlanById = computed(() => Object.fromEntries(
   planArchives.value
-    .filter((archive) => archive.plan_id !== undefined)
+    .filter((archive) => archive.plan_id !== undefined
+      && !planSummaries.value.some((activePlan) => String(activePlan.id) === String(archive.plan_id)))
     .map((archive) => [String(archive.plan_id), archive] as const),
 ))
 const planTaskById = computed(() => Object.fromEntries(

@@ -211,14 +211,15 @@ const stopWorkspaceListener = onWorkspaceChanged(scheduleWorkspaceSummaryRefresh
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
 const planNameById = computed(() => Object.fromEntries([
-  ...eventPlans.value.map((plan) => [plan.id, plan.name] as const),
   ...archivedPlans.value
     .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null)
     .map((plan) => [String(plan.plan_id), plan.name] as const),
+  ...eventPlans.value.map((plan) => [plan.id, plan.name] as const),
 ]))
 const archivedPlanById = computed(() => Object.fromEntries(
   archivedPlans.value
-    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null)
+    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null
+      && !eventPlans.value.some((activePlan) => String(activePlan.id) === String(plan.plan_id)))
     .map((plan) => [String(plan.plan_id), plan] as const),
 ))
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0

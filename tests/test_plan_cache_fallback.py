@@ -40,5 +40,6 @@ def test_task_center_exposes_archived_plan_state_without_removing_the_link():
     i18n = I18N.read_text(encoding="utf-8")
     assert "listPlanArchives" in tasks
     assert "const archivedPlanById = computed" in tasks
+    assert "!planSummaries.value.some((activePlan) => String(activePlan.id) === String(archive.plan_id))" in tasks
     assert "tasks.archivedPlan" in tasks
     assert i18n.count("'tasks.archivedPlan':") == 2

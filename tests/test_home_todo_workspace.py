@@ -70,6 +70,7 @@ def test_home_resolves_archived_plan_references_without_hiding_them():
     source = HOME.read_text(encoding="utf-8")
     assert "listPlanArchives" in source
     assert "archivedPlanById" in source
+    assert "!eventPlans.value.some((activePlan) => String(activePlan.id) === String(plan.plan_id))" in source
     assert "home.archivedPlan" in source
 
 
