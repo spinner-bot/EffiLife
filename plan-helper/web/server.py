@@ -325,6 +325,9 @@ def run_server(host="127.0.0.1", port=8765, data_dir=None):
         runtime_dir = Path(data_dir).expanduser().resolve()
         runtime_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(runtime_dir)
+        # Keep archived plans beside the runtime registry when running as the
+        # unified desktop sidecar; source/dev mode retains the legacy default.
+        os.environ["EFFILIFE_PLAN_ARCHIVE_DIR"] = str(runtime_dir / "data" / "archives")
     Path("data/system/registry").mkdir(parents=True, exist_ok=True)
     registry_file = Path("data/system/registry/registry.json")
     if registry_file.exists():

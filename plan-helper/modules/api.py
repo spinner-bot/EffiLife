@@ -8,6 +8,7 @@
 
 import json
 import copy
+import os
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from . import plan as plan_module
@@ -49,6 +50,16 @@ def success_response(data=None, code=200):
 
 def error_response(message, code=400):
     return APIResponse(success=False, error=message, code=code)
+
+
+def _archive_dir(archive_dir=None):
+    """Resolve the archive root without breaking the legacy source layout."""
+    if archive_dir:
+        return Path(archive_dir)
+    configured = os.environ.get("EFFILIFE_PLAN_ARCHIVE_DIR", "").strip()
+    if configured:
+        return Path(configured)
+    return Path(__file__).parent.parent / "data" / "archives"
 
 
 # ==========================================
@@ -174,7 +185,7 @@ def archive_plan(plan_id, archive_dir=None):
         if plan_id not in plan_module.Plan.registry:
             return error_response(f"Plan {plan_id} not found", code=404)
         p = plan_module.Plan.registry[plan_id]
-        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        target_dir = _archive_dir(archive_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         archive_file = target_dir / f"plan_{plan_id}_{timestamp}.json"
@@ -196,7 +207,7 @@ def archive_plan(plan_id, archive_dir=None):
 def list_archives(archive_dir=None):
     """List recoverable archived plans."""
     try:
-        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        target_dir = _archive_dir(archive_dir)
         if not target_dir.exists():
             return success_response(data={"archives": [], "count": 0})
         archives = []
@@ -225,7 +236,7 @@ def restore_archive(filename, archive_dir=None, new_id=None):
     """Restore an archived plan into the active registry."""
     try:
         safe_name = Path(str(filename)).name
-        target_dir = Path(archive_dir) if archive_dir else Path(__file__).parent.parent / "data" / "archives"
+        target_dir = _archive_dir(archive_dir)
         archive_file = target_dir / safe_name
         if not archive_file.exists() or archive_file.suffix != ".json":
             return error_response("Archive not found", code=404)
