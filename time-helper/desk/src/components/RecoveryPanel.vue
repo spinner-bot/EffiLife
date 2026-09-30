@@ -6,6 +6,21 @@ import type { BackupData, DataStatus } from '@/storage'
 defineProps<{ dataStatus: DataStatus | null; backups: BackupData[] }>()
 defineEmits<{ back: []; restore: [backup: BackupData]; emergencyExport: [] }>()
 const { t, locale } = useI18n()
+
+const BACKUP_TYPE_KEYS: Record<string, string> = {
+  archive_import: 'settings.restore.backupArchiveImport',
+  config: 'settings.restore.backupConfig',
+  plans: 'settings.restore.backupPlans',
+  records: 'settings.restore.backupRecords',
+  schedule_rules: 'settings.restore.backupScheduleRules',
+  manual_plans: 'settings.restore.backupManualPlans',
+  pre_migration_full: 'settings.restore.backupMigration',
+}
+
+function backupTypeLabel(module: string): string {
+  const key = BACKUP_TYPE_KEYS[module]
+  return key ? t(key) : module
+}
 </script>
 
 <template>
@@ -34,7 +49,7 @@ const { t, locale } = useI18n()
       <h3>{{ t('settings.restore.availableBackups') }} ({{ backups.length }})</h3>
       <div v-if="backups.length" class="backup-list">
         <div v-for="backup in backups" :key="`${backup.module}_${backup.timestamp}`" class="backup-row">
-          <div><strong>{{ backup.module }}</strong><span>{{ new Date(backup.timestamp).toLocaleString(locale) }}</span></div>
+          <div><strong>{{ backupTypeLabel(backup.module) }}</strong><span>{{ new Date(backup.timestamp).toLocaleString(locale) }}</span></div>
           <button class="recovery-action secondary" type="button" @click="$emit('restore', backup)"><RotateCcw :size="15" /> {{ t('settings.restore.action') }}</button>
         </div>
       </div>
