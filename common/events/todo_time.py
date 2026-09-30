@@ -59,9 +59,11 @@ class TodoTimeLinker:
             if result.get('success'):
                 todo_data = result.get('data', {})
 
-        # 确定记录时长
-        if time_spent is None:
-            time_spent = todo_data.get('time_spent')
+        # 确定记录时长。TodoAPI.complete_todo() 在发布事件前已经把显式
+        # time_spent 写入待办，因此显式值代表这次完成操作持久化的总值，
+        # 不能在下面再次累加。只有旧调用方没有提供时长时，才使用估算值
+        # 作为新增的时间记录，并累加到待办已有用时。
+        supplied_time_spent = time_spent is not None
         if time_spent is None:
             time_spent = todo_data.get('time_estimate', 25)
 
@@ -111,7 +113,7 @@ class TodoTimeLinker:
             )
 
             # 更新时间记录到待办
-            if todo_api:
+            if todo_api and not supplied_time_spent:
                 current_spent = todo_data.get('time_spent', 0) or 0
                 todo_api.update_todo(todo_id, time_spent=current_spent + total_minutes)
 
