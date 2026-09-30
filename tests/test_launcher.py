@@ -41,8 +41,11 @@ def test_release_check_reports_desktop_and_mobile_boundaries(capsys):
 
     report = json.loads(capsys.readouterr().out)
     assert report["ok"] is True
+    assert "build_ready" in report
     assert report["checks"]["desktop"]["ok"] is True
     assert report["checks"]["mobile"]["ok"] is True
+    assert set(report["environment"]) == {"desktop", "android", "ios"}
+    assert "missing" in report["environment"]["desktop"]
 
 
 def test_launcher_defaults_to_unified_workspace_without_legacy_flag(monkeypatch):

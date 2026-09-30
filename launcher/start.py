@@ -223,17 +223,24 @@ def release_check_command():
         sys.path.insert(0, str(BASE_DIR))
     from scripts.check_release_config import validate
     from scripts.check_mobile_release_config import validate as validate_mobile
+    from scripts.check_build_environment import build_report
 
     desktop_errors = validate(BASE_DIR)
     mobile_errors = validate_mobile(BASE_DIR)
     errors = desktop_errors + mobile_errors
+    environment = {
+        target: build_report(target, BASE_DIR)
+        for target in ("desktop", "android", "ios")
+    }
     print(json.dumps({
         "ok": not errors,
+        "build_ready": all(report["ready"] for report in environment.values()),
         "errors": errors,
         "checks": {
             "desktop": {"ok": not desktop_errors, "errors": desktop_errors},
             "mobile": {"ok": not mobile_errors, "errors": mobile_errors},
         },
+        "environment": environment,
     }, ensure_ascii=True, indent=2))
     return not errors
 
