@@ -56,7 +56,7 @@ export const MAIN_GUIDE: GuideConfig = {
     // ========== 欢迎 ==========
     {
       id: 'welcome',
-      title: '欢迎使用浪兮效率时钟！',
+      title: '欢迎使用 EffiLife！',
       description: '让我们通过实际操作来了解核心功能。你将亲手体验计划、待办和时间记录。准备好了吗？',
       position: 'bottom',
       isDemo: true

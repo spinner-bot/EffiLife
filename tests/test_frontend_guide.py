@@ -50,3 +50,11 @@ def test_guide_source_does_not_retain_retired_calendar_steps():
     assert "calendar" not in guide.lower()
     assert "日历" not in guide
     assert "navigateTo: '/calendar'" not in guide
+
+
+def test_visible_branding_uses_effilife_instead_of_legacy_product_name():
+    settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
+    catalog = I18N_SOURCE.read_text(encoding="utf-8")
+    assert "浪兮效率时钟" not in settings
+    assert "'home.appTitle': 'EffiLife'" in catalog
+    assert "'home.footer': 'EffiLife | 专注高效生活'" in catalog
