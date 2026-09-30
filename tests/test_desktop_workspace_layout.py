@@ -28,3 +28,11 @@ def test_task_center_uses_the_shared_wide_desktop_content_budget():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in tasks
     assert ".task-header, .task-content { max-width: 1180px; }" in tasks
+
+
+def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
+    plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
+    assert ".detail-actions { display: flex; flex-wrap: wrap;" in plans
+    assert ".plan-section > header { display: flex; flex-wrap: wrap;" in plans
+    assert "@media (max-width: 900px)" in plans

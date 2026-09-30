@@ -1089,14 +1089,14 @@ onUnmounted(() => {
 .plans-readonly-note { display: grid; gap: 4px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--color-primary); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; line-height: 1.5; }
 .plans-readonly-note strong { color: var(--color-text-primary); }
 .plans-retry { justify-self: start; }
-.detail-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.detail-actions { display: flex; gap: 8px; }
+.detail-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .meta-editor, .section-editor { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
 .meta-editor label, .section-editor label, .task-editor label, .create-modal label { display: grid; gap: 6px; color: var(--color-text-secondary); font-size: 12px; }
 .meta-editor input, .section-editor input, .task-editor input, .create-modal input { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); outline: none; }
 .meta-editor input:focus, .section-editor input:focus, .task-editor input:focus, .create-modal input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .create-modal { width: min(440px, calc(100vw - 32px)); }
-.plan-detail-summary { display: flex; gap: 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
+.plan-detail-summary { display: flex; flex-wrap: wrap; gap: 18px 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
 .plan-detail-progress { min-width: 130px; }
@@ -1118,9 +1118,9 @@ onUnmounted(() => {
 .section-editor input:first-child { flex: 1; }
 .section-editor input:nth-child(2) { flex: 1.5; }
 .plan-section { margin-bottom: 12px; padding: 17px; border: 1px solid var(--color-border); border-radius: 14px; }
-.plan-section > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plan-section > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .plan-section > header > div { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.section-actions { display: flex; gap: 7px; }
+.section-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .section-letter { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--color-button-text); background: var(--color-primary); font-size: 12px; font-weight: 700; }
 .plan-section header small { overflow: hidden; color: var(--color-text-tertiary); text-overflow: ellipsis; white-space: nowrap; }
 .task-editor { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0 8px; padding: 10px; border-radius: 10px; background: var(--color-bg-secondary); }
@@ -1183,5 +1183,6 @@ onUnmounted(() => {
   .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .log-editor, .group-editor { display: flex; } .section-actions { flex-wrap: wrap; justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
+@media (max-width: 900px) { .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; } .log-editor, .group-editor { display: flex; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } }
 </style>
