@@ -21,8 +21,8 @@ def test_theme_save_refreshes_persistent_snapshot():
     assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
     assert "function discardThemeChanges()" in source
     theme_template = source.split("<!-- 主题设置 -->", 1)[1].split("<!-- 帮助 -->", 1)[0]
-    assert ':disabled="!themeDirty"' not in theme_template
-    assert '@click="saveTheme"' not in theme_template
+    assert ':disabled="!themeDirty"' in theme_template
+    assert '@click="saveTheme"' in theme_template
 
 
 def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
