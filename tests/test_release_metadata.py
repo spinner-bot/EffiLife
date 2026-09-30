@@ -17,6 +17,16 @@ def test_desktop_release_versions_are_aligned():
     assert source_version == package["version"] == tauri["version"] == cargo_version.group(1)
 
 
+def test_desktop_shell_opens_with_a_wide_workspace_budget():
+    tauri = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+    window = tauri["app"]["windows"][0]
+
+    assert window["width"] >= 1200
+    assert window["height"] >= 780
+    assert window["minWidth"] >= 900
+    assert window["minHeight"] >= 600
+
+
 def test_windows_workflow_matches_configured_bundle_target():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     tauri = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
