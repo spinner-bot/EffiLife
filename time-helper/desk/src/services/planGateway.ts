@@ -630,7 +630,12 @@ export async function restorePlanArchive(file: string): Promise<void> {
     const sourcePlan = archive?.payload?.plan
     if (!sourcePlan) throw new Error(translate('plans.mobileSnapshotMissing'))
     const plans = cloneMobilePlans(await getMobileRawPlans())
-    const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+    const sourceId = Number(sourcePlan.head?.index)
+    const sourceIdIsFree = Number.isInteger(sourceId) && sourceId > 0
+      && !plans.some((plan, index) => Number(plan.head?.index ?? index) === sourceId)
+    const nextId = sourceIdIsFree
+      ? sourceId
+      : plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
     const restored = JSON.parse(JSON.stringify(sourcePlan)) as RawPlan
     restored.head = { ...(restored.head || {}), index: nextId }
     plans.push(restored)

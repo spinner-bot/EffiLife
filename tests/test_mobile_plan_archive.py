@@ -12,6 +12,8 @@ def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "archives.push({" in GATEWAY
     assert "await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)" in GATEWAY
     assert "const sourcePlan = archive?.payload?.plan" in GATEWAY
+    assert "const sourceIdIsFree = Number.isInteger(sourceId)" in GATEWAY
+    assert "const nextId = sourceIdIsFree" in GATEWAY
     assert "restored.head = { ...(restored.head || {}), index: nextId }" in GATEWAY
 
 
