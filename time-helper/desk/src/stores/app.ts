@@ -18,6 +18,8 @@ export const useAppStore = defineStore('app', () => {
   const todayStat = ref<RealTimeStat | null>(null)
   const isLoading = ref(false)
   let initPromise: Promise<void> | null = null
+  let refreshPromise: Promise<void> | null = null
+  let refreshRequested = false
 
   // 计算属性
   const overtimeThreshold = computed(() => config.value.overtime_threshold)
@@ -73,10 +75,27 @@ export const useAppStore = defineStore('app', () => {
 
   /** Reload shared state after a change made by another window. */
   async function refreshWorkspaceData() {
-    config.value = await DataService.loadConfig()
-    plans.value = await DataService.loadPlans()
-    scheduleRules.value = await DataService.loadScheduleRules()
-    await refreshTodayData()
+    refreshRequested = true
+    if (refreshPromise) return refreshPromise
+
+    refreshPromise = (async () => {
+      // Workspace events may arrive while a refresh is in flight. Serialize
+      // reads and run one more pass when a later event requested it, so an
+      // older response cannot overwrite a newer cross-module state change.
+      do {
+        refreshRequested = false
+        config.value = await DataService.loadConfig()
+        plans.value = await DataService.loadPlans()
+        scheduleRules.value = await DataService.loadScheduleRules()
+        await refreshTodayData()
+      } while (refreshRequested)
+    })()
+    const currentRefresh = refreshPromise
+    try {
+      await currentRefresh
+    } finally {
+      if (refreshPromise === currentRefresh) refreshPromise = null
+    }
   }
 
   // 保存配置

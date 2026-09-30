@@ -29,3 +29,14 @@ def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources()
     assert "await DataService.saveDayPlan(planName, today)" in source
     assert "notifyWorkspaceChanged('plans')" in source.split("async function changeTodayPlan", 1)[1]
     assert "refreshWorkspaceData," in source
+
+
+def test_workspace_refreshes_are_serialized_and_later_requests_are_not_dropped():
+    source = STORE.read_text(encoding="utf-8")
+    refresh_block = source.split("async function refreshWorkspaceData()", 1)[1].split("// 保存配置", 1)[0]
+    assert "let refreshPromise: Promise<void> | null = null" in source
+    assert "let refreshRequested = false" in source
+    assert "if (refreshPromise) return refreshPromise" in refresh_block
+    assert "do {" in refresh_block
+    assert "} while (refreshRequested)" in refresh_block
+    assert "if (refreshPromise === currentRefresh) refreshPromise = null" in refresh_block
