@@ -42,6 +42,8 @@ def test_mobile_plan_creation_preserves_section_and_task_shape():
     assert "group: {}," in gateway
     assert "planDataSource.value = 'mobile'" in gateway
     assert "planDataSource.value = 'service'" in gateway
+    assert "if ((options.method || 'GET').toUpperCase() !== 'GET') {" in gateway
+    assert "notifyWorkspaceChanged('plans')" in gateway
 
 
 def test_template_creation_uses_the_existing_plan_helper_endpoint():

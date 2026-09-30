@@ -256,7 +256,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   })
   const payload = await readPayload<T>(response)
   if (!response.ok || !payload.success) throw new Error(payload.error || translate('plans.serviceError', { status: response.status }))
-  if ((options.method || 'GET').toUpperCase() !== 'GET') notifyWorkspaceChanged('plans')
+  if ((options.method || 'GET').toUpperCase() !== 'GET') {
+    planDataSource.value = 'service'
+    notifyWorkspaceChanged('plans')
+  }
   return payload.data as T
 }
 
