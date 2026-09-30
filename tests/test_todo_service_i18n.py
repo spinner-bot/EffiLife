@@ -26,3 +26,11 @@ def test_imported_todo_enums_are_normalized_before_storage():
     assert "TODO_STATUSES.includes(todo.status as TodoStatus)" in source
     assert "TODO_PRIORITIES.includes(todo.priority as TodoPriority)" in source
     assert "TODO_RECURRENCES.includes(todo.recurrence as TodoRecurrence)" in source
+
+
+def test_todo_import_validates_and_normalizes_subtasks():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "function normalizeSubtasks(value: unknown): TodoSubtask[]" in source
+    assert "subtasks: normalizeSubtasks(todo.subtasks)" in source
+    assert "candidate.subtasks !== undefined && !Array.isArray(candidate.subtasks)" in source
+    assert "item.title !== 'string' || !item.title.trim()" in source

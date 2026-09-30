@@ -114,6 +114,21 @@ function makeSubtaskId(): string {
   return `SUB-${suffix.toUpperCase()}`
 }
 
+function normalizeSubtasks(value: unknown): TodoSubtask[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return []
+    const candidate = item as Partial<TodoSubtask>
+    if (typeof candidate.title !== 'string' || !candidate.title.trim()) return []
+    return [{
+      id: typeof candidate.id === 'string' && candidate.id.trim() ? candidate.id : makeSubtaskId(),
+      title: candidate.title.trim(),
+      completed: candidate.completed === true,
+      completed_at: typeof candidate.completed_at === 'string' ? candidate.completed_at : undefined,
+    }]
+  })
+}
+
 function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): UnifiedTodo {
   const timestamp = now()
   const status = TODO_STATUSES.includes(todo.status as TodoStatus) ? todo.status as TodoStatus : 'pending'
@@ -134,7 +149,7 @@ function normalize(todo: Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>): Uni
     deadline: todo.deadline,
     completed_at: todo.completed_at,
     tags: todo.tags || [],
-    subtasks: todo.subtasks || [],
+    subtasks: normalizeSubtasks(todo.subtasks),
     related_plan_id: todo.related_plan_id,
     related_plan_task_id: todo.related_plan_task_id,
     time_estimate: todo.time_estimate,
@@ -171,6 +186,14 @@ export function normalizeImportedTodo(value: unknown): UnifiedTodo | null {
     !Array.isArray(candidate.related_time_record_ids)
     || candidate.related_time_record_ids.some((id) => typeof id !== 'string')
   )) return null
+  if (candidate.subtasks !== undefined && !Array.isArray(candidate.subtasks)) return null
+  if (Array.isArray(candidate.subtasks) && candidate.subtasks.some((subtask) => {
+    if (!subtask || typeof subtask !== 'object' || Array.isArray(subtask)) return true
+    const item = subtask as Partial<TodoSubtask>
+    return typeof item.title !== 'string' || !item.title.trim()
+      || (item.id !== undefined && typeof item.id !== 'string')
+      || (item.completed_at !== undefined && typeof item.completed_at !== 'string')
+  })) return null
   return normalize(candidate as Partial<UnifiedTodo> & Pick<UnifiedTodo, 'title'>)
 }
 
