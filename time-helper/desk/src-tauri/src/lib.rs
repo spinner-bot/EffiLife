@@ -136,6 +136,24 @@ fn get_data_dir() -> PathBuf {
     path
 }
 
+// Plan Helper's legacy layout expects its runtime root to contain both
+// `plan/` and `data/`. A configured shared root is already that runtime root;
+// only the platform fallback stores the frontend data one level deeper.
+fn get_plan_helper_data_dir() -> PathBuf {
+    if let Ok(configured) = std::env::var("EFFILIFE_DATA_DIR") {
+        let configured = configured.trim();
+        if !configured.is_empty() {
+            return PathBuf::from(configured);
+        }
+    }
+
+    let data_dir = get_data_dir();
+    data_dir
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or(data_dir)
+}
+
 // 命令：获取今日日期
 #[tauri::command]
 fn get_today_date() -> String {
@@ -212,11 +230,7 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box
     // both `plan/` and `data/system/registry/`. Tauri's shared data helper
     // already points at `<app-data>/EffiLife/data`, so pass its parent root to
     // avoid producing an accidental `<app-data>/data/data` hierarchy.
-    let data_dir = get_data_dir();
-    let plan_runtime_root = data_dir
-        .parent()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| data_dir.clone());
+    let plan_runtime_root = get_plan_helper_data_dir();
     let command = app
         .shell()
         .sidecar("efflife-plan-helper")?
