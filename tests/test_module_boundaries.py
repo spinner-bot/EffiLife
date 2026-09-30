@@ -29,3 +29,9 @@ def test_date_detail_returns_to_records_after_calendar_removal():
     assert "'dayDetail.back': 'Back to records'" in catalog
     assert "'dayDetail.back': '返回日历'" not in catalog
     assert "'dayDetail.back': 'Back to calendar'" not in catalog
+
+
+def test_i18n_does_not_retain_retired_calendar_dictionary():
+    catalog = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+    assert "'nav.calendar':" not in catalog
+    assert "'calendar." not in catalog
