@@ -19,7 +19,8 @@ TARGET_REQUIREMENTS = {
 
 MOBILE_PROJECTS = {
     "android": Path("time-helper/desk/src-tauri/gen/android"),
-    "ios": Path("time-helper/desk/src-tauri/gen/ios"),
+    # Tauri calls the shared Apple native project `gen/apple` for iOS.
+    "ios": Path("time-helper/desk/src-tauri/gen/apple"),
 }
 
 

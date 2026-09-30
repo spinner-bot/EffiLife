@@ -57,6 +57,18 @@ def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monk
     assert report["missing"] == []
 
 
+def test_ios_report_uses_tauri_apple_project_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(MODULE, "executable_path", lambda _name: "/bin/tool")
+    project = tmp_path / "time-helper/desk/src-tauri/gen/apple"
+    project.mkdir(parents=True)
+
+    report = MODULE.build_report("ios", tmp_path)
+
+    assert report["mobile_project"] == str(project)
+    assert report["mobile_project_exists"] is True
+    assert report["missing"] == []
+
+
 def test_node_tool_path_prefers_configured_custom_directory(monkeypatch, tmp_path):
     custom_dir = tmp_path / "node"
     custom_dir.mkdir()
