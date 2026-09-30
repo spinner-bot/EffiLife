@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, parseStoredDate } from '@/services/dataService'
-import { ClipboardList, Clock3, Settings, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
+import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -563,27 +563,11 @@ onUnmounted(() => {
         <EmptyState v-else :icon="ListTodo" :title="t('home.noTodos')" :description="t('home.createTodoHint')" :action-text="t('home.openTodoCenter')" action-route="/tasks" />
       </section>
 
-      <nav class="nav-buttons">
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/plans')">
-          <ClipboardList :size="22" />
-          <span>{{ t('nav.plan') }}</span>
-        </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/time')">
-          <Clock3 :size="22" />
-          <span>{{ t('nav.records') }}</span>
-        </button>
-        <button class="nav-btn checkin-nav" @click="AudioManager.playSound('click'); router.push('/checkin')">
-          <CheckCircle :size="22" />
+      <nav class="home-quick-actions" :aria-label="t('nav.checkin')">
+        <button class="home-checkin-action" type="button" @click="AudioManager.playSound('click'); router.push('/checkin')">
+          <CheckCircle :size="18" />
           <span>{{ t('nav.checkin') }}</span>
-          <span v-if="canCheckinToday && !hasCheckedInToday" class="nav-red-dot"></span>
-        </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/tasks')">
-          <ListTodo :size="22" />
-          <span>{{ t('nav.tasks') }}<span v-if="activeTodoCount > 0" class="nav-count">{{ activeTodoCount }}</span></span>
-        </button>
-        <button class="nav-btn" @click="AudioManager.playSound('click'); router.push('/settings')">
-          <Settings :size="22" />
-          <span>{{ t('nav.settings') }}</span>
+          <span v-if="canCheckinToday && !hasCheckedInToday" class="home-checkin-dot" aria-hidden="true"></span>
         </button>
       </nav>
     </main>
@@ -1247,19 +1231,18 @@ onUnmounted(() => {
   padding: var(--spacing-md) 0;
 }
 
-.nav-buttons {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--spacing-sm);
+.home-quick-actions {
+  display: flex;
+  justify-content: flex-start;
   width: 100%;
 }
 
-.nav-btn {
+.home-checkin-action {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
+  gap: 8px;
+  position: relative;
+  padding: 10px 14px;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -1269,64 +1252,21 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
-.nav-btn:hover {
+.home-checkin-action:hover {
   background: var(--color-bg-secondary);
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-muted);
   transform: translateY(-2px);
 }
 
-.nav-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  margin-left: 5px;
-  padding: 0 4px;
-  border-radius: 999px;
-  color: var(--color-button-text);
-  background: var(--color-primary);
-  font-size: 0.6875rem;
-  line-height: 1;
-}
-
-.nav-btn:active {
+.home-checkin-action:active {
   transform: translateY(0) scale(0.96);
 }
 
-.checkin-nav {
-  position: relative;
-}
-
-.nav-btn.placeholder {
-  cursor: default;
-  opacity: 0.4;
-  border-style: dashed;
-}
-
-.nav-btn.placeholder:hover {
-  transform: none;
-  background: var(--color-bg-secondary);
-  border-color: var(--color-border);
-}
-
-.nav-placeholder-icon {
-  font-size: 1.25rem;
-  letter-spacing: 2px;
-  color: var(--color-text-tertiary);
-  line-height: 1;
-}
-
-.nav-placeholder-text {
-  font-size: 0.6875rem;
-  color: var(--color-text-tertiary);
-}
-
-.nav-red-dot {
+.home-checkin-dot {
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: 7px;
   width: 8px;
   height: 8px;
   background: var(--color-error);
@@ -1360,6 +1300,5 @@ onUnmounted(() => {
     gap: 24px;
   }
   .overall-progress-ring { margin: 0 auto; }
-  .nav-buttons { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 </style>
