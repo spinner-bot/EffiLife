@@ -24,3 +24,11 @@ def test_inbox_labels_exist_in_both_locales():
     catalog = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     for key in ("home.openInbox", "home.closeInbox"):
         assert catalog.count(f"'{key}'") == 2
+
+
+def test_event_warning_rule_editor_is_keyboard_reachable():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "EventManagerView.vue").read_text(encoding="utf-8")
+    assert 'class="warning-main"' in source
+    assert 'role="button"' in source
+    assert 'tabindex="0"' in source
+    assert '@keydown="activateWarningRule' in source

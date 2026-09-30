@@ -255,6 +255,12 @@ function startEditRule(rule: WarningRule) {
   showRuleForm.value = true
 }
 
+function activateWarningRule(event: KeyboardEvent, rule: WarningRule) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  startEditRule(rule)
+}
+
 function saveRule() {
   // 验证小时
   if (newRule.value.hour < 0 || newRule.value.hour > 23) {
@@ -517,7 +523,13 @@ function testWarning(rule: WarningRule) {
               class="warning-item"
               :class="{ disabled: !rule.enabled }"
             >
-              <div class="warning-main" @click="startEditRule(rule)">
+              <div
+                class="warning-main"
+                role="button"
+                tabindex="0"
+                @click="startEditRule(rule)"
+                @keydown="activateWarningRule($event, rule)"
+              >
                 <div class="warning-time">
                   <Clock :size="16" />
                   <span class="time-text">{{ formatTime(rule) }}</span>
@@ -1096,6 +1108,11 @@ function testWarning(rule: WarningRule) {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.warning-main:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .warning-time {
