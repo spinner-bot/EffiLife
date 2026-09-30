@@ -33,3 +33,8 @@ def test_plan_rename_refreshes_only_system_derived_todo_descriptions():
     assert "export async function syncTodoDescriptionsFromPlan" in sync
     assert "todo.description === previousName" in sync
     assert "syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())" in plans
+
+
+def test_plan_completion_does_not_resurrect_archived_or_cancelled_todos():
+    sync = SYNC.read_text(encoding="utf-8")
+    assert "!['completed', 'archived', 'cancelled'].includes(todo.status)" in sync

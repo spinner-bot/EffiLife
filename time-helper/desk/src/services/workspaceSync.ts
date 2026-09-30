@@ -15,7 +15,7 @@ export async function completeLinkedTodos(planId: string, planTaskIds: string | 
   const linked = todos.filter((todo) =>
     todo.related_plan_id === String(planId)
     && Boolean(todo.related_plan_task_id && identifiers.has(String(todo.related_plan_task_id)))
-    && todo.status !== 'completed'
+    && !['completed', 'archived', 'cancelled'].includes(todo.status)
   )
 
   for (const todo of linked) {
