@@ -209,9 +209,9 @@ watch(() => props.open, async (open) => {
 
 <template>
   <div v-if="open" class="search-backdrop" @click.self="close">
-    <section class="search-dialog theme-card" role="dialog" aria-modal="true" :aria-label="t('search.title')" @keydown.esc="close">
+    <section id="global-search-dialog" class="search-dialog theme-card" role="dialog" aria-modal="true" aria-labelledby="global-search-title" @keydown.esc="close">
       <header class="search-header">
-        <div class="search-heading"><Search :size="18" /><strong>{{ t('search.title') }}</strong></div>
+        <div class="search-heading"><Search :size="18" /><strong id="global-search-title">{{ t('search.title') }}</strong></div>
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
       <input ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />

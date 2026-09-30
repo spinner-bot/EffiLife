@@ -248,7 +248,7 @@ watch(() => appStore.todayStat, () => {
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
           </RouterLink>
         </nav>
-        <button class="global-search-trigger" type="button" :aria-label="t('search.open')" aria-keyshortcuts="Control+K Meta+K" @click="showGlobalSearch = true">
+        <button id="global-search-trigger" class="global-search-trigger" type="button" :aria-label="t('search.open')" aria-haspopup="dialog" :aria-expanded="showGlobalSearch" aria-controls="global-search-dialog" aria-keyshortcuts="Control+K Meta+K" @click="showGlobalSearch = true">
           <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
       </header>

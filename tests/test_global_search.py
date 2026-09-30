@@ -81,6 +81,18 @@ def test_global_search_exposes_active_result_to_assistive_technology():
     assert "function resultDomId(result: SearchResult)" in source
 
 
+def test_global_search_trigger_and_dialog_are_explicitly_linked():
+    app = APP.read_text(encoding="utf-8")
+    source = SEARCH.read_text(encoding="utf-8")
+    assert 'id="global-search-trigger"' in app
+    assert 'aria-haspopup="dialog"' in app
+    assert ':aria-expanded="showGlobalSearch"' in app
+    assert 'aria-controls="global-search-dialog"' in app
+    assert 'id="global-search-dialog"' in source
+    assert 'aria-labelledby="global-search-title"' in source
+    assert 'id="global-search-title"' in source
+
+
 def test_global_search_indexes_todo_descriptions_and_tags():
     source = SEARCH.read_text(encoding="utf-8")
     assert "todo.description || todo.tags?.join(', ')" in source
