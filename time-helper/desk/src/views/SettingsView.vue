@@ -130,8 +130,13 @@ async function saveCustomSettings() {
     use_24h: use24h.value,
     show_ampm: showAmPm.value
   }
-  await appStore.saveConfig(newConfig)
-  notifyToast(t('settings.saved'), 'success')
+  try {
+    await appStore.saveConfig(newConfig)
+    notifyToast(t('settings.saved'), 'success')
+  } catch (error) {
+    console.error('Failed to save custom settings:', error)
+    notifyToast(t('settings.saveFailed'), 'error')
+  }
 }
 
 function addThreshold() {

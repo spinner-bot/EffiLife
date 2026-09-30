@@ -13,3 +13,10 @@ def test_custom_settings_uses_native_submit_and_explicit_button_types():
     assert '<button type="button" class="threshold-btn"' in form
     assert '<button type="button" class="btn secondary"' in form
     assert '@click="saveCustomSettings"' not in form
+
+
+def test_custom_settings_save_has_a_recoverable_error_boundary():
+    save_block = VIEW.split("async function saveCustomSettings()", 1)[1].split("function addThreshold", 1)[0]
+    assert "try {" in save_block
+    assert "appStore.saveConfig(newConfig)" in save_block
+    assert "settings.saveFailed" in save_block
