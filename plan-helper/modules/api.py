@@ -246,6 +246,12 @@ def restore_archive(filename, archive_dir=None, new_id=None):
         plan_data = payload.get("plan")
         if not isinstance(plan_data, dict):
             return error_response("Invalid archive format")
+        # Restoring an archive must remain usable when its historical numeric
+        # id has since been reused. Preserve the id when free; otherwise use
+        # Plan's normal smallest-free-id allocation rule.
+        original_id = plan_data.get("head", {}).get("index")
+        if new_id is None and str(original_id).isdigit() and int(original_id) in plan_module.Plan.registry:
+            new_id = plan_module.Plan.request_id()
         restored = plan_module.Plan.load_from_json(json.dumps(plan_data, ensure_ascii=False), new_id=new_id)
         return success_response(data=_serialize_plan(restored), code=201)
     except (OSError, ValueError, TypeError, IndexError, json.JSONDecodeError) as e:

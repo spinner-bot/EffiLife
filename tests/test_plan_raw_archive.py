@@ -85,6 +85,29 @@ def test_repeated_archive_restore_does_not_overwrite_history(tmp_path, monkeypat
         Plan.registry.pop(plan_id, None)
 
 
+def test_archive_restore_allocates_a_new_id_when_historical_id_is_occupied(tmp_path, monkeypatch):
+    archive_dir = tmp_path / "archives"
+    monkeypatch.setenv("EFFILIFE_PLAN_ARCHIVE_DIR", str(archive_dir))
+    original_id = Plan.request_id()
+    created = api.create_plan(name="Occupied archive", plan_id=original_id)
+    assert created.success
+    restored_id = None
+    try:
+        archived = api.archive_plan(original_id)
+        assert archived.success
+        replacement = api.create_plan(name="Replacement", plan_id=original_id)
+        assert replacement.success
+        restored = api.restore_archive(Path(archived.data["file"]).name)
+        assert restored.success
+        restored_id = restored.data["id"]
+        assert restored_id != original_id
+        assert restored.data["name"] == "Occupied archive"
+    finally:
+        Plan.registry.pop(original_id, None)
+        if restored_id is not None:
+            Plan.registry.pop(restored_id, None)
+
+
 def test_soft_deleted_task_is_renumbered_only_in_the_display_projection():
     plan_id = Plan.request_id()
     created = api.create_plan(name="Display numbering", plan_id=plan_id)
