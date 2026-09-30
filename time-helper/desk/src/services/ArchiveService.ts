@@ -353,22 +353,23 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
     zip.file(`data/${name}.json`, datasetPayloads[name as keyof typeof datasetPayloads])
   }
 
-  // 添加说明文件
-  zip.file('README.txt', `浪兮效率时钟存档文件
-协议: ${ARCHIVE_FORMAT} ${ARCHIVE_FORMAT_VERSION}
-版本: ${ARCHIVE_VERSION}
-导出时间: ${new Date(data.exportDate).toLocaleString(currentLocale.value)}
-
-此文件包含以下数据:
-- 应用配置
-- 计划和时间表规则
-- plan-helper 原始事件计划快照
-- 音频和事件设置
-- 打卡记录
-- 历史记录
-
-导入方法: 设置 → 更多设置 → 存档管理 → 导入存档
-`)
+  // 添加与当前界面语言一致的说明文件；协议字段和数据集名称保持不变。
+  zip.file('README.txt', [
+    translate('settings.archive.readme.title'),
+    `${translate('settings.archive.readme.protocol')}: ${ARCHIVE_FORMAT} ${ARCHIVE_FORMAT_VERSION}`,
+    `${translate('settings.archive.readme.version')}: ${ARCHIVE_VERSION}`,
+    `${translate('settings.archive.readme.exportedAt')}: ${new Date(data.exportDate).toLocaleString(currentLocale.value)}`,
+    '',
+    `${translate('settings.archive.readme.includes')}:`,
+    `- ${translate('settings.archive.readme.appData')}`,
+    `- ${translate('settings.archive.readme.planHelper')}`,
+    `- ${translate('settings.archive.readme.audioEvents')}`,
+    `- ${translate('settings.archive.readme.checkin')}`,
+    `- ${translate('settings.archive.readme.records')}`,
+    '',
+    translate('settings.archive.readme.importMethod'),
+    '',
+  ].join('\n'))
 
   // 生成 zip blob
   const blob = await zip.generateAsync({ type: 'blob' })
