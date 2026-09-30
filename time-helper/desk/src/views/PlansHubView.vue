@@ -525,6 +525,14 @@ function groupEntries(section: PlanFull['sections'][number]) {
   }))
 }
 
+function groupDisplayRange(section: PlanFull['sections'][number], group: ReturnType<typeof groupEntries>[number]): string {
+  const visibleTasks = section.tasks.filter((task) => task.is_active !== false)
+  const first = visibleTasks.find((task) => task.internal_index >= group.start && task.internal_index <= group.end)
+  const last = [...visibleTasks].reverse().find((task) => task.internal_index >= group.start && task.internal_index <= group.end)
+  if (!first || !last) return t('plans.groupNoActiveTasks')
+  return first.display_id === last.display_id ? first.display_id : `${first.display_id}–${last.display_id}`
+}
+
 function startNewGroup(section: PlanFull['sections'][number]) {
   const taskIndexes = section.tasks.map((task) => task.internal_index)
   groupSectionIndex.value = section.index
@@ -996,7 +1004,7 @@ onUnmounted(() => {
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
-              <span class="group-range">{{ group.key }}</span>
+              <span class="group-range">{{ groupDisplayRange(section, group) }}</span>
               <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
               <button v-if="canEditPlan" class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
               <button v-if="canEditPlan" class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
