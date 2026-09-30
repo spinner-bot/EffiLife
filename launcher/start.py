@@ -269,6 +269,36 @@ def time_helper_binary_paths():
     ]
 
 
+def installer_artifact_patterns():
+    """Return the platform bundle locations produced by the release matrix."""
+    bundle_root = BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle"
+    if os.name == "nt":
+        return [bundle_root / "nsis" / "*.exe"]
+    if sys.platform == "darwin":
+        return [bundle_root / "dmg" / "*.dmg"]
+    return [bundle_root / "deb" / "*.deb", bundle_root / "appimage" / "*.AppImage"]
+
+
+def installer_artifacts():
+    """Describe non-empty installer files without creating or mutating anything."""
+    artifacts = []
+    for pattern in installer_artifact_patterns():
+        matches = sorted(path for path in pattern.parent.glob(pattern.name) if path.is_file())
+        if matches:
+            artifacts.extend(
+                {
+                    "path": str(path),
+                    "exists": True,
+                    "non_empty": path.stat().st_size > 0,
+                    "size": path.stat().st_size,
+                }
+                for path in matches
+            )
+        else:
+            artifacts.append({"path": str(pattern), "exists": False, "non_empty": False, "size": 0})
+    return artifacts
+
+
 def get_todos_web_cmd():
     """Get command for to-dos web, checking for npm"""
     npm = find_npm()
@@ -427,6 +457,14 @@ def collect_diagnostics(modules):
             "severity": "info",
             "message": "Rust/Cargo is unavailable; native Tauri installer builds must run in CI or a release machine",
         })
+    installer_status = installer_artifacts()
+    if not any(item["exists"] and item["non_empty"] for item in installer_status):
+        hints.append({
+            "code": "installer-artifact-missing",
+            "severity": "info",
+            "message": "No non-empty native installer was found; a Tauri binary is not the same as an installable release",
+            "hint": "Run the desktop release workflow or build the platform bundle on a release machine",
+        })
     if any(status.get("needs_setup") for status in module_status.values()):
         hints.append({
             "code": "dependencies-pending",
@@ -450,6 +488,7 @@ def collect_diagnostics(modules):
             {"path": str(path), "exists": path.exists()}
             for path in time_helper_binary_paths()
         ],
+        "installer_artifacts": installer_status,
         "modules": module_status,
         "issues": issues,
         "hints": hints,
@@ -464,6 +503,9 @@ def print_doctor_report(report):
     print(f"Python: {report.get('python')}")
     print(f"Node: {report.get('node') or 'missing'}")
     print(f"npm: {report.get('npm') or 'missing'}")
+    installer_status = report.get("installer_artifacts", [])
+    installers_ready = any(item.get("exists") and item.get("non_empty") for item in installer_status)
+    print(f"Native installer: {'available' if installers_ready else 'not found (binary-only or source checkout)'}")
     print()
 
     workspace = report.get("modules", {}).get("1", {})

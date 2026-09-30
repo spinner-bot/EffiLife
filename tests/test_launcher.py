@@ -416,6 +416,38 @@ def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypat
         "rustc": "rustc.exe",
         "available": True,
     }
+    assert result["installer_artifacts"]
+    assert all("path" in item and "exists" in item and "non_empty" in item for item in result["installer_artifacts"])
+
+
+def test_launcher_diagnostics_distinguish_binary_from_installer(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
+    bundle.mkdir(parents=True)
+    installer = bundle / "EffiLife-setup.exe"
+    installer.write_bytes(b"installer")
+
+    result = launcher.collect_diagnostics({})
+
+    assert result["installer_artifacts"] == [{
+        "path": str(installer),
+        "exists": True,
+        "non_empty": True,
+        "size": len(b"installer"),
+    }]
+    assert not any(item["code"] == "installer-artifact-missing" for item in result["hints"])
+
+
+def test_launcher_reports_missing_installer_without_blocking_workspace(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher.os, "name", "nt")
+
+    result = launcher.collect_diagnostics({})
+
+    assert result["installer_artifacts"]
+    assert any(item["code"] == "installer-artifact-missing" for item in result["hints"])
+    assert all(item["severity"] != "error" or item["code"] != "installer-artifact-missing" for item in result["issues"])
 
 
 def test_launcher_diagnostics_explain_blockers_and_release_hints(monkeypatch):
