@@ -9,7 +9,7 @@ import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
 import { Home, ClipboardList, Clock3, ListTodo, Settings, Search } from 'lucide-vue-next'
-import { useI18n } from '@/i18n'
+import { refreshLocaleFromStorage, useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
 import ConfirmHost from './components/ConfirmHost.vue'
@@ -71,6 +71,7 @@ function retryStartup() {
 
 function refreshWhenVisible() {
   if (document.visibilityState !== 'visible' || !runtimeReady.value) return
+  refreshLocaleFromStorage()
   void appStore.refreshWorkspaceData().catch((error) => {
     console.warn('Failed to refresh workspace after visibility change:', error)
   })
@@ -130,6 +131,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', refreshWhenVisible)
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
+    if (source === 'archive') refreshLocaleFromStorage()
     void appStore.refreshWorkspaceData().catch((error) => {
       console.warn('Failed to refresh workspace after external change:', error)
     })

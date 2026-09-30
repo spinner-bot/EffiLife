@@ -18,3 +18,9 @@ def test_i18n_exposes_supported_locale_registry_and_document_language():
     assert "export const SUPPORTED_LOCALES" in SOURCE
     assert "document.documentElement.lang = locale" in SOURCE
     assert "localeOptions: [...SUPPORTED_LOCALES]" in SOURCE
+
+
+def test_i18n_can_refresh_locale_written_by_another_workspace_window():
+    assert "export function refreshLocaleFromStorage(): void" in SOURCE
+    assert "const next = readLocale()" in SOURCE
+    assert "if (next === currentLocale.value) return" in SOURCE

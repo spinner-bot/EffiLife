@@ -2446,6 +2446,14 @@ export function setLocale(next: string): void {
   }
 }
 
+/** Apply a locale written by another workspace window without writing it back. */
+export function refreshLocaleFromStorage(): void {
+  const next = readLocale()
+  if (next === currentLocale.value) return
+  currentLocale.value = next
+  syncDocumentLocale(next)
+}
+
 export function translate(key: string, params: Record<string, string | number> = {}): string {
   const value = catalogs[currentLocale.value][key] || navigationFallbacks[currentLocale.value][key] || catalogs['zh-CN'][key] || navigationFallbacks['zh-CN'][key] || key
   return value.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? `{${name}}`))
