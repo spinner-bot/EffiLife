@@ -55,3 +55,12 @@ def test_external_theme_refresh_syncs_clean_draft_but_preserves_local_edits():
     assert "function syncThemeDraft(theme: Config['theme'])" in source
     assert "if (!hadLocalDraft) syncThemeDraft(externalTheme)" in source
     assert "Do not overwrite an intentional local draft" in source
+
+
+def test_generic_config_watcher_does_not_overwrite_theme_draft():
+    source = SETTINGS.read_text(encoding="utf-8")
+    config_watch = source.split("watch(() => config.value", 1)[1].split("watch([themeType", 1)[0]
+    assert "overtimeThreshold.value = newConfig.overtime_threshold" in config_watch
+    assert "showAmPm.value = newConfig.show_ampm" in config_watch
+    assert "themeType.value = newConfig.theme.type" not in config_watch
+    assert "syncThemeDraft(newConfig.theme)" not in config_watch

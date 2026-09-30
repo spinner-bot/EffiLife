@@ -573,11 +573,6 @@ watch(() => config.value, (newConfig) => {
   showSeconds.value = newConfig.show_seconds
   use24h.value = newConfig.use_24h
   showAmPm.value = newConfig.show_ampm
-  themeType.value = newConfig.theme.type || 'solid'
-  if (newConfig.theme.solid) solidConfig.value = { ...newConfig.theme.solid }
-  if (newConfig.theme.gradient) gradientConfig.value = { ...newConfig.theme.gradient }
-  if (newConfig.theme.glass) glassConfig.value = { ...newConfig.theme.glass }
-  if (newConfig.theme.neon) neonConfig.value = { ...newConfig.theme.neon }
 }, { immediate: true, deep: true })
 
 watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], previewTheme, { deep: true })
