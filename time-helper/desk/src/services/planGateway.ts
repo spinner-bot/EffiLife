@@ -387,6 +387,7 @@ export async function createEventPlan(
 export async function listPlanTemplates(): Promise<PlanTemplateSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') return []
   const data = await request<{ templates?: PlanTemplateSummary[] }>('/api/templates')
+  planDataSource.value = 'service'
   return data.templates || []
 }
 

@@ -51,6 +51,7 @@ def test_template_creation_uses_the_existing_plan_helper_endpoint():
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
 
     assert "request<{ templates?: PlanTemplateSummary[] }>('/api/templates')" in gateway
+    assert "planDataSource.value = 'service'" in gateway
     assert "request<PlanFull>('/api/plans/from-template'" in gateway
     assert "template_id: templateId" in gateway
     assert "locale = 'zh-CN'" in gateway
