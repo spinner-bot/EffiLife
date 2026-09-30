@@ -103,10 +103,12 @@ export const DEFAULT_SCHEDULE_RULES: ScheduleRule[] = [
 
 // ============ 工具函数 ============
 
-export function hoursToHm(totalHours: number): string {
-  if (totalHours <= 0) return '0分钟'
+export function hoursToHm(totalHours: number, locale = 'zh-CN'): string {
+  const isEnglish = locale.toLowerCase().startsWith('en')
+  if (totalHours <= 0) return isEnglish ? '0m' : '0分钟'
   const h = Math.floor(totalHours)
   const m = Math.round((totalHours - h) * 60)
+  if (isEnglish) return h > 0 ? `${h}h ${m}m` : `${m}m`
   return h > 0 ? `${h}小时${m}分钟` : `${m}分钟`
 }
 

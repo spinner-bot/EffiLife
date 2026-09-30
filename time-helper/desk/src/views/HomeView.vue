@@ -424,7 +424,7 @@ onUnmounted(() => {
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
         <button class="workflow-summary-item" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours) }}</strong><small>{{ t('home.recordedToday') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.recordedToday') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" type="button" @click="router.push('/plans')">
@@ -492,7 +492,7 @@ onUnmounted(() => {
                     <span class="tag-dot" :class="{ 'bg-dot': tag === stat.bg_tag }"></span>
                     {{ tag }}
                   </span>
-                  <span class="tag-times">{{ hoursToHm(stat.raw_stat[tag] || 0) }} <span class="tag-target">/ {{ hoursToHm(target) }}</span></span>
+                  <span class="tag-times">{{ hoursToHm(stat.raw_stat[tag] || 0, locale) }} <span class="tag-target">/ {{ hoursToHm(target, locale) }}</span></span>
                 </div>
                 <div class="tag-bar-track">
                   <div

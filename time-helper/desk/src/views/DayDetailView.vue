@@ -12,7 +12,7 @@ import { requestConfirm } from '@/services/confirmService'
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const dateStr = computed(() => route.params.date as string)
 const highlightedTodoId = computed(() => String(route.query.todo || ''))
@@ -124,13 +124,13 @@ onMounted(loadData)
               class="stat-item"
             >
               <span class="stat-tag"><CheckCircle2 v-if="tag === stat.bg_tag" :size="14" /><Circle v-else :size="14" /> {{ tag }}</span>
-              <span class="stat-value">{{ hoursToHm(stat.stat[tag] || 0) }} / {{ hoursToHm(target) }}</span>
+              <span class="stat-value">{{ hoursToHm(stat.stat[tag] || 0, locale) }} / {{ hoursToHm(target, locale) }}</span>
             </div>
           </div>
 
           <div class="no-plan" v-else>
             <p>{{ t('dayDetail.noPlan') }}</p>
-            <p class="hint">{{ t('dayDetail.totalDuration') }}：{{ hoursToHm(stat.total_used_hours) }}</p>
+            <p class="hint">{{ t('dayDetail.totalDuration') }}：{{ hoursToHm(stat.total_used_hours, locale) }}</p>
           </div>
         </div>
       </section>
@@ -148,7 +148,7 @@ onMounted(loadData)
             <div class="record-info">
               <span class="record-tag">[{{ record.tag }}]</span>
               <span class="record-time">{{ record.start }} - {{ record.end }}</span>
-              <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
+              <span class="record-duration">({{ hoursToHm(record.duration, locale) }})</span>
             </div>
             <div class="record-content">{{ record.content }}</div>
             <button v-if="record.todo_id" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>

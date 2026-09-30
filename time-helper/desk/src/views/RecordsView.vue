@@ -15,7 +15,7 @@ import { onWorkspaceChanged } from '@/services/workspaceEvents'
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const records = computed(() => appStore.todayRecords)
 const todayPlan = computed(() => appStore.todayPlan)
@@ -376,7 +376,7 @@ onUnmounted(() => {
           <div class="record-info">
             <span class="record-tag">[{{ record.tag }}]</span>
             <span class="record-time">{{ record.start }} - {{ record.end }}</span>
-            <span class="record-duration">({{ hoursToHm(record.duration) }})</span>
+            <span class="record-duration">({{ hoursToHm(record.duration, locale) }})</span>
           </div>
           <div class="record-content">{{ record.content }}</div>
           <button

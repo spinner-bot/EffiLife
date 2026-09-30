@@ -23,7 +23,7 @@ import { requestConfirm } from '@/services/confirmService'
 const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 const router = useRouter()
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // ============ Records 相关状态 ============
 const records = computed(() => appStore.todayRecords)
@@ -441,7 +441,7 @@ onMounted(() => {
           <div class="pv-summary-card">
             <div class="pv-summary-left">
               <span class="pv-summary-label">{{ t('legacyPlan.todayRecorded') }}</span>
-              <span class="pv-summary-value">{{ hoursToHm(todayTotalHours) }}</span>
+              <span class="pv-summary-value">{{ hoursToHm(todayTotalHours, locale) }}</span>
             </div>
             <div class="pv-summary-right">
               <span class="pv-summary-plan">{{ todayPlan.name }}</span>
@@ -464,7 +464,7 @@ onMounted(() => {
                     <span class="pv-record-time">{{ record.start }} — {{ record.end }}</span>
                   </div>
                   <div class="pv-record-content">{{ record.content }}</div>
-                  <div class="pv-record-meta">{{ hoursToHm(record.duration) }}</div>
+                  <div class="pv-record-meta">{{ hoursToHm(record.duration, locale) }}</div>
                 </div>
                 <div class="pv-record-actions">
                   <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')">
