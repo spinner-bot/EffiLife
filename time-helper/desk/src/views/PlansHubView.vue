@@ -194,8 +194,17 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
     if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
     return
   }
-  if (selectedPlan.value && source === 'plans') {
-    selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+  if (selectedPlan.value && (source === 'plans' || source === 'archive')) {
+    try {
+      selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+    } catch {
+      // The plan may have been archived or removed in another window. Do not
+      // leave the user on a detail screen whose source no longer exists.
+      selectedPlan.value = null
+      view.value = 'events'
+      await router.replace({ path: '/plans', query: {} })
+      await loadPlans()
+    }
     return
   }
   if (view.value === 'events') await loadPlans()
