@@ -12,7 +12,8 @@ def test_plan_creation_collects_a_first_section_and_task_before_opening_editor()
     assert "const created = await createEventPlan(name, toDateTuple(planDate.value), [{" in view
     assert "name: section," in view
     assert "tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }]," in view
-    assert "createEventPlanFromTemplate" not in view
+    assert "createEventPlanFromTemplate" in view
+    assert "listPlanTemplates" in view
     assert "const createSectionName = ref('')" in view
     assert "const createTaskContent = ref('')" in view
     assert "const createTaskMinutes = ref(30)" in view
@@ -20,6 +21,9 @@ def test_plan_creation_collects_a_first_section_and_task_before_opening_editor()
     assert "plans.firstActionTitle" in view
     assert "plans.firstActionHint" in view
     assert "plans.createTaskRequired" in view
+    assert "v-model=\"createTemplateId\"" in view
+    assert "plans.templateManual" in view
+    assert "plans.templateSelected" in view
     assert "v-model=\"createTodos\"" in view
     assert "linkPendingPlanTasksToTodos(selectedPlan.value)" in view
     assert "catch {\n        notifyToast(t('plans.todoSyncFailed'), 'error')\n      }" in view

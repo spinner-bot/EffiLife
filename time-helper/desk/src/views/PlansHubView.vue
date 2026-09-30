@@ -14,15 +14,18 @@ import {
   archivePlan,
   completePlanTask,
   createEventPlan,
+  createEventPlanFromTemplate,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
   listPlanArchives,
+  listPlanTemplates,
   listPlanSummaries,
   restorePlanArchive,
   type PlanArchiveSummary,
   type PlanFull,
   type PlanSummary,
+  type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
   updateEventPlan,
@@ -61,6 +64,9 @@ const createSectionInfo = ref('')
 const createTaskContent = ref('')
 const createTaskMinutes = ref(30)
 const createTodos = ref(false)
+const createTemplates = ref<PlanTemplateSummary[]>([])
+const createTemplateId = ref('')
+const createTemplatesLoading = ref(false)
 const editingMeta = ref(false)
 const sectionName = ref('')
 const sectionInfo = ref('')
@@ -224,9 +230,16 @@ function openCreatePlan() {
   createTaskContent.value = ''
   createTaskMinutes.value = 30
   createTodos.value = false
+  createTemplateId.value = ''
+  createTemplates.value = []
+  createTemplatesLoading.value = true
   errorMessage.value = ''
   showCreate.value = true
   void nextTick(() => createNameInput.value?.focus())
+  void listPlanTemplates()
+    .then((templates) => { createTemplates.value = templates })
+    .catch(() => { createTemplates.value = [] })
+    .finally(() => { createTemplatesLoading.value = false })
 }
 
 function closeCreatePlan() {
@@ -236,6 +249,9 @@ function closeCreatePlan() {
   createTaskContent.value = ''
   createTaskMinutes.value = 30
   createTodos.value = false
+  createTemplateId.value = ''
+  createTemplates.value = []
+  createTemplatesLoading.value = false
   const returnTarget = createReturnFocus.value
   createReturnFocus.value = null
   void nextTick(() => {
@@ -285,20 +301,29 @@ async function createPlan() {
   const name = planName.value.trim()
   const section = createSectionName.value.trim()
   const task = createTaskContent.value.trim()
-  if (!name || !planDate.value || !section || !task) {
+  if (!name || !planDate.value) return
+  if (!createTemplateId.value && (!section || !task)) {
     errorMessage.value = t('plans.createTaskRequired')
     return
   }
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const created = await createEventPlan(name, toDateTuple(planDate.value), [{
-      name: section,
-      info: createSectionInfo.value.trim(),
-      tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
-    }])
-    const createdId = created.id
-    selectedPlan.value = await getPlanFull(created.id)
+    let createdId: string
+    if (createTemplateId.value) {
+      selectedPlan.value = await createEventPlanFromTemplate(createTemplateId.value, name, toDateTuple(planDate.value))
+      createdId = selectedPlan.value.id
+    } else {
+      const created = await createEventPlan(name, toDateTuple(planDate.value), [{
+        name: section,
+        info: createSectionInfo.value.trim(),
+        tasks: [{ content: task, time_minutes: Math.max(0, Number(createTaskMinutes.value) || 0) }],
+      }])
+      createdId = created.id
+    }
+    if (!selectedPlan.value || String(selectedPlan.value.id) !== String(createdId)) {
+      selectedPlan.value = await getPlanFull(createdId)
+    }
     if (createTodos.value) {
       try {
         const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
@@ -957,7 +982,15 @@ onUnmounted(() => {
         <p>{{ t('plans.createHint') }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
-        <div class="create-first-action">
+        <label v-if="createTemplatesLoading || createTemplates.length" class="create-template-field">
+          {{ t('plans.template') }}
+          <select v-model="createTemplateId" :disabled="createTemplatesLoading">
+            <option value="">{{ t('plans.templateManual') }}</option>
+            <option v-for="template in createTemplates" :key="template.id" :value="template.id">{{ template.name }} · {{ template.description }}</option>
+          </select>
+        </label>
+        <p v-if="createTemplateId" class="create-template-note"><strong>{{ t('plans.templateSelected') }}</strong><small>{{ t('plans.templateHint') }}</small></p>
+        <div v-if="!createTemplateId" class="create-first-action">
           <strong>{{ t('plans.firstActionTitle') }}</strong>
           <span>{{ t('plans.firstActionHint') }}</span>
           <label>{{ t('plans.sectionName') }}<input v-model="createSectionName" :placeholder="t('plans.sectionName')" required /></label>
