@@ -46,6 +46,17 @@ def test_mobile_plan_creation_preserves_section_and_task_shape():
     assert "notifyWorkspaceChanged('plans')" in gateway
 
 
+def test_mobile_plan_templates_are_local_and_keep_group_semantics():
+    gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")
+
+    assert "const MOBILE_TEMPLATE_DEFINITIONS" in gateway
+    assert "return MOBILE_TEMPLATE_DEFINITIONS.map(mobileTemplateSummary)" in gateway
+    assert "const template = MOBILE_TEMPLATE_DEFINITIONS.find((candidate) => candidate.id === templateId)" in gateway
+    assert "await addPlanGroup(" in gateway
+    assert "group.start" in gateway and "group.end" in gateway
+    assert "plans.templateMissing" in gateway
+
+
 def test_template_creation_uses_the_existing_plan_helper_endpoint():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     gateway = (DESK / "services" / "planGateway.ts").read_text(encoding="utf-8")

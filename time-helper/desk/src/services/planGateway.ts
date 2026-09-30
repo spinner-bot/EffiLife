@@ -75,6 +75,138 @@ type RawPlan = {
 }
 type RawSection = NonNullable<RawPlan['main']>[number]
 
+type MobileTemplateDefinition = {
+  id: string
+  type: string
+  nameKey: string
+  descriptionKey: string
+  sections: Array<{
+    nameKey: string
+    infoKey: string
+    tasks: Array<{ contentKey: string; timeMinutes: number }>
+    groups?: Array<{ titleKey: string; descriptionKey: string; start: number; end: number }>
+  }>
+}
+
+const MOBILE_TEMPLATE_DEFINITIONS: MobileTemplateDefinition[] = [
+  {
+    id: 'workday',
+    type: 'workday',
+    nameKey: 'plans.templateTypes.workdayName',
+    descriptionKey: 'plans.templateTypes.workdayDescription',
+    sections: [
+      {
+        nameKey: 'plans.mobileTemplates.workday.morningName',
+        infoKey: 'plans.mobileTemplates.workday.morningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.workday.plan', timeMinutes: 15 },
+          { contentKey: 'plans.mobileTemplates.workday.deepWork', timeMinutes: 90 },
+        ],
+        groups: [{ titleKey: 'plans.mobileTemplates.workday.morningName', descriptionKey: 'plans.mobileTemplates.workday.morningInfo', start: 1, end: 2 }],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.workday.afternoonName',
+        infoKey: 'plans.mobileTemplates.workday.afternoonInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.workday.routine', timeMinutes: 60 },
+          { contentKey: 'plans.mobileTemplates.workday.project', timeMinutes: 60 },
+        ],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.workday.eveningName',
+        infoKey: 'plans.mobileTemplates.workday.eveningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.workday.review', timeMinutes: 20 },
+          { contentKey: 'plans.mobileTemplates.workday.read', timeMinutes: 45 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'weekend',
+    type: 'weekend',
+    nameKey: 'plans.templateTypes.weekendName',
+    descriptionKey: 'plans.templateTypes.weekendDescription',
+    sections: [
+      {
+        nameKey: 'plans.mobileTemplates.weekend.morningName',
+        infoKey: 'plans.mobileTemplates.weekend.morningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.weekend.exercise', timeMinutes: 60 },
+          { contentKey: 'plans.mobileTemplates.weekend.learning', timeMinutes: 90 },
+        ],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.weekend.afternoonName',
+        infoKey: 'plans.mobileTemplates.weekend.afternoonInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.weekend.leisure', timeMinutes: 120 },
+          { contentKey: 'plans.mobileTemplates.weekend.social', timeMinutes: 120 },
+        ],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.weekend.eveningName',
+        infoKey: 'plans.mobileTemplates.weekend.eveningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.weekend.entertainment', timeMinutes: 90 },
+          { contentKey: 'plans.mobileTemplates.weekend.preview', timeMinutes: 20 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'exam',
+    type: 'exam',
+    nameKey: 'plans.templateTypes.examName',
+    descriptionKey: 'plans.templateTypes.examDescription',
+    sections: [
+      {
+        nameKey: 'plans.mobileTemplates.exam.morningName',
+        infoKey: 'plans.mobileTemplates.exam.morningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.exam.review', timeMinutes: 30 },
+          { contentKey: 'plans.mobileTemplates.exam.practice', timeMinutes: 90 },
+        ],
+        groups: [{ titleKey: 'plans.mobileTemplates.exam.morningName', descriptionKey: 'plans.mobileTemplates.exam.morningInfo', start: 1, end: 2 }],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.exam.afternoonName',
+        infoKey: 'plans.mobileTemplates.exam.afternoonInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.exam.mock', timeMinutes: 120 },
+          { contentKey: 'plans.mobileTemplates.exam.errors', timeMinutes: 60 },
+        ],
+      },
+      {
+        nameKey: 'plans.mobileTemplates.exam.eveningName',
+        infoKey: 'plans.mobileTemplates.exam.eveningInfo',
+        tasks: [
+          { contentKey: 'plans.mobileTemplates.exam.notes', timeMinutes: 45 },
+          { contentKey: 'plans.mobileTemplates.exam.tomorrow', timeMinutes: 15 },
+        ],
+      },
+    ],
+  },
+]
+
+function mobileTemplateSummary(template: MobileTemplateDefinition): PlanTemplateSummary {
+  return {
+    id: template.id,
+    name: translate(template.nameKey),
+    description: translate(template.descriptionKey),
+    type: template.type,
+    built_in: true,
+  }
+}
+
+function mobileTemplateSections(template: MobileTemplateDefinition): InitialPlanSection[] {
+  return template.sections.map((section) => ({
+    name: translate(section.nameKey),
+    info: translate(section.infoKey),
+    tasks: section.tasks.map((task) => ({ content: translate(task.contentKey), time_minutes: task.timeMinutes })),
+  }))
+}
+
 async function getMobileRawPlans(): Promise<RawPlan[]> {
   const { get, STORE_NAMES } = await import('@/storage')
   const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
@@ -385,7 +517,10 @@ export async function createEventPlan(
 }
 
 export async function listPlanTemplates(): Promise<PlanTemplateSummary[]> {
-  if (getPlanRuntime() === 'mobile-unavailable') return []
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    planDataSource.value = 'mobile'
+    return MOBILE_TEMPLATE_DEFINITIONS.map(mobileTemplateSummary)
+  }
   const data = await request<{ templates?: PlanTemplateSummary[] }>('/api/templates')
   planDataSource.value = 'service'
   return data.templates || []
@@ -398,7 +533,22 @@ export async function createEventPlanFromTemplate(
   locale = 'zh-CN',
 ): Promise<PlanFull> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    throw new Error(getPlanRuntimeUnavailableReason())
+    const template = MOBILE_TEMPLATE_DEFINITIONS.find((candidate) => candidate.id === templateId)
+    if (!template) throw new Error(translate('plans.templateMissing'))
+    const created = await createEventPlan(name, date, mobileTemplateSections(template))
+    for (const [sectionIndex, section] of template.sections.entries()) {
+      for (const group of section.groups || []) {
+        await addPlanGroup(
+          created.id,
+          sectionIndex,
+          translate(group.titleKey),
+          translate(group.descriptionKey),
+          group.start,
+          group.end,
+        )
+      }
+    }
+    return getPlanFull(created.id)
   }
   const result = await request<PlanFull>('/api/plans/from-template', {
     method: 'POST',
