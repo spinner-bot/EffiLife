@@ -81,9 +81,17 @@ export const useAppStore = defineStore('app', () => {
 
   // 保存配置
   async function saveConfig(newConfig: Config) {
+    const previousConfig = config.value
     config.value = newConfig
-    await DataService.saveConfig(newConfig)
-    notifyWorkspaceChanged('settings')
+    try {
+      await DataService.saveConfig(newConfig)
+      notifyWorkspaceChanged('settings')
+    } catch (error) {
+      // Keep the in-memory workspace consistent with durable storage when a
+      // write fails. Callers can still keep their draft and retry the save.
+      config.value = previousConfig
+      throw error
+    }
   }
 
   // 仅更新运行时配置，用于设置页实时预览；不会写入持久化存储。
