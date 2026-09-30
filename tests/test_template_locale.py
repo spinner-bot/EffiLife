@@ -34,3 +34,6 @@ def test_unknown_locale_and_custom_template_shape_keep_original_text():
 def test_template_http_route_forwards_optional_locale():
     server = (PLAN_HELPER / "web/server.py").read_text(encoding="utf-8")
     assert "locale=data.get(\"locale\")" in server
+    spec = (PLAN_HELPER / "docs/API_SPEC.md").read_text(encoding="utf-8")
+    assert "POST `/api/plans/from-template`" in spec
+    assert "Creation language for built-in content" in spec

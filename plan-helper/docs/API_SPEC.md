@@ -1,6 +1,6 @@
 # plan-helper API Specification
 
-> Version: 0.2.0 | Updated: 2026-09-20
+> Version: 0.3.1 | Updated: 2026-09-30
 
 ---
 
@@ -53,6 +53,29 @@ All API responses follow this structure:
 ---
 
 ## Plan Operations
+
+### `POST /api/plans/from-template`
+
+Create a plan from a registered template through the HTTP companion.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| template_id | str | yes | Built-in or custom template identifier |
+| name | str | no | Name for the new plan |
+| date | array | no | `[year, month, day]`; defaults to the service date |
+| plan_id | int | no | Preferred plan ID |
+| locale | str | no | Creation language for built-in content; `en-*` selects English, other/omitted values preserve Chinese |
+
+The `locale` field only affects newly generated built-in template content. It does not mutate template registration, existing plans, custom templates, or archive format. Older clients may omit it.
+
+```json
+{
+  "template_id": "workday",
+  "name": "My Workday",
+  "date": [2026, 9, 30],
+  "locale": "en-US"
+}
+```
 
 ### `create_plan(name=None, date_tuple=None, plan_id=None)`
 
