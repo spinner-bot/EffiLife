@@ -192,6 +192,8 @@ python scripts/run_integration.py stats
 python scripts/run_integration.py dashboard
 ```
 
+首次启动默认保持真实空状态，不会自动写入虚假计划、待办或时间记录。若需要在开发/演示环境加载示例数据，可显式设置 `VITE_EFFILIFE_DEMO_DATA=true` 后再启动统一工作台；该开关不应带入正式发布构建。
+
 ---
 
 ## 技术栈总览
