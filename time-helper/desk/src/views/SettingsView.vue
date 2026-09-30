@@ -396,19 +396,21 @@ async function handleImportArchive() {
   if (isTauriRuntime() && !isMobilePlatform()) {
     archiveBusy.value = true
     // Tauri 环境：使用原生文件对话框
-    const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
-    if (result.cancelled) {
-      archiveBusy.value = false
-      return
-    }
-    if (result.success) {
-      if (await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
-        window.location.reload()
+    try {
+      const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
+      if (result.cancelled) return
+      if (result.success) {
+        if (await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
+          window.location.reload()
+        }
+      } else {
+        notifyToast(result.message, 'error')
       }
-    } else {
-      notifyToast(result.message, 'error')
+    } catch (error) {
+      notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+    } finally {
+      archiveBusy.value = false
     }
-    archiveBusy.value = false
   } else {
     // 浏览器环境：使用文件选择器
     if (fileInputRef.value) {
@@ -441,14 +443,18 @@ async function onFileSelected(event: Event) {
     return
   }
 
-  const result = await importArchive(file)
-  notifyToast(result.message, result.success ? 'success' : 'error')
+  try {
+    const result = await importArchive(file)
+    notifyToast(result.message, result.success ? 'success' : 'error')
 
-  if (result.success) {
-    // 刷新页面以应用更改
-    window.location.reload()
+    if (result.success) {
+      window.location.reload()
+    }
+  } catch (error) {
+    notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+  } finally {
+    archiveBusy.value = false
   }
-  archiveBusy.value = false
 }
 
 // ============ 数据恢复 ============
