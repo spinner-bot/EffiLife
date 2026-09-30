@@ -7,12 +7,12 @@ OVERLAY = Path("time-helper/desk/src/guide/GuideOverlay.vue").read_text(encoding
 
 
 def test_desktop_and_mobile_navigation_expose_semantic_guide_targets():
-    for key in ("plans", "tasks", "settings"):
+    for key in ("plans", "tasks", "time", "settings"):
         assert APP.count(f'data-guide="{key}"') == 2
 
 
 def test_active_guide_uses_semantic_targets_instead_of_navigation_order():
-    for key in ("plans", "tasks", "settings"):
+    for key in ("plans", "tasks", "time", "settings"):
         assert f'[data-guide="{key}"]' in GUIDE
     assert "global-nav-link:nth-child" not in GUIDE
 
