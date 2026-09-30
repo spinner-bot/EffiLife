@@ -31,6 +31,13 @@ const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
 const scheduleRules = computed(() => appStore.scheduleRules)
 
+/** Stored plan types remain compatible Chinese domain values; only the UI label is localized. */
+function planTypeLabel(value?: string): string {
+  if (value === '切分制') return t('legacyPlan.split')
+  if (value === '分配制') return t('legacyPlan.allocate')
+  return value || t('legacyPlan.split')
+}
+
 const availableTags = computed(() => {
   const plan = plans.value[todayPlan.value.name]
   return plan?.items.map(item => item.name) || []
@@ -508,7 +515,7 @@ onMounted(() => {
                   :value="todayPlan.name"
                   @change="changeTodayPlan(($event.target as HTMLSelectElement).value)"
                 >
-                  <option v-for="(plan, name) in plans" :key="name" :value="name">{{ name }} · {{ plan.plan_type }}</option>
+                  <option v-for="(plan, name) in plans" :key="name" :value="name">{{ name }} · {{ planTypeLabel(plan.plan_type) }}</option>
                 </select>
                 <button class="pv-inline-btn pv-inline-btn-primary" @click="AudioManager.playSound('click'); openCreatePlan()">
                   <Plus :size="14" />
@@ -572,7 +579,7 @@ onMounted(() => {
                 <div class="pv-plan-info">
                   <div class="pv-plan-title">{{ name }}</div>
                   <div class="pv-plan-meta">
-                    {{ plan.plan_type }}
+                    {{ planTypeLabel(plan.plan_type) }}
                     <template v-if="plan.plan_type === '分配制'">
                        · {{ plan.items.reduce((s, i) => s + i.hours, 0).toFixed(1) }}{{ t('legacyPlan.hourUnit') }}
                     </template>
@@ -799,7 +806,7 @@ onMounted(() => {
                 @click="AudioManager.playSound('click'); changeTodayPlan(name as string)"
               >
                 <span class="pv-plan-pick-name">{{ name }}</span>
-                <span class="pv-plan-pick-type">{{ plan.plan_type }}</span>
+                <span class="pv-plan-pick-type">{{ planTypeLabel(plan.plan_type) }}</span>
                 <Check v-if="name === todayPlan.name" :size="16" />
               </button>
             </div>
