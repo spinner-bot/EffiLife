@@ -145,6 +145,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout release metadata
+        uses: actions/checkout@v4
+
+      - name: Verify release tag matches desktop version
+        run: |
+          expected_tag="v$(cat time-helper/VERSION)"
+          test "${GITHUB_REF_NAME}" = "${expected_tag}" || {
+            echo "Release tag ${GITHUB_REF_NAME} does not match ${expected_tag}"
+            exit 1
+          }
+
       - name: Download installer artifacts
         uses: actions/download-artifact@v4
         with:

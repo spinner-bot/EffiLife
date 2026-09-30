@@ -117,3 +117,10 @@ def test_release_workflow_verifies_non_empty_platform_installer():
     assert "extension: .AppImage" in workflow
     assert "extension: .dmg" in workflow
     assert "--version-file time-helper/VERSION" in workflow
+
+
+def test_publish_job_rejects_tag_that_does_not_match_repository_version():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "expected_tag=\"v$(cat time-helper/VERSION)\"" in workflow
+    assert 'test "${GITHUB_REF_NAME}" = "${expected_tag}"' in workflow
+    assert workflow.index("Verify release tag matches desktop version") < workflow.index("Download installer artifacts")
