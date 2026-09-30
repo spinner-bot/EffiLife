@@ -227,6 +227,27 @@ export function getTodayDate(): string {
   return formatDate(new Date())
 }
 
+/**
+ * Normalize configuration loaded from any supported storage/archive version.
+ * Theme settings are intentionally merged by section so a partial legacy
+ * payload cannot erase fields needed by the editor or the theme engine.
+ */
+export function normalizeConfig(stored: Partial<Config>): Config {
+  const storedTheme: Partial<Config['theme']> = stored.theme || {}
+  return {
+    ...DEFAULT_CONFIG,
+    ...stored,
+    theme: {
+      ...DEFAULT_CONFIG.theme,
+      ...storedTheme,
+      solid: { ...DEFAULT_CONFIG.theme.solid, ...storedTheme.solid } as NonNullable<Config['theme']['solid']>,
+      gradient: { ...DEFAULT_CONFIG.theme.gradient, ...storedTheme.gradient } as NonNullable<Config['theme']['gradient']>,
+      glass: { ...DEFAULT_CONFIG.theme.glass, ...storedTheme.glass } as NonNullable<Config['theme']['glass']>,
+      neon: { ...DEFAULT_CONFIG.theme.neon, ...storedTheme.neon } as NonNullable<Config['theme']['neon']>,
+    },
+  }
+}
+
 export function formatDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
@@ -283,11 +304,7 @@ export const DataService = {
     try {
       const stored = await idbGet<Config>(STORE_NAMES.CONFIG, 'config')
       if (stored) {
-        // 确保 theme 属性存在
-        if (!stored.theme) {
-          stored.theme = DEFAULT_CONFIG.theme
-        }
-        return { ...DEFAULT_CONFIG, ...stored }
+        return normalizeConfig(stored)
       }
     } catch {
       // fallback to localStorage
@@ -295,10 +312,7 @@ export const DataService = {
         const stored = localStorage.getItem(STORAGE_PREFIX + 'config')
         if (stored) {
           const parsed = JSON.parse(stored)
-          if (!parsed.theme) {
-            parsed.theme = DEFAULT_CONFIG.theme
-          }
-          return { ...DEFAULT_CONFIG, ...parsed }
+          return normalizeConfig(parsed)
         }
       } catch {
         // ignore
