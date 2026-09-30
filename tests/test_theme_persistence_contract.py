@@ -37,7 +37,8 @@ def test_theme_snapshot_tracks_external_settings_and_archive_changes():
 
     assert "onWorkspaceChanged" in source
     assert "source !== 'settings' && source !== 'archive'" in source
-    assert "savedThemeSnapshot.value = cloneTheme(appStore.config.theme)" in source
+    assert "const externalTheme = cloneTheme(appStore.config.theme)" in source
+    assert "savedThemeSnapshot.value = externalTheme" in source
     assert "stopWorkspaceListener()" in source
 
 
@@ -46,3 +47,11 @@ def test_theme_snapshot_waits_for_external_workspace_hydration():
 
     assert "void appStore.refreshWorkspaceData().then(() =>" in source
     assert "Failed to refresh theme snapshot after workspace change" in source
+
+
+def test_external_theme_refresh_syncs_clean_draft_but_preserves_local_edits():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "const hadLocalDraft = themeDirty.value" in source
+    assert "function syncThemeDraft(theme: Config['theme'])" in source
+    assert "if (!hadLocalDraft) syncThemeDraft(externalTheme)" in source
+    assert "Do not overwrite an intentional local draft" in source

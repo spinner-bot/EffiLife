@@ -187,13 +187,26 @@ function cloneTheme(theme: Config['theme']): Config['theme'] {
 
 const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
 
+function syncThemeDraft(theme: Config['theme']) {
+  themeType.value = theme.type || 'solid'
+  if (theme.solid) solidConfig.value = { ...theme.solid }
+  if (theme.gradient) gradientConfig.value = { ...theme.gradient }
+  if (theme.glass) glassConfig.value = { ...theme.glass }
+  if (theme.neon) neonConfig.value = { ...theme.neon }
+}
+
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source !== 'settings' && source !== 'archive') return
+  const hadLocalDraft = themeDirty.value
   // The workspace event is emitted before other windows finish rehydrating
   // IndexedDB. Reload here as well so the dirty marker never snapshots the
   // stale in-memory theme from before the external save/import.
   void appStore.refreshWorkspaceData().then(() => {
-    savedThemeSnapshot.value = cloneTheme(appStore.config.theme)
+    const externalTheme = cloneTheme(appStore.config.theme)
+    savedThemeSnapshot.value = externalTheme
+    // Do not overwrite an intentional local draft. If the editor was clean,
+    // keep its controls aligned with the theme written by the other window.
+    if (!hadLocalDraft) syncThemeDraft(externalTheme)
   }).catch((error) => {
     console.warn('Failed to refresh theme snapshot after workspace change:', error)
   })
@@ -223,11 +236,7 @@ function previewTheme() {
 async function discardThemeChanges() {
   const restored = cloneTheme(savedThemeSnapshot.value)
   appStore.previewConfig({ ...config.value, theme: restored })
-  themeType.value = restored.type
-  if (restored.solid) solidConfig.value = { ...restored.solid }
-  if (restored.gradient) gradientConfig.value = { ...restored.gradient }
-  if (restored.glass) glassConfig.value = { ...restored.glass }
-  if (restored.neon) neonConfig.value = { ...restored.neon }
+  syncThemeDraft(restored)
 }
 
 // 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
