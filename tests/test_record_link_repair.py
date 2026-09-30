@@ -51,3 +51,10 @@ def test_app_runs_plan_task_link_repair_after_record_link_repair():
     assert "repairTodoPlanTaskLinks" in source
     assert "void repairTodoPlanTaskLinks()" in source
     assert source.index("runtimeReady.value = true") < source.index("void repairTodoPlanTaskLinks()")
+
+
+def test_plan_task_link_repair_has_a_recoverable_startup_error_boundary():
+    source = APP.read_text(encoding="utf-8")
+    repair_call = source.split("void repairTodoPlanTaskLinks()", 1)[1].split("// 启动背景音乐", 1)[0]
+    assert ".catch((error) =>" in repair_call
+    assert "Failed to repair todo/plan links after startup:" in repair_call

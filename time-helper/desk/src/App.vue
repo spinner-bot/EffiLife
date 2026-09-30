@@ -155,7 +155,11 @@ onMounted(async () => {
   applyTheme()
   runtimeReady.value = true
   // Plan-helper may need network retries; do not delay the first usable frame.
-  void repairTodoPlanTaskLinks()
+  void repairTodoPlanTaskLinks().catch((error) => {
+    // Link repair is recoverable maintenance; it must not create an
+    // unhandled rejection or make the first usable frame look broken.
+    console.warn('Failed to repair todo/plan links after startup:', error)
+  })
 
   // 启动背景音乐
   AudioManager.startBgm()
