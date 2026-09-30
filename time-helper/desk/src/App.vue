@@ -8,7 +8,7 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
-import { Home, ClipboardList, Clock3, ListTodo, Settings, Search } from 'lucide-vue-next'
+import { Home, ClipboardList, Clock3, History, ListTodo, Settings, Search } from 'lucide-vue-next'
 import { refreshLocaleFromStorage, useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
@@ -237,6 +237,9 @@ watch(() => appStore.todayStat, () => {
           </RouterLink>
           <RouterLink class="global-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
             <Clock3 :size="16" /> <span>{{ t('nav.time') }}</span>
+          </RouterLink>
+          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
+            <History :size="16" /> <span>{{ t('nav.records') }}</span>
           </RouterLink>
           <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
             <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span>
