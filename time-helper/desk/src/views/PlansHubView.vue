@@ -46,7 +46,7 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
-const canArchivePlan = !isMobilePlanRuntime
+const canArchivePlan = computed(() => canEditPlan.value)
 const view = ref<'hub' | 'events' | 'detail' | 'time'>(route.query.mode === 'time' ? 'time' : 'hub')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
