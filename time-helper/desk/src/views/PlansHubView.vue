@@ -86,6 +86,12 @@ const logDay = ref(new Date().getDate())
 const logContent = ref('')
 const linkedTodoIdsByTask = ref(new Map<string, string>())
 
+const archivedPlanTarget = computed(() => {
+  const targetId = String(route.query.plan || '')
+  if (!targetId || selectedPlan.value) return null
+  return archives.value.find((archive) => String(archive.plan_id ?? '') === targetId) || null
+})
+
 function showPlanSaved(): void {
   successMessage.value = t('plans.saved')
   notifyToast(t('plans.saved'), 'success')
@@ -237,6 +243,7 @@ async function restoreArchive(archive: PlanArchiveSummary) {
   try {
     await restorePlanArchive(archive.file)
     await loadPlans()
+    await revealSearchTarget()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -867,6 +874,11 @@ onUnmounted(() => {
             <button v-if="canEditPlan" class="plans-secondary" @click="openCreatePlan"><Plus :size="15" /> {{ t('plans.create') }}</button>
           </div>
           <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
+          <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
+            <strong>{{ t('plans.archivedTargetTitle') }}</strong>
+            <span>{{ t('plans.archivedTargetDescription') }}</span>
+            <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
+          </div>
           <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
             <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
             <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
@@ -901,6 +913,11 @@ onUnmounted(() => {
 
       <template v-else-if="view === 'events'">
         <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
+        <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
+          <strong>{{ t('plans.archivedTargetTitle') }}</strong>
+          <span>{{ t('plans.archivedTargetDescription') }}</span>
+          <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
+        </div>
         <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
           <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
           <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>

@@ -29,3 +29,11 @@ def test_plan_hub_recovers_when_another_window_archives_the_open_plan():
     assert "The plan may have been archived or removed in another window" in HUB
     assert "selectedPlan.value = null" in HUB
     assert "await router.replace({ path: '/plans', query: {} })" in HUB
+
+
+def test_plan_hub_explains_and_restores_archived_plan_deep_links():
+    assert "const archivedPlanTarget = computed" in HUB
+    assert "archive.plan_id" in HUB
+    assert "plans.archivedTargetTitle" in HUB
+    assert "@click=\"restoreArchive(archivedPlanTarget)\"" in HUB
+    assert "await revealSearchTarget()" in HUB
