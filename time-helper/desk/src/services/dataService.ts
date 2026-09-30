@@ -259,6 +259,11 @@ export function parseLocalDate(dateStr: string): Date {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
 }
 
+/** Parse a stored date while preserving calendar-only values in local time. */
+export function parseStoredDate(value: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? parseLocalDate(value) : new Date(value)
+}
+
 export function addDays(dateStr: string, days: number): string {
   const date = parseLocalDate(dateStr)
   date.setDate(date.getDate() + days)

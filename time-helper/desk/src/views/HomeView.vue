@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { hoursToHm } from '@/services/dataService'
+import { hoursToHm, parseStoredDate } from '@/services/dataService'
 import { ClipboardList, Clock3, Settings, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
@@ -94,7 +94,7 @@ async function completeHomeTodo(todo: UnifiedTodo) {
 
 function formatTodoDeadline(deadline?: string): string {
   if (!deadline) return t('home.noDeadline')
-  return new Date(deadline).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
+  return parseStoredDate(deadline).toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 }
 
 function formatTodoTime(todo: UnifiedTodo): string {

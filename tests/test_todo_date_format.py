@@ -12,3 +12,11 @@ def test_todo_deadline_display_requests_two_digit_month_and_day():
     assert "month: '2-digit'" in date_block
     assert "day: '2-digit'" in date_block
     assert "date.toLocaleDateString(locale.value)" not in date_block
+
+
+def test_todo_deadline_uses_local_calendar_date_parser_for_display_and_state():
+    assert "parseStoredDate" in TASKS
+    assert "const date = parseStoredDate(deadline)" in TASKS
+
+    home = (ROOT / "time-helper/desk/src/views/HomeView.vue").read_text(encoding="utf-8")
+    assert "parseStoredDate(deadline).toLocaleDateString" in home

@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, 
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
-import { DataService } from '@/services/dataService'
+import { DataService, parseStoredDate } from '@/services/dataService'
 import {
   TodoCategoryService,
   TodoSettingsService,
@@ -786,7 +786,7 @@ async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
 
 function formatDeadline(deadline?: string): string {
   if (!deadline) return ''
-  const date = new Date(deadline)
+  const date = parseStoredDate(deadline)
   return Number.isNaN(date.getTime())
     ? deadline
     : new Intl.DateTimeFormat(locale.value, {
@@ -800,7 +800,7 @@ type DeadlineState = 'overdue' | 'today' | 'upcoming'
 
 function getDeadlineState(deadline?: string): DeadlineState | null {
   if (!deadline) return null
-  const date = new Date(deadline)
+  const date = parseStoredDate(deadline)
   if (Number.isNaN(date.getTime())) return null
   const now = new Date()
   if (date.getTime() < now.getTime()) return 'overdue'
