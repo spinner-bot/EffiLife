@@ -131,7 +131,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', refreshWhenVisible)
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
-    if (source === 'archive') refreshLocaleFromStorage()
+    if (source === 'archive' || source === 'settings') refreshLocaleFromStorage()
     void appStore.refreshWorkspaceData().catch((error) => {
       console.warn('Failed to refresh workspace after external change:', error)
     })

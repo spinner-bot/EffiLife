@@ -15,7 +15,7 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     assert "document.addEventListener('visibilitychange', refreshWhenVisible)" in source
     assert "document.removeEventListener('visibilitychange', refreshWhenVisible)" in source
     assert "refreshLocaleFromStorage()" in source
-    assert "if (source === 'archive') refreshLocaleFromStorage()" in source
+    assert "if (source === 'archive' || source === 'settings') refreshLocaleFromStorage()" in source
 
 
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
