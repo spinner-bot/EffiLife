@@ -11,7 +11,7 @@ import { parseLocalDate } from '@/services/dataService'
 
 const router = useRouter()
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const checkinData = computed(() => CheckinSystem.getData())
 const hasCheckedInToday = computed(() => checkinState.hasCheckedInToday)
@@ -97,12 +97,8 @@ function formatDate(dateStr: string): string {
 }
 
 function formatWeekday(dateStr: string): string {
-  const weekdays = [
-    t('checkin.weekday.sun'), t('checkin.weekday.mon'), t('checkin.weekday.tue'),
-    t('checkin.weekday.wed'), t('checkin.weekday.thu'), t('checkin.weekday.fri'), t('checkin.weekday.sat'),
-  ]
   const d = parseLocalDate(dateStr)
-  return `周${weekdays[d.getDay()]}`
+  return new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(d)
 }
 
 // 打卡热力图数据（最近 26 周）
@@ -130,10 +126,7 @@ const last7Days = computed(() => {
     const dateStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
     const hasCheckin = checkinData.value.records.some(r => r.date === dateStr)
     const isToday = i === 0
-    const weekday = [
-      t('checkin.weekday.sun'), t('checkin.weekday.mon'), t('checkin.weekday.tue'),
-      t('checkin.weekday.wed'), t('checkin.weekday.thu'), t('checkin.weekday.fri'), t('checkin.weekday.sat'),
-    ][d.getDay()]
+    const weekday = new Intl.DateTimeFormat(locale.value, { weekday: 'short' }).format(d)
     days.push({ dateStr, hasCheckin, isToday, weekday, label: d.getDate().toString() })
   }
   return days
