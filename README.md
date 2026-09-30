@@ -10,7 +10,7 @@
   <a href="#三步工作流">三步工作流</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="docs/INTEGRATION.md">集成文档</a> ·
-  <a href="docs/进展报告/0000-报告与文档管理规范.txt">进展记录</a>
+  <a href="docs/progress/0000-进展报告规范.md">进展记录</a>
 </p>
 
 <p align="center">
