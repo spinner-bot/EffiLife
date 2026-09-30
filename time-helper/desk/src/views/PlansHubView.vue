@@ -810,7 +810,7 @@ onUnmounted(() => {
       <button class="plans-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('plans.back')">
         <ArrowLeft :size="18" />
       </button>
-      <div>
+      <div class="plans-title-block">
         <p class="plans-eyebrow">{{ t('plans.moduleLabel') }}</p>
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
         <p v-if="view !== 'detail'" class="plans-module-description">{{ t('plans.moduleDescription') }}</p>
@@ -1029,14 +1029,15 @@ onUnmounted(() => {
 
 <style scoped>
 .plans-hub { min-height: 100vh; color: var(--color-text-primary); background: var(--color-bg); }
-.plans-header { display: flex; align-items: center; gap: 15px; max-width: 1080px; margin: 0 auto; padding: 30px 28px 20px; }
+.plans-header { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; max-width: 1080px; margin: 0 auto; padding: 30px 28px 20px; }
+.plans-title-block { flex: 1 1 220px; min-width: 0; }
 .plans-back { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--color-border); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
 .plans-eyebrow { margin: 0 0 4px; color: var(--color-text-tertiary); font-size: 12px; letter-spacing: .08em; }
 .plans-module-description { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .plans-header h1 { margin: 0; font-size: 25px; }
 .plans-primary, .plans-secondary, .plans-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+.plan-entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
 .plans-primary { margin-left: auto; border: 1px solid var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
-.plan-entry-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .plan-entry-actions .plans-primary { margin-left: 0; }
 .plans-secondary { border: 1px solid var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .plans-link { border: 0; padding-left: 0; color: var(--color-primary); background: transparent; }
