@@ -22,3 +22,9 @@ def test_settings_uses_two_column_desktop_navigation():
     assert "@media (min-width: 900px)" in SETTINGS
     assert "max-width: 920px" in SETTINGS
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in SETTINGS
+
+
+def test_task_center_uses_the_shared_wide_desktop_content_budget():
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    assert "@media (min-width: 1100px)" in tasks
+    assert ".task-header, .task-content { max-width: 1180px; }" in tasks

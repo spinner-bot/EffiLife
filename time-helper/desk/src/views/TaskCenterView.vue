@@ -1313,6 +1313,9 @@ watch(() => route.query.todo, () => {
 .category-pin.active, .category-pin:hover { color: var(--color-primary); }
 .category-swatch { width: 10px; height: 10px; border-radius: 50%; }
 .category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
+@media (min-width: 1100px) {
+  .task-header, .task-content { max-width: 1180px; }
+}
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
 @media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-create-advanced[open] { grid-template-columns: 1fr; } .task-create-advanced[open] .task-description-label { padding-top: 0; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } .task-item-actions { flex-basis: 100%; justify-content: flex-end; margin-left: 36px; } }
 </style>
