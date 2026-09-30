@@ -857,7 +857,18 @@ function planProgress(plan: PlanSummary): number {
 }
 
 async function revealSearchTarget(): Promise<void> {
-  if (route.query.archive) return
+  if (route.query.archive) {
+    // An archive search result can be opened while the user is already in an
+    // active-plan detail view. Clear that transient selection so the archive
+    // preview is not hidden behind stale active-plan state.
+    if (selectedPlan.value || view.value === 'detail' || view.value === 'time') {
+      selectedPlan.value = null
+      editingMeta.value = false
+      view.value = 'events'
+      searchTargetTaskId.value = null
+    }
+    return
+  }
   const targetId = String(route.query.plan || '')
   if (!targetId) return
   const target = plans.value.find((plan) => String(plan.id) === targetId)
