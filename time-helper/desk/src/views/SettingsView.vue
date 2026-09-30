@@ -454,6 +454,7 @@ async function onFileSelected(event: Event) {
 function formatArchivePreview(preview: ArchivePreview): string {
   const summary = t('settings.archive.importPreview', {
     plans: preview.planCount,
+    archivedPlans: preview.archivedPlanCount,
     todos: preview.todoCount,
     records: preview.recordCount,
     categories: preview.categoryCount,

@@ -54,6 +54,16 @@ def test_archive_preview_discloses_plan_snapshot_status():
     assert i18n.count("'settings.archive.planSnapshotStale'") == 2
 
 
+def test_archive_preview_discloses_active_and_archived_plan_counts():
+    service = SERVICE.read_text(encoding="utf-8")
+    settings = SETTINGS.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "archivedPlanCount: number" in service
+    assert "data.planHelper.archives" in service
+    assert "archivedPlans: preview.archivedPlanCount" in settings
+    assert i18n.count("{archivedPlans}") == 2
+
+
 def test_archive_import_rejects_partial_canonical_bundles_before_writing():
     source = SERVICE.read_text(encoding="utf-8")
     i18n = I18N.read_text(encoding="utf-8")

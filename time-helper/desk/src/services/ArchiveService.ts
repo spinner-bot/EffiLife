@@ -132,6 +132,7 @@ type PlanHelperData = {
 export interface ArchivePreview {
   exportDate: string
   planCount: number
+  archivedPlanCount: number
   todoCount: number
   recordCount: number
   categoryCount: number
@@ -151,6 +152,7 @@ function summarizeArchive(data: ArchiveData): ArchivePreview {
   return {
     exportDate: data.exportDate,
     planCount: Array.isArray(data.planHelper?.plans) ? data.planHelper.plans.length : 0,
+    archivedPlanCount: Array.isArray(data.planHelper?.archives) ? data.planHelper.archives.length : 0,
     todoCount: data.todos.length,
     recordCount: Object.values(data.records || {}).reduce((total, records) => total + records.length, 0),
     categoryCount: data.categories.length,
