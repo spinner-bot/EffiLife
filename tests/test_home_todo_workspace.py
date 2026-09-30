@@ -89,3 +89,12 @@ def test_home_dashboard_previews_multiple_active_plans_without_merging_todos():
     assert "plan.progress_percentage" in source
     assert "home.moreActivePlans" in source
     assert "event-plan-preview" in source
+
+
+def test_home_dashboard_can_deep_link_to_an_individual_plan():
+    source = HOME.read_text(encoding="utf-8")
+    assert "function openEventPlan(plan: PlanSummary)" in source
+    assert "query: { plan: plan.id }" in source
+    assert 'class="event-plan-preview-row"' in source
+    assert '@click.stop="openEventPlan(plan)"' in source
+    assert 'role="link" tabindex="0"' in source

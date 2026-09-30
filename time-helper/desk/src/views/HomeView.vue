@@ -40,6 +40,16 @@ function openDailyPlan() {
   router.push('/time')
 }
 
+function openEventPlan(plan: PlanSummary) {
+  router.push({ path: '/plans', query: { plan: plan.id } })
+}
+
+function activateEventOverview(event: KeyboardEvent) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  router.push('/plans')
+}
+
 function activateDailyPlan(event: KeyboardEvent) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault()
@@ -532,7 +542,7 @@ onUnmounted(() => {
             />
           </div>
         </div>
-        <button class="event-overview-card" @click="router.push('/plans')">
+        <div class="event-overview-card" role="link" tabindex="0" @click="router.push('/plans')" @keydown="activateEventOverview">
           <div class="event-overview-header"><h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" /></div>
           <template v-if="eventPlanState === 'ready'">
             <strong class="event-overview-count">{{ eventPlans.length }}</strong>
@@ -540,20 +550,20 @@ onUnmounted(() => {
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
             <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
             <div v-if="eventPlanPreview.length" class="event-plan-preview" :aria-label="t('home.eventPlans')">
-              <div v-for="plan in eventPlanPreview" :key="plan.id" class="event-plan-preview-row">
+              <button v-for="plan in eventPlanPreview" :key="plan.id" type="button" class="event-plan-preview-row" @click.stop="openEventPlan(plan)">
                 <div class="event-plan-preview-copy">
                   <span class="event-plan-preview-name">{{ plan.name }}</span>
                   <span class="event-plan-preview-count">{{ plan.completed_tasks }}/{{ plan.total_tasks }}</span>
                 </div>
                 <div class="event-plan-preview-track"><i :style="{ width: `${plan.progress_percentage}%` }" /></div>
-              </div>
+              </button>
               <span v-if="eventPlanRemainingCount" class="event-plan-preview-more">{{ t('home.moreActivePlans', { count: eventPlanRemainingCount }) }}</span>
             </div>
             <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
-        </button>
+        </div>
         </div>
       </section>
 
@@ -1092,7 +1102,8 @@ onUnmounted(() => {
 .event-overview-progress-track { height: 6px; flex: 1; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
 .event-overview-progress-track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
 .event-plan-preview { display: grid; gap: 8px; width: 100%; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border); }
-.event-plan-preview-row { display: grid; gap: 5px; min-width: 0; }
+.event-plan-preview-row { display: grid; gap: 5px; min-width: 0; width: 100%; border: 0; padding: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; }
+.event-plan-preview-row:hover .event-plan-preview-name, .event-plan-preview-row:focus-visible .event-plan-preview-name { color: var(--color-primary); }
 .event-plan-preview-copy { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; color: var(--color-text-secondary); font-size: 11px; }
 .event-plan-preview-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-plan-preview-count { flex: 0 0 auto; color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; }
