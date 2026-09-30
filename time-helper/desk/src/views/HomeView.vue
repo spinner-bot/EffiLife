@@ -44,13 +44,6 @@ function openEventPlan(plan: PlanSummary) {
   router.push({ path: '/plans', query: { plan: plan.id } })
 }
 
-function activateDailyPlan(event: KeyboardEvent) {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault()
-    openDailyPlan()
-  }
-}
-
 async function refreshTodoSummary() {
   try {
     const [todos, categories] = await Promise.all([
@@ -468,18 +461,12 @@ onUnmounted(() => {
       <!-- 总完成度环形图 + 分类进度条 -->
       <section class="stats-section">
         <div class="overview-grid">
-        <div
-          class="stats-card"
-          role="button"
-          tabindex="0"
-          :aria-label="t('home.todayProgress')"
-          @click="openDailyPlan"
-          @keydown="activateDailyPlan"
-        >
-          <div class="stats-header-row">
+        <section class="stats-card">
+          <button type="button" class="stats-header-row stats-header-action" :aria-label="t('home.todayProgress')" @click="openDailyPlan">
             <h2 class="stats-title">{{ t('home.todayProgress') }}</h2>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
-          </div>
+            <ChevronRight :size="18" />
+          </button>
           <div class="stats-content" v-if="stat && stat.plan_exists">
             <!-- 环形总完成度 -->
             <div class="overall-progress-ring">
@@ -541,7 +528,7 @@ onUnmounted(() => {
               action-route="/plan"
             />
           </div>
-        </div>
+        </section>
         <section class="event-overview-card">
           <button type="button" class="event-overview-header event-overview-header-action" @click="router.push('/plans')">
             <h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" />
@@ -1064,7 +1051,6 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   border: 1px solid var(--color-border);
-  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
@@ -1073,6 +1059,11 @@ onUnmounted(() => {
   background: var(--color-bg-secondary);
   box-shadow: 0 0 0 2px var(--color-primary-muted);
 }
+
+.stats-header-row { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: var(--spacing-sm); color: var(--color-text-tertiary); }
+.stats-header-action { border: 0; padding: 0; background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.stats-header-action:hover, .stats-header-action:focus-visible { color: var(--color-text-primary); outline: 0; }
+.stats-header-action svg { flex: 0 0 auto; color: var(--color-primary); }
 
 .event-overview-card {
   display: flex;

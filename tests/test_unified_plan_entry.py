@@ -21,10 +21,9 @@ def test_unified_workspace_embeds_daily_plan_view_and_preserves_event_mode():
 
 def test_home_daily_plan_link_uses_dedicated_time_workspace():
     source = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
-    assert "function activateDailyPlan" in source
-    assert 'role="button"' in source
-    assert 'tabindex="0"' in source
-    assert "@keydown=\"activateDailyPlan\"" in source
+    assert 'class="stats-header-row stats-header-action"' in source
+    assert 'type="button"' in source
+    assert '@click="openDailyPlan"' in source
     assert "router.push('/time')" in source
 
 
