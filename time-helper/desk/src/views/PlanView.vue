@@ -1037,6 +1037,17 @@ onMounted(() => {
   padding: var(--spacing-lg);
 }
 
+@media (min-width: 1100px) {
+  .pv-content {
+    max-width: 1180px;
+    padding: 28px 32px 48px;
+  }
+  .pv-summary-card,
+  .pv-plan-hero {
+    max-width: 980px;
+  }
+}
+
 .pv-panel {
   animation: panelIn 0.2s ease-out;
 }

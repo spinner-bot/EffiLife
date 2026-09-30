@@ -1281,4 +1281,26 @@ onUnmounted(() => {
   color: var(--color-text-tertiary);
   font-size: 0.75rem;
 }
+
+/* 宽屏控制台：桌面端使用可扫描的横向分区，不把内容压缩在移动端宽度内。 */
+@media (min-width: 900px) {
+  .home-view { padding: 20px 32px; }
+  .main-content {
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 1180px;
+    gap: 24px;
+  }
+  .clock-section { text-align: left; }
+  .checkin-badges { justify-content: flex-start; }
+  .workflow-summary { width: 100%; margin-bottom: 0; }
+  .stats-content {
+    display: grid;
+    grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+  }
+  .overall-progress-ring { margin: 0 auto; }
+  .nav-buttons { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 </style>
