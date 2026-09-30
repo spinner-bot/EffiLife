@@ -36,6 +36,15 @@ def test_startup_repairs_only_provably_stale_plan_task_links():
     assert "related_plan_id: undefined" in source
 
 
+def test_startup_preserves_links_to_archived_plans():
+    source = SYNC.read_text(encoding="utf-8")
+    absent_plan_branch = source.split("for (const planId of new Set(linkedTodos.map", 1)[1]
+    absent_plan_branch = absent_plan_branch.split("try {", 1)[0]
+    assert "if (!planIds.has(planId))" in absent_plan_branch
+    assert "archived plans" in absent_plan_branch
+    assert "continue" in absent_plan_branch
+
+
 def test_app_runs_plan_task_link_repair_after_record_link_repair():
     source = APP.read_text(encoding="utf-8")
     assert "repairTodoPlanTaskLinks" in source
