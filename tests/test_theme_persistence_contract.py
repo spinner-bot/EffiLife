@@ -39,3 +39,10 @@ def test_theme_snapshot_tracks_external_settings_and_archive_changes():
     assert "source !== 'settings' && source !== 'archive'" in source
     assert "savedThemeSnapshot.value = cloneTheme(appStore.config.theme)" in source
     assert "stopWorkspaceListener()" in source
+
+
+def test_theme_snapshot_waits_for_external_workspace_hydration():
+    source = SETTINGS.read_text(encoding="utf-8")
+
+    assert "void appStore.refreshWorkspaceData().then(() =>" in source
+    assert "Failed to refresh theme snapshot after workspace change" in source

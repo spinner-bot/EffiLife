@@ -184,7 +184,14 @@ const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source !== 'settings' && source !== 'archive') return
-  savedThemeSnapshot.value = cloneTheme(appStore.config.theme)
+  // The workspace event is emitted before other windows finish rehydrating
+  // IndexedDB. Reload here as well so the dirty marker never snapshots the
+  // stale in-memory theme from before the external save/import.
+  void appStore.refreshWorkspaceData().then(() => {
+    savedThemeSnapshot.value = cloneTheme(appStore.config.theme)
+  }).catch((error) => {
+    console.warn('Failed to refresh theme snapshot after workspace change:', error)
+  })
 })
 
 function buildDraftTheme(): Config['theme'] {
