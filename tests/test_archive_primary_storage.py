@@ -90,6 +90,12 @@ def test_archive_import_repairs_plan_task_links_against_archived_snapshots():
     assert "const rawPlans = [" in source
 
 
+def test_archive_import_unions_task_ids_when_active_and_archived_plan_ids_repeat():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "const knownTaskIds = taskIdsByPlan.get(planId)" in source
+    assert "new Set([...knownTaskIds, ...taskIds])" in source
+
+
 def test_archive_import_does_not_write_mobile_plan_snapshot_twice():
     source = ARCHIVE.read_text(encoding="utf-8")
     restore = source.split("const warnings: string[] = []", 1)[1].split("notifyWorkspaceChanged('archive')", 1)[0]

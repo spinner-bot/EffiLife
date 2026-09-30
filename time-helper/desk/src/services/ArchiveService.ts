@@ -779,7 +779,12 @@ function repairImportedTodoPlanLinks(todos: UnifiedTodo[], rawPlanHelper: unknow
         taskIds.add(`${planLetter(sectionIndex)}${displayIndex}`)
       })
     })
-    taskIdsByPlan.set(planId, taskIds)
+    // A numeric PH id can legitimately reappear across an active plan and an
+    // archived historical snapshot. Keep the union so importing an archive
+    // never detaches a TD merely because the later snapshot has a different
+    // task layout under the same id.
+    const knownTaskIds = taskIdsByPlan.get(planId)
+    taskIdsByPlan.set(planId, knownTaskIds ? new Set([...knownTaskIds, ...taskIds]) : taskIds)
   })
 
   let repaired = 0
