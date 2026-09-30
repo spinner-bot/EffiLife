@@ -52,6 +52,8 @@ def _validate_workspace_dataset_shapes(datasets: Mapping[str, Any]) -> None:
         raise ValueError("Workspace dataset has invalid shape: plan_helper")
     if "plans" in plan_helper and not isinstance(plan_helper["plans"], list):
         raise ValueError("Workspace plan_helper plans must be an array")
+    if "archives" in plan_helper and not isinstance(plan_helper["archives"], list):
+        raise ValueError("Workspace plan_helper archives must be an array")
 
 
 def _json_bytes(value: Any) -> bytes:

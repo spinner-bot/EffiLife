@@ -88,6 +88,20 @@ def test_workspace_bundle_rejects_invalid_record_bucket_shape(tmp_path):
         read_workspace_bundle(bundle)
 
 
+def test_workspace_bundle_rejects_invalid_plan_archive_shape(tmp_path):
+    bundle = tmp_path / "invalid-plan-archives.efl"
+    export_bundle(bundle, {
+        "app": {},
+        "records": {},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": {"plans": [], "archives": {}},
+    })
+
+    with pytest.raises(ValueError, match="plan_helper archives"):
+        read_workspace_bundle(bundle)
+
+
 def test_bundle_rejects_valid_json_dataset_tampering(tmp_path):
     bundle = tmp_path / "tampered.efl"
     export_bundle(bundle, {"app": {"version": "one"}})
