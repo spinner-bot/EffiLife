@@ -26,6 +26,7 @@ import {
   type PlanFull,
   type InitialPlanSection,
   type PlanSummary,
+  type PlanTaskSummary,
   type PlanTemplateSummary,
   updatePlanTask,
   updatePlanGroup,
