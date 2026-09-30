@@ -608,7 +608,7 @@ export async function archivePlan(planId: string): Promise<void> {
     const [plan] = plans.splice(index, 1)
     const archives = await getMobileRawArchives()
     const timestamp = new Date()
-    const stamp = timestamp.toISOString().slice(0, 19).split('-').join('').split(':').join('').replace('T', '')
+    const stamp = `${timestamp.getTime()}${String(timestamp.getMilliseconds()).padStart(3, '0')}`
     archives.push({
       file: `plan_${String(plan.head?.index ?? planId)}_${stamp}.json`,
       payload: { archived_at: timestamp.toISOString(), plan },

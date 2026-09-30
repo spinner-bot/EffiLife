@@ -65,6 +65,26 @@ def test_registry_exchange_round_trip_preserves_archived_plan_payloads(tmp_path,
         Plan.registry.pop(plan_id, None)
 
 
+def test_repeated_archive_restore_does_not_overwrite_history(tmp_path, monkeypatch):
+    archive_dir = tmp_path / "archives"
+    monkeypatch.setenv("EFFILIFE_PLAN_ARCHIVE_DIR", str(archive_dir))
+    plan_id = Plan.request_id()
+    created = api.create_plan(name="Archive history", plan_id=plan_id)
+    assert created.success
+    try:
+        first = api.archive_plan(plan_id)
+        assert first.success
+        first_file = Path(first.data["file"])
+        restored = api.restore_archive(first_file.name)
+        assert restored.success
+        second = api.archive_plan(plan_id)
+        assert second.success
+        assert Path(second.data["file"]).name != first_file.name
+        assert len(list(archive_dir.glob("plan_*.json"))) == 2
+    finally:
+        Plan.registry.pop(plan_id, None)
+
+
 def test_soft_deleted_task_is_renumbered_only_in_the_display_projection():
     plan_id = Plan.request_id()
     created = api.create_plan(name="Display numbering", plan_id=plan_id)

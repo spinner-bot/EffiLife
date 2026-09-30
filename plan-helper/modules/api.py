@@ -188,7 +188,7 @@ def archive_plan(plan_id, archive_dir=None):
         p = plan_module.Plan.registry[plan_id]
         target_dir = _archive_dir(archive_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         archive_file = target_dir / f"plan_{plan_id}_{timestamp}.json"
         with open(archive_file, "w", encoding="utf-8") as handle:
             json.dump({
