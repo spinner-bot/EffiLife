@@ -57,7 +57,7 @@ export const MAIN_GUIDE: GuideConfig = {
     {
       id: 'welcome',
       title: '欢迎使用浪兮效率时钟！',
-      description: '让我们通过实际操作来了解核心功能。你将亲手体验记录时间、查看日历等功能。准备好了吗？',
+      description: '让我们通过实际操作来了解核心功能。你将亲手体验计划、待办和时间记录。准备好了吗？',
       position: 'bottom',
       isDemo: true
     },
@@ -112,59 +112,6 @@ export const MAIN_GUIDE: GuideConfig = {
       actionRequired: true,
       actionType: 'click',
       actionTarget: '.pv-tab:nth-child(2)',
-      autoAdvance: true,
-      position: 'bottom'
-    },
-
-    // ========== 核心功能：日历视图 ==========
-    {
-      id: 'go-calendar',
-      title: '第二步：查看日历',
-      description: '点击"日历"按钮，查看你的时间记录在日历中的展示。',
-      target: '.nav-btn:nth-child(2)',
-      highlight: true,
-      actionRequired: true,
-      actionType: 'click',
-      actionTarget: '.nav-btn:nth-child(2)',
-      navigateTo: '/calendar',
-      autoAdvance: true,
-      position: 'bottom'
-    },
-    {
-      id: 'calendar-view',
-      title: '日历视图',
-      description: '这里展示你每天的记录。点击今天的日期，查看当天的详细记录。',
-      target: '.day-cell.today',
-      highlight: true,
-      actionRequired: true,
-      actionType: 'click',
-      actionTarget: '.day-cell.today',
-      autoAdvance: true,
-      position: 'bottom'
-    },
-    {
-      id: 'day-detail',
-      title: '日期详情',
-      description: '这里显示当天的计划和记录。你可以切换日计划、查看记录详情。点击"返回日历"继续。',
-      target: '.back-btn',
-      highlight: true,
-      actionRequired: true,
-      actionType: 'click',
-      actionTarget: '.back-btn',
-      navigateTo: '/calendar',
-      autoAdvance: true,
-      position: 'bottom'
-    },
-    {
-      id: 'back-home',
-      title: '返回主页',
-      description: '点击"返回"回到主页，继续探索管理功能。',
-      target: '.back-btn',
-      highlight: true,
-      actionRequired: true,
-      actionType: 'click',
-      actionTarget: '.back-btn',
-      navigateTo: '/',
       autoAdvance: true,
       position: 'bottom'
     },
@@ -288,16 +235,14 @@ export const MAIN_GUIDE: GuideConfig = {
     {
       id: 'guide-complete',
       title: '🎉 引导完成！',
-      description: '恭喜你完成了所有核心功能的体验！现在你已掌握：\n• 记录时间\n• 查看日历\n• 管理计划\n• 个性化设置\n\n开始你的效率之旅吧！',
+      description: '恭喜你完成了所有核心功能的体验！现在你已掌握：\n• 管理计划\n• 管理待办\n• 记录时间\n• 个性化设置\n\n开始你的效率之旅吧！',
       position: 'bottom',
       isDemo: true
     }
   ]
 }
 
-// The original guide described the pre-integration navigation (tabs, calendar
-// and legacy management selectors). Keep its data above for migration history,
-// but run the current onboarding against the unified application shell.
+// Keep the current onboarding against the unified application shell.
 MAIN_GUIDE.name = 'guide.name'
 MAIN_GUIDE.steps = [
   { id: 'welcome', title: '', description: '', titleKey: 'guide.welcomeTitle', descriptionKey: 'guide.welcomeDescription', isDemo: true },

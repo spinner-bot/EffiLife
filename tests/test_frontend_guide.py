@@ -43,3 +43,10 @@ def test_current_help_copy_does_not_advertise_retired_calendar_view():
     assert '<strong>日历视图</strong>' not in settings
     assert '使用时间记录、日历和打卡' not in catalog
     assert 'Use time records, the calendar and check-ins' not in catalog
+
+
+def test_guide_source_does_not_retain_retired_calendar_steps():
+    guide = GUIDE_SOURCE.read_text(encoding="utf-8")
+    assert "calendar" not in guide.lower()
+    assert "日历" not in guide
+    assert "navigateTo: '/calendar'" not in guide
