@@ -543,17 +543,18 @@ def collect_diagnostics(modules):
         item for item in installer_status
         if item["exists"] and item["non_empty"] and item.get("version_matches", True)
     ]
-    if not usable_installers:
+    stale_installers = [
+        item for item in installer_status
+        if item["exists"] and item["non_empty"] and not item.get("version_matches", True)
+    ]
+    if not usable_installers and not stale_installers:
         hints.append({
             "code": "installer-artifact-missing",
             "severity": "info",
             "message": "No non-empty native installer was found; a Tauri binary is not the same as an installable release",
             "hint": "Run the desktop release workflow or build the platform bundle on a release machine",
         })
-    if any(
-        item["exists"] and item["non_empty"] and not item.get("version_matches", True)
-        for item in installer_status
-    ):
+    if stale_installers:
         hints.append({
             "code": "installer-artifact-stale",
             "severity": "info",

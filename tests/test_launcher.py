@@ -577,7 +577,7 @@ def test_launcher_marks_old_version_installer_as_stale(monkeypatch, tmp_path):
     assert artifact["artifact_version"] == "1.0.11"
     assert artifact["version_matches"] is False
     assert any(item["code"] == "installer-artifact-stale" for item in result["hints"])
-    assert any(item["code"] == "installer-artifact-missing" for item in result["hints"])
+    assert not any(item["code"] == "installer-artifact-missing" for item in result["hints"])
 
 
 def test_launcher_reports_missing_installer_without_blocking_workspace(monkeypatch, tmp_path):
