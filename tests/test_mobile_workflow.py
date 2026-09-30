@@ -17,3 +17,21 @@ def test_mobile_boundary_workflow_does_not_claim_to_publish_installers():
     source = WORKFLOW.read_text(encoding="utf-8").lower()
     assert "upload-artifact" not in source
     assert "release create" not in source
+
+
+def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-mobile-build.yml").read_text(encoding="utf-8")
+    assert "workflow_dispatch:" in workflow
+    assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
+    assert "npm run mobile:android:build" in workflow
+    assert "actions/upload-artifact@v4" in workflow
+    assert "gen/android/app/build/outputs/apk/**/*.apk" in workflow
+    assert "npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
+    assert "npm run mobile:ios:build -- --debug" in workflow
+    assert "gen/apple/build/**/*.app" in workflow
+
+
+def test_mobile_build_workflow_does_not_use_desktop_sidecar():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-mobile-build.yml").read_text(encoding="utf-8")
+    assert "build:sidecar" not in workflow
+    assert "tauri-desktop-release" not in workflow

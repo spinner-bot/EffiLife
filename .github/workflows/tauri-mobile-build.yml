@@ -1,0 +1,110 @@
+name: EffiLife mobile build
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Platform to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android APK
+    if: inputs.target == 'all' || inputs.target == 'android'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: time-helper/desk/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Install frontend dependencies
+        working-directory: time-helper/desk
+        run: npm ci
+
+      - name: Initialize Tauri Android project
+        working-directory: time-helper/desk
+        run: npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
+
+      - name: Build Android APK
+        working-directory: time-helper/desk
+        run: npm run mobile:android:build
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: EffiLife-android-apk
+          path: time-helper/desk/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS app bundle
+    if: inputs.target == 'all' || inputs.target == 'ios'
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: time-helper/desk/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Install frontend dependencies
+        working-directory: time-helper/desk
+        run: npm ci
+
+      - name: Initialize Tauri iOS project
+        working-directory: time-helper/desk
+        run: npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
+
+      - name: Build iOS app bundle
+        working-directory: time-helper/desk
+        run: npm run mobile:ios:build -- --debug
+
+      - name: Upload iOS app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: EffiLife-ios-app
+          path: |
+            time-helper/desk/src-tauri/gen/apple/build/**/*.app
+            time-helper/desk/src-tauri/gen/apple/build/**/*.ipa
+          if-no-files-found: error
