@@ -7,6 +7,13 @@ import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus, Sort
 import { DEFAULT_SETTINGS } from '@/types'
 import { calcPriorityScore, formatScoreDisplay, calcAllScores } from '@/utils/priority'
 
+function localDateKey(date: Date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // 模拟数据 (v0.5.0: 新增字段)
 const mockTodos: Todo[] = [
   {
@@ -273,7 +280,7 @@ export const useTodosStore = defineStore('todos', () => {
   })
 
   const todayTodos = computed(() => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateKey()
     return todos.value.filter(t => {
       if (t.deadline && t.deadline.startsWith(today)) return true
       if (t.status === 'in-progress') return true
