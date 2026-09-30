@@ -20,3 +20,12 @@ def test_custom_settings_save_has_a_recoverable_error_boundary():
     assert "try {" in save_block
     assert "appStore.saveConfig(newConfig)" in save_block
     assert "settings.saveFailed" in save_block
+
+
+def test_external_config_refresh_preserves_unsaved_custom_settings_draft():
+    assert "type CustomSettingsDraft = Pick<Config" in VIEW
+    assert "const savedCustomSettingsSnapshot = ref<CustomSettingsDraft>" in VIEW
+    assert "const customSettingsDirty = computed" in VIEW
+    assert "const hadLocalDraft = customSettingsDirty.value" in VIEW
+    assert "if (!hadLocalDraft)" in VIEW
+    assert "savedCustomSettingsSnapshot.value = currentCustomSettings()" in VIEW

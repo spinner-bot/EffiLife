@@ -122,6 +122,29 @@ const showSeconds = ref(config.value.show_seconds)
 const use24h = ref(config.value.use_24h)
 const showAmPm = ref(config.value.show_ampm)
 
+type CustomSettingsDraft = Pick<Config, 'overtime_threshold' | 'show_seconds' | 'use_24h' | 'show_ampm'>
+
+function customSettingsFrom(configValue: Config): CustomSettingsDraft {
+  return {
+    overtime_threshold: configValue.overtime_threshold,
+    show_seconds: configValue.show_seconds,
+    use_24h: configValue.use_24h,
+    show_ampm: configValue.show_ampm,
+  }
+}
+
+function currentCustomSettings(): CustomSettingsDraft {
+  return {
+    overtime_threshold: overtimeThreshold.value,
+    show_seconds: showSeconds.value,
+    use_24h: use24h.value,
+    show_ampm: showAmPm.value,
+  }
+}
+
+const savedCustomSettingsSnapshot = ref<CustomSettingsDraft>(customSettingsFrom(config.value))
+const customSettingsDirty = computed(() => JSON.stringify(currentCustomSettings()) !== JSON.stringify(savedCustomSettingsSnapshot.value))
+
 async function saveCustomSettings() {
   const newConfig: Config = {
     ...config.value,
@@ -132,6 +155,7 @@ async function saveCustomSettings() {
   }
   try {
     await appStore.saveConfig(newConfig)
+    savedCustomSettingsSnapshot.value = currentCustomSettings()
     notifyToast(t('settings.saved'), 'success')
   } catch (error) {
     console.error('Failed to save custom settings:', error)
@@ -569,10 +593,14 @@ async function handleEmergencyExport() {
 
 // 同步配置到本地状态
 watch(() => config.value, (newConfig) => {
-  overtimeThreshold.value = newConfig.overtime_threshold
-  showSeconds.value = newConfig.show_seconds
-  use24h.value = newConfig.use_24h
-  showAmPm.value = newConfig.show_ampm
+  const hadLocalDraft = customSettingsDirty.value
+  if (!hadLocalDraft) {
+    overtimeThreshold.value = newConfig.overtime_threshold
+    showSeconds.value = newConfig.show_seconds
+    use24h.value = newConfig.use_24h
+    showAmPm.value = newConfig.show_ampm
+    savedCustomSettingsSnapshot.value = customSettingsFrom(newConfig)
+  }
 }, { immediate: true, deep: true })
 
 watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], previewTheme, { deep: true })
