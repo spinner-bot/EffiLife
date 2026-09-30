@@ -101,4 +101,4 @@ def test_home_dashboard_can_deep_link_to_an_individual_plan():
     assert "query: { plan: plan.id }" in source
     assert 'class="event-plan-preview-row"' in source
     assert '@click.stop="openEventPlan(plan)"' in source
-    assert 'role="link" tabindex="0"' in source
+    assert 'class="event-overview-header event-overview-header-action"' in source
