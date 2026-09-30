@@ -406,11 +406,12 @@ export const TodoService = {
     const recordIds = Array.isArray(timeRecordId)
       ? timeRecordId.filter(Boolean)
       : timeRecordId ? [timeRecordId] : []
+    const relatedTimeRecordIds = recordIds.length > 0
+      ? [...new Set([...(current.related_time_record_ids || []), ...recordIds])]
+      : current.related_time_record_ids
     return this.update(id, {
       time_spent: (current.time_spent || 0) + minutes,
-      related_time_record_ids: recordIds.length > 0
-        ? [...(current.related_time_record_ids || []), ...recordIds]
-        : current.related_time_record_ids,
+      related_time_record_ids: relatedTimeRecordIds,
     })
   },
 }
