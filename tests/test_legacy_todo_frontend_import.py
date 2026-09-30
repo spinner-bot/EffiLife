@@ -16,6 +16,13 @@ def test_frontend_has_non_destructive_legacy_todo_migration():
     assert "if (migrated > 0 || categories > 0) notifyWorkspaceChanged('todos')" in source
 
 
+def test_startup_legacy_migration_broadcasts_new_records():
+    source = SERVICE.read_text(encoding="utf-8")
+    migration = source.split("async migrateLegacyLocalStorage", 1)[1].split("async list()", 1)[0]
+    assert "localStorage.setItem(LEGACY_MIGRATION_MARKER" in migration
+    assert "if (migrated > 0 || categories > 0) notifyWorkspaceChanged('todos')" in migration
+
+
 def test_todo_normalizer_rejects_malformed_cross_module_references():
     source = SERVICE.read_text(encoding="utf-8")
     assert "candidate.related_plan_id !== undefined" in source

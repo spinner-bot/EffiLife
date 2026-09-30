@@ -345,6 +345,7 @@ export const TodoService = {
       }
       await TodoCategoryService.ensureDefaults([...existingTodos, ...(Array.isArray(payload.todos) ? payload.todos.map(normalizeImportedTodo).filter((todo): todo is UnifiedTodo => todo !== null) : [])])
       localStorage.setItem(LEGACY_MIGRATION_MARKER, new Date().toISOString())
+      if (migrated > 0 || categories > 0) notifyWorkspaceChanged('todos')
       return { migrated, categories, skipped }
     } catch {
       legacyMigrationAttempted = false
