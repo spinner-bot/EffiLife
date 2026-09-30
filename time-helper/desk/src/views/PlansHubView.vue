@@ -89,6 +89,10 @@ const logContent = ref('')
 const linkedTodoIdsByTask = ref(new Map<string, string>())
 
 const archivedPlanTarget = computed(() => {
+  const targetFile = String(route.query.archive || '')
+  if (targetFile && !selectedPlan.value) {
+    return archives.value.find((archive) => archive.file === targetFile) || null
+  }
   const targetId = String(route.query.plan || '')
   if (!targetId || selectedPlan.value) return null
   return archives.value.find((archive) => String(archive.plan_id ?? '') === targetId) || null
@@ -258,8 +262,9 @@ async function restoreArchive(archive: PlanArchiveSummary) {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    await restorePlanArchive(archive.file)
+    const restoredId = await restorePlanArchive(archive.file)
     await loadPlans()
+    if (restoredId) await router.replace({ path: '/plans', query: { plan: restoredId } })
     await revealSearchTarget()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
@@ -845,6 +850,7 @@ function planProgress(plan: PlanSummary): number {
 }
 
 async function revealSearchTarget(): Promise<void> {
+  if (route.query.archive) return
   const targetId = String(route.query.plan || '')
   if (!targetId) return
   const target = plans.value.find((plan) => String(plan.id) === targetId)
@@ -867,7 +873,7 @@ onMounted(async () => {
   await revealSearchTarget()
 })
 
-watch(() => [route.query.plan, route.query.task], () => {
+watch(() => [route.query.plan, route.query.task, route.query.archive], () => {
   if (plans.value.length > 0) void revealSearchTarget()
 })
 

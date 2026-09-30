@@ -632,7 +632,7 @@ export async function archivePlan(planId: string): Promise<void> {
   await request(`/api/plans/${encodeURIComponent(planId)}/archive`, { method: 'POST' })
 }
 
-export async function restorePlanArchive(file: string): Promise<void> {
+export async function restorePlanArchive(file: string): Promise<string | undefined> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     const archives = await getMobileRawArchives()
     const archive = archives.find((candidate) => candidate.file === file)
@@ -665,13 +665,14 @@ export async function restorePlanArchive(file: string): Promise<void> {
     }
     planDataSource.value = 'mobile'
     notifyWorkspaceChanged('plans')
-    return
+    return String(nextId)
   }
-  await request('/api/archives/restore', {
+  const restored = await request<PlanSummary>('/api/archives/restore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ file }),
   })
+  return restored?.id ? String(restored.id) : undefined
 }
 
 export async function addPlanSection(planId: string, name: string, info = ''): Promise<void> {

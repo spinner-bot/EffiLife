@@ -25,6 +25,7 @@ def test_global_search_indexes_all_unified_data_domains():
     assert "listPlanArchives()" in source
     assert "kind: 'archivedPlan'" in source
     assert "search.archivedPlanDetail" in source
+    assert "archive=${encodeURIComponent(plan.file)}" in source
     assert "STORE_NAMES.RECORDS" in source
     assert "router.push(result.route)" in source
     assert "tasks?todo=" in source

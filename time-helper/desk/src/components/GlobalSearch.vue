@@ -66,7 +66,7 @@ const allResults = computed<SearchResult[]>(() => [
     title: plan.name || plan.file,
     detail: t('search.archivedPlanDetail'),
     searchText: `${plan.name || ''} ${plan.plan_id || ''} ${plan.file}`,
-    route: `/plans?plan=${encodeURIComponent(String(plan.plan_id ?? ''))}`,
+    route: `/plans?archive=${encodeURIComponent(plan.file)}`,
   })),
   ...planTasks.value.map(({ plan, task }) => ({
     id: `plan-task:${plan.id}:${task.internal_id}`,
