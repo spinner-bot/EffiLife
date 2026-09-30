@@ -18,6 +18,8 @@ def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "linked_todos: linkedTodos" in GATEWAY
     assert "archive.payload?.linked_todos" in GATEWAY
     assert "related_plan_id: String(nextId)" in GATEWAY
+    assert "body: JSON.stringify({ linked_todos: linkedTodos })" in GATEWAY
+    assert "restored.restored_from_id" in GATEWAY
 
 
 def test_mobile_archive_copy_is_localized_as_snapshot_capability():

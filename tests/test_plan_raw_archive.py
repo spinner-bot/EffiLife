@@ -108,6 +108,26 @@ def test_archive_restore_allocates_a_new_id_when_historical_id_is_occupied(tmp_p
             Plan.registry.pop(restored_id, None)
 
 
+def test_archive_round_trip_preserves_linked_todo_metadata(tmp_path, monkeypatch):
+    archive_dir = tmp_path / "archives"
+    monkeypatch.setenv("EFFILIFE_PLAN_ARCHIVE_DIR", str(archive_dir))
+    plan_id = Plan.request_id()
+    created = api.create_plan(name="Linked archive", plan_id=plan_id)
+    assert created.success
+    links = [{"id": "TODO-1", "task_id": "A1"}]
+    try:
+        archived = api.archive_plan(plan_id, linked_todos=links)
+        assert archived.success
+        listed = api.list_archives()
+        assert listed.data["archives"][0]["linked_todo_ids"] == ["TODO-1"]
+        restored = api.restore_archive(Path(archived.data["file"]).name)
+        assert restored.success
+        assert restored.data["linked_todos"] == links
+        assert restored.data["restored_from_id"] == plan_id
+    finally:
+        Plan.registry.pop(plan_id, None)
+
+
 def test_soft_deleted_task_is_renumbered_only_in_the_display_projection():
     plan_id = Plan.request_id()
     created = api.create_plan(name="Display numbering", plan_id=plan_id)

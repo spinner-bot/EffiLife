@@ -221,7 +221,7 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
                 sections=data.get("sections", []),
             )
         elif path.startswith("/api/plans/") and path.endswith("/archive"):
-            resp = api.archive_plan(path.split("/")[3])
+            resp = api.archive_plan(path.split("/")[3], linked_todos=data.get("linked_todos", []))
         elif path == "/api/plans/from-template":
             resp = tmpl.apply_template(
                 data.get("template_id", "workday"),

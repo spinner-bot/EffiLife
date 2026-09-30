@@ -179,7 +179,7 @@ def delete_plan(plan_id):
         return error_response("Invalid plan ID")
 
 
-def archive_plan(plan_id, archive_dir=None):
+def archive_plan(plan_id, archive_dir=None, linked_todos=None):
     """Archive a plan to a recoverable JSON file and remove it from active plans."""
     try:
         plan_id = int(plan_id)
@@ -190,10 +190,19 @@ def archive_plan(plan_id, archive_dir=None):
         target_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         archive_file = target_dir / f"plan_{plan_id}_{timestamp}.json"
+        normalized_links = []
+        for link in linked_todos or []:
+            if not isinstance(link, dict) or not str(link.get("id", "")):
+                continue
+            normalized_links.append({
+                "id": str(link["id"]),
+                "task_id": str(link["task_id"]) if link.get("task_id") else None,
+            })
         with open(archive_file, "w", encoding="utf-8") as handle:
             json.dump({
                 "archived_at": datetime.now().isoformat(),
                 "plan": p.plan,
+                "linked_todos": normalized_links,
             }, handle, ensure_ascii=False, indent=2)
         p.delete()
         return success_response(data={
@@ -225,6 +234,11 @@ def list_archives(archive_dir=None):
                     "name": head.get("name"),
                     "date": list(head.get("date", ())),
                     "archived_at": payload.get("archived_at"),
+                    "linked_todo_ids": [
+                        str(link["id"])
+                        for link in payload.get("linked_todos", [])
+                        if isinstance(link, dict) and link.get("id")
+                    ],
                 })
             except (OSError, ValueError, json.JSONDecodeError):
                 continue
@@ -253,7 +267,10 @@ def restore_archive(filename, archive_dir=None, new_id=None):
         if new_id is None and str(original_id).isdigit() and int(original_id) in plan_module.Plan.registry:
             new_id = plan_module.Plan.request_id()
         restored = plan_module.Plan.load_from_json(json.dumps(plan_data, ensure_ascii=False), new_id=new_id)
-        return success_response(data=_serialize_plan(restored), code=201)
+        response = _serialize_plan(restored)
+        response["restored_from_id"] = original_id
+        response["linked_todos"] = payload.get("linked_todos", [])
+        return success_response(data=response, code=201)
     except (OSError, ValueError, TypeError, IndexError, json.JSONDecodeError) as e:
         return error_response(str(e))
 

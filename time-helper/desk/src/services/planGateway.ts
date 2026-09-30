@@ -60,6 +60,7 @@ export interface PlanArchiveSummary {
   name?: string
   date?: [number, number, number]
   archived_at?: string
+  linked_todo_ids?: string[]
 }
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
@@ -454,6 +455,9 @@ export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
         name: String(head.name || ''),
         date: Array.isArray(head.date) ? head.date : undefined,
         archived_at: archive.payload?.archived_at,
+        linked_todo_ids: Array.isArray(archive.payload?.linked_todos)
+          ? archive.payload.linked_todos.map((link) => String(link.id || '')).filter(Boolean)
+          : [],
       }]
     }).filter((archive) => archive.file)
   }
@@ -629,7 +633,14 @@ export async function archivePlan(planId: string): Promise<void> {
     notifyWorkspaceChanged('plans')
     return
   }
-  await request(`/api/plans/${encodeURIComponent(planId)}/archive`, { method: 'POST' })
+  const linkedTodos = (await TodoService.list())
+    .filter((todo) => todo.related_plan_id === String(planId))
+    .map((todo) => ({ id: todo.id, task_id: todo.related_plan_task_id }))
+  await request(`/api/plans/${encodeURIComponent(planId)}/archive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ linked_todos: linkedTodos }),
+  })
 }
 
 export async function restorePlanArchive(file: string): Promise<string | undefined> {
@@ -667,11 +678,23 @@ export async function restorePlanArchive(file: string): Promise<string | undefin
     notifyWorkspaceChanged('plans')
     return String(nextId)
   }
-  const restored = await request<PlanSummary>('/api/archives/restore', {
+  const restored = await request<PlanSummary & {
+    restored_from_id?: number | string
+    linked_todos?: Array<{ id?: string; task_id?: string }>
+  }>('/api/archives/restore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ file }),
   })
+  if (restored?.id && restored.restored_from_id !== undefined && String(restored.id) !== String(restored.restored_from_id)) {
+    const todoIds = new Set((restored.linked_todos || []).map((link) => link.id).filter((id): id is string => Boolean(id)))
+    const todos = await TodoService.list()
+    for (const todo of todos) {
+      if (todoIds.has(todo.id) && todo.related_plan_id === String(restored.restored_from_id)) {
+        await TodoService.update(todo.id, { related_plan_id: String(restored.id) })
+      }
+    }
+  }
   return restored?.id ? String(restored.id) : undefined
 }
 
