@@ -119,7 +119,11 @@ function checkProgressEvents() {
 function onCheckinComplete() {
   showCheckinPopup.value = false
   // 通过 store 刷新
-  appStore.refreshTodayData()
+  void appStore.refreshTodayData().catch((error) => {
+    // The check-in is already recorded; a refresh failure should not create
+    // an unhandled rejection or undo the user's completed action.
+    console.warn('Failed to refresh today data after check-in:', error)
+  })
 }
 
 function onCheckinClose() {

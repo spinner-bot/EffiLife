@@ -27,3 +27,10 @@ def test_startup_error_exposes_localized_diagnostic_detail():
     assert "startupErrorMessage.value = error instanceof Error ? error.message : String(error)" in app
     assert "app.startupFailedDetail" in app
     assert source.count("'app.startupFailedDetail'") == 4
+
+
+def test_checkin_refresh_has_a_recoverable_error_boundary():
+    app = APP.read_text(encoding="utf-8")
+    checkin_block = app.split("function onCheckinComplete()", 1)[1].split("function onCheckinClose", 1)[0]
+    assert "void appStore.refreshTodayData().catch((error) =>" in checkin_block
+    assert "Failed to refresh today data after check-in:" in checkin_block
