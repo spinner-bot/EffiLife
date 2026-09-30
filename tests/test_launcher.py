@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -33,6 +34,15 @@ def test_release_check_is_read_only_and_short_circuits_startup(monkeypatch, caps
     launcher.main()
 
     assert capsys.readouterr().out == ""
+
+
+def test_release_check_reports_desktop_and_mobile_boundaries(capsys):
+    assert launcher.release_check_command() is True
+
+    report = json.loads(capsys.readouterr().out)
+    assert report["ok"] is True
+    assert report["checks"]["desktop"]["ok"] is True
+    assert report["checks"]["mobile"]["ok"] is True
 
 
 def test_launcher_defaults_to_unified_workspace_without_legacy_flag(monkeypatch):

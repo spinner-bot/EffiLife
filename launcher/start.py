@@ -218,13 +218,23 @@ def verify_bundle_command(bundle_path):
 
 
 def release_check_command():
-    """Print the read-only desktop release preflight as machine-readable JSON."""
+    """Print the read-only desktop/mobile release preflight as JSON."""
     if str(BASE_DIR) not in sys.path:
         sys.path.insert(0, str(BASE_DIR))
     from scripts.check_release_config import validate
+    from scripts.check_mobile_release_config import validate as validate_mobile
 
-    errors = validate(BASE_DIR)
-    print(json.dumps({"ok": not errors, "errors": errors}, ensure_ascii=True, indent=2))
+    desktop_errors = validate(BASE_DIR)
+    mobile_errors = validate_mobile(BASE_DIR)
+    errors = desktop_errors + mobile_errors
+    print(json.dumps({
+        "ok": not errors,
+        "errors": errors,
+        "checks": {
+            "desktop": {"ok": not desktop_errors, "errors": desktop_errors},
+            "mobile": {"ok": not mobile_errors, "errors": mobile_errors},
+        },
+    }, ensure_ascii=True, indent=2))
     return not errors
 
 
@@ -956,7 +966,7 @@ def print_help():
         "  --no-browser     Start without opening the browser\n"
         "  --diagnose       Print machine-readable launcher diagnostics\n"
         "  --doctor         Print a human-readable readiness report\n"
-        "  --release-check  Validate desktop release configuration\n"
+        "  --release-check  Validate desktop and mobile release configuration\n"
         "  --verify-bundle  Verify a release bundle path\n"
         "  --packaged       Require a packaged Tauri binary or built dist\n"
         "  --legacy-menu    Open the legacy module launcher\n"
