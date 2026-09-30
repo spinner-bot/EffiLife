@@ -25,6 +25,11 @@ def test_day_detail_highlights_linked_todo_records():
     assert "openLinkedTodo(record.todo_id)" in source
 
 
+def test_day_detail_plan_switch_notifies_the_unified_workspace():
+    source = DAY.read_text(encoding="utf-8")
+    assert "notifyWorkspaceChanged('plans')" in source
+
+
 def test_record_date_lookup_reads_unified_record_store():
     source = DATA.read_text(encoding="utf-8")
     assert "async findRecordDatesByTodoId(todoId: string)" in source

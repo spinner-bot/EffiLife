@@ -6,6 +6,7 @@ import { DataService, hoursToHm } from '@/services/dataService'
 import { ArrowLeft, Trash2, Check, X, Circle, CheckCircle2 } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
+import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
 import { requestConfirm } from '@/services/confirmService'
 
@@ -72,6 +73,7 @@ async function deleteRecord(index: number) {
     try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
   }
   await loadData()
+  notifyWorkspaceChanged('records')
 }
 
 // 切换日计划 - 打开选择弹窗
@@ -84,6 +86,7 @@ async function selectPlan(planName: string) {
   await DataService.saveDayPlan(planName, dateStr.value)
   showPlanSelector.value = false
   await loadData()
+  notifyWorkspaceChanged('plans')
 }
 
 onMounted(loadData)

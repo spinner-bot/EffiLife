@@ -35,6 +35,8 @@ def test_day_detail_delete_cleans_linked_todo_reference():
     assert "import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'" in source
     assert "const record = records.value[index]" in source
     assert "await unlinkTodoFromTimeRecord(record)" in source
+    assert "import { notifyWorkspaceChanged } from '@/services/workspaceEvents'" in source
+    assert "notifyWorkspaceChanged('records')" in source
 
 
 def test_record_save_confirms_success_in_both_locales():
