@@ -149,7 +149,7 @@ const currentTab = ref<SettingTab>('audio')
               </div>
               <div class="sfx-controls">
                 <input type="range" min="0" max="100" :value="audioSettings.sfxVolumes[sfx.type]" @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))" />
-                <button class="test-btn" @click="testSound(sfx.type)"><Play :size="14" /></button>
+                <button class="test-btn" type="button" :aria-label="t('settings.audio.testSound')" @click="testSound(sfx.type)"><Play :size="14" /></button>
               </div>
             </div>
           </div>
@@ -180,13 +180,13 @@ const currentTab = ref<SettingTab>('audio')
 
             <div class="bgm-section-title">
               {{ t('settings.audio.custom') }}
-              <button class="add-bgm-btn" @click="addCustomBgm"><Plus :size="14" /></button>
+              <button class="add-bgm-btn" type="button" :aria-label="t('settings.audio.addCustom')" @click="addCustomBgm"><Plus :size="14" /></button>
             </div>
             <div v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" role="button" tabindex="0" @click="selectBgm(bgm.id)" @keydown="selectBgmFromKeyboard($event, bgm.id)">
               <Music :size="16" />
               <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
-              <button class="remove-btn" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
+              <button class="remove-btn" type="button" :aria-label="t('settings.audio.removeCustom')" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
             </div>
             <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">{{ t('settings.audio.addHint') }}</div>
           </div>

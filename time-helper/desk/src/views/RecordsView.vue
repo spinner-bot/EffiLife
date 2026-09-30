@@ -421,7 +421,7 @@ onUnmounted(() => {
         <form class="modal-form" @submit.prevent="saveRecord">
         <div class="modal-header">
           <h2>{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
-          <button type="button" class="close-btn" @click="showForm = false">
+          <button type="button" class="close-btn" :aria-label="t('search.close')" @click="showForm = false">
             <X :size="20" />
           </button>
         </div>

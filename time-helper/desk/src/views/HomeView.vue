@@ -321,7 +321,7 @@ onUnmounted(() => {
       <h1 class="logo">{{ t('home.appTitle') }}</h1>
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
-        <button class="inbox-btn" :class="{ 'has-unread': unreadCount > 0 }" @click="AudioManager.playSound('click'); toggleInboxPanel()">
+        <button class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" @click="AudioManager.playSound('click'); toggleInboxPanel()">
           <Inbox :size="20" />
           <span v-if="unreadCount > 0" class="inbox-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </button>
@@ -333,7 +333,7 @@ onUnmounted(() => {
           <h3 class="inbox-panel-title">{{ t('home.inbox') }}</h3>
           <div class="inbox-panel-actions">
             <button v-if="unreadCount > 0" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">{{ t('home.markAllRead') }}</button>
-            <button class="inbox-close-btn" @click="closeInboxPanel()">
+            <button class="inbox-close-btn" type="button" :aria-label="t('home.closeInbox')" @click="closeInboxPanel()">
               <X :size="16" />
             </button>
           </div>

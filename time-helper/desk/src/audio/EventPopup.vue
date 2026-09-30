@@ -4,8 +4,10 @@ import { EventSystem } from './EventSystem'
 import { X } from 'lucide-vue-next'
 import type { AppEvent } from './EventSystem'
 import { getNotificationIcon } from '@/services/notificationIcons'
+import { useI18n } from '@/i18n'
 
 const events = computed(() => EventSystem.getActiveEvents())
+const { t } = useI18n()
 
 function dismissEvent(eventId: string) {
   EventSystem.dismissEvent(eventId)
@@ -42,7 +44,7 @@ function getEventStyle(event: AppEvent) {
             <h3 class="popup-title">{{ event.title }}</h3>
             <p class="popup-message">{{ event.message }}</p>
           </div>
-          <button class="popup-close" @click="dismissEvent(event.id)">
+          <button class="popup-close" type="button" :aria-label="t('app.closeNotification')" @click="dismissEvent(event.id)">
             <X :size="16" />
           </button>
           <div class="popup-progress"></div>
