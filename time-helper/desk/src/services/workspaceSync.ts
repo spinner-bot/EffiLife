@@ -140,7 +140,9 @@ export async function repairTodoPlanTaskLinks(): Promise<number> {
     const taskIdsByPlan = new Map<string, Set<string>>()
     for (const planId of new Set(linkedTodos.map((todo) => String(todo.related_plan_id)))) {
       if (!planIds.has(planId)) {
-        taskIdsByPlan.set(planId, new Set())
+        // An absent active summary is not proof that the plan was deleted:
+        // archived plans and temporarily incomplete service indexes must keep
+        // their recoverable TD relation until a concrete task list is read.
         continue
       }
       try {
