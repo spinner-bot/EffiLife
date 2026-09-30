@@ -19,3 +19,12 @@ def test_visible_duration_call_sites_forward_current_locale():
         assert "const { t, locale } = useI18n()" in source
         calls = re.findall(r"hoursToHm\([^\n]+\)", source)
         assert calls and all("locale" in call for call in calls), (name, calls)
+
+
+def test_legacy_plan_hour_unit_is_localized():
+    source = (ROOT / "time-helper/desk/src/views/PlanView.vue").read_text(encoding="utf-8")
+    catalog = (ROOT / "time-helper/desk/src/i18n/index.ts").read_text(encoding="utf-8")
+    assert source.count("t('legacyPlan.hourUnit')") >= 4
+    assert "legacyPlan.balanceConfirm', { total, unit: t('legacyPlan.hourUnit') }" in source
+    assert catalog.count("'legacyPlan.balanceConfirm':") == 2
+    assert "{unit}" in catalog

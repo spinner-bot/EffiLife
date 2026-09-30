@@ -237,7 +237,7 @@ async function savePlan() {
   if (editingPlanType.value === '切分制') {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
     if (Math.abs(total - 24) > 0.01) {
-      if (await requestConfirm(t('legacyPlan.balanceConfirm', { total }))) {
+      if (await requestConfirm(t('legacyPlan.balanceConfirm', { total, unit: t('legacyPlan.hourUnit') }))) {
         editingPlanItems.value = autoBalance(items, 24)
       } else { return }
     }
@@ -520,7 +520,7 @@ onMounted(() => {
                 <div v-for="item in plans[todayPlan.name].items" :key="item.name" class="pv-plan-hero-item">
                   <span class="pv-plan-item-dot" :style="{ background: getPlanItemColor(item.name) }"></span>
                   <span>{{ item.name }}</span>
-                  <span class="pv-plan-item-hours">{{ item.hours }}h</span>
+                  <span class="pv-plan-item-hours">{{ item.hours }}{{ t('legacyPlan.hourUnit') }}</span>
                 </div>
               </div>
             </div>
@@ -574,7 +574,7 @@ onMounted(() => {
                   <div class="pv-plan-meta">
                     {{ plan.plan_type }}
                     <template v-if="plan.plan_type === '分配制'">
-                       · {{ plan.items.reduce((s, i) => s + i.hours, 0).toFixed(1) }}h
+                       · {{ plan.items.reduce((s, i) => s + i.hours, 0).toFixed(1) }}{{ t('legacyPlan.hourUnit') }}
                     </template>
                     <template v-else-if="plan.bg_tag">
                   · {{ t('legacyPlan.backgroundPrefix') }}{{ plan.bg_tag }}
@@ -631,7 +631,7 @@ onMounted(() => {
                 <div v-for="(item, index) in editingPlanItems" :key="index" class="pv-item-row">
                   <input type="text" v-model="item.name" :placeholder="t('legacyPlan.categoryName')" class="pv-text-input flex-1" />
                   <input type="number" v-model="item.hours" :placeholder="t('legacyPlan.hours')" class="pv-num-input" step="0.5" />
-                  <span class="pv-unit">h</span>
+                  <span class="pv-unit">{{ t('legacyPlan.hourUnit') }}</span>
                   <button
                     v-if="editingPlanType === '切分制'"
                     class="pv-bg-toggle"
