@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
+import { AlertTriangle, ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, isDevVersion, VERSION_HISTORY } from '@/version'
@@ -924,7 +924,10 @@ onMounted(async () => {
       <!-- 恢复 -->
       <template v-else-if="currentView === 'reset'">
         <h2>{{ t('settings.reset.title') }}</h2>
-        <p class="reset-warning">⚠️ {{ t('settings.reset.warning') }}</p>
+        <p class="reset-warning">
+          <AlertTriangle :size="18" aria-hidden="true" />
+          <span>{{ t('settings.reset.warning') }}</span>
+        </p>
 
         <div class="reset-section">
           <h3>{{ t('settings.reset.dataClearTitle') }}</h3>
@@ -1557,6 +1560,9 @@ h2 {
 
 /* 恢复页面样式 */
 .reset-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
   font-size: 0.875rem;
   color: var(--color-warning, #f59e0b);
   background: rgba(245, 158, 11, 0.1);
