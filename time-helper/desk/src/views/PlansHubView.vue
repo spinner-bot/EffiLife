@@ -300,9 +300,13 @@ async function createPlan() {
     const createdId = created.id
     selectedPlan.value = await getPlanFull(created.id)
     if (createTodos.value) {
-      const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
-      if (result.created > 0) notifyToast(t('plans.todosCreated', { count: result.created }), 'success')
-      if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+      try {
+        const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
+        if (result.created > 0) notifyToast(t('plans.todosCreated', { count: result.created }), 'success')
+        if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
+      } catch {
+        notifyToast(t('plans.todoSyncFailed'), 'error')
+      }
     }
     closeCreatePlan()
     planName.value = ''

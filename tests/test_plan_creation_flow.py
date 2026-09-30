@@ -22,6 +22,7 @@ def test_plan_creation_collects_a_first_section_and_task_before_opening_editor()
     assert "plans.createTaskRequired" in view
     assert "v-model=\"createTodos\"" in view
     assert "linkPendingPlanTasksToTodos(selectedPlan.value)" in view
+    assert "catch {\n        notifyToast(t('plans.todoSyncFailed'), 'error')\n      }" in view
     assert "plans.createAndEdit" in view
     assert "v-model=\"planName\"" in view
     assert "v-model=\"planDate\"" in view
