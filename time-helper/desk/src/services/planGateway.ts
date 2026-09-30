@@ -74,6 +74,10 @@ type RawPlan = {
   log?: Array<{ index?: number; day?: number; plan?: string; time?: [number, number]; content?: string }>
 }
 type RawSection = NonNullable<RawPlan['main']>[number]
+type RawArchive = {
+  file?: string
+  payload?: { archived_at?: string; plan?: RawPlan }
+}
 
 type MobileTemplateDefinition = {
   id: string
@@ -211,6 +215,14 @@ async function getMobileRawPlans(): Promise<RawPlan[]> {
   const { get, STORE_NAMES } = await import('@/storage')
   const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
   return Array.isArray(plans) ? plans.filter((plan): plan is RawPlan => Boolean(plan && typeof plan === 'object')) : []
+}
+
+async function getMobileRawArchives(): Promise<RawArchive[]> {
+  const { get, STORE_NAMES } = await import('@/storage')
+  const archives = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives')
+  return Array.isArray(archives)
+    ? archives.filter((archive): archive is RawArchive => Boolean(archive && typeof archive === 'object'))
+    : []
 }
 
 function planLetter(index: number): string {
@@ -424,7 +436,22 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
 }
 
 export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
-  if (getPlanRuntime() === 'mobile-unavailable') return []
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    planDataSource.value = 'mobile'
+    const archives = await getMobileRawArchives()
+    return archives.flatMap((archive) => {
+      const plan = archive.payload?.plan
+      if (!plan) return []
+      const head = plan.head || {}
+      return [{
+        file: String(archive.file || ''),
+        plan_id: Number(head.index),
+        name: String(head.name || ''),
+        date: Array.isArray(head.date) ? head.date : undefined,
+        archived_at: archive.payload?.archived_at,
+      }]
+    }).filter((archive) => archive.file)
+  }
   try {
     const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
     return data.archives || []
@@ -574,10 +601,45 @@ export async function updateEventPlan(planId: string, name: string, date: [numbe
 }
 
 export async function archivePlan(planId: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const plans = cloneMobilePlans(await getMobileRawPlans())
+    const index = plans.findIndex((plan, fallbackIndex) => String(plan.head?.index ?? fallbackIndex) === String(planId))
+    if (index < 0) throw new Error(translate('plans.mobileSnapshotMissing'))
+    const [plan] = plans.splice(index, 1)
+    const archives = await getMobileRawArchives()
+    const timestamp = new Date()
+    const stamp = timestamp.toISOString().slice(0, 19).split('-').join('').split(':').join('').replace('T', '')
+    archives.push({
+      file: `plan_${String(plan.head?.index ?? planId)}_${stamp}.json`,
+      payload: { archived_at: timestamp.toISOString(), plan },
+    })
+    const { set, STORE_NAMES } = await import('@/storage')
+    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)
+    planDataSource.value = 'mobile'
+    notifyWorkspaceChanged('plans')
+    return
+  }
   await request(`/api/plans/${encodeURIComponent(planId)}/archive`, { method: 'POST' })
 }
 
 export async function restorePlanArchive(file: string): Promise<void> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    const archives = await getMobileRawArchives()
+    const archive = archives.find((candidate) => candidate.file === file)
+    const sourcePlan = archive?.payload?.plan
+    if (!sourcePlan) throw new Error(translate('plans.mobileSnapshotMissing'))
+    const plans = cloneMobilePlans(await getMobileRawPlans())
+    const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+    const restored = JSON.parse(JSON.stringify(sourcePlan)) as RawPlan
+    restored.head = { ...(restored.head || {}), index: nextId }
+    plans.push(restored)
+    const { set, STORE_NAMES } = await import('@/storage')
+    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+    planDataSource.value = 'mobile'
+    notifyWorkspaceChanged('plans')
+    return
+  }
   await request('/api/archives/restore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
