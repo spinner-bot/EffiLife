@@ -9,6 +9,10 @@
     "build:sidecar": "python ../../scripts/build_plan_helper_sidecar.py",
     "release:check": "python ../../scripts/check_release_config.py",
     "release:mobile-check": "python ../../scripts/check_mobile_release_config.py",
+    "mobile:android:init": "tauri android init",
+    "mobile:android:build": "tauri android build --config src-tauri/tauri.mobile.conf.json",
+    "mobile:ios:init": "tauri ios init",
+    "mobile:ios:build": "tauri ios build --config src-tauri/tauri.mobile.conf.json",
     "preview": "vite preview",
     "tauri": "tauri"
   },
