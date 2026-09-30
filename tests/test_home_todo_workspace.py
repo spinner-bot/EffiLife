@@ -80,3 +80,12 @@ def test_home_refreshes_unified_summaries_after_workspace_changes():
     assert "Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])" in source
     assert "workspaceRefreshTimer" in source
     assert "stopWorkspaceListener()" in source
+
+
+def test_home_dashboard_previews_multiple_active_plans_without_merging_todos():
+    source = HOME.read_text(encoding="utf-8")
+    assert "const eventPlanPreview = computed(() => eventPlans.value.slice(0, 3))" in source
+    assert "plan.completed_tasks" in source
+    assert "plan.progress_percentage" in source
+    assert "home.moreActivePlans" in source
+    assert "event-plan-preview" in source

@@ -214,6 +214,8 @@ const archivedPlanById = computed(() => Object.fromEntries(
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
+const eventPlanPreview = computed(() => eventPlans.value.slice(0, 3))
+const eventPlanRemainingCount = computed(() => Math.max(0, eventPlans.value.length - eventPlanPreview.value.length))
 const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache' || planDataSource.value === 'mobile')
 const eventPlanSnapshotLabel = computed(() => planDataSource.value === 'mobile'
   ? t('plans.mobileLocalTitle')
@@ -537,6 +539,16 @@ onUnmounted(() => {
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
             <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
             <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
+            <div v-if="eventPlanPreview.length" class="event-plan-preview" :aria-label="t('home.eventPlans')">
+              <div v-for="plan in eventPlanPreview" :key="plan.id" class="event-plan-preview-row">
+                <div class="event-plan-preview-copy">
+                  <span class="event-plan-preview-name">{{ plan.name }}</span>
+                  <span class="event-plan-preview-count">{{ plan.completed_tasks }}/{{ plan.total_tasks }}</span>
+                </div>
+                <div class="event-plan-preview-track"><i :style="{ width: `${plan.progress_percentage}%` }" /></div>
+              </div>
+              <span v-if="eventPlanRemainingCount" class="event-plan-preview-more">{{ t('home.moreActivePlans', { count: eventPlanRemainingCount }) }}</span>
+            </div>
             <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
@@ -1079,6 +1091,14 @@ onUnmounted(() => {
 .event-overview-progress { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--color-primary); font-size: 12px; font-variant-numeric: tabular-nums; }
 .event-overview-progress-track { height: 6px; flex: 1; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
 .event-overview-progress-track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
+.event-plan-preview { display: grid; gap: 8px; width: 100%; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.event-plan-preview-row { display: grid; gap: 5px; min-width: 0; }
+.event-plan-preview-copy { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; color: var(--color-text-secondary); font-size: 11px; }
+.event-plan-preview-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-plan-preview-count { flex: 0 0 auto; color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; }
+.event-plan-preview-track { height: 4px; overflow: hidden; border-radius: 999px; background: var(--color-bg-elevated); }
+.event-plan-preview-track i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); opacity: .72; transition: width .25s ease; }
+.event-plan-preview-more { color: var(--color-text-tertiary); font-size: 11px; }
 .event-overview-snapshot { margin-top: 7px; color: var(--color-warning, var(--color-text-tertiary)); font-size: 11px; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
 
