@@ -44,3 +44,12 @@ def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
     assert ".detail-actions { display: flex; flex-wrap: wrap;" in plans
     assert ".plan-section > header { display: flex; flex-wrap: wrap;" in plans
     assert "@media (max-width: 900px)" in plans
+
+
+def test_plan_detail_uses_a_desktop_summary_sidebar_and_mobile_single_column():
+    plans = (ROOT / "time-helper/desk/src/views/PlansHubView.vue").read_text(encoding="utf-8")
+    assert 'class="plan-detail-layout"' in plans
+    assert 'class="plan-detail-aside"' in plans
+    assert 'class="plan-detail-main"' in plans
+    desktop_block = plans.split("@media (min-width: 1100px)", 1)[1]
+    assert ".plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr);" in desktop_block

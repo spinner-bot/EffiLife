@@ -1017,6 +1017,8 @@ onUnmounted(() => {
           <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
           <div><button type="button" class="plans-secondary" @click="editingMeta = false">{{ t('plans.cancel') }}</button><button type="submit" class="plans-primary">{{ t('plans.save') }}</button></div>
         </form>
+        <div class="plan-detail-layout">
+          <aside class="plan-detail-aside">
         <section class="plan-detail-summary theme-card">
           <div><span>{{ t('plans.date') }}</span><strong>{{ formatPlanDate(selectedPlan.date) }}</strong></div>
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
@@ -1045,6 +1047,8 @@ onUnmounted(() => {
             <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
+          </aside>
+          <div class="plan-detail-main">
         <form v-if="canEditPlan" class="section-editor theme-card" @submit.prevent="saveSection">
           <label for="plan-section-name">{{ t('plans.sectionName') }}</label>
           <input id="plan-section-name" v-model="sectionName" :placeholder="t('plans.sectionName')" required />
@@ -1089,6 +1093,8 @@ onUnmounted(() => {
             </div>
           </div>
         </section>
+          </div>
+        </div>
       </template>
     </main>
 
@@ -1190,6 +1196,12 @@ onUnmounted(() => {
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
 .plan-detail-progress { min-width: 130px; }
+.plan-detail-layout { display: grid; gap: 14px; }
+.plan-detail-aside, .plan-detail-main { min-width: 0; }
+.plan-detail-aside { display: grid; align-content: start; gap: 14px; }
+.plan-detail-aside .plan-detail-summary, .plan-detail-aside .log-editor, .plan-detail-aside .log-list { margin-bottom: 0; }
+.plan-detail-aside .plan-detail-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.plan-detail-aside .plan-detail-progress { min-width: 0; grid-column: 1 / -1; }
 .log-editor, .log-list { display: grid; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
 .log-editor { grid-template-columns: minmax(190px, 1fr) auto minmax(180px, 1.4fr) auto; align-items: end; }
 .log-editor-heading { display: grid; gap: 3px; }
@@ -1282,6 +1294,7 @@ onUnmounted(() => {
   .plans-content-hub .unified-plan-section { min-width: 0; margin-bottom: 0; }
   .plans-content-hub .event-plans-section { border-top: 0; padding-top: 0; }
   .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
 @media (max-width: 900px) {
