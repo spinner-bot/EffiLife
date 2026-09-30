@@ -66,6 +66,13 @@ def test_home_plan_reference_copy_is_bilingual():
         assert source.count(f"'{key}'") == 2
 
 
+def test_home_resolves_archived_plan_references_without_hiding_them():
+    source = HOME.read_text(encoding="utf-8")
+    assert "listPlanArchives" in source
+    assert "archivedPlanById" in source
+    assert "home.archivedPlan" in source
+
+
 def test_home_refreshes_unified_summaries_after_workspace_changes():
     source = HOME.read_text(encoding="utf-8")
     assert "onWorkspaceChanged" in source

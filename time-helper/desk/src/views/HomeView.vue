@@ -10,7 +10,7 @@ import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
-import { completePlanTask, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { completePlanTask, listPlanArchives, listPlanSummaries, planDataSource, type PlanArchiveSummary, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
@@ -32,6 +32,7 @@ const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
+const archivedPlans = ref<PlanArchiveSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
@@ -176,10 +177,13 @@ function openTodoPlan(todo: UnifiedTodo) {
 async function refreshEventPlanSummary() {
   eventPlanState.value = 'loading'
   try {
-    eventPlans.value = await listPlanSummaries()
+    const [activePlans, archives] = await Promise.all([listPlanSummaries(), listPlanArchives()])
+    eventPlans.value = activePlans
+    archivedPlans.value = archives
     eventPlanState.value = 'ready'
   } catch {
     eventPlans.value = []
+    archivedPlans.value = []
     eventPlanState.value = 'unavailable'
   }
 }
@@ -196,7 +200,17 @@ const stopWorkspaceListener = onWorkspaceChanged(scheduleWorkspaceSummaryRefresh
 
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
-const planNameById = computed(() => Object.fromEntries(eventPlans.value.map((plan) => [plan.id, plan.name])))
+const planNameById = computed(() => Object.fromEntries([
+  ...eventPlans.value.map((plan) => [plan.id, plan.name] as const),
+  ...archivedPlans.value
+    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null)
+    .map((plan) => [String(plan.plan_id), plan.name] as const),
+]))
+const archivedPlanById = computed(() => Object.fromEntries(
+  archivedPlans.value
+    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null)
+    .map((plan) => [String(plan.plan_id), plan] as const),
+))
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
@@ -573,6 +587,7 @@ onUnmounted(() => {
             >
               <ClipboardList :size="14" />
               <span>{{ planNameById[todo.related_plan_id] || t('home.linkedPlan') }}</span>
+              <small v-if="archivedPlanById[todo.related_plan_id]"> · {{ t('home.archivedPlan') }}</small>
             </button>
             <button class="today-todo-record" type="button" :aria-label="t('home.recordTodoTime')" :title="t('home.recordTodoTime')" @click.stop="openTodoRecord(todo)">
               <Clock3 :size="14" />
