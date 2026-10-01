@@ -375,12 +375,12 @@ onUnmounted(() => {
 <template>
   <div class="records-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/')">
+      <button type="button" class="back-btn" @click="router.push('/')">
         <ArrowLeft :size="16" />
         <span>{{ t('records.back') }}</span>
       </button>
       <h1>{{ t('records.title') }}</h1>
-      <button class="add-btn" @click="openAddForm">
+      <button type="button" class="add-btn" @click="openAddForm">
         <Plus :size="16" />
         <span>{{ t('records.add') }}</span>
       </button>

@@ -112,7 +112,7 @@ const performanceRating = computed(() => getPerformanceRating())
 <template>
   <div class="motion-settings-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/settings')">
+      <button type="button" class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
         <span>{{ t('settings.motion.back') }}</span>
       </button>
@@ -146,6 +146,7 @@ const performanceRating = computed(() => getPerformanceRating())
         </div>
         <div class="option-grid">
           <button
+            type="button"
             v-for="opt in fpsOptions"
             :key="opt.value"
             class="option-card"
@@ -209,6 +210,7 @@ const performanceRating = computed(() => getPerformanceRating())
         </div>
         <div class="option-grid speed-grid">
           <button
+            type="button"
             v-for="opt in animationSpeedOptions"
             :key="opt.value"
             class="option-card"
@@ -228,6 +230,7 @@ const performanceRating = computed(() => getPerformanceRating())
         </div>
         <div class="option-grid">
           <button
+            type="button"
             v-for="opt in particleMultiplierOptions"
             :key="opt.value"
             class="option-card"
@@ -252,6 +255,7 @@ const performanceRating = computed(() => getPerformanceRating())
 
         <div class="benchmark-area">
           <button
+            type="button"
             class="btn primary full"
             :disabled="isOptimizing"
             @click="runAutoOptimize"
@@ -290,7 +294,7 @@ const performanceRating = computed(() => getPerformanceRating())
               <span>{{ t('settings.motion.recommendationPrefix') }}<strong>{{ recommendation.targetFps }} FPS</strong></span>
               <span>{{ t('settings.motion.recommendationNote') }}</span>
             </div>
-            <button class="btn primary" @click="applyRecommendation">
+            <button type="button" class="btn primary" @click="applyRecommendation">
               <Check :size="16" />
               <span>{{ t('settings.motion.apply') }}</span>
             </button>
@@ -300,7 +304,7 @@ const performanceRating = computed(() => getPerformanceRating())
 
       <!-- 重置 -->
       <section class="settings-section">
-        <button class="btn secondary full" @click="resetToDefault">
+        <button type="button" class="btn secondary full" @click="resetToDefault">
           {{ t('settings.motion.reset') }}
         </button>
       </section>

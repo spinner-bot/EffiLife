@@ -136,7 +136,7 @@ const last7Days = computed(() => {
 <template>
   <div class="checkin-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/')">
+      <button type="button" class="back-btn" @click="router.push('/')">
         <ArrowLeft :size="16" />
         <span>{{ t('checkin.back') }}</span>
       </button>
@@ -160,6 +160,7 @@ const last7Days = computed(() => {
               {{ t('checkin.notReadyDesc') }}
             </p>
             <button
+              type="button"
               v-if="canCheckinToday"
               class="checkin-btn"
               @click="doCheckin"

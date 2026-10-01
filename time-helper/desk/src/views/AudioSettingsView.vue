@@ -98,7 +98,7 @@ const currentTab = ref<SettingTab>('audio')
 <template>
   <div class="audio-settings-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/settings')">
+      <button type="button" class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
         <span>{{ t('settings.audio.back') }}</span>
       </button>
@@ -172,7 +172,7 @@ const currentTab = ref<SettingTab>('audio')
 
           <div class="bgm-list">
             <div class="bgm-section-title">{{ t('settings.audio.builtIn') }}</div>
-            <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
+            <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" type="button" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>

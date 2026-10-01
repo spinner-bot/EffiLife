@@ -325,7 +325,7 @@ function testWarning(rule: WarningRule) {
 <template>
   <div class="event-manager-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/settings')">
+      <button type="button" class="back-btn" @click="router.push('/settings')">
         <ArrowLeft :size="16" />
         <span>{{ t('settings.events.back') }}</span>
       </button>
@@ -334,16 +334,16 @@ function testWarning(rule: WarningRule) {
 
     <main class="main-content">
       <div class="tab-bar">
-        <button class="tab-btn" :class="{ active: currentView === 'inbox' }" @click="currentView = 'inbox'">
+        <button type="button" class="tab-btn" :class="{ active: currentView === 'inbox' }" @click="currentView = 'inbox'">
           <Inbox :size="18" />
           <span>{{ t('settings.events.inbox') }}</span>
           <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
         </button>
-        <button class="tab-btn" :class="{ active: currentView === 'events' }" @click="currentView = 'events'">
+        <button type="button" class="tab-btn" :class="{ active: currentView === 'events' }" @click="currentView = 'events'">
           <Bell :size="18" />
           <span>{{ t('settings.events.eventsTab') }}</span>
         </button>
-        <button class="tab-btn" :class="{ active: currentView === 'warnings' }" @click="currentView = 'warnings'">
+        <button type="button" class="tab-btn" :class="{ active: currentView === 'warnings' }" @click="currentView = 'warnings'">
           <Clock :size="18" />
           <span>{{ t('settings.events.warningsTab') }}</span>
         </button>
@@ -358,11 +358,11 @@ function testWarning(rule: WarningRule) {
               <span v-if="inbox.length > 0" class="inbox-stats">
                 {{ t('settings.events.readCount') }}：{{ readCount }}/{{ totalCount }}
               </span>
-              <button v-if="unreadCount > 0" class="text-btn" @click="markAllAsRead">
+              <button v-if="unreadCount > 0" type="button" class="text-btn" @click="markAllAsRead">
                 <Check :size="14" />
                 {{ t('settings.events.markAllRead') }}
               </button>
-              <button v-if="readCount > 0" class="text-btn danger" @click="clearRead">
+              <button v-if="readCount > 0" type="button" class="text-btn danger" @click="clearRead">
                 <Trash2 :size="14" />
                 {{ t('settings.events.clearRead') }}
               </button>
@@ -372,6 +372,7 @@ function testWarning(rule: WarningRule) {
           <!-- 分类过滤器 -->
           <div class="inbox-filters" v-if="inbox.length > 0">
             <button
+              type="button"
               class="filter-pill"
               :class="{ active: inboxFilter === 'all' }"
               @click="setFilter('all')"
@@ -380,6 +381,7 @@ function testWarning(rule: WarningRule) {
               <span class="filter-count">{{ filterCounts.all }}</span>
             </button>
             <button
+              type="button"
               class="filter-pill"
               :class="{ active: inboxFilter === 'achievement' }"
               @click="setFilter('achievement')"
@@ -388,6 +390,7 @@ function testWarning(rule: WarningRule) {
               <span class="filter-count">{{ filterCounts.achievement }}</span>
             </button>
             <button
+              type="button"
               class="filter-pill"
               :class="{ active: inboxFilter === 'event' }"
               @click="setFilter('event')"
@@ -396,6 +399,7 @@ function testWarning(rule: WarningRule) {
               <span class="filter-count">{{ filterCounts.event }}</span>
             </button>
             <button
+              type="button"
               class="filter-pill"
               :class="{ active: inboxFilter === 'reminder' }"
               @click="setFilter('reminder')"
@@ -441,6 +445,7 @@ function testWarning(rule: WarningRule) {
               </div>
               <!-- 打卡按钮（仅对可打卡条目显示） -->
               <button
+                type="button"
                 v-if="entry.checkinPlanName && entry.checkinDate"
                 class="checkin-btn"
                 @click.stop="handleCheckinFromInbox(entry)"
@@ -449,7 +454,7 @@ function testWarning(rule: WarningRule) {
                 <Check :size="14" />
                 <span>{{ t('settings.events.checkin') }}</span>
               </button>
-              <button class="delete-btn" @click.stop="deleteEntry(entry.id)" :title="t('settings.events.delete')">
+              <button type="button" class="delete-btn" @click.stop="deleteEntry(entry.id)" :title="t('settings.events.delete')">
                 <Trash2 :size="14" />
               </button>
             </div>
@@ -460,6 +465,7 @@ function testWarning(rule: WarningRule) {
             <span class="setting-label">{{ t('settings.events.autoClean') }}：</span>
             <div class="option-pills">
               <button
+                type="button"
                 v-for="opt in autoCleanOptions"
                 :key="opt.value"
                 class="pill-btn"
@@ -493,7 +499,7 @@ function testWarning(rule: WarningRule) {
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="eventSettings.enabled[event.type]" @change="toggleEvent(event.type)" />
                 </label>
-                <button class="test-btn" @click="testEvent(event.type)" :title="t('settings.events.test')">
+                <button type="button" class="test-btn" @click="testEvent(event.type)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
               </div>
@@ -542,16 +548,16 @@ function testWarning(rule: WarningRule) {
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule)" />
                 </label>
-                <button class="test-btn" @click="testWarning(rule)" :title="t('settings.events.test')">
+                <button type="button" class="test-btn" @click="testWarning(rule)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
-                <button class="test-btn danger" @click="deleteRule(rule.id)" :title="t('settings.events.delete')">
+                <button type="button" class="test-btn danger" @click="deleteRule(rule.id)" :title="t('settings.events.delete')">
                   <Trash2 :size="14" />
                 </button>
               </div>
             </div>
 
-            <button class="add-rule-btn" @click="startAddRule">
+            <button type="button" class="add-rule-btn" @click="startAddRule">
               <span class="plus">+</span>
               <span>{{ t('settings.events.addRule') }}</span>
             </button>
@@ -588,8 +594,8 @@ function testWarning(rule: WarningRule) {
             </div>
 
             <div class="modal-actions">
-              <button class="btn secondary" @click="cancelRule">{{ t('settings.cancel') }}</button>
-              <button class="btn primary" @click="saveRule">{{ t('settings.save') }}</button>
+              <button type="button" class="btn secondary" @click="cancelRule">{{ t('settings.cancel') }}</button>
+              <button type="button" class="btn primary" @click="saveRule">{{ t('settings.save') }}</button>
             </div>
           </div>
         </div>

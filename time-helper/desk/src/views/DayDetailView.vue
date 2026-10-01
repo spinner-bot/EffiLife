@@ -101,7 +101,7 @@ onMounted(() => {
 <template>
   <div class="day-detail-view">
     <header class="header">
-      <button class="back-btn" @click="router.push('/records')">
+      <button type="button" class="back-btn" @click="router.push('/records')">
         <ArrowLeft :size="16" />
         <span>{{ t('dayDetail.backToRecords') }}</span>
       </button>
@@ -113,7 +113,7 @@ onMounted(() => {
       <section class="info-card">
         <div class="info-header">
           <h2>{{ t('dayDetail.plan') }}</h2>
-          <button class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
+          <button type="button" class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
         </div>
         <p class="plan-name">{{ dayPlanName }}（{{ dayPlanType }}）</p>
 
@@ -186,6 +186,7 @@ onMounted(() => {
             <p class="modal-desc">{{ t('dayDetail.currentPlan') }}：{{ dayPlanName }}</p>
             <div class="plan-list">
               <button
+                type="button"
                 v-for="(plan, name) in plans"
                 :key="name"
                 class="plan-option"
