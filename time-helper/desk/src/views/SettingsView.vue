@@ -233,6 +233,7 @@ function syncThemeDraft(theme: Config['theme']) {
 }
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
+  if (currentView.value === 'archive') void refreshDataStats()
   if (source !== 'settings' && source !== 'archive') return
   if (savingTheme.value) return
   const hadLocalDraft = themeDirty.value

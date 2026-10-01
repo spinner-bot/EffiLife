@@ -29,3 +29,4 @@ def test_archive_controls_announce_busy_state_and_refresh_stats_on_entry():
     assert "settings.archive.busy" in SETTINGS
     assert "watch(currentView, (view) =>" in SETTINGS
     assert "if (view === 'archive') void refreshDataStats()" in SETTINGS
+    assert "if (currentView.value === 'archive') void refreshDataStats()" in SETTINGS
