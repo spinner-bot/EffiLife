@@ -222,6 +222,8 @@ const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
 // callback until the durable write has completed, otherwise an in-flight
 // hydration can briefly put the old theme back into the editor during exit.
 const themeSaveInFlight = ref(false)
+let themeSaveTimer: ReturnType<typeof setTimeout> | null = null
+let themeSavePromise: Promise<boolean> | null = null
 
 function syncThemeDraft(theme: Config['theme']) {
   themeType.value = theme.type || 'solid'
@@ -323,9 +325,33 @@ async function saveTheme(): Promise<boolean> {
   }
 }
 
+function queueThemeSave(): void {
+  if (themeSaveTimer) clearTimeout(themeSaveTimer)
+  themeSaveTimer = setTimeout(() => {
+    themeSaveTimer = null
+    if (!themeDirty.value || themeSaveInFlight.value) return
+    themeSavePromise = saveTheme().finally(() => {
+      themeSavePromise = null
+    })
+  }, 250)
+}
+
+async function flushThemeSave(): Promise<boolean> {
+  if (themeSaveTimer) {
+    clearTimeout(themeSaveTimer)
+    themeSaveTimer = null
+  }
+  if (themeSavePromise) return await themeSavePromise
+  if (!themeDirty.value) return true
+  themeSavePromise = saveTheme().finally(() => {
+    themeSavePromise = null
+  })
+  return await themeSavePromise
+}
+
 async function confirmThemeExit(): Promise<boolean> {
   if (!await requestConfirm(t('settings.theme.unsavedConfirm'))) return false
-  return await saveTheme()
+  return await flushThemeSave()
 }
 
 // Global navigation can leave SettingsView without going through goBack().
@@ -658,7 +684,10 @@ watch(() => config.value.theme, (newTheme) => {
   syncThemeDraft(newTheme)
 }, { deep: true })
 
-watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], previewTheme, { deep: true })
+watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], () => {
+  previewTheme()
+  queueThemeSave()
+}, { deep: true })
 
 // 初始化完成后关闭加载状态
 onMounted(async () => {
@@ -691,6 +720,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (themeSaveTimer) clearTimeout(themeSaveTimer)
   stopWorkspaceListener()
 })
 </script>

@@ -14,7 +14,9 @@ def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     assert "async function confirmThemeExit()" in source
     assert "requestConfirm(t('settings.theme.unsavedConfirm'))" in source
     assert "if (!await requestConfirm(t('settings.theme.unsavedConfirm'))) return false" in source
-    assert "return await saveTheme()" in source
+    assert "return await flushThemeSave()" in source
+    assert "function queueThemeSave()" in source
+    assert "function flushThemeSave()" in source
     assert "const canLeave = await confirmThemeExit()" in source
     assert "if (!canLeave) return" in source
     assert "onBeforeRouteLeave(async () =>" in source
@@ -24,8 +26,8 @@ def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     assert "if (currentView.value === 'theme' && themeDirty.value)" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
     assert "const canLeave = await confirmThemeExit()" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
     translations = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
-    assert "确认退出并自动保存当前主题吗" in translations
-    assert "Exit and save it automatically" in translations
+    assert "主题修改会自动保存" in translations
+    assert "Theme changes are saved automatically" in translations
 
 
 def test_theme_save_refreshes_persistent_snapshot():
@@ -42,8 +44,8 @@ def test_theme_save_refreshes_persistent_snapshot():
 def test_theme_preview_status_explains_automatic_save_in_both_locales():
     source = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert source.count("'settings.theme.previewStatus'") == 2
-    assert "退出主题面板时自动保存" in source
-    assert "save automatically when leaving" in source
+    assert "已自动保存" in source
+    assert "saved automatically" in source
 
 
 def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
