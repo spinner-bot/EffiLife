@@ -21,3 +21,13 @@ def test_plan_task_mobile_grid_assigns_every_action_without_implicit_columns():
     assert ".event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto auto; }" in mobile_block
     assert ".event-task-row .task-edit { grid-column: 3; grid-row: 1; }" in mobile_block
     assert ".event-task-row .task-delete { grid-column: 4; grid-row: 1; }" in mobile_block
+
+
+def test_group_editor_uses_two_columns_on_tablet_and_one_on_mobile():
+    source = SOURCE.read_text(encoding="utf-8")
+    tablet_block = source.split("@media (min-width: 761px) and (max-width: 1099px)", 1)[1].split("@media (max-width: 760px)", 1)[0]
+    mobile_block = source.split("@media (max-width: 760px)", 1)[1]
+    assert ".group-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }" in tablet_block
+    assert ".group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: 1 / -1; }" in tablet_block
+    assert ".group-editor { grid-template-columns: 1fr; }" in mobile_block
+    assert ".group-editor button { width: 100%; }" in mobile_block

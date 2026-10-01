@@ -1046,7 +1046,7 @@ onUnmounted(() => {
 .task-minutes-field input { width: 100%; box-sizing: border-box; }
 .group-editor { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(160px, 1.4fr) 110px 110px auto auto; align-items: end; gap: 8px; margin: 10px 0; padding: 10px; border: 1px dashed var(--color-border); border-radius: 10px; background: var(--color-bg-secondary); }
 .group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
-.group-editor input, .group-editor select { min-width: 0; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
+.group-editor input, .group-editor select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
 .event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
@@ -1106,11 +1106,14 @@ onUnmounted(() => {
    row horizontal with compact controls; only the mobile breakpoint stacks
    actions below the task title. */
 @media (max-width: 1099px) {
-  .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; }
-  .log-editor, .group-editor { display: flex; }
+  .meta-editor, .section-editor, .task-editor, .log-editor { align-items: stretch; flex-direction: column; }
+  .log-editor { display: flex; }
 }
 @media (min-width: 761px) and (max-width: 1099px) {
+  .group-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+  .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: 1 / -1; }
+  .group-editor button { min-height: 38px; }
   .event-task-row { grid-template-columns: 24px minmax(120px, 1fr) auto 58px auto 58px 28px 28px; gap: 5px; }
 }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto auto; } .event-task-row > div { grid-column: 2; grid-row: 1; } .event-task-row > small { grid-column: 2; grid-row: 2; } .event-task-row .task-log { grid-column: 2; grid-row: 3; justify-self: start; } .event-task-row .task-edit { grid-column: 3; grid-row: 1; } .event-task-row .task-delete { grid-column: 4; grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto auto; } .event-task-row > div { grid-column: 2; grid-row: 1; } .event-task-row > small { grid-column: 2; grid-row: 2; } .event-task-row .task-log { grid-column: 2; grid-row: 3; justify-self: start; } .event-task-row .task-edit { grid-column: 3; grid-row: 1; } .event-task-row .task-delete { grid-column: 4; grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
 </style>
