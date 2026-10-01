@@ -769,6 +769,10 @@ def run_module(choice, modules, open_browser=True):
             print(f"   cd {module['cwd']}")
             print(f"   {' '.join(module['setup'])}")
             return
+        # Keep the in-memory menu state accurate during a legacy-menu
+        # session. A successful first-run install must not be repeated every
+        # time the user reopens the same compatibility module.
+        module["needs_setup"] = False
 
     # Run the command
     print(f"执行: {' '.join(module['cmd'])}")

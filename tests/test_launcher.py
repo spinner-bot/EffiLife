@@ -461,6 +461,42 @@ def test_launcher_returns_when_dependency_setup_times_out(monkeypatch):
     launcher.run_module("test", {"test": module})
 
 
+def test_launcher_marks_dependency_setup_complete_for_reused_module(monkeypatch):
+    setup_calls = []
+
+    class CompletedRun:
+        returncode = 0
+
+    class FinishedProcess:
+        stdout = None
+        returncode = 0
+
+        def poll(self):
+            return 0
+
+        def wait(self):
+            return 0
+
+    monkeypatch.setattr(launcher.subprocess, "run", lambda command, **_kwargs: setup_calls.append(command) or CompletedRun())
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *_args, **_kwargs: FinishedProcess())
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [])
+    monkeypatch.setattr(launcher, "stream_output", lambda _process: None)
+    module = {
+        "name": "compatibility web",
+        "available": True,
+        "cmd": ["frontend"],
+        "cwd": launcher.BASE_DIR,
+        "url": None,
+        "setup": ["npm", "install"],
+        "needs_setup": True,
+    }
+
+    launcher.run_module("test", {"test": module}, open_browser=False)
+
+    assert setup_calls == [["npm", "install"]]
+    assert module["needs_setup"] is False
+
+
 def test_launcher_groups_owned_processes_for_shutdown():
     options = launcher.process_group_options()
     if launcher.os.name == "nt":
