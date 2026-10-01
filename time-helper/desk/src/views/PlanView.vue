@@ -35,6 +35,10 @@ function recordKey(record: TimeRecord, index: number): string {
   return record.id || `${record.date}-${record.start}-${record.end}-${record.tag}-${index}`
 }
 
+function scheduleRuleKey(rule: ScheduleRule, index: number): string {
+  return `${rule.rule_type}-${rule.value}-${rule.plan_name}-${index}`
+}
+
 /** Stored plan types remain compatible Chinese domain values; only the UI label is localized. */
 function planTypeLabel(value?: string): string {
   if (value === '切分制') return t('legacyPlan.split')
@@ -684,7 +688,7 @@ onMounted(() => {
               </button>
             </div>
             <div class="pv-rule-list">
-              <div v-for="(rule, index) in scheduleRules" :key="index" class="pv-rule-card">
+              <div v-for="(rule, index) in scheduleRules" :key="scheduleRuleKey(rule, index)" class="pv-rule-card">
                 <div class="pv-rule-info">
                   <template v-if="rule.rule_type === 'week'">
                     <span class="pv-rule-type-badge">{{ t('legacyPlan.week') }}</span>
