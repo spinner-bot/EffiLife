@@ -28,6 +28,7 @@ def test_soft_delete_compacts_display_ids_without_rewriting_internal_slots_or_ne
 
     assert api.add_group(plan_id, 0, "Outer", start_index=1, end_index=3).success
     assert api.add_group(plan_id, 0, "Inner", start_index=1, end_index=2).success
+    assert api.add_log(plan_id, day=1, task_id="A2", time_input=(9, 30), content="historical work").success
     assert api.delete_task(plan_id, "A2").success
 
     full = api.get_plan_full(plan_id)
@@ -38,5 +39,7 @@ def test_soft_delete_compacts_display_ids_without_rewriting_internal_slots_or_ne
         ("A2", "A3", "A3"),
     ]
     assert set(full.data["sections"][0]["groups"]) == {"1_3", "1_2"}
+    assert full.data["logs"][0]["plan"] == "A2"
+    assert full.data["logs"][0]["content"] == "historical work"
 
     Plan.registry.clear()
