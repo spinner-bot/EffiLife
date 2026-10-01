@@ -27,9 +27,8 @@ def test_home_daily_plan_link_uses_dedicated_time_workspace():
     assert "router.push('/time')" in source
 
 
-def test_home_todo_completion_syncs_linked_plan_task_first():
+def test_home_todo_completion_stays_in_the_todo_module():
     source = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
-    assert "import { completePlanTask" in source
-    assert "if (todo.related_plan_id && todo.related_plan_task_id)" in source
-    assert "await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)" in source
+    assert "completePlanTask" not in source
+    assert "todo.related_plan_id" not in source
     assert "await TodoService.complete(todo.id)" in source

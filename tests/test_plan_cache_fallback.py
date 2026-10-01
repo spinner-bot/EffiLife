@@ -23,9 +23,8 @@ def test_cached_plan_snapshot_is_read_only_in_desktop_ui():
     assert "planDataSource === 'cache'" in plans
     assert "plans-list-source-note" in plans
     assert "@click=\"retryPlanService\"" in plans
-    assert ":disabled=\"planGatewayState !== 'ready'\"" in tasks
-    assert "async function retryPlanGateway(): Promise<void>" in tasks
-    assert '@click="retryPlanGateway"' in tasks
+    assert "planGatewayState" not in tasks
+    assert "retryPlanGateway" not in tasks
 
 
 def test_cached_plan_mode_is_localized():
@@ -35,11 +34,9 @@ def test_cached_plan_mode_is_localized():
     assert source.count("'tasks.retryPlanService':") == 2
 
 
-def test_task_center_exposes_archived_plan_state_without_removing_the_link():
+def test_task_center_does_not_expose_plan_linking_controls():
     tasks = TASKS.read_text(encoding="utf-8")
     i18n = I18N.read_text(encoding="utf-8")
-    assert "listPlanArchives" in tasks
-    assert "const archivedPlanById = computed" in tasks
-    assert "!planSummaries.value.some((activePlan) => String(activePlan.id) === String(archive.plan_id))" in tasks
-    assert "tasks.archivedPlan" in tasks
-    assert i18n.count("'tasks.archivedPlan':") == 2
+    assert "listPlanArchives" not in tasks
+    assert "archivedPlanById" not in tasks
+    assert "tasks.archivedPlan" not in tasks

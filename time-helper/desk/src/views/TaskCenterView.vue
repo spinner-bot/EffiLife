@@ -14,7 +14,6 @@ import {
   type TodoSettings,
   type UnifiedTodo,
 } from '@/services/todoService'
-import { completePlanTask, getPlanTasks, listPlanArchives, listPlanSummaries, planDataSource, updatePlanTask, type PlanArchiveSummary, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { getPriorityScore } from '@/services/priority'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
@@ -42,8 +41,6 @@ const estimatedTime = ref(60)
 const deadline = ref('')
 const recurrence = ref<TodoRecurrence>('none')
 const category = ref('default')
-const selectedPlanId = ref('')
-const selectedPlanTaskId = ref('')
 const filter = ref<'all' | 'active' | 'completed'>('active')
 const categoryFilter = ref('')
 const isLoading = ref(true)
@@ -59,8 +56,6 @@ const editingEstimatedTime = ref(60)
 const editingDeadline = ref('')
 const editingRecurrence = ref<TodoRecurrence>('none')
 const editingCategory = ref('default')
-const editingPlanId = ref('')
-const editingPlanTaskId = ref('')
 const isSaving = ref(false)
 const creatingTodo = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -75,11 +70,6 @@ const trackingTodoId = ref<string | null>(null)
 const focusTodoId = ref<string | null>(null)
 const focusStartedAt = ref<number | null>(null)
 const focusElapsedSeconds = ref(0)
-const planSummaries = ref<PlanSummary[]>([])
-const planArchives = ref<PlanArchiveSummary[]>([])
-const planGatewayState = ref<PlanGatewayState>('idle')
-const planTasks = ref<PlanTaskSummary[]>([])
-const planTaskState = ref<PlanGatewayState>('idle')
 const categories = ref<TodoCategory[]>([])
 const showCategoryManager = ref(false)
 const categoryName = ref('')
@@ -208,16 +198,6 @@ async function saveTodoSettings() {
   }
 }
 
-const planNameById = computed(() => Object.fromEntries([
-  ...planArchives.value.filter((archive) => archive.plan_id !== undefined).map((archive) => [String(archive.plan_id), archive.name || `#${archive.plan_id}`] as const),
-  ...planSummaries.value.map((plan) => [plan.id, plan.name] as const),
-]))
-const archivedPlanById = computed(() => Object.fromEntries(
-  planArchives.value
-    .filter((archive) => archive.plan_id !== undefined
-      && !planSummaries.value.some((activePlan) => String(activePlan.id) === String(archive.plan_id)))
-    .map((archive) => [String(archive.plan_id), archive] as const),
-))
 async function loadTodos() {
   isLoading.value = true
   errorMessage.value = ''
@@ -246,8 +226,6 @@ async function addTodo() {
       deadline: deadline.value ? new Date(`${deadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: recurrence.value,
       category: category.value,
-      related_plan_id: selectedPlanId.value || undefined,
-      related_plan_task_id: selectedPlanId.value ? selectedPlanTaskId.value || undefined : undefined,
     })
     todos.value = [todo, ...todos.value]
     title.value = ''
@@ -260,8 +238,6 @@ async function addTodo() {
     deadline.value = ''
     recurrence.value = 'none'
     category.value = 'default'
-    selectedPlanId.value = ''
-    selectedPlanTaskId.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
   } finally {
@@ -354,53 +330,14 @@ async function toggleCategoryPinned(item: TodoCategory) {
   }
 }
 
-async function loadPlanSummaries() {
-  planGatewayState.value = 'loading'
-  try {
-    const [activePlans, archivedPlans] = await Promise.all([listPlanSummaries(), listPlanArchives()])
-    planSummaries.value = activePlans
-    planArchives.value = archivedPlans
-    planGatewayState.value = planDataSource.value === 'cache' ? 'unavailable' : 'ready'
-  } catch {
-    planSummaries.value = []
-    planGatewayState.value = 'unavailable'
-  }
-}
-
-async function loadPlanTasks(planId: string) {
-  planTasks.value = []
-  if (!planId) {
-    planTasks.value = []
-    planTaskState.value = 'idle'
-    return
-  }
-  planTaskState.value = 'loading'
-  try {
-    planTasks.value = await getPlanTasks(planId)
-    planTaskState.value = planDataSource.value === 'cache' ? 'unavailable' : 'ready'
-    if (planDataSource.value === 'cache') planGatewayState.value = 'unavailable'
-  } catch {
-    planTasks.value = []
-    planTaskState.value = 'unavailable'
-  }
-}
-
-async function retryPlanGateway(): Promise<void> {
-  if (planGatewayState.value === 'loading') return
-  await loadPlanSummaries()
-  if (selectedPlanId.value) await loadPlanTasks(selectedPlanId.value)
-}
-
 async function refreshFromWorkspace(source?: string): Promise<void> {
-  if (!source || !['todos', 'plans', 'records', 'archive', 'settings'].includes(source)) return
+  if (!source || !['todos', 'records', 'settings'].includes(source)) return
   if (source === 'settings') {
     await loadTodoSettings()
     return
   }
   await loadTodos()
   await loadCategories()
-  if (source === 'plans' || source === 'archive') await loadPlanSummaries()
-  if (selectedPlanId.value) await loadPlanTasks(selectedPlanId.value)
 }
 
 // Coalesce bursts from imports and cross-window edits so an older refresh
@@ -430,7 +367,7 @@ async function drainWorkspaceRefresh(): Promise<void> {
 }
 
 function queueWorkspaceRefresh(source?: string): void {
-  if (!source || !['todos', 'plans', 'records', 'archive', 'settings'].includes(source)) return
+  if (!source || !['todos', 'records', 'settings'].includes(source)) return
   pendingWorkspaceSources.add(source)
   void drainWorkspaceRefresh()
 }
@@ -439,17 +376,6 @@ async function completeTodo(todo: UnifiedTodo) {
   if (todo.status === 'completed' || completingTodoId.value === todo.id) return
   completingTodoId.value = todo.id
   try {
-    // Complete the source plan task first. Without a transaction spanning
-    // IndexedDB and plan-helper, this prevents a failed plan sync from
-    // silently leaving the local todo in a completed state.
-    if (todo.related_plan_id && todo.related_plan_task_id) {
-      try {
-        await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
-      } catch {
-        errorMessage.value = t('tasks.planSyncFailed')
-        return
-      }
-    }
     const updated = await TodoService.complete(todo.id)
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
@@ -472,9 +398,6 @@ function startEdit(todo: UnifiedTodo) {
   editingDeadline.value = todo.deadline ? todo.deadline.slice(0, 10) : ''
   editingRecurrence.value = todo.recurrence || 'none'
   editingCategory.value = todo.category || 'default'
-  editingPlanId.value = todo.related_plan_id || ''
-  editingPlanTaskId.value = todo.related_plan_task_id || ''
-  loadPlanTasks(editingPlanId.value)
   errorMessage.value = ''
 }
 
@@ -490,30 +413,12 @@ function cancelEdit() {
   editingDeadline.value = ''
   editingRecurrence.value = 'none'
   editingCategory.value = 'default'
-  editingPlanId.value = ''
-  editingPlanTaskId.value = ''
-  loadPlanTasks(selectedPlanId.value)
 }
 
 async function saveEdit(todo: UnifiedTodo) {
   if (!editingTitle.value.trim() || isSaving.value) return
   isSaving.value = true
   try {
-    const linkedTaskChanged = Boolean(
-      todo.related_plan_id
-      && todo.related_plan_task_id
-      && editingPlanId.value === todo.related_plan_id
-      && editingPlanTaskId.value === todo.related_plan_task_id
-      && (editingTitle.value.trim() !== todo.title || Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)) !== (todo.estimated_time ?? todo.time_estimate ?? 60)),
-    )
-    if (linkedTaskChanged) {
-      try {
-        await updatePlanTask(todo.related_plan_id as string, todo.related_plan_task_id as string, editingTitle.value.trim(), Math.max(1, Math.trunc(Number(editingEstimatedTime.value) || 60)))
-      } catch {
-        errorMessage.value = t('tasks.planSyncFailed')
-        return
-      }
-    }
     const updated = await TodoService.update(todo.id, {
       title: editingTitle.value,
       description: editingDescription.value,
@@ -526,8 +431,6 @@ async function saveEdit(todo: UnifiedTodo) {
       deadline: editingDeadline.value ? new Date(`${editingDeadline.value}T23:59:59`).toISOString() : undefined,
       recurrence: editingRecurrence.value,
       category: editingCategory.value,
-      related_plan_id: editingPlanId.value || undefined,
-      related_plan_task_id: editingPlanId.value ? editingPlanTaskId.value || undefined : undefined,
     })
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
@@ -580,23 +483,13 @@ async function bulkCompleteTodos() {
   if (bulkWorking.value || selectedTodoCount.value === 0) return
   bulkWorking.value = true
   let completed = 0
-  let failed = 0
   try {
     for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
       if (todo.status === 'completed') continue
-      if (todo.related_plan_id && todo.related_plan_task_id) {
-        try {
-          await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
-        } catch {
-          failed += 1
-          continue
-        }
-      }
       replaceTodo(await TodoService.complete(todo.id))
       completed += 1
     }
     notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')
-    if (failed > 0) errorMessage.value = t('tasks.bulkPlanSyncFailed', { count: failed })
     clearTodoSelection()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
@@ -751,18 +644,6 @@ async function openTodoRecords(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
-function openTodoPlan(todo: UnifiedTodo) {
-  if (!todo.related_plan_id) return
-  const archivedPlan = archivedPlanById.value[String(todo.related_plan_id)]
-  router.push({
-    path: '/plans',
-    query: {
-      ...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id }),
-      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
-    },
-  })
-}
-
 const focusElapsedLabel = computed(() => {
   const minutes = Math.floor(focusElapsedSeconds.value / 60)
   const seconds = focusElapsedSeconds.value % 60
@@ -881,7 +762,6 @@ onMounted(async () => {
   stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)
   await loadTodos()
   await loadCategories()
-  loadPlanSummaries()
   loadTodoSettings()
   await revealSearchTarget()
 })
@@ -899,11 +779,6 @@ onUnmounted(() => {
   }
   if (priorityTimer !== null) window.clearInterval(priorityTimer)
   clearFocusTimer()
-})
-
-watch(selectedPlanId, (planId) => {
-  selectedPlanTaskId.value = ''
-  loadPlanTasks(planId)
 })
 
 watch(() => route.query.todo, () => {
@@ -952,16 +827,6 @@ watch(() => route.query.todo, () => {
         <select id="new-task-recurrence" v-model="recurrence" class="task-select">
           <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
         </select>
-        <label class="task-field-label" for="new-task-plan">{{ t('tasks.plan') }}</label>
-        <select id="new-task-plan" v-model="selectedPlanId" class="task-select task-plan-select" :disabled="planGatewayState !== 'ready'">
-          <option value="">{{ t('tasks.noPlan') }}</option>
-          <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
-        </select>
-        <label class="task-field-label" for="new-task-plan-task">{{ t('tasks.planTask') }}</label>
-        <select id="new-task-plan-task" v-model="selectedPlanTaskId" class="task-select task-plan-select" :disabled="!selectedPlanId || planTaskState !== 'ready'">
-          <option value="">{{ t('tasks.noTask') }}</option>
-          <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
-        </select>
         </details>
         <button type="submit" class="task-add" :disabled="creatingTodo || !title.trim()">
           <Plus :size="17" /> {{ t('tasks.add') }}
@@ -992,10 +857,6 @@ watch(() => route.query.todo, () => {
           <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
         <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
-        <div v-else-if="planGatewayState === 'unavailable'" class="task-plan-status task-plan-status-action">
-          <span>{{ t('tasks.serviceUnavailable') }}</span>
-          <button type="button" class="task-plan-retry" @click="retryPlanGateway">{{ t('tasks.retryPlanService') }}</button>
-        </div>
       </section>
 
       <section v-if="categories.length" class="task-category-nav theme-card">
@@ -1136,16 +997,6 @@ watch(() => route.query.todo, () => {
             <select :id="`edit-recurrence-${todo.id}`" v-model="editingRecurrence" class="task-edit-select">
               <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
             </select>
-            <label :for="`edit-plan-${todo.id}`">{{ t('tasks.plan') }}</label>
-            <select :id="`edit-plan-${todo.id}`" v-model="editingPlanId" class="task-edit-select" :disabled="planGatewayState !== 'ready'" @change="editingPlanTaskId = ''; loadPlanTasks(editingPlanId)">
-              <option value="">{{ t('tasks.noPlan') }}</option>
-              <option v-for="plan in planSummaries" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
-            </select>
-            <label :for="`edit-plan-task-${todo.id}`">{{ t('tasks.planTask') }}</label>
-            <select :id="`edit-plan-task-${todo.id}`" v-model="editingPlanTaskId" class="task-edit-select" :disabled="!editingPlanId || planTaskState !== 'ready'">
-              <option value="">{{ t('tasks.noTask') }}</option>
-              <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
-            </select>
             <div class="task-edit-actions">
             <button type="button" class="task-edit-cancel" @click="cancelEdit">{{ t('tasks.cancel') }}</button>
             <button type="button" class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? t('tasks.saving') : t('tasks.save') }}</button>
@@ -1167,8 +1018,6 @@ watch(() => route.query.todo, () => {
             </button>
             <span v-if="todo.deadline" class="task-deadline" :class="getDeadlineState(todo.deadline)">{{ deadlineStateLabel(todo.deadline) }} · {{ formatDeadline(todo.deadline) }}</span>
             <span v-if="todo.recurrence && todo.recurrence !== 'none'" class="task-recurrence">{{ t('tasks.recurrence') }}：{{ recurrenceLabels[todo.recurrence] }}</span>
-            <button v-if="todo.related_plan_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.planReference') }}: {{ planNameById[todo.related_plan_id] || `#${todo.related_plan_id}` }}<small v-if="archivedPlanById[todo.related_plan_id]"> · {{ t('tasks.archivedPlan') }}</small></button>
-            <button v-if="todo.related_plan_task_id" type="button" class="task-plan-reference task-plan-link" @click="openTodoPlan(todo)">{{ t('tasks.taskReference') }}: #{{ todo.related_plan_task_id }}<small v-if="todo.related_plan_id && archivedPlanById[todo.related_plan_id]"> · {{ t('tasks.archivedPlan') }}</small></button>
           </div>
           <div v-if="editingId !== todo.id" class="task-item-actions">
             <div class="task-rank-control" :title="t('tasks.priorityRank')">
@@ -1266,9 +1115,6 @@ watch(() => route.query.todo, () => {
 .task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
 .task-error { color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
-.task-plan-status-action { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-.task-plan-retry { border: 1px solid var(--color-border); border-radius: 7px; padding: 4px 7px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
-.task-plan-retry:disabled { cursor: not-allowed; opacity: .55; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
 .task-category-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .task-category-nav-header > div { display: grid; gap: 3px; }
@@ -1314,8 +1160,6 @@ watch(() => route.query.todo, () => {
 .task-deadline.today { color: var(--color-primary); font-weight: 600; }
 .task-deadline.upcoming { color: var(--color-text-secondary); }
 .task-recurrence { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
-.task-plan-reference { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
-.task-plan-link { border: 0; padding: 0; background: transparent; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .task-edit, .task-delete { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-pin { display: grid; place-items: center; border: 0; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .task-pin.active, .task-pin:hover { color: var(--color-primary); }

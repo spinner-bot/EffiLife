@@ -11,4 +11,5 @@ def test_records_view_refreshes_todo_picker_after_workspace_changes():
     assert "async function loadTodoOptions(): Promise<void>" in source
     assert "if (source === 'todos' || source === 'archive') void loadTodoOptions()" in source
     assert "stopWorkspaceListener?.()" in source
-    assert "await Promise.all([loadTodoOptions(), loadPlanContexts()])" in source
+    assert "await loadTodoOptions()" in source
+    assert "loadPlanContexts" not in source

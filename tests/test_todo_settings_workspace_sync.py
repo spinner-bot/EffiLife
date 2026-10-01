@@ -11,7 +11,7 @@ def test_todo_settings_broadcast_and_refresh_across_workspace_windows():
     tasks = TASKS.read_text(encoding="utf-8")
     assert "await set(STORE_NAMES.CONFIG, TODO_SETTINGS_KEY, settings)" in service
     assert "notifyWorkspaceChanged('settings')" in service
-    assert "'archive', 'settings'" in tasks
+    assert "'todos', 'records', 'settings'" in tasks
     assert "if (source === 'settings')" in tasks
     assert "await loadTodoSettings()" in tasks
 

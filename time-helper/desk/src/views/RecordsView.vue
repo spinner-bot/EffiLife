@@ -6,7 +6,6 @@ import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
 import type { TimeRecord } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
-import { listPlanArchives, listPlanSummaries, type PlanArchiveSummary } from '@/services/planGateway'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
@@ -29,14 +28,6 @@ const todoOptions = computed(() => {
   return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
 })
 const todoTitleById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo.title])))
-const todoById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo])))
-const activePlanIds = ref(new Set<string>())
-const planArchives = ref<PlanArchiveSummary[]>([])
-const archivedPlanById = computed(() => new Map(
-  planArchives.value
-    .filter((archive) => archive.plan_id !== undefined && !activePlanIds.value.has(String(archive.plan_id)))
-    .map((archive) => [String(archive.plan_id), archive]),
-))
 const linkedTodoFromQuery = computed(() => {
   const value = route.query.todo
   return typeof value === 'string' ? value : ''
@@ -54,30 +45,6 @@ let stopWorkspaceListener: (() => void) | null = null
 
 function openLinkedTodo(todoId: string) {
   router.push({ path: '/tasks', query: { todo: todoId } })
-}
-
-function openLinkedPlan(todoId: string): void {
-  const todo = todoById.value.get(todoId)
-  if (!todo?.related_plan_id) return
-  const archivedPlan = archivedPlanById.value.get(String(todo.related_plan_id))
-  router.push({
-    path: '/plans',
-    query: {
-      ...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id }),
-      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
-    },
-  })
-}
-
-async function loadPlanContexts(): Promise<void> {
-  try {
-    const [activePlans, archives] = await Promise.all([listPlanSummaries(), listPlanArchives()])
-    activePlanIds.value = new Set(activePlans.map((plan) => String(plan.id)))
-    planArchives.value = archives
-  } catch {
-    activePlanIds.value = new Set()
-    planArchives.value = []
-  }
 }
 
 function preselectLinkedTodo(): void {
@@ -354,9 +321,9 @@ onMounted(async () => {
   formTag.value = availableTags.value[0] || ''
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (source === 'todos' || source === 'archive') void loadTodoOptions()
-    if (source === 'plans' || source === 'archive') void loadPlanContexts()
+    // PH changes do not alter independent TH records or TD data.
   })
-  await Promise.all([loadTodoOptions(), loadPlanContexts()])
+  await loadTodoOptions()
   // A task with no existing record opens the record form with its relation
   // preselected, completing the task -> time-record workflow.
   preselectLinkedTodo()
@@ -408,15 +375,6 @@ onUnmounted(() => {
             @click="openLinkedTodo(record.todo_id)"
           >
             {{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}
-          </button>
-          <button
-            v-if="record.todo_id && todoById.get(record.todo_id)?.related_plan_id"
-            type="button"
-            class="record-plan-link"
-            :title="t('records.openPlan')"
-            @click="openLinkedPlan(record.todo_id)"
-          >
-            {{ t('records.linkedPlan') }}
           </button>
           <div class="record-actions">
             <button type="button" class="icon-btn" :aria-label="t('records.edit')" @click="openEditForm(index)" :title="t('records.edit')">
@@ -651,8 +609,7 @@ onUnmounted(() => {
   margin-bottom: var(--spacing-sm);
 }
 
-.record-todo-link,
-.record-plan-link {
+.record-todo-link {
   display: inline-block;
   margin-bottom: var(--spacing-sm);
   border: 0;
@@ -664,8 +621,7 @@ onUnmounted(() => {
   color: var(--color-primary);
   font-size: 0.75rem;
 }
-.record-todo-link:hover,
-.record-plan-link:hover { text-decoration: underline; }
+.record-todo-link:hover { text-decoration: underline; }
 
 .record-actions {
   display: flex;

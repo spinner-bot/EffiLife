@@ -51,28 +51,23 @@ def test_home_todo_summary_survives_category_storage_failure():
     assert "TodoCategoryService.list().catch(() => [])" in source
 
 
-def test_home_linked_todos_can_return_to_their_plan_task():
+def test_home_todos_stay_independent_from_event_plans():
     source = HOME.read_text(encoding="utf-8")
-    assert "function openTodoPlan(todo: UnifiedTodo)" in source
-    assert "plan: todo.related_plan_id" in source
-    assert "task: todo.related_plan_task_id" in source
-    assert 'class="today-todo-plan"' in source
-    assert "home.openPlanReference" in source
+    assert "function openTodoPlan(todo: UnifiedTodo)" not in source
+    assert "today-todo-plan" not in source
 
 
-def test_home_plan_reference_copy_is_bilingual():
+def test_home_keeps_event_plan_summary_copy_bilingual():
     source = I18N.read_text(encoding="utf-8")
-    for key in ("home.openPlanReference", "home.linkedPlan"):
+    for key in ("home.openPlanCenter", "home.planModuleSummary"):
         assert source.count(f"'{key}'") == 2
 
 
-def test_home_resolves_archived_plan_references_without_hiding_them():
+def test_home_event_plan_summary_does_not_resolve_todo_plan_links():
     source = HOME.read_text(encoding="utf-8")
-    assert "listPlanArchives" in source
-    assert "archivedPlanById" in source
-    assert "!eventPlans.value.some((activePlan) => String(activePlan.id) === String(plan.plan_id))" in source
-    assert "...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id })" in source
-    assert "home.archivedPlan" in source
+    assert "listPlanArchives" not in source
+    assert "archivedPlanById" not in source
+    assert "openTodoPlan" not in source
 
 
 def test_home_refreshes_unified_summaries_after_workspace_changes():

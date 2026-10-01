@@ -11,7 +11,7 @@ def test_task_center_exposes_safe_bulk_actions():
     assert "async function bulkCompleteTodos()" in source
     assert "async function bulkDeleteTodos()" in source
     assert "DataService.unlinkTodoFromRecords(todo.id)" in source
-    assert "await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)" in source
+    assert "completePlanTask" not in source
     assert "clearTodoSelection()" in source
     assert "t('tasks.bulkDeleteConfirm'" in source
 

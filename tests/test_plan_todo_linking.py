@@ -26,23 +26,17 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
         assert en_match.group('body').count(f"'{key}'") == 1
 
 
-def test_task_center_can_open_the_linked_plan_task():
+def test_task_center_does_not_open_plan_tasks_from_todos():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
-    assert "function openTodoPlan(todo: UnifiedTodo)" in tasks
-    assert "path: '/plans'" in tasks
-    assert "task: todo.related_plan_task_id" in tasks
-    assert "@click=\"openTodoPlan(todo)\"" in tasks
-    assert "#{{ todo.related_plan_task_id }}" in tasks
-    assert "planTaskById[todo.related_plan_task_id]" not in tasks
-    assert "...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id })" in tasks
+    assert "function openTodoPlan" not in tasks
+    assert "todo.related_plan_task_id" not in tasks
 
 
-def test_editing_a_linked_todo_updates_the_source_plan_task_first():
+def test_editing_a_todo_does_not_update_a_plan_task():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
-    assert "updatePlanTask" in tasks
-    assert "const linkedTaskChanged = Boolean" in tasks
-    assert "await updatePlanTask(todo.related_plan_id as string, todo.related_plan_task_id as string" in tasks
-    assert "errorMessage.value = t('tasks.planSyncFailed')" in tasks
+    assert "updatePlanTask" not in tasks
+    assert "linkedTaskChanged" not in tasks
+    assert "tasks.planSyncFailed" not in tasks
 
 
 def test_plan_mutations_expose_success_feedback_in_both_locales():

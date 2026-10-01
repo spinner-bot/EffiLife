@@ -10,7 +10,7 @@ import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
-import { completePlanTask, listPlanArchives, listPlanSummaries, planDataSource, type PlanArchiveSummary, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
@@ -32,7 +32,6 @@ const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
-const archivedPlans = ref<PlanArchiveSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 
@@ -88,17 +87,6 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   if (completingTodoId.value) return
   completingTodoId.value = todo.id
   try {
-    // Keep the unified todo and its source plan task consistent. There is no
-    // cross-store transaction, so only update the todo after the plan accepts
-    // the completion.
-    if (todo.related_plan_id && todo.related_plan_task_id) {
-      try {
-        await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
-      } catch {
-        notifyToast(t('tasks.planSyncFailed'), 'error')
-        return
-      }
-    }
     await TodoService.complete(todo.id)
     await refreshTodoSummary()
   } catch (error) {
@@ -160,28 +148,14 @@ function openTodoRecord(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
-function openTodoPlan(todo: UnifiedTodo) {
-  if (!todo.related_plan_id) return
-  const archivedPlan = archivedPlanById.value[String(todo.related_plan_id)]
-  router.push({
-    path: '/plans',
-    query: {
-      ...(archivedPlan ? { archive: archivedPlan.file } : { plan: todo.related_plan_id }),
-      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
-    },
-  })
-}
-
 async function refreshEventPlanSummary() {
   eventPlanState.value = 'loading'
   try {
-    const [activePlans, archives] = await Promise.all([listPlanSummaries(), listPlanArchives()])
+    const activePlans = await listPlanSummaries()
     eventPlans.value = activePlans
-    archivedPlans.value = archives
     eventPlanState.value = 'ready'
   } catch {
     eventPlans.value = []
-    archivedPlans.value = []
     eventPlanState.value = 'unavailable'
   }
 }
@@ -208,18 +182,6 @@ const stopWorkspaceListener = onWorkspaceChanged(scheduleWorkspaceSummaryRefresh
 
 const eventPlanTaskCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.total_tasks || 0), 0))
 const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, plan) => sum + (plan.completed_tasks || 0), 0))
-const planNameById = computed(() => Object.fromEntries([
-  ...archivedPlans.value
-    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null)
-    .map((plan) => [String(plan.plan_id), plan.name] as const),
-  ...eventPlans.value.map((plan) => [plan.id, plan.name] as const),
-]))
-const archivedPlanById = computed(() => Object.fromEntries(
-  archivedPlans.value
-    .filter((plan) => plan.plan_id !== undefined && plan.plan_id !== null
-      && !eventPlans.value.some((activePlan) => String(activePlan.id) === String(plan.plan_id)))
-    .map((plan) => [String(plan.plan_id), plan] as const),
-))
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
@@ -600,18 +562,6 @@ onUnmounted(() => {
                   <span v-if="formatTodoTime(todo)" class="today-todo-time">{{ formatTodoTime(todo) }}</span>
                 </span>
               </span>
-            </button>
-            <button
-              v-if="todo.related_plan_id"
-              class="today-todo-plan"
-              type="button"
-              :aria-label="t('home.openPlanReference')"
-              :title="t('home.openPlanReference')"
-              @click.stop="openTodoPlan(todo)"
-            >
-              <ClipboardList :size="14" />
-              <span>{{ planNameById[todo.related_plan_id] || t('home.linkedPlan') }}</span>
-              <small v-if="archivedPlanById[todo.related_plan_id]"> · {{ t('home.archivedPlan') }}</small>
             </button>
             <button class="today-todo-record" type="button" :aria-label="t('home.recordTodoTime')" :title="t('home.recordTodoTime')" @click.stop="openTodoRecord(todo)">
               <Clock3 :size="14" />
@@ -1154,9 +1104,6 @@ onUnmounted(() => {
 .today-todo-deadline, .today-todo-time { white-space: nowrap; }
 .today-todo-deadline.is-overdue { color: var(--color-error); font-weight: 700; }
 .today-todo-deadline.is-today { color: var(--color-primary); font-weight: 700; }
-.today-todo-plan { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; padding: 5px 8px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
-.today-todo-plan span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.today-todo-plan:hover, .today-todo-plan:focus-visible { border-color: var(--color-primary); outline: 0; }
 .today-todo-record { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
 .today-todo-record:hover, .today-todo-record:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
 .today-todos-more { margin: 3px 0 0 29px; color: var(--color-text-tertiary); font-size: 11px; }
@@ -1168,8 +1115,6 @@ onUnmounted(() => {
   .today-todo-capture { flex-direction: column; }
   .today-todo-capture button { width: 100%; }
   .today-todo-deadline { display: none; }
-  .today-todo-plan { max-width: 32px; padding: 5px; }
-  .today-todo-plan span { display: none; }
 }
 
 /* 平板横向工作台：保留桌面层级，避免 761–899px 被窄单列容器浪费。 */
