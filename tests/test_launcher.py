@@ -5,6 +5,28 @@ from pathlib import Path
 import launcher.start as launcher
 
 
+def test_launcher_reads_custom_node_directory_at_lookup_time(monkeypatch, tmp_path):
+    node_dir = tmp_path / "node-runtime"
+    node_dir.mkdir()
+    (node_dir / "node.exe").write_bytes(b"node")
+    (node_dir / "npm.cmd").write_text("@echo off", encoding="utf-8")
+
+    # The launcher module is imported before the environment is configured in
+    # embedded/packaged hosts. It must still agree with diagnostics afterward.
+    monkeypatch.setenv("EFFILIFE_NODE_DIR", str(node_dir))
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+
+    assert launcher.find_node() == str(node_dir / "node.exe")
+    assert launcher.find_npm() == str(node_dir / "npm.cmd")
+    assert str(node_dir) in launcher.node_environment()["PATH"]
+
+
+def test_launcher_ignores_blank_custom_node_directory(monkeypatch):
+    monkeypatch.setenv("EFFILIFE_NODE_DIR", "   ")
+    assert launcher.custom_node_dir() == launcher.CUSTOM_NODE_DIR
+
+
 def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     modules = {"1": {"name": "EffiLife unified workspace"}}
     calls = []

@@ -23,8 +23,16 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.parent
 VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 
-# Custom Node.js location (F drive)
-CUSTOM_NODE_DIR = Path(os.environ.get("EFFILIFE_NODE_DIR", "F:/dev-tools/node"))
+# Default custom Node.js location (F drive). The environment override is read
+# at call time so an embedded launcher and the build diagnostics observe the
+# same runtime configuration.
+CUSTOM_NODE_DIR = Path("F:/dev-tools/node")
+
+
+def custom_node_dir() -> Path:
+    """Return the configured Node directory using the current environment."""
+    configured = os.environ.get("EFFILIFE_NODE_DIR", "").strip()
+    return Path(configured).expanduser() if configured else CUSTOM_NODE_DIR
 
 
 def configured_data_dir():
@@ -59,7 +67,7 @@ def find_npm():
 
     # Check custom F drive location first
     if os.name == "nt":
-        custom_npm = CUSTOM_NODE_DIR / "npm.cmd"
+        custom_npm = custom_node_dir() / "npm.cmd"
         if custom_npm.exists():
             return str(custom_npm)
 
@@ -80,7 +88,7 @@ def find_node():
     """Find the Node executable using the same rules as npm."""
     candidates = []
     if os.name == "nt":
-        candidates.append(CUSTOM_NODE_DIR / "node.exe")
+        candidates.append(custom_node_dir() / "node.exe")
         system_node = shutil.which("node.exe") or shutil.which("node")
         if system_node:
             candidates.append(Path(system_node))
@@ -99,8 +107,9 @@ def find_rust_tool(name):
 def node_environment():
     """Build an environment that can run npm and its child processes."""
     env = os.environ.copy()
-    if CUSTOM_NODE_DIR.exists():
-        env["PATH"] = str(CUSTOM_NODE_DIR) + os.pathsep + env.get("PATH", "")
+    node_dir = custom_node_dir()
+    if node_dir.exists():
+        env["PATH"] = str(node_dir) + os.pathsep + env.get("PATH", "")
     return env
 
 
