@@ -83,11 +83,19 @@ jobs:
           --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
           --target android
 
+      - name: Generate Android checksums
+        run: >-
+          python scripts/generate_checksums.py
+          --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
+          --output release-checksums/EffiLife-android.sha256
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: EffiLife-android-apk
-          path: time-helper/desk/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: |
+            time-helper/desk/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            release-checksums/EffiLife-android.sha256
           if-no-files-found: error
 
   ios:
@@ -144,6 +152,12 @@ jobs:
           --directory time-helper/desk/src-tauri/gen/apple/build
           --target ios
 
+      - name: Generate iOS checksums
+        run: >-
+          python scripts/generate_checksums.py
+          --directory time-helper/desk/src-tauri/gen/apple/build
+          --output release-checksums/EffiLife-ios.sha256
+
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4
         with:
@@ -151,4 +165,5 @@ jobs:
           path: |
             time-helper/desk/src-tauri/gen/apple/build/**/*.app
             time-helper/desk/src-tauri/gen/apple/build/**/*.ipa
+            release-checksums/EffiLife-ios.sha256
           if-no-files-found: error
