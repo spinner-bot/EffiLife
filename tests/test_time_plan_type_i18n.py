@@ -10,5 +10,5 @@ def test_time_plan_type_values_are_localized_only_at_the_display_boundary():
     assert "t('legacyPlan.split')" in VIEW
     assert "t('legacyPlan.allocate')" in VIEW
     assert "planTypeLabel(plan.plan_type)" in VIEW
+    assert "planTypeLabel(todayPlan.type)" in VIEW
     assert "{{ plan.plan_type }}" not in VIEW
-

@@ -500,7 +500,7 @@ onMounted(() => {
               <div class="pv-plan-hero-header">
                 <span class="pv-plan-hero-label">{{ t('legacyPlan.todayPlan') }}</span>
                 <div class="pv-plan-hero-tools">
-                  <span class="pv-plan-hero-badge">{{ todayPlan.type }}</span>
+                  <span class="pv-plan-hero-badge">{{ planTypeLabel(todayPlan.type) }}</span>
                 <button type="button" class="pv-inline-btn" @click="AudioManager.playSound('click'); openEditPlan(todayPlan.name)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                     <span>{{ t('legacyPlan.edit') }}</span>
