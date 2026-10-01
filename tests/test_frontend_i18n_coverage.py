@@ -50,6 +50,19 @@ def test_dynamic_audio_bgm_keys_exist_for_every_builtin_track():
     assert not missing, f"missing bilingual BGM translation keys: {missing}"
 
 
+def test_dynamic_theme_registry_keys_exist_for_every_registered_theme():
+    catalog = CATALOG.read_text(encoding="utf-8")
+    theme_engine = (SRC / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    registered = re.findall(
+        r"nameKey: '([^']+)', descriptionKey: '([^']+)', categoryKey: '([^']+)'",
+        theme_engine,
+    )
+    assert registered
+    keys = {key for entry in registered for key in entry}
+    missing = sorted(key for key in keys if catalog.count(f"'{key}'") < 2)
+    assert not missing, f"missing bilingual theme registry keys: {missing}"
+
+
 def test_unified_workspace_templates_do_not_embed_visible_cjk_text():
     """Visible copy in the active shell must remain translatable.
 
