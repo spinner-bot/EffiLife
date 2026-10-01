@@ -368,7 +368,8 @@ def test_launcher_reports_port_conflict_without_starting_main(monkeypatch):
             raise AssertionError("the launcher must not start on an occupied port")
 
     monkeypatch.setattr(launcher.subprocess, "Popen", UnexpectedPopen)
-    launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
+    result = launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
+    assert result == 1
     assert terminated == [companion]
     assert opened == []
 
