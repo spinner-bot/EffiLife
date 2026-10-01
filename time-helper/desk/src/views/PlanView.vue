@@ -211,7 +211,13 @@ const editingPlanName = ref('')
 const editingPlanType = ref<'切分制' | '分配制'>('切分制')
 const editingPlanBgTag = ref('')
 const editingPlanColor = ref([128, 128, 128])
-const editingPlanItems = ref<PlanItem[]>([{ name: '', hours: 0 }, { name: '', hours: 0 }])
+type DraftPlanItem = PlanItem & { draftId: string }
+let draftPlanItemSequence = 0
+function createDraftPlanItem(item: Partial<PlanItem> = {}): DraftPlanItem {
+  draftPlanItemSequence += 1
+  return { name: item.name || '', hours: Number(item.hours) || 0, draftId: `draft-plan-item-${draftPlanItemSequence}` }
+}
+const editingPlanItems = ref<DraftPlanItem[]>([createDraftPlanItem(), createDraftPlanItem()])
 
 function openPlanList() { manageView.value = 'plans' }
 function openCreatePlan() {
@@ -219,7 +225,7 @@ function openCreatePlan() {
   editingPlanType.value = '切分制'
   editingPlanBgTag.value = ''
   editingPlanColor.value = [128, 128, 128]
-  editingPlanItems.value = [{ name: '', hours: 0 }, { name: '', hours: 0 }]
+  editingPlanItems.value = [createDraftPlanItem(), createDraftPlanItem()]
   manageView.value = 'editPlan'
 }
 function openEditPlan(name: string) {
@@ -229,10 +235,10 @@ function openEditPlan(name: string) {
   editingPlanType.value = plan.plan_type
   editingPlanBgTag.value = plan.bg_tag
   editingPlanColor.value = [...plan.color]
-  editingPlanItems.value = plan.items.map(item => ({ ...item }))
+  editingPlanItems.value = plan.items.map(item => createDraftPlanItem(item))
   manageView.value = 'editPlan'
 }
-function addPlanItem() { editingPlanItems.value.push({ name: '', hours: 0 }) }
+function addPlanItem() { editingPlanItems.value.push(createDraftPlanItem()) }
 function removePlanItem(index: number) {
   const minCount = editingPlanType.value === '切分制' ? 2 : 1
   if (editingPlanItems.value.length <= minCount) return
@@ -243,7 +249,9 @@ async function savePlan() {
   // 使用表单验证
   const valid = planValidation.validate({ planName: name })
   if (!valid) return
-  const items = editingPlanItems.value.filter(item => item.name.trim())
+  let items: PlanItem[] = editingPlanItems.value
+    .filter(item => item.name.trim())
+    .map(({ draftId: _draftId, ...item }) => item)
   if (items.length === 0) { notifyToast(t('legacyPlan.validationCategoryRequired'), 'error'); return }
   for (const item of items) {
     if (item.hours < 0) { notifyToast(t('legacyPlan.validationHoursNegative', { name: item.name }), 'error'); return }
@@ -253,7 +261,8 @@ async function savePlan() {
     const total = items.reduce((sum, item) => sum + item.hours, 0)
     if (Math.abs(total - 24) > 0.01) {
       if (await requestConfirm(t('legacyPlan.balanceConfirm', { total, unit: t('legacyPlan.hourUnit') }))) {
-        editingPlanItems.value = autoBalance(items, 24)
+        items = autoBalance(items, 24)
+        editingPlanItems.value = items.map(item => createDraftPlanItem(item))
       } else { return }
     }
   if (!editingPlanBgTag.value) { notifyToast(t('legacyPlan.backgroundRequired'), 'error'); return }
@@ -261,7 +270,7 @@ async function savePlan() {
   const newPlans = { ...plans.value }
   newPlans[name] = {
     plan_type: editingPlanType.value,
-    items: editingPlanItems.value,
+    items,
     bg_tag: editingPlanType.value === '切分制' ? editingPlanBgTag.value : '',
     color: editingPlanColor.value
   }
@@ -643,7 +652,7 @@ onMounted(() => {
             <div class="pv-form-group">
               <label>{{ t('legacyPlan.categories') }}</label>
               <div class="pv-items">
-                <div v-for="(item, index) in editingPlanItems" :key="index" class="pv-item-row">
+                <div v-for="(item, index) in editingPlanItems" :key="item.draftId" class="pv-item-row">
                   <input type="text" v-model="item.name" :placeholder="t('legacyPlan.categoryName')" class="pv-text-input flex-1" />
                   <input type="number" v-model="item.hours" :placeholder="t('legacyPlan.hours')" class="pv-num-input" step="0.5" />
                   <span class="pv-unit">{{ t('legacyPlan.hourUnit') }}</span>
