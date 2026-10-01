@@ -59,6 +59,7 @@ def test_global_search_surfaces_partial_index_failures_and_can_retry():
     assert "const indexUnavailable = ref(false)" in source
     assert "const indexPartial = ref(false)" in source
     assert "failedSources" in source
+    assert "planArchivesState.value === 'unavailable'" in source
     assert 'class="search-state search-error" role="status" aria-live="polite"' in source
     assert 'class="search-partial" role="status" aria-live="polite"' in source
     assert "async function retryIndex(): Promise<void>" in source

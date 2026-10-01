@@ -5,7 +5,7 @@ import { ArrowRight, ClipboardList, Clock3, ListTodo, Search, X } from 'lucide-v
 import { useI18n } from '@/i18n'
 import { getAll, STORE_NAMES } from '@/storage'
 import { TodoService, type UnifiedTodo } from '@/services/todoService'
-import { getPlanTasks, listPlanArchives, listPlanSummaries, type PlanArchiveSummary, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
+import { getPlanTasks, listPlanArchives, listPlanSummaries, planArchivesState, type PlanArchiveSummary, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import type { TimeRecord } from '@/types'
 
@@ -174,7 +174,8 @@ async function loadIndex() {
       getAll<TimeRecord[]>(STORE_NAMES.RECORDS),
     ])
     if (requestId !== searchRequestId) return
-    const failedSources = [todoResult, planResult, archiveResult, recordResult].filter((result) => result.status === 'rejected').length
+    const archiveUnavailable = archiveResult.status === 'rejected' || planArchivesState.value === 'unavailable'
+    const failedSources = [todoResult, planResult, recordResult].filter((result) => result.status === 'rejected').length + (archiveUnavailable ? 1 : 0)
     indexUnavailable.value = failedSources === 4
     indexPartial.value = failedSources > 0
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
