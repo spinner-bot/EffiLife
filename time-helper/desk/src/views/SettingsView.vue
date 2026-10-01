@@ -502,6 +502,16 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const legacyTodoInputRef = ref<HTMLInputElement | null>(null)
 const archiveBusy = ref(false)
 
+async function refreshAfterArchiveImport(): Promise<void> {
+  // The import is durable immediately, but the current settings view may
+  // still hold pre-import Pinia/statistics snapshots when the user chooses
+  // to postpone the full page reload.
+  await Promise.allSettled([
+    appStore.refreshWorkspaceData(),
+    refreshDataStats(),
+  ])
+}
+
 async function handleExportArchive() {
   if (archiveBusy.value) return
   archiveBusy.value = true
@@ -530,6 +540,7 @@ async function handleImportArchive() {
       const result = await importArchiveWithDialog((preview) => requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' }))
       if (result.cancelled) return
       if (result.success) {
+        await refreshAfterArchiveImport()
         if (await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
           window.location.reload()
         }
@@ -577,8 +588,11 @@ async function onFileSelected(event: Event) {
     const result = await importArchive(file)
     notifyToast(result.message, result.success ? 'success' : 'error')
 
-    if (result.success && await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
-      window.location.reload()
+    if (result.success) {
+      await refreshAfterArchiveImport()
+      if (await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
+        window.location.reload()
+      }
     }
   } catch (error) {
     notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
