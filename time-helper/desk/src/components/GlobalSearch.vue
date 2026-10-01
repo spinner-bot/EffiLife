@@ -76,7 +76,7 @@ const allResults = computed<SearchResult[]>(() => [
     id: `archived-plan-task:${plan.file}:${task.internal_id}`,
     kind: 'planTask' as const,
     title: task.content,
-    detail: `${t('search.planTaskDetail')} · ${plan.name || plan.file} · ${task.display_id} · ${t('search.archivedPlanDetail')}`,
+    detail: `${t('search.planTaskDetail')} ${t('search.detailSeparator')} ${plan.name || plan.file} ${t('search.detailSeparator')} ${task.display_id} ${t('search.detailSeparator')} ${t('search.archivedPlanDetail')}`,
     searchText: `${task.content} ${plan.name || ''} ${task.display_id} ${plan.file}`,
     route: `/plans?archive=${encodeURIComponent(plan.file)}&task=${encodeURIComponent(task.internal_id)}`,
   }))),
@@ -84,7 +84,7 @@ const allResults = computed<SearchResult[]>(() => [
     id: `plan-task:${plan.id}:${task.internal_id}`,
     kind: 'planTask' as const,
     title: task.content,
-    detail: `${t('search.planTaskDetail')} · ${plan.name} · ${task.display_id}`,
+    detail: `${t('search.planTaskDetail')} ${t('search.detailSeparator')} ${plan.name} ${t('search.detailSeparator')} ${task.display_id}`,
     searchText: `${task.content} ${plan.name} ${task.display_id}`,
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}&task=${encodeURIComponent(task.internal_id)}`,
   })),
@@ -92,7 +92,7 @@ const allResults = computed<SearchResult[]>(() => [
     id: `record:${record.id || `${record.date}-${index}`}`,
     kind: 'record' as const,
     title: record.content || record.tag,
-    detail: `${record.date} · ${record.tag}`,
+    detail: `${record.date} ${t('search.detailSeparator')} ${record.tag}`,
     searchText: `${record.content} ${record.tag}`,
     route: `/day/${record.date}?record=${encodeURIComponent(record.id || `${record.date}-${index}`)}`,
   })),
@@ -288,7 +288,7 @@ watch(() => props.open, async (open) => {
             <ClipboardList v-else-if="result.kind === 'plan' || result.kind === 'archivedPlan' || result.kind === 'planTask'" :size="16" />
             <Clock3 v-else :size="16" />
           </span>
-          <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ searchModuleLabel(result.kind) }} · {{ result.detail }}</small></span>
+          <span class="search-result-copy"><strong>{{ result.title }}</strong><small>{{ searchModuleLabel(result.kind) }} {{ t('search.detailSeparator') }} {{ result.detail }}</small></span>
           <ArrowRight :size="15" class="search-result-arrow" />
         </button>
       </div>

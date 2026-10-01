@@ -65,6 +65,14 @@ def test_global_search_surfaces_partial_index_failures_and_can_retry():
     assert "search.partial" in I18N.read_text(encoding="utf-8")
 
 
+def test_global_search_detail_separators_are_localized():
+    source = SEARCH.read_text(encoding="utf-8")
+    catalog = I18N.read_text(encoding="utf-8")
+    assert "search.detailSeparator" in source
+    assert "{{ t('search.detailSeparator') }}" in source
+    assert catalog.count("'search.detailSeparator':") == 2
+
+
 def test_search_targets_are_consumed_by_plan_and_task_views():
     plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
