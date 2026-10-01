@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
@@ -19,6 +19,7 @@ import { onWorkspaceChanged } from './services/workspaceEvents'
 
 const appStore = useAppStore()
 const route = useRoute()
+const router = useRouter()
 const { t, locale } = useI18n()
 
 const pageTitle = computed(() => {
@@ -95,6 +96,18 @@ function onGlobalKeydown(event: KeyboardEvent) {
     if (isEditableTarget(event.target)) return
     event.preventDefault()
     showGlobalSearch.value = true
+  } else if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !isEditableTarget(event.target)) {
+    const workspaceRoutes: Record<string, string> = {
+      '1': '/',
+      '2': '/plans',
+      '3': '/time',
+      '4': '/tasks',
+      '5': '/records',
+    }
+    const target = workspaceRoutes[event.key]
+    if (!target) return
+    event.preventDefault()
+    void router.push(target)
   } else if (event.key === 'Escape') {
     showGlobalSearch.value = false
   }

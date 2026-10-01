@@ -18,6 +18,18 @@ def test_global_search_button_declares_supported_shortcuts():
     assert 'aria-keyshortcuts="Control+K Meta+K"' in APP
 
 
+def test_desktop_shell_provides_fast_workspace_switching_shortcuts():
+    assert "const router = useRouter()" in APP
+    assert "event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey" in APP
+    assert "'1': '/'," in APP
+    assert "'2': '/plans'," in APP
+    assert "'3': '/time'," in APP
+    assert "'4': '/tasks'," in APP
+    assert "'5': '/records'," in APP
+    assert "void router.push(target)" in APP
+    assert "!isEditableTarget(event.target)" in APP
+
+
 def test_mobile_navigation_keeps_records_as_a_first_class_sixth_entry():
     assert 'data-guide="records" to="/records"' in APP
     assert 'grid-template-columns: repeat(6, minmax(44px, 1fr));' in APP
