@@ -46,6 +46,16 @@ def test_home_plan_service_failure_has_an_explicit_desktop_retry():
     assert I18N.count("'home.retryEventPlans':") == 2
 
 
+def test_home_inbox_has_dialog_semantics_and_escape_focus_return():
+    assert 'aria-haspopup="dialog"' in HOME
+    assert 'aria-controls="home-inbox-panel"' in HOME
+    assert 'id="home-inbox-panel"' in HOME
+    assert 'role="dialog"' in HOME
+    assert 'aria-labelledby="home-inbox-title"' in HOME
+    assert 'closeInboxPanel(true)' in HOME
+    assert 'inboxButton.value?.focus()' in HOME
+
+
 def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakpoints():
     tablet = "@media (min-width: 761px) and (max-width: 899px)"
     assert tablet in HOME

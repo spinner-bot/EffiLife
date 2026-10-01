@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, parseStoredDate } from '@/services/dataService'
@@ -244,13 +244,28 @@ const unreadCount = computed(() => EventSystem.getUnreadCount())
 // 收件箱面板
 const showInboxPanel = ref(false)
 const inboxEntries = computed(() => EventSystem.getEventInbox().slice(0, 10))
+const inboxButton = ref<HTMLButtonElement | null>(null)
+const inboxCloseButton = ref<HTMLButtonElement | null>(null)
 
-function toggleInboxPanel() {
+async function toggleInboxPanel() {
   showInboxPanel.value = !showInboxPanel.value
+  if (showInboxPanel.value) {
+    await nextTick()
+    inboxCloseButton.value?.focus()
+  }
 }
 
-function closeInboxPanel() {
+function closeInboxPanel(restoreFocus = false) {
   showInboxPanel.value = false
+  if (restoreFocus) {
+    void nextTick().then(() => inboxButton.value?.focus())
+  }
+}
+
+function handleInboxKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  closeInboxPanel(true)
 }
 
 function markInboxRead(entryId: string) {
@@ -336,19 +351,19 @@ onUnmounted(() => {
     <header class="header">
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
-        <button class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" @click="AudioManager.playSound('click'); toggleInboxPanel()">
+        <button ref="inboxButton" class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" aria-haspopup="dialog" :aria-expanded="showInboxPanel" aria-controls="home-inbox-panel" @click="AudioManager.playSound('click'); toggleInboxPanel()">
           <Inbox :size="20" />
           <span v-if="unreadCount > 0" class="inbox-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
         </button>
 
       <!-- 收件箱下拉面板 -->
       <Transition name="inbox-dropdown">
-        <div v-if="showInboxPanel" class="inbox-panel">
+        <div v-if="showInboxPanel" id="home-inbox-panel" class="inbox-panel" role="dialog" aria-modal="false" aria-labelledby="home-inbox-title" tabindex="-1" @keydown="handleInboxKeydown">
         <div class="inbox-panel-header">
-          <h3 class="inbox-panel-title">{{ t('home.inbox') }}</h3>
+          <h3 id="home-inbox-title" class="inbox-panel-title">{{ t('home.inbox') }}</h3>
           <div class="inbox-panel-actions">
             <button v-if="unreadCount > 0" type="button" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">{{ t('home.markAllRead') }}</button>
-            <button class="inbox-close-btn" type="button" :aria-label="t('home.closeInbox')" @click="closeInboxPanel()">
+            <button ref="inboxCloseButton" class="inbox-close-btn" type="button" :aria-label="t('home.closeInbox')" @click="closeInboxPanel()">
               <X :size="16" />
             </button>
           </div>
@@ -365,6 +380,7 @@ onUnmounted(() => {
               :class="{ unread: !entry.read }"
               role="button"
               tabindex="0"
+              :aria-label="entry.title"
               @click="markInboxRead(entry.id)"
               @keydown="activateInboxEntry($event, entry.id)"
             >
