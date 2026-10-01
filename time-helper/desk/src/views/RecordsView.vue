@@ -682,6 +682,7 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 500px;
+  box-sizing: border-box;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
@@ -771,6 +772,7 @@ onUnmounted(() => {
 
 .time-input-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
@@ -817,6 +819,7 @@ onUnmounted(() => {
 
 .text-input, .select-input {
   width: 100%;
+  box-sizing: border-box;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -848,6 +851,7 @@ onUnmounted(() => {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 

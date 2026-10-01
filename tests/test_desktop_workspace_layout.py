@@ -119,6 +119,14 @@ def test_records_view_activates_grid_before_declaring_desktop_columns():
     assert ".records-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }" in records
 
 
+def test_records_form_prevents_mobile_input_overflow():
+    records = (VIEWS / "RecordsView.vue").read_text(encoding="utf-8")
+    assert ".modal {" in records and "box-sizing: border-box;" in records
+    assert ".time-input-row {" in records and "flex-wrap: wrap;" in records
+    assert ".text-input, .select-input {" in records
+    assert "box-sizing: border-box;" in records
+
+
 def test_desktop_workspaces_keep_mobile_breakpoints_explicit():
     for name in ("PlansHubView.vue", "TaskCenterView.vue", "RecordsView.vue"):
         source = (VIEWS / name).read_text(encoding="utf-8")
