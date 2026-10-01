@@ -458,8 +458,8 @@ onMounted(() => {
 
     <!-- 内容区域 -->
     <main class="pv-content">
+      <!-- Transition 的两个分支必须保持相邻，避免注释节点破坏 v-if/v-else 配对。 -->
       <Transition name="tab-fade" mode="out-in">
-        <!-- ============ 统一计划工作台 ============ -->
         <div v-if="manageView === 'overview'" key="overview" class="pv-panel">
           <!-- 今日概览卡片 -->
           <div class="pv-summary-card">
@@ -573,7 +573,6 @@ onMounted(() => {
           </section>
         </div>
 
-        <!-- ============ 管理二级视图 ============ -->
         <div v-else key="manage" class="pv-panel">
           <!-- 管理子视图 -->
 
