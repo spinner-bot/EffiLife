@@ -33,6 +33,16 @@ def test_unified_shell_mounts_the_themed_confirm_host():
     assert "<ConfirmHost />" in source
 
 
+def test_confirm_host_keeps_keyboard_focus_inside_dialog():
+    source = (ROOT / "time-helper" / "desk" / "src" / "components" / "ConfirmHost.vue").read_text(encoding="utf-8")
+    assert 'ref="dialog"' in source
+    assert "function onDialogKeydown(event: KeyboardEvent)" in source
+    assert "event.key !== 'Tab'" in source
+    assert "event.shiftKey && document.activeElement === first" in source
+    assert "!event.shiftKey && document.activeElement === last" in source
+    assert ':aria-describedby="`confirm-message-${activeConfirm.id}`"' in source
+
+
 def test_confirm_service_resolves_the_user_decision():
     source = SERVICE.read_text(encoding="utf-8")
     assert "export function requestConfirm" in source

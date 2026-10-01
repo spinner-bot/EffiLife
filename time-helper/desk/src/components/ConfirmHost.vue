@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
 const cancelButton = ref<HTMLButtonElement | null>(null)
+const dialog = ref<HTMLElement | null>(null)
 
 watch(activeConfirm, async (request) => {
   if (!request) return
@@ -16,15 +17,32 @@ watch(activeConfirm, async (request) => {
 function close(confirmed: boolean) {
   settleConfirm(confirmed)
 }
+
+function onDialogKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Tab' || !dialog.value) return
+  const focusable = Array.from(dialog.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="confirm-fade">
       <div v-if="activeConfirm" class="confirm-backdrop" @click.self="close(false)">
-        <section class="confirm-dialog theme-card" :class="{ 'confirm-danger': activeConfirm.tone === 'danger' }" role="alertdialog" aria-modal="true" :aria-labelledby="`confirm-title-${activeConfirm.id}`" @keydown.esc="close(false)">
+        <section ref="dialog" class="confirm-dialog theme-card" :class="{ 'confirm-danger': activeConfirm.tone === 'danger' }" role="alertdialog" aria-modal="true" :aria-labelledby="`confirm-title-${activeConfirm.id}`" :aria-describedby="`confirm-message-${activeConfirm.id}`" @keydown.esc="close(false)" @keydown="onDialogKeydown">
           <div class="confirm-icon"><AlertTriangle :size="19" /></div>
-          <div class="confirm-copy"><h2 :id="`confirm-title-${activeConfirm.id}`">{{ t('common.confirmTitle') }}</h2><p>{{ activeConfirm.message }}</p></div>
+          <div class="confirm-copy"><h2 :id="`confirm-title-${activeConfirm.id}`">{{ t('common.confirmTitle') }}</h2><p :id="`confirm-message-${activeConfirm.id}`">{{ activeConfirm.message }}</p></div>
           <button class="confirm-close" type="button" :aria-label="t('common.cancel')" @click="close(false)"><X :size="17" /></button>
           <footer class="confirm-actions">
             <button ref="cancelButton" class="confirm-cancel" type="button" @click="close(false)">{{ t('common.cancel') }}</button>
