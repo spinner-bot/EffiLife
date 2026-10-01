@@ -260,8 +260,12 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
 function buildDraftTheme(): Config['theme'] {
   return {
     // Keep rich-theme/custom fields that are not edited by this panel. The
-    // editor must not turn a valid theme into a partial object on save.
-    ...config.value.theme,
+    // editor must not turn a valid theme into a partial object on save. Use
+    // the durable snapshot as the base instead of the live preview object:
+    // App-level refreshes are allowed to replace config.value while this
+    // panel is open, but they must never become the source of truth for a
+    // draft that is about to be confirmed and persisted.
+    ...savedThemeSnapshot.value,
     type: themeType.value,
     solid: { ...solidConfig.value },
     gradient: { ...gradientConfig.value },

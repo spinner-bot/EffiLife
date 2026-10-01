@@ -112,7 +112,8 @@ def test_theme_save_ignores_its_own_workspace_refresh_event():
 def test_theme_draft_preserves_rich_theme_fields_not_edited_by_basic_controls():
     source = SETTINGS.read_text(encoding="utf-8")
     draft_block = source.split("function buildDraftTheme", 1)[1].split("const themeDirty", 1)[0]
-    assert "...config.value.theme" in draft_block
+    assert "...savedThemeSnapshot.value" in draft_block
+    assert "...config.value.theme" not in draft_block
 
 
 def test_theme_exit_builds_persistence_payload_from_detached_draft():
