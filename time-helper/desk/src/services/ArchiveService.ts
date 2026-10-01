@@ -191,9 +191,10 @@ async function getAllRecords(): Promise<Record<string, unknown[]>> {
         indexedDBRecords[entry.key] = entry.value
       }
     }
-    // IndexedDB is authoritative once it has readable records. Do not merge
-    // stale localStorage dates back into the primary dataset.
-    if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords
+    // A successful IndexedDB read is authoritative even when the store is
+    // empty. Do not resurrect stale localStorage dates into a valid empty
+    // primary dataset; fall back only when the primary read itself fails.
+    return indexedDBRecords
   } catch {
     // IndexedDB unavailable: use the legacy localStorage snapshot.
   }

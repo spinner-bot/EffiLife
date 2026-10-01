@@ -41,7 +41,16 @@ def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():
     records = source.split("async function getAllRecords", 1)[1]
 
     assert "const indexedDBRecords: Record<string, unknown[]> = {}" in records
-    assert "if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords" in records
+    assert "return indexedDBRecords" in records
+    assert "if (Object.keys(indexedDBRecords).length > 0) return indexedDBRecords" not in records
+
+
+def test_archive_records_do_not_fall_back_to_legacy_when_indexeddb_is_successfully_empty():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    records = source.split("async function getAllRecords", 1)[1]
+    assert "return indexedDBRecords" in records
+    assert "return legacyRecords" in records
+    assert records.index("return indexedDBRecords") < records.index("return legacyRecords")
 
 
 def test_archive_import_validates_record_buckets_before_writing():
