@@ -104,8 +104,8 @@ function navigateTo(view: ViewType) {
 // 返回上一级
 async function goBack() {
   if (currentView.value === 'theme' && themeDirty.value) {
-    const saved = await saveTheme()
-    if (!saved) return
+    const canLeave = await confirmThemeExit()
+    if (!canLeave) return
   }
   if (viewHistory.value.length > 1) {
     viewHistory.value.pop()
@@ -292,12 +292,17 @@ async function saveTheme(): Promise<boolean> {
   }
 }
 
+async function confirmThemeExit(): Promise<boolean> {
+  if (!await requestConfirm(t('settings.theme.unsavedConfirm'))) return false
+  return await saveTheme()
+}
+
 // Global navigation can leave SettingsView without going through goBack().
 // Persist the theme draft for every exit path and keep the editor mounted if
 // durable storage rejects the write.
 onBeforeRouteLeave(async () => {
   if (currentView.value !== 'theme' || !themeDirty.value) return true
-  return await saveTheme()
+  return await confirmThemeExit()
 })
 
 // 纯色预设
@@ -750,6 +755,7 @@ onUnmounted(() => {
             <button
               v-for="theme in availableThemes.filter(theme => themeCategory(theme) === category)"
               :key="theme.type"
+              type="button"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               @click="themeType = theme.type"
@@ -771,24 +777,24 @@ onUnmounted(() => {
               <div class="color-row">
                 <span>{{ t('settings.theme.windowBackground') }}</span>
                 <input type="text" v-model="solidConfig.bg_window" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_bg_window')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('solid_bg_window')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.buttonBackground') }}</span>
                 <input type="text" v-model="solidConfig.bg_button" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_bg_button')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('solid_bg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.buttonText') }}</span>
                 <input type="text" v-model="solidConfig.fg_button" class="color-input" />
-                <button class="btn small" @click="pickColor('solid_fg_button')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('solid_fg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
             </div>
             <div class="preset-buttons">
               <span>{{ t('settings.theme.presetLabel') }}</span>
-              <button class="btn small" @click="applySolidPreset('default')">{{ t('settings.theme.preset.default') }}</button>
-              <button class="btn small" @click="applySolidPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
-              <button class="btn small" @click="applySolidPreset('light')">{{ t('settings.theme.preset.light') }}</button>
+              <button type="button" class="btn small" @click="applySolidPreset('default')">{{ t('settings.theme.preset.default') }}</button>
+              <button type="button" class="btn small" @click="applySolidPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
+              <button type="button" class="btn small" @click="applySolidPreset('light')">{{ t('settings.theme.preset.light') }}</button>
             </div>
           </div>
         </template>
@@ -801,12 +807,12 @@ onUnmounted(() => {
               <div class="color-row">
                 <span>{{ t('settings.theme.startColor') }}</span>
                 <input type="text" v-model="gradientConfig.color_start" class="color-input" />
-                <button class="btn small" @click="pickColor('gradient_color_start')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('gradient_color_start')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.endColor') }}</span>
                 <input type="text" v-model="gradientConfig.color_end" class="color-input" />
-                <button class="btn small" @click="pickColor('gradient_color_end')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('gradient_color_end')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.gradientDirection') }}</span>
@@ -822,10 +828,10 @@ onUnmounted(() => {
             </div>
             <div class="preset-buttons">
               <span>{{ t('settings.theme.presetLabel') }}</span>
-              <button class="btn small" @click="applyGradientPreset('purple')">{{ t('settings.theme.preset.purple') }}</button>
-              <button class="btn small" @click="applyGradientPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
-              <button class="btn small" @click="applyGradientPreset('sunset')">{{ t('settings.theme.preset.sunset') }}</button>
-              <button class="btn small" @click="applyGradientPreset('forest')">{{ t('settings.theme.preset.forest') }}</button>
+              <button type="button" class="btn small" @click="applyGradientPreset('purple')">{{ t('settings.theme.preset.purple') }}</button>
+              <button type="button" class="btn small" @click="applyGradientPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
+              <button type="button" class="btn small" @click="applyGradientPreset('sunset')">{{ t('settings.theme.preset.sunset') }}</button>
+              <button type="button" class="btn small" @click="applyGradientPreset('forest')">{{ t('settings.theme.preset.forest') }}</button>
             </div>
           </div>
         </template>
@@ -838,7 +844,7 @@ onUnmounted(() => {
               <div class="color-row">
                 <span>{{ t('settings.theme.backgroundColor') }}</span>
                 <input type="text" v-model="glassConfig.bg_color" class="color-input" />
-                <button class="btn small" @click="pickColor('glass_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('glass_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.glassOpacity') }}</span>
@@ -853,9 +859,9 @@ onUnmounted(() => {
             </div>
             <div class="preset-buttons">
               <span>{{ t('settings.theme.presetLabel') }}</span>
-              <button class="btn small" @click="applyGlassPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
-              <button class="btn small" @click="applyGlassPreset('light')">{{ t('settings.theme.preset.light') }}</button>
-              <button class="btn small" @click="applyGlassPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
+              <button type="button" class="btn small" @click="applyGlassPreset('dark')">{{ t('settings.theme.preset.dark') }}</button>
+              <button type="button" class="btn small" @click="applyGlassPreset('light')">{{ t('settings.theme.preset.light') }}</button>
+              <button type="button" class="btn small" @click="applyGlassPreset('blue')">{{ t('settings.theme.preset.blue') }}</button>
             </div>
           </div>
         </template>
@@ -868,17 +874,17 @@ onUnmounted(() => {
               <div class="color-row">
                 <span>{{ t('settings.theme.backgroundColor') }}</span>
                 <input type="text" v-model="neonConfig.bg_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('neon_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.neonColor') }}</span>
                 <input type="text" v-model="neonConfig.neon_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_neon_color')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('neon_neon_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.accentColor') }}</span>
                 <input type="text" v-model="neonConfig.accent_color" class="color-input" />
-                <button class="btn small" @click="pickColor('neon_accent_color')">{{ t('settings.theme.chooseColor') }}</button>
+                <button type="button" class="btn small" @click="pickColor('neon_accent_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
                 <span>{{ t('settings.theme.glowIntensity') }}</span>
@@ -888,10 +894,10 @@ onUnmounted(() => {
             </div>
             <div class="preset-buttons">
               <span>{{ t('settings.theme.presetLabel') }}</span>
-              <button class="btn small" @click="applyNeonPreset('green')">{{ t('settings.theme.preset.green') }}</button>
-              <button class="btn small" @click="applyNeonPreset('pink')">{{ t('settings.theme.preset.pink') }}</button>
-              <button class="btn small" @click="applyNeonPreset('cyan')">{{ t('settings.theme.preset.cyan') }}</button>
-              <button class="btn small" @click="applyNeonPreset('rainbow')">{{ t('settings.theme.preset.rainbow') }}</button>
+              <button type="button" class="btn small" @click="applyNeonPreset('green')">{{ t('settings.theme.preset.green') }}</button>
+              <button type="button" class="btn small" @click="applyNeonPreset('pink')">{{ t('settings.theme.preset.pink') }}</button>
+              <button type="button" class="btn small" @click="applyNeonPreset('cyan')">{{ t('settings.theme.preset.cyan') }}</button>
+              <button type="button" class="btn small" @click="applyNeonPreset('rainbow')">{{ t('settings.theme.preset.rainbow') }}</button>
             </div>
           </div>
         </template>

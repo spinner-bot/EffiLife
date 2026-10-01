@@ -152,3 +152,17 @@ def test_locale_catalogs_have_the_same_translation_keys():
 def test_theme_save_failure_message_exists_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
     assert source.count("'settings.saveFailed'") == 2
+
+
+def test_theme_exit_confirms_before_persisting_without_a_save_button():
+    import re
+
+    source = SETTINGS.read_text(encoding="utf-8")
+    theme_view = source.split("currentView === 'theme'", 1)[1].split("currentView === 'help'", 1)[0]
+    buttons = re.findall(r"<button\b[\s\S]*?>", theme_view)
+
+    assert "async function confirmThemeExit()" in source
+    assert "requestConfirm(t('settings.theme.unsavedConfirm'))" in source
+    assert "return await confirmThemeExit()" in source
+    assert 'type="submit"' not in theme_view
+    assert all('type="button"' in button for button in buttons if "@click" in button)

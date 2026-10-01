@@ -5,16 +5,21 @@ ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue"
 
 
-def test_theme_changes_preview_and_save_automatically_on_exit():
+def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     source = SETTINGS.read_text(encoding="utf-8")
 
     assert "appStore.previewConfig({ ...config.value, theme })" in source
     assert "const themeDirty = computed" in source
     assert "if (currentView.value === 'theme' && themeDirty.value)" in source
-    assert "const saved = await saveTheme()" in source
-    assert "if (!saved) return" in source
+    assert "async function confirmThemeExit()" in source
+    assert "requestConfirm(t('settings.theme.unsavedConfirm'))" in source
+    assert "if (!await requestConfirm(t('settings.theme.unsavedConfirm'))) return false" in source
+    assert "return await saveTheme()" in source
+    assert "const canLeave = await confirmThemeExit()" in source
+    assert "if (!canLeave) return" in source
     assert "onBeforeRouteLeave(async () =>" in source
     assert "if (currentView.value !== 'theme' || !themeDirty.value) return true" in source
+    assert "return await confirmThemeExit()" in source
 
 
 def test_theme_save_refreshes_persistent_snapshot():
