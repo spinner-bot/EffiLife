@@ -644,6 +644,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
     ...legacy,
+    config: legacy.config ? normalizeConfig(legacy.config as Partial<Config>) as unknown as Record<string, unknown> : null,
     archiveIntegrity: 'legacy',
     records: legacyRecords,
     locale: legacy.locale || 'zh-CN',
