@@ -40,7 +40,10 @@ export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource) =>
   window.addEventListener(WORKSPACE_CHANGED_EVENT, handler)
   broadcast?.addEventListener('message', broadcastHandler)
   subscriberCount += 1
+  let active = true
   return () => {
+    if (!active) return
+    active = false
     window.removeEventListener(WORKSPACE_CHANGED_EVENT, handler)
     broadcast?.removeEventListener('message', broadcastHandler)
     subscriberCount = Math.max(0, subscriberCount - 1)
