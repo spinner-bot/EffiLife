@@ -234,6 +234,15 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
 
     // 恢复 localStorage 数据
     if (data.localStorage) {
+      // The emergency snapshot is a replacement for runtime mirrors. Remove
+      // stale app keys first, but keep emergency-backup entries so a failed
+      // restore never destroys the recovery source itself.
+      for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('efflife_') && !key.startsWith('efflife_emergency_backup_')) {
+          localStorage.removeItem(key)
+        }
+      }
       for (const [key, value] of Object.entries(data.localStorage)) {
         localStorage.setItem(key, JSON.stringify(value))
       }
