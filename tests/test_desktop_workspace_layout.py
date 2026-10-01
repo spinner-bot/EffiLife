@@ -50,6 +50,15 @@ def test_task_center_uses_the_shared_wide_desktop_content_budget():
     assert ".task-header, .task-content { max-width: 1180px; }" in tasks
 
 
+def test_task_center_only_stacks_editing_controls_on_mobile():
+    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    assert "@media (max-width: 700px)" in tasks
+    mobile_block = tasks.split("@media (max-width: 700px)", 1)[1]
+    assert ".task-edit-form { grid-template-columns: 1fr; }" in mobile_block
+    assert ".task-item-actions { flex-basis: 100%;" in mobile_block
+    assert "@media (max-width: 1099px)" not in tasks
+
+
 def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
     plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
