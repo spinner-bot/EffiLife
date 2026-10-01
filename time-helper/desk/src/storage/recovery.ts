@@ -166,17 +166,16 @@ export async function exportEmergencyBackup(): Promise<string> {
     backupData.records = records
 
     // 也收集 localStorage 中的数据
-    const localStorageData: Record<string, unknown> = {}
+    const localStorageData: Record<string, string> = {}
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
       if (key && key.startsWith('efflife_')) {
-        try {
-          localStorageData[key] = JSON.parse(localStorage.getItem(key) || 'null')
-        } catch {
-          localStorageData[key] = localStorage.getItem(key)
-        }
+        // Keep the exact browser value. Older emergency backups stored a
+        // parsed value and are still supported by the legacy restore branch.
+        localStorageData[key] = localStorage.getItem(key) || ''
       }
     }
+    backupData.localStorageEncoding = 'raw-v2'
     backupData.localStorage = localStorageData
 
     const jsonStr = JSON.stringify(backupData, null, 2)
@@ -244,7 +243,12 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
         }
       }
       for (const [key, value] of Object.entries(data.localStorage)) {
-        localStorage.setItem(key, JSON.stringify(value))
+        localStorage.setItem(
+          key,
+          data.localStorageEncoding === 'raw-v2' && typeof value === 'string'
+            ? value
+            : JSON.stringify(value),
+        )
       }
     }
 
