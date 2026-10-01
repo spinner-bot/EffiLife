@@ -68,8 +68,16 @@ def test_global_search_supports_keyboard_result_navigation():
     assert "selectedIndex" in source
     assert "ArrowDown" in source
     assert "ArrowUp" in source
+    assert "event.key === 'Home'" in source
+    assert "event.key === 'End'" in source
     assert "openResult(filteredResults.value[selectedIndex.value])" in source
     assert "class=\"search-result\" :class=\"{ selected: selectedIndex === index }\"" in source
+
+
+def test_global_search_keeps_selected_result_visible():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "scrollIntoView({ block: 'nearest' })" in source
+    assert "watch(\n  [selectedIndex, () => filteredResults.value.length]" in source
 
 
 def test_global_search_exposes_active_result_to_assistive_technology():

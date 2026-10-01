@@ -121,6 +121,16 @@ watch(query, () => {
   selectedIndex.value = 0
 })
 
+watch(
+  [selectedIndex, () => filteredResults.value.length],
+  async () => {
+    await nextTick()
+    const result = filteredResults.value[selectedIndex.value]
+    if (!result) return
+    document.getElementById(resultDomId(result))?.scrollIntoView({ block: 'nearest' })
+  },
+)
+
 const stopWorkspaceListener = onWorkspaceChanged(() => {
   if (props.open) void loadIndex()
 })
@@ -193,6 +203,12 @@ function handleSearchKeydown(event: KeyboardEvent) {
   } else if (event.key === 'ArrowUp' && count > 0) {
     event.preventDefault()
     selectedIndex.value = (selectedIndex.value - 1 + count) % count
+  } else if (event.key === 'Home' && count > 0) {
+    event.preventDefault()
+    selectedIndex.value = 0
+  } else if (event.key === 'End' && count > 0) {
+    event.preventDefault()
+    selectedIndex.value = count - 1
   } else if (event.key === 'Enter' && count > 0) {
     event.preventDefault()
     openResult(filteredResults.value[selectedIndex.value])
