@@ -13,7 +13,8 @@ def test_plan_create_dialog_has_standard_dialog_semantics():
 
 def test_plan_create_dialog_supports_keyboard_and_backdrop_close():
     assert '@click.self="closeCreatePlan"' in SOURCE
-    assert '@keydown.esc.prevent.stop="closeCreatePlan"' in SOURCE
+    assert '@keydown="onCreateModalKeydown"' in SOURCE
+    assert "event.key === 'Escape'" in SOURCE
     assert '@click="closeCreatePlan"' in SOURCE
 
 

@@ -27,10 +27,20 @@ def test_plan_creation_collects_initial_content_then_opens_full_editor():
 
 def test_plan_creation_errors_are_visible_inside_the_modal():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
-    modal = view.split('<form class="create-modal', 1)[1].split('</form>', 1)[0]
+    modal = view.split('class="create-modal', 1)[1].split('</form>', 1)[0]
     assert 'v-if="errorMessage"' in modal
     assert 'class="plans-error create-modal-error"' in modal
     assert 'role="alert"' in modal
+
+
+def test_plan_creation_modal_traps_keyboard_focus_and_restores_trigger_focus():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    assert 'ref="createModal"' in view
+    assert 'function onCreateModalKeydown' in view
+    assert "createReturnFocus" in view
+    assert 'event.key === \'Escape\'' in view
+    assert 'event.key !== \'Tab\'' in view
+    assert 'first.focus()' in view and 'last.focus()' in view
 
 
 def test_plan_create_and_template_dates_default_to_the_local_current_day():

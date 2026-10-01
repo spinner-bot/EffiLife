@@ -68,6 +68,7 @@ const templateDraftId = ref('')
 const templateOptions = ref<PlanTemplateSummary[]>([])
 const templateLoading = ref(false)
 const editingMeta = ref(false)
+const createModal = ref<HTMLElement | null>(null)
 const sectionName = ref('')
 const sectionInfo = ref('')
 const editingSectionIndex = ref<number | null>(null)
@@ -299,6 +300,29 @@ function closeCreatePlan() {
   void nextTick(() => {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
+}
+
+function onCreateModalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
+    closeCreatePlan()
+    return
+  }
+  if (event.key !== 'Tab' || !createModal.value) return
+  const focusable = Array.from(createModal.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 function addCreateSection(): void {
@@ -942,7 +966,7 @@ onUnmounted(() => {
     </main>
 
     <div v-if="showCreate" class="modal-backdrop" @click.self="closeCreatePlan">
-      <form class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown.esc.prevent.stop="closeCreatePlan">
+      <form ref="createModal" class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown="onCreateModalKeydown">
         <h2 id="plan-create-title">{{ t('plans.create') }}</h2>
         <p>{{ t('plans.createHint') }}</p>
         <p v-if="errorMessage" class="plans-error create-modal-error" role="alert">{{ errorMessage }}</p>
