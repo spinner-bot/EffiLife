@@ -179,8 +179,8 @@ async function loadPlans() {
 }
 
 async function refreshFromWorkspace(source?: string): Promise<void> {
-  if (!source || !['plans', 'archive'].includes(source)) return
-  if (selectedPlan.value && (source === 'plans' || source === 'archive')) {
+  if (!source || !['plans', 'archive', 'network'].includes(source)) return
+  if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network')) {
     try {
       selectedPlan.value = await getPlanFull(selectedPlan.value.id)
     } catch {
@@ -224,7 +224,7 @@ async function drainWorkspaceRefresh(): Promise<void> {
 }
 
 function queueWorkspaceRefresh(source?: string): void {
-  if (!source || !['plans', 'archive'].includes(source)) return
+  if (!source || !['plans', 'archive', 'network'].includes(source)) return
   pendingWorkspaceSources.add(source)
   void drainWorkspaceRefresh()
 }

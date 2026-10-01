@@ -15,7 +15,7 @@ import ToastHost from './components/ToastHost.vue'
 import ConfirmHost from './components/ConfirmHost.vue'
 import { notifyToast } from '@/services/toastService'
 import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
-import { onWorkspaceChanged } from './services/workspaceEvents'
+import { notifyWorkspaceChanged, onWorkspaceChanged } from './services/workspaceEvents'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -129,7 +129,9 @@ function refreshWhenVisible() {
 }
 
 function updateOnlineStatus() {
+  const wasOnline = isOnline.value
   isOnline.value = navigator.onLine
+  if (!wasOnline && isOnline.value) notifyWorkspaceChanged('network')
 }
 
 // 应用主题到 CSS 变量
@@ -204,7 +206,7 @@ onMounted(async () => {
     }
   }
   stopWorkspaceListener = onWorkspaceChanged((source) => {
-    if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
+    if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive', 'network'].includes(source)) return
     if (source === 'settings') {
       // Settings writes the config and updates the Pinia store before it
       // emits this same-window event. Re-reading the workspace here can race

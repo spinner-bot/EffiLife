@@ -1,4 +1,4 @@
-export type WorkspaceChangeSource = 'todos' | 'plans' | 'records' | 'archive' | 'settings'
+export type WorkspaceChangeSource = 'todos' | 'plans' | 'records' | 'archive' | 'settings' | 'network'
 
 export const WORKSPACE_CHANGED_EVENT = 'effilife:workspace-changed'
 const WORKSPACE_CHANNEL = 'effilife-workspace'

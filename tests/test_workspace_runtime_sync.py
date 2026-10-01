@@ -10,7 +10,7 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     source = APP.read_text(encoding="utf-8")
     assert "onWorkspaceChanged" in source
     assert "appStore.refreshWorkspaceData()" in source
-    assert "['plans', 'records', 'settings', 'archive']" in source
+    assert "['plans', 'records', 'settings', 'archive', 'network']" in source
     assert "stopWorkspaceListener?.()" in source
     assert "document.addEventListener('visibilitychange', refreshWhenVisible)" in source
     assert "document.removeEventListener('visibilitychange', refreshWhenVisible)" in source

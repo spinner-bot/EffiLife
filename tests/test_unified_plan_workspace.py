@@ -24,7 +24,7 @@ def test_daily_plan_supports_embedded_mode_without_duplicate_header():
 
 
 def test_plan_hub_recovers_when_another_window_archives_the_open_plan():
-    assert "if (selectedPlan.value && (source === 'plans' || source === 'archive'))" in HUB
+    assert "if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network'))" in HUB
     assert "The plan may have been archived or removed in another window" in HUB
     assert "selectedPlan.value = null" in HUB
     assert "await router.replace({ path: '/plans', query: {} })" in HUB
