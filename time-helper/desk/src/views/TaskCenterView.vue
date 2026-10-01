@@ -756,9 +756,13 @@ function getDeadlineState(deadline?: string): DeadlineState | null {
   const date = parseStoredDate(deadline)
   if (Number.isNaN(date.getTime())) return null
   const now = new Date()
-  if (date.getTime() < now.getTime()) return 'overdue'
   const localDay = (value: Date) => `${value.getFullYear()}-${value.getMonth()}-${value.getDate()}`
-  return localDay(date) === localDay(now) ? 'today' : 'upcoming'
+  const deadlineDay = localDay(date)
+  const today = localDay(now)
+  if (deadlineDay === today) return 'today'
+  return date.getTime() < new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    ? 'overdue'
+    : 'upcoming'
 }
 
 function deadlineStateLabel(deadline?: string): string {
