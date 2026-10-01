@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { categoryIconRegistry } from './categoryIcons'
 import { Circle } from 'lucide-vue-next'
+import { useI18n } from '@/i18n'
 
 const props = withDefaults(defineProps<{
   name?: string
@@ -12,10 +13,11 @@ const props = withDefaults(defineProps<{
 })
 
 const iconComponent = computed(() => categoryIconRegistry[props.name || ''] || Circle)
+const { t } = useI18n()
 </script>
 
 <template>
-  <span class="category-icon-preview" :aria-label="name || ascii || 'category'">
+  <span class="category-icon-preview" :aria-label="name || ascii || t('tasks.categoryIcon')">
     <span v-if="ascii" class="category-icon-ascii">{{ ascii }}</span>
     <component :is="iconComponent" v-else :size="size" :stroke-width="2" />
   </span>

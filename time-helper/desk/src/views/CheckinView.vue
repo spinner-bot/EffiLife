@@ -279,7 +279,7 @@ const last7Days = computed(() => {
           :data="checkinHeatmapData"
           :weeks="26"
           color-mode="checkin"
-          title=""
+          :title="t('checkin.heatmap')"
           @cell-click="onHeatmapClick"
         />
       </section>
