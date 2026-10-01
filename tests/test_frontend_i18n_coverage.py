@@ -25,6 +25,16 @@ def test_runtime_event_service_localizes_missed_checkin_copy():
     assert "entry.message = translate('settings.events.runtime.missedCheckinMessage', { date, planName })" in event_system
 
 
+def test_dynamic_translation_key_families_exist_in_both_locales():
+    catalog = CATALOG.read_text(encoding="utf-8")
+    dynamic_keys = {
+        *(f"tasks.iconTab.{name}" for name in ("icons", "ascii", "colors")),
+        *(f"settings.archive.planSource.{name}" for name in ("live", "cache", "snapshot", "unavailable")),
+    }
+    missing = sorted(key for key in dynamic_keys if catalog.count(f"'{key}'") < 2)
+    assert not missing, f"missing bilingual dynamic translation keys: {missing}"
+
+
 def test_unified_workspace_templates_do_not_embed_visible_cjk_text():
     """Visible copy in the active shell must remain translatable.
 
