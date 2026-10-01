@@ -116,6 +116,26 @@ def find_rust_tool(name):
     return shutil.which(name) or shutil.which(f"{name}.exe")
 
 
+def native_toolchain_status():
+    """Report optional native-build tools without changing launcher readiness."""
+    sdk_configured = bool(
+        os.environ.get("ANDROID_HOME", "").strip()
+        or os.environ.get("ANDROID_SDK_ROOT", "").strip()
+    )
+    return {
+        "android": {
+            "adb": shutil.which("adb") or shutil.which("adb.exe"),
+            "sdk_configured": sdk_configured,
+            "ready": bool((shutil.which("adb") or shutil.which("adb.exe")) and sdk_configured),
+        },
+        "ios": {
+            "xcodebuild": shutil.which("xcodebuild") or shutil.which("xcodebuild.exe"),
+            "platform_supported": os.name != "nt",
+            "ready": bool(shutil.which("xcodebuild") or shutil.which("xcodebuild.exe")),
+        },
+    }
+
+
 def node_environment():
     """Build an environment that can run npm and its child processes."""
     env = os.environ.copy()
@@ -499,6 +519,7 @@ def collect_diagnostics(modules):
     npm = find_npm()
     cargo = find_rust_tool("cargo")
     rustc = find_rust_tool("rustc")
+    native_tools = native_toolchain_status()
     module_status = {}
     for key, module in modules.items():
         url = module.get("url")
@@ -563,6 +584,21 @@ def collect_diagnostics(modules):
             "code": "rust-toolchain-missing",
             "severity": "info",
             "message": "Rust/Cargo is unavailable; native Tauri installer builds must run in CI or a release machine",
+            "hint": "Install Rust with rustup, or run the desktop release workflow on a release machine",
+        })
+    if not native_tools["android"]["ready"]:
+        hints.append({
+            "code": "android-toolchain-missing",
+            "severity": "info",
+            "message": "Android SDK/ADB is unavailable; Android builds remain a release-runner task",
+            "hint": "Install Android SDK platform-tools and set ANDROID_HOME or ANDROID_SDK_ROOT",
+        })
+    if not native_tools["ios"]["ready"]:
+        hints.append({
+            "code": "ios-toolchain-missing",
+            "severity": "info",
+            "message": "iOS native tooling is unavailable in this environment",
+            "hint": "Run the iOS workflow on macOS with Xcode and Apple signing prerequisites",
         })
     installer_status = installer_artifacts()
     usable_installers = [
@@ -605,6 +641,7 @@ def collect_diagnostics(modules):
             "rustc": rustc,
             "available": bool(cargo and rustc),
         },
+        "native_toolchain": native_tools,
         "launch_mode": "packaged" if packaged_mode() else "development",
         "time_helper_binaries": [
             {"path": str(path), "exists": path.exists(), "usable": is_non_empty_file(path)}

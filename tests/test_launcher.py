@@ -785,6 +785,24 @@ def test_launcher_diagnostics_explain_blockers_and_release_hints(monkeypatch):
     assert "dependencies-pending" in hint_codes
 
 
+def test_launcher_diagnostics_expose_platform_native_toolchain_hints(monkeypatch):
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "find_node", lambda: "node.exe")
+    monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
+    monkeypatch.setattr(launcher, "find_rust_tool", lambda _name: None)
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+    monkeypatch.delenv("ANDROID_HOME", raising=False)
+    monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
+
+    result = launcher.collect_diagnostics({})
+
+    assert result["native_toolchain"]["android"]["ready"] is False
+    assert result["native_toolchain"]["ios"]["platform_supported"] is False
+    hint_codes = {item["code"] for item in result["hints"]}
+    assert "android-toolchain-missing" in hint_codes
+    assert "ios-toolchain-missing" in hint_codes
+
+
 def test_diagnose_output_uses_ascii_safe_json():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
     assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
