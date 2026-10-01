@@ -526,8 +526,10 @@ def test_posix_shutdown_targets_the_owned_process_group(monkeypatch):
 
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
-    assert "python3 launcher/start.py --unified" in script
-    assert 'python3 launcher/start.py --unified "$@"' in script
+    assert 'PYTHON_BIN="python3"' in script
+    assert 'PYTHON_BIN="$EFFILIFE_PYTHON"' in script
+    assert 'exec "$PYTHON_BIN" launcher/start.py --unified "$@"' in script
+    assert 'exit 127' in script
 
 
 def test_windows_launcher_forwards_extra_arguments():
