@@ -36,11 +36,15 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "--target android" in workflow
     assert "python scripts/generate_checksums.py" in workflow
     assert "release-checksums/EffiLife-android.sha256" in workflow
+    assert "python scripts/generate_release_manifest.py" in workflow
+    assert "release-checksums/EffiLife-android.manifest.json" in workflow
     assert "npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "npm run mobile:ios:build -- --debug" in workflow
     assert "gen/apple/build/**/*.app" in workflow
     assert "--target ios" in workflow
     assert "release-checksums/EffiLife-ios.sha256" in workflow
+    assert "release-checksums/EffiLife-ios.manifest.json" in workflow
+    assert workflow.count("--version-file time-helper/VERSION") == 2
 
 
 def test_mobile_build_workflow_does_not_use_desktop_sidecar():

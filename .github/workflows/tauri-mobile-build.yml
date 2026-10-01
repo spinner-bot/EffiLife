@@ -89,6 +89,14 @@ jobs:
           --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
           --output release-checksums/EffiLife-android.sha256
 
+      - name: Generate Android release manifest
+        run: >-
+          python scripts/generate_release_manifest.py
+          --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
+          --output release-checksums/EffiLife-android.manifest.json
+          --version-file time-helper/VERSION
+          --target android
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
@@ -96,6 +104,7 @@ jobs:
           path: |
             time-helper/desk/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
             release-checksums/EffiLife-android.sha256
+            release-checksums/EffiLife-android.manifest.json
           if-no-files-found: error
 
   ios:
@@ -158,6 +167,14 @@ jobs:
           --directory time-helper/desk/src-tauri/gen/apple/build
           --output release-checksums/EffiLife-ios.sha256
 
+      - name: Generate iOS release manifest
+        run: >-
+          python scripts/generate_release_manifest.py
+          --directory time-helper/desk/src-tauri/gen/apple/build
+          --output release-checksums/EffiLife-ios.manifest.json
+          --version-file time-helper/VERSION
+          --target ios
+
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4
         with:
@@ -166,4 +183,5 @@ jobs:
             time-helper/desk/src-tauri/gen/apple/build/**/*.app
             time-helper/desk/src-tauri/gen/apple/build/**/*.ipa
             release-checksums/EffiLife-ios.sha256
+            release-checksums/EffiLife-ios.manifest.json
           if-no-files-found: error
