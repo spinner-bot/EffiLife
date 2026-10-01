@@ -15,7 +15,8 @@ import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
 import { currentLocale, translate } from '@/i18n'
-import { getTodayDate } from '@/services/dataService'
+import { getTodayDate, normalizeConfig } from '@/services/dataService'
+import type { Config } from '@/types'
 import { notifyWorkspaceChanged } from './workspaceEvents'
 
 // 存档版本
@@ -314,7 +315,7 @@ async function collectAllData(): Promise<ArchiveData> {
   return {
     version: ARCHIVE_VERSION,
     exportDate: new Date().toISOString(),
-    config: await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config'),
+    config: normalizeConfig(await readCoreJSON<Partial<Config>>(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config') || {}) as unknown as Record<string, unknown>,
     plans: await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans'),
     scheduleRules: await readCoreJSON(STORAGE_KEYS.SCHEDULE_RULES, STORE_NAMES.SCHEDULE_RULES, 'rules'),
     manualPlans: await readCoreJSON(STORAGE_KEYS.MANUAL_PLANS, STORE_NAMES.MANUAL_PLANS, 'all'),
@@ -596,7 +597,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     return {
       version: String(app.version || manifest.format_version || '1.0.0'),
       exportDate: String(app.exportDate || manifest.created_at || new Date().toISOString()),
-      config: app.config || null,
+      config: app.config ? normalizeConfig(app.config as Partial<Config>) as unknown as Record<string, unknown> : null,
       plans: app.plans || null,
       scheduleRules: app.scheduleRules || null,
       manualPlans: app.manualPlans || null,
