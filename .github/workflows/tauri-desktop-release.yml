@@ -143,6 +143,14 @@ jobs:
           --target ${{ matrix.target }}
           --extension ${{ matrix.extension }}
 
+      - name: Verify release manifest
+        run: >-
+          python scripts/verify_release_manifest.py
+          --manifest release-checksums/EffiLife-${{ matrix.name }}.manifest.json
+          --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
+          --version-file time-helper/VERSION
+          --target ${{ matrix.target }}
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:

@@ -44,7 +44,7 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "--target ios" in workflow
     assert "release-checksums/EffiLife-ios.sha256" in workflow
     assert "release-checksums/EffiLife-ios.manifest.json" in workflow
-    assert workflow.count("--version-file time-helper/VERSION") == 2
+    assert workflow.count("--version-file time-helper/VERSION") == 4
 
 
 def test_mobile_build_workflow_does_not_use_desktop_sidecar():

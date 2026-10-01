@@ -99,6 +99,14 @@ jobs:
           --target android
           --extension .apk
 
+      - name: Verify Android release manifest
+        run: >-
+          python scripts/verify_release_manifest.py
+          --manifest release-checksums/EffiLife-android.manifest.json
+          --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
+          --version-file time-helper/VERSION
+          --target android
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
@@ -180,6 +188,14 @@ jobs:
           --target ios
           --extension .ipa
           --bundle-extension .app
+
+      - name: Verify iOS release manifest
+        run: >-
+          python scripts/verify_release_manifest.py
+          --manifest release-checksums/EffiLife-ios.manifest.json
+          --directory time-helper/desk/src-tauri/gen/apple/build
+          --version-file time-helper/VERSION
+          --target ios
 
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4
