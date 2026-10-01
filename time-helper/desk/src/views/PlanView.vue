@@ -424,7 +424,7 @@ onMounted(() => {
   <div class="plan-view" :class="{ embedded: props.embedded }">
     <!-- 顶部导航栏 -->
     <header v-if="!props.embedded" class="pv-header">
-      <button class="pv-back" @click="AudioManager.playSound('click'); router.push('/plans')">
+      <button type="button" class="pv-back" @click="AudioManager.playSound('click'); router.push('/plans')">
         <ArrowLeft :size="18" />
       </button>
       <div class="pv-header-title">
@@ -432,7 +432,7 @@ onMounted(() => {
         <span>{{ t('legacyPlan.title') }}</span>
       </div>
       <div class="pv-header-actions">
-        <button class="pv-add-btn" @click="AudioManager.playSound('click'); openAddForm()">
+        <button type="button" class="pv-add-btn" @click="AudioManager.playSound('click'); openAddForm()">
           <Plus :size="16" />
           <span>{{ t('legacyPlan.add') }}</span>
         </button>
@@ -474,10 +474,10 @@ onMounted(() => {
                   <div class="pv-record-meta">{{ hoursToHm(record.duration, locale) }}</div>
                 </div>
                 <div class="pv-record-actions">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -501,7 +501,7 @@ onMounted(() => {
                 <span class="pv-plan-hero-label">{{ t('legacyPlan.todayPlan') }}</span>
                 <div class="pv-plan-hero-tools">
                   <span class="pv-plan-hero-badge">{{ todayPlan.type }}</span>
-                  <button class="pv-inline-btn" @click="AudioManager.playSound('click'); openEditPlan(todayPlan.name)" :title="t('legacyPlan.edit')">
+                <button type="button" class="pv-inline-btn" @click="AudioManager.playSound('click'); openEditPlan(todayPlan.name)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                     <span>{{ t('legacyPlan.edit') }}</span>
                   </button>
@@ -517,7 +517,7 @@ onMounted(() => {
                 >
                   <option v-for="(plan, name) in plans" :key="name" :value="name">{{ name }} · {{ planTypeLabel(plan.plan_type) }}</option>
                 </select>
-                <button class="pv-inline-btn pv-inline-btn-primary" @click="AudioManager.playSound('click'); openCreatePlan()">
+                <button type="button" class="pv-inline-btn pv-inline-btn-primary" @click="AudioManager.playSound('click'); openCreatePlan()">
                   <Plus :size="14" />
                   <span>{{ t('legacyPlan.create') }}</span>
                 </button>
@@ -532,22 +532,22 @@ onMounted(() => {
               </div>
             </div>
             <div class="pv-action-cards">
-              <button class="pv-action-card" @click="AudioManager.playSound('click'); openPlanList()">
+              <button type="button" class="pv-action-card" @click="AudioManager.playSound('click'); openPlanList()">
                 <div class="pv-action-icon pv-action-icon-plan"><FolderKanban :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.planManagement') }}</span><span class="pv-action-desc">{{ t('legacyPlan.planManagementDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
-              <button class="pv-action-card" @click="AudioManager.playSound('click'); openRuleList()">
+              <button type="button" class="pv-action-card" @click="AudioManager.playSound('click'); openRuleList()">
                 <div class="pv-action-icon pv-action-icon-schedule"><Calendar :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.scheduleRules') }}</span><span class="pv-action-desc">{{ t('legacyPlan.scheduleRulesDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
-              <button class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
+              <button type="button" class="pv-action-card" @click="AudioManager.playSound('click'); manageView = 'tempChange'">
                 <div class="pv-action-icon pv-action-icon-temporary"><RefreshCw :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.temporaryChange') }}</span><span class="pv-action-desc">{{ t('legacyPlan.temporaryChangeDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
               </button>
-              <button class="pv-action-card" @click="AudioManager.playSound('click'); router.push('/records')">
+              <button type="button" class="pv-action-card" @click="AudioManager.playSound('click'); router.push('/records')">
                 <div class="pv-action-icon pv-action-icon-history"><History :size="22" /></div>
                 <div class="pv-action-text"><span class="pv-action-title">{{ t('legacyPlan.historyRecords') }}</span><span class="pv-action-desc">{{ t('legacyPlan.historyRecordsDescription') }}</span></div>
                 <ChevronRight :size="16" class="pv-action-arrow" />
@@ -563,12 +563,12 @@ onMounted(() => {
           <!-- 日计划列表 -->
           <template v-if="manageView === 'plans'">
             <div class="pv-sub-header">
-              <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
+              <button type="button" class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
                 <span>{{ t('legacyPlan.back') }}</span>
               </button>
               <h2>{{ t('legacyPlan.plans') }}</h2>
-              <button class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreatePlan()">
+              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreatePlan()">
                 <Plus :size="14" />
                 <span>{{ t('legacyPlan.create') }}</span>
               </button>
@@ -589,10 +589,10 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="pv-plan-actions">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -603,7 +603,7 @@ onMounted(() => {
           <!-- 编辑日计划 -->
           <template v-else-if="manageView === 'editPlan'">
             <div class="pv-sub-header">
-              <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'plans'">
+              <button type="button" class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'plans'">
                 <ArrowLeft :size="14" />
                 <span>{{ t('legacyPlan.back') }}</span>
               </button>
@@ -627,8 +627,8 @@ onMounted(() => {
             <div class="pv-form-group">
               <label>{{ t('legacyPlan.planType') }}</label>
               <div class="pv-type-toggle">
-                <button :class="{ active: editingPlanType === '切分制' }" @click="editingPlanType = '切分制'">{{ t('legacyPlan.split') }}</button>
-                <button :class="{ active: editingPlanType === '分配制' }" @click="editingPlanType = '分配制'">{{ t('legacyPlan.allocate') }}</button>
+                <button type="button" :class="{ active: editingPlanType === '切分制' }" @click="editingPlanType = '切分制'">{{ t('legacyPlan.split') }}</button>
+                <button type="button" :class="{ active: editingPlanType === '分配制' }" @click="editingPlanType = '分配制'">{{ t('legacyPlan.allocate') }}</button>
               </div>
             </div>
 
@@ -640,25 +640,26 @@ onMounted(() => {
                   <input type="number" v-model="item.hours" :placeholder="t('legacyPlan.hours')" class="pv-num-input" step="0.5" />
                   <span class="pv-unit">{{ t('legacyPlan.hourUnit') }}</span>
                   <button
+                    type="button"
                     v-if="editingPlanType === '切分制'"
                     class="pv-bg-toggle"
                     :class="{ active: editingPlanBgTag === item.name }"
                     @click="editingPlanBgTag = item.name"
                   >{{ t('legacyPlan.background') }}</button>
-                  <button class="pv-icon-btn sm" @click="removePlanItem(index)">
+                  <button type="button" class="pv-icon-btn sm" @click="removePlanItem(index)">
                     <X :size="12" />
                   </button>
                 </div>
               </div>
-              <button class="pv-secondary-btn" @click="addPlanItem()">
+              <button type="button" class="pv-secondary-btn" @click="addPlanItem()">
                 <Plus :size="14" />
                 <span>{{ t('legacyPlan.addCategory') }}</span>
               </button>
             </div>
 
             <div class="pv-form-footer">
-              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'plans'">{{ t('legacyPlan.cancel') }}</button>
-              <button class="pv-primary-btn" @click="AudioManager.playSound('click'); savePlan()">
+              <button type="button" class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'plans'">{{ t('legacyPlan.cancel') }}</button>
+              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); savePlan()">
                 <Check :size="14" />
                 <span>{{ t('legacyPlan.save') }}</span>
               </button>
@@ -668,12 +669,12 @@ onMounted(() => {
           <!-- 日程规则列表 -->
           <template v-else-if="manageView === 'rules'">
             <div class="pv-sub-header">
-              <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
+              <button type="button" class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
                 <span>{{ t('legacyPlan.back') }}</span>
               </button>
               <h2>{{ t('legacyPlan.rules') }}</h2>
-              <button class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreateRule()">
+              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); openCreateRule()">
                 <Plus :size="14" />
                 <span>{{ t('legacyPlan.addRule') }}</span>
               </button>
@@ -703,11 +704,11 @@ onMounted(() => {
                   </template>
                 </div>
                 <div class="pv-rule-actions" v-if="rule.rule_type !== 'default'">
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" :title="t('legacyPlan.moveUp')">↑</button>
-                  <button class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" :title="t('legacyPlan.moveUp')">↑</button>
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -718,7 +719,7 @@ onMounted(() => {
           <!-- 编辑规则 -->
           <template v-else-if="manageView === 'editRule'">
             <div class="pv-sub-header">
-              <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'rules'">
+              <button type="button" class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'rules'">
                 <ArrowLeft :size="14" />
                 <span>{{ t('legacyPlan.back') }}</span>
               </button>
@@ -729,10 +730,10 @@ onMounted(() => {
             <div class="pv-form-group">
               <label>{{ t('legacyPlan.rules') }}</label>
               <div class="pv-type-toggle wrap">
-                <button :class="{ active: editingRuleType === 'week' }" @click="editingRuleType = 'week'">{{ t('legacyPlan.week') }}</button>
-                <button :class="{ active: editingRuleType === 'month' }" @click="editingRuleType = 'month'">{{ t('legacyPlan.month') }}</button>
-                <button :class="{ active: editingRuleType === 'year' }" @click="editingRuleType = 'year'">{{ t('legacyPlan.year') }}</button>
-                <button :class="{ active: editingRuleType === 'month_week' }" @click="editingRuleType = 'month_week'">{{ t('legacyPlan.monthWeek') }}</button>
+                <button type="button" :class="{ active: editingRuleType === 'week' }" @click="editingRuleType = 'week'">{{ t('legacyPlan.week') }}</button>
+                <button type="button" :class="{ active: editingRuleType === 'month' }" @click="editingRuleType = 'month'">{{ t('legacyPlan.month') }}</button>
+                <button type="button" :class="{ active: editingRuleType === 'year' }" @click="editingRuleType = 'year'">{{ t('legacyPlan.year') }}</button>
+                <button type="button" :class="{ active: editingRuleType === 'month_week' }" @click="editingRuleType = 'month_week'">{{ t('legacyPlan.monthWeek') }}</button>
               </div>
             </div>
 
@@ -740,6 +741,7 @@ onMounted(() => {
               <label>{{ t('legacyPlan.selectWeek') }}</label>
               <div class="pv-week-picker">
                 <button
+                  type="button"
                   v-for="day in weekDays"
                   :key="day"
                   class="pv-week-btn"
@@ -772,8 +774,8 @@ onMounted(() => {
             </div>
 
             <div class="pv-form-footer">
-              <button class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'rules'">{{ t('legacyPlan.cancel') }}</button>
-              <button class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRule()">
+              <button type="button" class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'rules'">{{ t('legacyPlan.cancel') }}</button>
+              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRule()">
                 <Check :size="14" />
                 <span>{{ t('legacyPlan.save') }}</span>
               </button>
@@ -783,7 +785,7 @@ onMounted(() => {
           <!-- 临时计划变更 -->
           <template v-else-if="manageView === 'tempChange'">
             <div class="pv-sub-header">
-              <button class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
+              <button type="button" class="pv-back-link" @click="AudioManager.playSound('click'); manageView = 'overview'">
                 <ArrowLeft :size="14" />
                 <span>{{ t('legacyPlan.back') }}</span>
               </button>
@@ -798,6 +800,7 @@ onMounted(() => {
 
             <div class="pv-plan-pick-list">
               <button
+                type="button"
                 v-for="(plan, name) in plans"
                 :key="name"
                 class="pv-plan-pick"
@@ -821,15 +824,15 @@ onMounted(() => {
         <div class="pv-modal">
           <div class="pv-modal-header">
             <h3>{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
-            <button class="pv-modal-close" @click="showRecordForm = false">
+            <button type="button" class="pv-modal-close" @click="showRecordForm = false">
               <X :size="18" />
             </button>
           </div>
           <div class="pv-modal-body">
             <!-- 输入模式切换 -->
             <div class="pv-mode-toggle">
-              <button :class="{ active: formMode === 'time' }" @click="formMode = 'time'">{{ t('legacyPlan.startEnd') }}</button>
-              <button :class="{ active: formMode === 'duration' }" @click="formMode = 'duration'">{{ t('legacyPlan.durationPoint') }}</button>
+              <button type="button" :class="{ active: formMode === 'time' }" @click="formMode = 'time'">{{ t('legacyPlan.startEnd') }}</button>
+              <button type="button" :class="{ active: formMode === 'duration' }" @click="formMode = 'duration'">{{ t('legacyPlan.durationPoint') }}</button>
             </div>
 
             <div class="pv-form-group" v-if="formMode === 'time'">
@@ -901,8 +904,8 @@ onMounted(() => {
             </div>
           </div>
           <div class="pv-modal-footer">
-            <button class="pv-secondary-btn" @click="showRecordForm = false">{{ t('legacyPlan.cancel') }}</button>
-            <button class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRecord()">
+            <button type="button" class="pv-secondary-btn" @click="showRecordForm = false">{{ t('legacyPlan.cancel') }}</button>
+            <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
               <span>{{ t('legacyPlan.save') }}</span>
             </button>
