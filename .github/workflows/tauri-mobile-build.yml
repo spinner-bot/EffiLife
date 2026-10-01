@@ -16,11 +16,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: effilife-mobile-build-${{ github.ref }}-${{ inputs.target }}
+  cancel-in-progress: false
+
 jobs:
   android:
     name: Android APK
     if: inputs.target == 'all' || inputs.target == 'android'
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -124,6 +129,7 @@ jobs:
     name: iOS app bundle
     if: inputs.target == 'all' || inputs.target == 'ios'
     runs-on: macos-14
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v5
