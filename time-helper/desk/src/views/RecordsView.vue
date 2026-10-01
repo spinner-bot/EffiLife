@@ -254,6 +254,10 @@ async function saveRecordInternal() {
     const refMinutes = refH * 60 + refM
 
     if (formDurationRef.value === 'start') {
+      if (refMinutes + totalMinutes > 24 * 60) {
+        notifyToast(t('records.validation.crossesMidnight'), 'error')
+        return
+      }
       start = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       startMinutes = refMinutes
       const endMins = refMinutes + durationHours * 60
@@ -262,6 +266,10 @@ async function saveRecordInternal() {
       end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
       endMinutes = endMins % (24 * 60)
     } else {
+      if (refMinutes - totalMinutes < 0) {
+        notifyToast(t('records.validation.crossesMidnight'), 'error')
+        return
+      }
       end = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       endMinutes = refMinutes
       const startMins = refMinutes - durationHours * 60
