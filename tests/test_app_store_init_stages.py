@@ -7,6 +7,8 @@ STORE = (ROOT / "time-helper" / "desk" / "src" / "stores" / "app.ts").read_text(
 
 def test_app_store_initialization_reports_bounded_stage_failures():
     assert "async function waitForInitStage<T>" in STORE
+    assert "const INIT_STAGE_TIMEOUT_MS = 15000" in STORE
+    assert "INIT_STAGE_TIMEOUT_MS)" in STORE
     assert "Workspace initialization stalled at ${name}" in STORE
     for stage in ("data migration", "configuration", "plans", "schedule rules", "records", "today workspace"):
         assert f"waitForInitStage('{stage}'" in STORE

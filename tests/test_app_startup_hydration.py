@@ -18,6 +18,12 @@ def test_business_shell_mounts_only_after_storage_hydration():
     assert 'class="app-startup" role="status"' in source
 
 
+def test_core_startup_allows_cold_storage_hydration_but_remains_bounded():
+    source = APP.read_text(encoding="utf-8")
+    assert "const CORE_STARTUP_TIMEOUT_MS = 30000" in source
+    assert "CORE_STARTUP_TIMEOUT_MS)" in source
+
+
 def test_startup_state_is_localized_in_both_fallback_catalogs():
     source = I18N.read_text(encoding="utf-8")
     assert "'app.starting': '\\u6b63\\u5728\\u51c6\\u5907\\u5de5\\u4f5c\\u53f0\\u2026'" in source

@@ -62,7 +62,9 @@ function isEditableTarget(target: EventTarget | null): boolean {
 // Audio, check-in and event hydration are useful background services, but a
 // delayed IndexedDB request in one of them must not hide the whole workspace.
 const OPTIONAL_STARTUP_TIMEOUT_MS = 5000
-const CORE_STARTUP_TIMEOUT_MS = 15000
+// Keep the shell tolerant of a cold storage migration while retaining a hard
+// upper bound for a genuinely unavailable workspace.
+const CORE_STARTUP_TIMEOUT_MS = 30000
 
 async function waitForOptionalSubsystem(name: string, ready: Promise<void>): Promise<void> {
   let timeout: ReturnType<typeof setTimeout> | undefined

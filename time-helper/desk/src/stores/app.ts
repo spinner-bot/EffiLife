@@ -23,6 +23,10 @@ export const useAppStore = defineStore('app', () => {
   // Prevent a visibility/cross-window read that started before a local write
   // from overwriting the just-persisted configuration when it resolves later.
   let workspaceWriteVersion = 0
+  // A cold IndexedDB open/migration can be slower than a normal read. Keep a
+  // bounded stage timeout, but do not turn a transient cold start into a
+  // workspace-wide startup failure after only five seconds.
+  const INIT_STAGE_TIMEOUT_MS = 15000
 
   async function waitForInitStage<T>(name: string, task: Promise<T>): Promise<T> {
     let timeout: ReturnType<typeof setTimeout> | undefined
@@ -30,7 +34,7 @@ export const useAppStore = defineStore('app', () => {
       return await Promise.race([
         task,
         new Promise<T>((_, reject) => {
-          timeout = setTimeout(() => reject(new Error(`Workspace initialization stalled at ${name}`)), 5000)
+          timeout = setTimeout(() => reject(new Error(`Workspace initialization stalled at ${name}`)), INIT_STAGE_TIMEOUT_MS)
         }),
       ])
     } finally {

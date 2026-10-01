@@ -3,6 +3,7 @@
 const DB_NAME = 'efflife_db'
 const DB_VERSION = 3
 const DB_OPEN_TIMEOUT_MS = 3000
+const DB_READ_TIMEOUT_MS = 3000
 const STORAGE_PREFIX = 'efflife_'
 const RAW_STORAGE_PREFIX = `${STORAGE_PREFIX}raw_`
 
@@ -133,9 +134,14 @@ export async function get<T>(storeName: string, key: string): Promise<T | null> 
       const transaction = db.transaction([storeName], 'readonly')
       const store = transaction.objectStore(storeName)
       const request = store.get(key)
+      const timeout = setTimeout(() => reject(new Error(`IndexedDB read timed out after ${DB_READ_TIMEOUT_MS}ms`)), DB_READ_TIMEOUT_MS)
 
-      request.onerror = () => reject(request.error)
+      request.onerror = () => {
+        clearTimeout(timeout)
+        reject(request.error)
+      }
       request.onsuccess = () => {
+        clearTimeout(timeout)
         const result = request.result
         resolve(result ? (result as any).value : null)
       }
@@ -250,8 +256,15 @@ export async function getRawAll<T>(storeName: string): Promise<T[]> {
       const transaction = db.transaction([storeName], 'readonly')
       const store = transaction.objectStore(storeName)
       const request = store.getAll()
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve((request.result || []) as T[])
+      const timeout = setTimeout(() => reject(new Error(`IndexedDB raw read timed out after ${DB_READ_TIMEOUT_MS}ms`)), DB_READ_TIMEOUT_MS)
+      request.onerror = () => {
+        clearTimeout(timeout)
+        reject(request.error)
+      }
+      request.onsuccess = () => {
+        clearTimeout(timeout)
+        resolve((request.result || []) as T[])
+      }
     })
   } catch (error) {
     console.warn(`IndexedDB raw getAll failed for ${storeName}, falling back to localStorage:`, error)
