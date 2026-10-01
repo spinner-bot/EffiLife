@@ -37,6 +37,9 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Synchronize desktop release version
+        run: python scripts/sync_desktop_version.py
+
       - name: Install Python test dependencies
         run: python -m pip install --disable-pip-version-check pytest
 
@@ -100,6 +103,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+
+      - name: Synchronize desktop release version
+        run: python scripts/sync_desktop_version.py
 
       - name: Install Python test dependencies
         run: python -m pip install --disable-pip-version-check pytest
