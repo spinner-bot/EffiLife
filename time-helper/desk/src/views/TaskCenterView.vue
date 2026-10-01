@@ -1101,8 +1101,8 @@ watch(() => route.query.todo, () => {
 .task-estimate-input { width: 70px; }
 .task-check-label { display: inline-flex; align-items: center; gap: 4px; color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; }
 .task-add { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 0; border-radius: 10px; padding: 8px 15px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-weight: 600; }
-.task-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 24px 2px 12px; }
-.task-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
+.task-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 24px 2px 12px; }
+.task-tabs { display: flex; flex: 0 0 auto; max-width: 100%; gap: 4px; overflow-x: auto; padding: 4px; border-radius: 10px; background: var(--color-bg-secondary); }
 .task-tabs button { border: 0; border-radius: 7px; padding: 7px 13px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
 .task-tabs button.active { color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08)); }
 .task-filter-select { min-width: 120px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
@@ -1113,7 +1113,7 @@ watch(() => route.query.todo, () => {
 .task-bulk-actions button.danger { border-color: var(--color-error); background: var(--color-error); }
 .task-bulk-actions button.task-bulk-clear { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
-.task-error { color: var(--color-error); font-size: 13px; }
+.task-error { flex-basis: 100%; color: var(--color-error); font-size: 13px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
 .task-category-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

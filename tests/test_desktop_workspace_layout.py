@@ -68,6 +68,16 @@ def test_task_center_only_stacks_editing_controls_on_mobile():
     assert "@media (max-width: 1099px)" not in tasks
 
 
+def test_task_center_toolbar_wraps_module_controls_without_overlap():
+    tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
+    toolbar = tasks.split(".task-toolbar {", 1)[1].split("}", 1)[0]
+    assert "flex-wrap: wrap" in toolbar
+    assert "gap: 10px" in toolbar
+    tabs = tasks.split(".task-tabs {", 1)[1].split("}", 1)[0]
+    assert "max-width: 100%" in tabs
+    assert "overflow-x: auto" in tabs
+
+
 def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
     plans = (VIEWS / "PlansHubView.vue").read_text(encoding="utf-8")
     assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
