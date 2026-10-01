@@ -2,36 +2,50 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "time-helper" / "desk" / "src"
+PLANS = (SRC / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+TASKS = (SRC / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+HOME = (SRC / "views" / "HomeView.vue").read_text(encoding="utf-8")
+RECORDS = (SRC / "views" / "RecordsView.vue").read_text(encoding="utf-8")
+ROUTER = (SRC / "router" / "index.ts").read_text(encoding="utf-8")
+TODO_SERVICE = (SRC / "services" / "todoService.ts").read_text(encoding="utf-8")
 
 
-def test_plan_helper_web_does_not_reintroduce_calendar_ui():
-    web_root = ROOT / "plan-helper" / "web"
-    scanned = [
-        path for path in web_root.rglob("*")
-        if path.is_file() and path.suffix.lower() in {".html", ".css", ".js", ".ts", ".vue"}
-    ]
-    matches = []
-    for path in scanned:
-        text = path.read_text(encoding="utf-8", errors="ignore").lower()
-        if "calendar" in text or "日历" in text:
-            matches.append(str(path.relative_to(ROOT)))
-    assert matches == [], f"plan-helper web contains calendar UI references: {matches}"
+def test_ph_workspace_owns_plan_data_and_progress_only():
+    assert "TodoService" not in PLANS
+    assert "related_plan_id" not in PLANS
+    assert "addTaskToTodos" not in PLANS
+    assert "saveLog" in PLANS
+    assert "addPlanGroup" in PLANS
 
 
-def test_time_helper_owns_the_calendar_route():
-    router = (ROOT / "time-helper" / "desk" / "src" / "router" / "index.ts").read_text(encoding="utf-8")
-    assert "path: '/calendar'" in router
+def test_td_workspace_owns_todo_data_without_plan_editing_controls():
+    assert "planGateway" not in TASKS
+    assert "related_plan_id" not in TASKS
+    assert "completePlanTask" not in TASKS
+    assert "TodoService.create" in TASKS
+    assert "TodoService.update" in TASKS
 
 
-def test_date_detail_returns_to_records_after_calendar_removal():
-    catalog = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
-    assert "'dayDetail.back': '返回记录'" in catalog
-    assert "'dayDetail.back': 'Back to records'" in catalog
-    assert "'dayDetail.back': '返回日历'" not in catalog
-    assert "'dayDetail.back': 'Back to calendar'" not in catalog
+def test_th_records_keep_only_explicit_todo_record_association():
+    assert "listPlanArchives" not in RECORDS
+    assert "openLinkedPlan" not in RECORDS
+    assert "openLinkedTodo" in RECORDS
+    assert "unlinkTodoFromTimeRecord" in RECORDS
 
 
-def test_i18n_does_not_retain_retired_calendar_dictionary():
-    catalog = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
-    assert "'nav.calendar':" not in catalog
-    assert "'calendar." not in catalog
+def test_home_is_a_dashboard_not_a_cross_module_editor():
+    assert "refreshEventPlanSummary" in HOME
+    assert "refreshTodoSummary" in HOME
+    assert "openTodoPlan" not in HOME
+    assert "todo.related_plan_id" not in HOME
+
+
+def test_primary_routes_expose_three_independent_workspaces():
+    for path in ("'/plans'", "'/time'", "'/tasks'", "'/records'"):
+        assert f"path: {path}" in ROUTER
+
+
+def test_legacy_plan_relation_fields_remain_only_for_compatibility_data():
+    assert "related_plan_id?: string" in TODO_SERVICE
+    assert "related_plan_task_id?: string" in TODO_SERVICE
