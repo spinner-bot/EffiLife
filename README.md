@@ -63,6 +63,18 @@ python launcher/start.py --unified
 
 统一开发前端默认使用 `http://127.0.0.1:1420`，plan-helper companion API 使用 `http://127.0.0.1:8765`。旧 to-dos Web 兼容入口使用 `http://127.0.0.1:1421`，仅用于迁移和调试。
 
+如果本机已有服务占用默认端口，可在启动前覆盖开发端口，启动器会把相同端口同步传给前端、兼容服务和健康检查：
+
+```bash
+# PowerShell 示例
+$env:EFFILIFE_WORKSPACE_PORT = 2420
+$env:EFFILIFE_PLAN_HELPER_PORT = 8876
+$env:EFFILIFE_TODOS_PORT = 2421
+python launcher/start.py --unified
+```
+
+端口必须位于 `1024-65535`；非法值会回退到上述默认值。使用 `python launcher/start.py --doctor` 可查看当前实际生效端口和服务状态。
+
 ## 当前模块架构
 
 ```
