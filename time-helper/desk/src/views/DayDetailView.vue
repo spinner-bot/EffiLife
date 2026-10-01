@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
@@ -9,6 +9,7 @@ import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
 import { TodoService } from '@/services/todoService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyToast } from '@/services/toastService'
 
@@ -102,6 +103,10 @@ function openLinkedTodo(todoId?: string) {
   if (todoId && !isLinkedTodoUnavailable(todoId)) router.push({ path: '/tasks', query: { todo: todoId } })
 }
 
+const stopWorkspaceListener = onWorkspaceChanged((source) => {
+  if (source === 'todos' || source === 'archive') void loadTodoReferences()
+})
+
 // 删除记录
 async function deleteRecord(index: number) {
   if (!(await requestConfirm(t('dayDetail.deleteConfirm'), { tone: 'danger' }))) return
@@ -130,6 +135,14 @@ async function selectPlan(planName: string) {
 onMounted(() => {
   void retryLoadData()
   void loadTodoReferences()
+})
+
+watch(dateStr, () => {
+  void retryLoadData()
+})
+
+onUnmounted(() => {
+  stopWorkspaceListener()
 })
 </script>
 

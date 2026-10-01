@@ -20,3 +20,11 @@ def test_day_detail_keeps_todo_references_when_todo_storage_is_unavailable():
     block = source.split("async function loadTodoReferences", 1)[1].split("function isLinkedTodoUnavailable", 1)[0]
     assert "todoReferencesLoaded.value = false" in block
     assert I18N.read_text(encoding="utf-8").count("'dayDetail.todoUnavailable':") == 2
+
+
+def test_day_detail_reloads_when_route_date_or_workspace_todos_change():
+    source = VIEW.read_text(encoding="utf-8")
+    assert "watch(dateStr, () =>" in source
+    assert "const stopWorkspaceListener = onWorkspaceChanged" in source
+    assert "source === 'todos' || source === 'archive'" in source
+    assert "stopWorkspaceListener()" in source
