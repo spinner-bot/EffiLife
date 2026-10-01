@@ -42,3 +42,34 @@ def test_release_workflow_uploads_checksum_next_to_each_installer():
     assert "scripts/generate_checksums.py" in workflow
     assert "release-checksums/EffiLife-${{ matrix.name }}.sha256" in workflow
     assert "${{ matrix.artifact }}" in workflow
+
+
+def test_release_manifest_contains_version_target_and_artifact_hashes(tmp_path):
+    manifest_script = ROOT / "scripts" / "generate_release_manifest.py"
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("efflife_release_manifest", manifest_script)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    artifact = bundle / "EffiLife_1.7.0_x64-setup.exe"
+    artifact.write_bytes(b"installer")
+    output = tmp_path / "manifest.json"
+
+    manifest = module.generate(bundle, output, "1.7.0", "windows-nsis")
+
+    assert manifest["schema"] == "effilife.release-manifest.v1"
+    assert manifest["target"] == "windows-nsis"
+    assert manifest["artifacts"][0]["path"] == artifact.name
+    assert manifest["artifacts"][0]["bytes"] == artifact.stat().st_size
+    assert manifest["artifacts"][0]["sha256"] == hashlib.sha256(b"installer").hexdigest()
+    assert output.exists()
+
+
+def test_release_workflow_uploads_machine_readable_manifest():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "scripts/generate_release_manifest.py" in workflow
+    assert "--version-file time-helper/VERSION" in workflow
+    assert "release-checksums/EffiLife-${{ matrix.name }}.manifest.json" in workflow
