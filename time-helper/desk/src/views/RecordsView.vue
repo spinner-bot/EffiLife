@@ -874,7 +874,7 @@ onUnmounted(() => {
    layout remains the default for phones and narrow windows. */
 @media (min-width: 1100px) {
   .main-content { max-width: 1180px; }
-  .records-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .records-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 
 @keyframes fadeIn {

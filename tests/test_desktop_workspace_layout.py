@@ -114,6 +114,11 @@ def test_core_workspaces_expand_beyond_mobile_card_width_on_desktop():
         assert "@media (min-width: 1100px)" in source
 
 
+def test_records_view_activates_grid_before_declaring_desktop_columns():
+    records = (VIEWS / "RecordsView.vue").read_text(encoding="utf-8")
+    assert ".records-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }" in records
+
+
 def test_desktop_workspaces_keep_mobile_breakpoints_explicit():
     for name in ("PlansHubView.vue", "TaskCenterView.vue", "RecordsView.vue"):
         source = (VIEWS / name).read_text(encoding="utf-8")
