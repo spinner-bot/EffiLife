@@ -24,6 +24,7 @@ const { t, locale } = useI18n()
 
 const pageTitle = computed(() => {
   const path = route.path
+  if (route.name === 'notFound') return t('notFound.title')
   if (path === '/') return t('nav.home')
   if (path.startsWith('/plans') || path === '/plan') return t('nav.plans')
   if (path.startsWith('/time')) return t('nav.time')
