@@ -26,4 +26,5 @@ def test_manual_mobile_build_syncs_each_platform_job_before_npm_ci():
     for job in ("\n  android:", "\n  ios:"):
         job_source = workflow.split(job, 1)[1]
         assert "python scripts/sync_desktop_version.py" in job_source
+        assert job_source.index("python scripts/sync_desktop_version.py") < job_source.index("uses: actions/setup-node@v5")
         assert job_source.index("python scripts/sync_desktop_version.py") < job_source.index("run: npm ci")
