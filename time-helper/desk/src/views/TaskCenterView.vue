@@ -358,7 +358,7 @@ async function toggleCategoryPinned(item: TodoCategory) {
 }
 
 async function refreshFromWorkspace(source?: string): Promise<void> {
-  if (!source || !['todos', 'records', 'settings'].includes(source)) return
+  if (!source || !['todos', 'records', 'settings', 'archive', 'network'].includes(source)) return
   if (source === 'settings') {
     await loadTodoSettings()
     return
@@ -394,7 +394,7 @@ async function drainWorkspaceRefresh(): Promise<void> {
 }
 
 function queueWorkspaceRefresh(source?: string): void {
-  if (!source || !['todos', 'records', 'settings'].includes(source)) return
+  if (!source || !['todos', 'records', 'settings', 'archive', 'network'].includes(source)) return
   pendingWorkspaceSources.add(source)
   void drainWorkspaceRefresh()
 }
