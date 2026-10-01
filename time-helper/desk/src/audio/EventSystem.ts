@@ -415,7 +415,10 @@ class EventSystemClass {
       type: 'achievement_unlocked',  // 使用成就类型图标
       title: translate('settings.events.runtime.missedCheckinTitle'),
       message: `${date} 完成了「${planName}」但未打卡，点击此处补打`,
-      icon: '🔥',
+      // Store a semantic icon id. Renderers resolve it through the shared
+      // Lucide registry; legacy persisted emoji values remain readable but
+      // are no longer produced by new events.
+      icon: 'trophy',
       triggeredAt: new Date().toISOString(),
       read: false,
       checkinPlanName: planName,
@@ -539,51 +542,51 @@ class EventSystemClass {
       case 'plan_complete_100':
       case 'achievement_unlocked':
         sound = 'achievement'
-        icon = type === 'plan_complete_100' ? '🎉' : '🏆'
+        icon = 'trophy'
         break
       case 'plan_complete_90':
         sound = 'success'
-        icon = '⭐'
+        icon = 'check-circle'
         break
       case 'plan_complete_50':
         sound = 'success'
-        icon = '📈'
+        icon = 'trending-up'
         break
       case 'progress_warning':
         sound = 'warning'
-        icon = '⚠️'
+        icon = 'alert-triangle'
         break
       case 'record_added':
         sound = 'notification'
-        icon = '📝'
+        icon = 'file-text'
         break
       case 'record_deleted':
         sound = 'notification'
-        icon = '🗑️'
+        icon = 'trash-2'
         break
       case 'plan_changed':
         sound = 'toggle'
-        icon = '🔄'
+        icon = 'settings-2'
         break
       case 'checkin_complete':
         sound = 'achievement'
-        icon = '🔥'
+        icon = 'flame'
         break
       case 'streak_milestone':
         sound = 'achievement'
-        icon = '🎊'
+        icon = 'sparkles'
         break
       case 'idle_reminder':
         sound = 'notification'
-        icon = '💤'
+        icon = 'bell-ring'
         break
       case 'weekly_summary':
         sound = 'success'
-        icon = '📊'
+        icon = 'bar-chart-3'
         break
       case 'daily_first_record':
         sound = 'notification'
-        icon = '🌅'
+        icon = 'sunrise'
         break
     }
 
