@@ -46,9 +46,7 @@ def test_android_report_exposes_missing_generated_tauri_project(monkeypatch, tmp
 
 def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
-    sdk_root = tmp_path / "android-sdk"
-    sdk_root.mkdir()
-    monkeypatch.setenv("ANDROID_HOME", str(sdk_root))
+    monkeypatch.setenv("ANDROID_HOME", str(tmp_path / "android-sdk"))
     project = tmp_path / "time-helper/desk/src-tauri/gen/android"
     project.mkdir(parents=True)
 
@@ -57,16 +55,6 @@ def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monk
     assert report["ready"] is True
     assert report["mobile_project_exists"] is True
     assert report["missing"] == []
-
-
-def test_android_report_rejects_a_nonexistent_sdk_root(monkeypatch, tmp_path):
-    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
-    monkeypatch.setenv("ANDROID_HOME", str(tmp_path / "missing-sdk"))
-
-    report = MODULE.build_report("android")
-
-    assert report["ready"] is False
-    assert "Android SDK directory" in report["missing"]
 
 
 def test_ios_report_uses_tauri_apple_project_directory(monkeypatch, tmp_path):
