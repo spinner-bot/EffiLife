@@ -324,7 +324,7 @@ function formatInboxTime(isoStr: string): string {
   if (diffMin < 60) return `${diffMin}${t('home.minutesAgo')}`
   if (diffH < 24) return `${diffH}${t('home.hoursAgo')}`
   if (diffD < 7) return `${diffD}${t('home.daysAgo')}`
-  return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+  return d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 }
 
 // 今天是否可打卡（计划100%完成但还没打卡）

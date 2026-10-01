@@ -27,6 +27,11 @@ def test_home_does_not_render_zero_values_before_workspace_summary_is_ready():
     assert "class=\"today-todos-loading\"" in HOME
 
 
+def test_home_inbox_uses_current_locale_for_older_dates():
+    assert "d.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })" in HOME
+    assert "padStart(2, '0')" not in HOME.split("function formatInboxTime", 1)[1].split("}", 1)[0]
+
+
 def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 681px) and (max-width: 820px)" in app
