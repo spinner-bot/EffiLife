@@ -58,6 +58,13 @@ def test_time_workspace_header_wraps_tabs_before_mobile_controls_overflow():
     assert ".pv-tabs { flex-basis: 100%; order: 3; width: 100%; }" in mobile
 
 
+def test_time_workspace_plan_selector_stacks_without_mobile_overflow():
+    mobile = TIME.split("@media (max-width: 680px)", 1)[1]
+    assert ".pv-plan-selector-row { align-items: stretch; flex-wrap: wrap; }" in mobile
+    assert ".pv-plan-selector-label { flex: 1 1 100%; }" in mobile
+    assert ".pv-plan-selector { flex: 1 1 160px; }" in mobile
+
+
 def test_settings_uses_two_column_desktop_navigation():
     assert "@media (min-width: 900px)" in SETTINGS
     assert "max-width: 920px" in SETTINGS

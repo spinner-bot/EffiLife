@@ -1082,6 +1082,11 @@ onMounted(() => {
   .pv-header { padding: var(--spacing-sm) var(--spacing-md); }
   .pv-tabs { flex-basis: 100%; order: 3; width: 100%; }
   .pv-header-actions { margin-left: auto; }
+  .pv-plan-hero-header { align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm); }
+  .pv-plan-hero-tools { flex-wrap: wrap; justify-content: flex-end; }
+  .pv-plan-selector-row { align-items: stretch; flex-wrap: wrap; }
+  .pv-plan-selector-label { flex: 1 1 100%; }
+  .pv-plan-selector { flex: 1 1 160px; }
 }
 
 .pv-panel {
