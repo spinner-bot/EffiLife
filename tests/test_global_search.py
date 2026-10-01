@@ -16,6 +16,7 @@ def test_global_search_is_available_from_app_shell():
     assert "searchShortcut" in source
     assert "Mac|iPhone|iPad" in source
     assert "global-search-trigger" in source
+    assert "'⌘ K'" in source
 
 
 def test_global_search_indexes_all_unified_data_domains():

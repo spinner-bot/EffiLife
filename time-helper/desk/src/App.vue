@@ -49,7 +49,7 @@ let stopWorkspaceListener: (() => void) | null = null
 let legacyMigrationSummary: { migrated: number; categories: number; skipped: number } | null = null
 const searchShortcut = computed(() => {
   const platform = typeof navigator === 'undefined' ? '' : navigator.platform
-  return /Mac|iPhone|iPad/.test(platform) ? '⌘K' : 'Ctrl K'
+  return /Mac|iPhone|iPad/.test(platform) ? '⌘ K' : 'Ctrl K'
 })
 
 function isEditableTarget(target: EventTarget | null): boolean {
