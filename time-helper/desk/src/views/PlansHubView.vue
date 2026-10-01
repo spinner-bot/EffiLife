@@ -53,6 +53,7 @@ const selectedPlan = ref<PlanFull | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const planSearch = ref('')
 const searchTargetTaskId = ref<string | null>(null)
 const showCreate = ref(false)
 const showTemplatePicker = ref(false)
@@ -95,6 +96,18 @@ const archivedPlanTarget = computed(() => {
   return archives.value.find((archive) => String(archive.plan_id ?? '') === targetId) || null
 })
 const archivedTaskTargetId = computed(() => String(route.query.task || ''))
+
+const filteredPlans = computed(() => {
+  const query = planSearch.value.trim().toLocaleLowerCase()
+  if (!query) return plans.value
+  return plans.value.filter((plan) => `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`.toLocaleLowerCase().includes(query))
+})
+
+const filteredArchives = computed(() => {
+  const query = planSearch.value.trim().toLocaleLowerCase()
+  if (!query) return archives.value
+  return archives.value.filter((archive) => `${archive.name || ''} ${archive.file} ${archive.plan_id ?? ''} ${archive.date?.join('-') || ''}`.toLocaleLowerCase().includes(query))
+})
 
 function isArchivedTaskTarget(task: PlanTaskSummary): boolean {
   return Boolean(archivedTaskTargetId.value && (
@@ -788,6 +801,10 @@ onUnmounted(() => {
           <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
           <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
+        <label v-if="plans.length > 1 || archives.length > 1" class="plans-search">
+          <span>{{ t('plans.searchLabel') }}</span>
+          <input v-model="planSearch" type="search" :placeholder="t('plans.searchPlaceholder')" />
+        </label>
         <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
         <section v-else-if="plans.length === 0" class="plans-empty theme-card">
           <FolderPlus :size="34" />
@@ -795,8 +812,8 @@ onUnmounted(() => {
           <span>{{ t('plans.emptyHint') }}</span>
           <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
         </section>
-        <section v-else class="event-plan-grid">
-          <button v-for="plan in plans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
+        <section v-else-if="filteredPlans.length" class="event-plan-grid">
+          <button v-for="plan in filteredPlans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
             <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
             <strong>{{ plan.name }}</strong>
             <span>{{ formatPlanDate(plan.date) }}</span>
@@ -804,6 +821,7 @@ onUnmounted(() => {
             <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
           </button>
         </section>
+        <section v-else class="plans-empty theme-card"><strong>{{ t('plans.searchEmpty') }}</strong><span>{{ t('plans.searchEmptyHint') }}</span></section>
         <section class="archives-panel theme-card">
           <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
           <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
@@ -812,7 +830,8 @@ onUnmounted(() => {
             <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ t('plans.retryArchives') }}</button>
           </div>
           <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
-          <div v-for="archive in archives" :key="archive.file" class="archive-row">
+          <p v-else-if="filteredArchives.length === 0" class="section-empty">{{ t('plans.searchEmpty') }}</p>
+          <div v-for="archive in filteredArchives" :key="archive.file" class="archive-row">
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
             <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
           </div>
@@ -999,6 +1018,9 @@ onUnmounted(() => {
 .plan-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
 .plans-empty { display: grid; place-items: center; gap: 10px; min-height: 230px; border: 1px dashed var(--color-border); border-radius: 17px; color: var(--color-text-tertiary); text-align: center; }
 .plans-empty strong { color: var(--color-text-secondary); }
+.plans-search { display: grid; gap: 6px; margin-bottom: 14px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 650; }
+.plans-search input { width: 100%; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; color: var(--color-text-primary); background: var(--color-bg-secondary); font: inherit; font-weight: 400; outline: 0; }
+.plans-search input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .plans-error, .plans-success { margin-bottom: 14px; font-size: 13px; }
 .plans-error { color: var(--color-error); }
 .plans-success { color: var(--color-success, #16a34a); }
