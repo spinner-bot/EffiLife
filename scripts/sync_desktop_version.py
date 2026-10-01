@@ -21,6 +21,19 @@ def sync(root: Path) -> str:
     package["version"] = version
     package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+    # Keep npm's lock metadata aligned as well. This is intentionally handled
+    # here instead of invoking npm: release runners already install from the
+    # committed lockfile before synchronization, and a version-only update
+    # must not rewrite dependency resolution or integrity data.
+    lock_path = package_path.with_name("package-lock.json")
+    if lock_path.exists():
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        lock["version"] = version
+        root_package = lock.get("packages", {}).get("")
+        if isinstance(root_package, dict):
+            root_package["version"] = version
+        lock_path.write_text(json.dumps(lock, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
     tauri_path = root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json"
     tauri = json.loads(tauri_path.read_text(encoding="utf-8"))
     tauri["version"] = version

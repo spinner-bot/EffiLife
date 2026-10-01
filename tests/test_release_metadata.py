@@ -88,11 +88,18 @@ def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
     (root / "time-helper").mkdir(exist_ok=True)
     (root / "time-helper" / "VERSION").write_text("9.8.7\n", encoding="utf-8")
     (root / "time-helper" / "desk" / "package.json").write_text('{"name":"test","version":"0.0.1"}\n', encoding="utf-8")
+    (root / "time-helper" / "desk" / "package-lock.json").write_text(
+        '{"name":"test","version":"0.0.1","lockfileVersion":3,"packages":{"":{"name":"test","version":"0.0.1"}}}\n',
+        encoding="utf-8",
+    )
     (root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").write_text('{"version":"0.0.1"}\n', encoding="utf-8")
     (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").write_text('[package]\nversion = "0.0.1"\n', encoding="utf-8")
     script = ROOT / "scripts" / "sync_desktop_version.py"
     subprocess.run(["python", str(script), "--root", str(root)], check=True)
     assert json.loads((root / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
+    lock = json.loads((root / "time-helper" / "desk" / "package-lock.json").read_text(encoding="utf-8"))
+    assert lock["version"] == "9.8.7"
+    assert lock["packages"][""]["version"] == "9.8.7"
     assert json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
     assert 'version = "9.8.7"' in (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
 
