@@ -8,6 +8,7 @@ import type { TimeRecord, RealTimeStat } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
+import { TodoService } from '@/services/todoService'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyToast } from '@/services/toastService'
 
@@ -26,6 +27,8 @@ const records = ref<TimeRecord[]>([])
 const loadError = ref(false)
 const dayPlanName = ref('')
 const dayPlanType = ref('')
+const todoTitles = ref(new Map<string, string>())
+const todoReferencesLoaded = ref(false)
 
 /** Stored plan types remain legacy domain values; localize only at display time. */
 function planTypeLabel(value?: string): string {
@@ -80,8 +83,23 @@ function isSearchHighlightedRecord(record: TimeRecord, index: number): boolean {
   return Boolean(highlightedRecordKey.value && recordKey(record, index) === highlightedRecordKey.value)
 }
 
+async function loadTodoReferences(): Promise<void> {
+  try {
+    const todos = await TodoService.list()
+    todoTitles.value = new Map(todos.map((todo) => [todo.id, todo.title]))
+    todoReferencesLoaded.value = true
+  } catch {
+    todoTitles.value = new Map()
+    todoReferencesLoaded.value = false
+  }
+}
+
+function isLinkedTodoUnavailable(todoId?: string): boolean {
+  return Boolean(todoId && todoReferencesLoaded.value && !todoTitles.value.has(todoId))
+}
+
 function openLinkedTodo(todoId?: string) {
-  if (todoId) router.push({ path: '/tasks', query: { todo: todoId } })
+  if (todoId && !isLinkedTodoUnavailable(todoId)) router.push({ path: '/tasks', query: { todo: todoId } })
 }
 
 // 删除记录
@@ -111,6 +129,7 @@ async function selectPlan(planName: string) {
 
 onMounted(() => {
   void retryLoadData()
+  void loadTodoReferences()
 })
 </script>
 
@@ -180,7 +199,7 @@ onMounted(() => {
               <span class="record-duration">({{ hoursToHm(record.duration, locale) }})</span>
             </div>
             <div class="record-content">{{ record.content }}</div>
-            <button v-if="record.todo_id" type="button" class="record-linked-label" @click="openLinkedTodo(record.todo_id)">{{ t('dayDetail.openLinkedTodo') }}</button>
+            <button v-if="record.todo_id" type="button" class="record-linked-label" :class="{ unavailable: isLinkedTodoUnavailable(record.todo_id) }" :disabled="isLinkedTodoUnavailable(record.todo_id)" @click="openLinkedTodo(record.todo_id)">{{ isLinkedTodoUnavailable(record.todo_id) ? t('dayDetail.todoUnavailable') : t('dayDetail.openLinkedTodo') }}</button>
             <button type="button" class="delete-btn" :aria-label="t('dayDetail.delete')" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
