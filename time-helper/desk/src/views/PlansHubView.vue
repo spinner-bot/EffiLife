@@ -829,24 +829,27 @@ onUnmounted(() => {
           <span>{{ t('plans.searchLabel') }}</span>
           <input v-model="planSearch" type="search" :placeholder="t('plans.searchPlaceholder')" />
         </label>
-        <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
-        <section v-else-if="plans.length === 0" class="plans-empty theme-card">
-          <FolderPlus :size="34" />
-          <strong>{{ t('plans.empty') }}</strong>
-          <span>{{ t('plans.emptyHint') }}</span>
-          <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
-        </section>
-        <section v-else-if="filteredPlans.length" class="event-plan-grid">
-          <button v-for="plan in filteredPlans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
-            <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
-            <strong>{{ plan.name }}</strong>
-            <span>{{ formatPlanDate(plan.date) }}</span>
-            <div class="plan-progress-meta"><small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small><small>{{ planProgress(plan) }}%</small></div>
-            <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
-          </button>
-        </section>
-        <section v-else class="plans-empty theme-card"><strong>{{ t('plans.searchEmpty') }}</strong><span>{{ t('plans.searchEmptyHint') }}</span></section>
-        <section class="archives-panel theme-card">
+        <div class="plan-index-layout">
+          <div class="plan-index-main">
+            <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
+            <section v-else-if="plans.length === 0" class="plans-empty theme-card">
+              <FolderPlus :size="34" />
+              <strong>{{ t('plans.empty') }}</strong>
+              <span>{{ t('plans.emptyHint') }}</span>
+              <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+            </section>
+            <section v-else-if="filteredPlans.length" class="event-plan-grid">
+              <button v-for="plan in filteredPlans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
+                <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
+                <strong>{{ plan.name }}</strong>
+                <span>{{ formatPlanDate(plan.date) }}</span>
+                <div class="plan-progress-meta"><small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small><small>{{ planProgress(plan) }}%</small></div>
+                <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
+              </button>
+            </section>
+            <section v-else class="plans-empty theme-card"><strong>{{ t('plans.searchEmpty') }}</strong><span>{{ t('plans.searchEmptyHint') }}</span></section>
+          </div>
+          <section class="archives-panel theme-card">
           <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
           <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
           <div v-else-if="archivesUnavailable" class="section-empty archive-unavailable" role="status" aria-live="polite">
@@ -859,7 +862,8 @@ onUnmounted(() => {
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
             <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
           </div>
-        </section>
+          </section>
+        </div>
       </template>
 
       <template v-else-if="selectedPlan">
@@ -1052,6 +1056,8 @@ onUnmounted(() => {
 .plans-readonly-note { display: grid; gap: 4px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--color-primary); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; line-height: 1.5; }
 .plans-readonly-note strong { color: var(--color-text-primary); }
 .plans-retry { justify-self: start; }
+.plan-index-layout { display: grid; gap: 20px; }
+.plan-index-main { min-width: 0; }
 .detail-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .meta-editor, .section-editor { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; }
@@ -1153,6 +1159,9 @@ onUnmounted(() => {
 .create-add-section { justify-self: start; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (min-width: 1100px) {
+  .plan-index-layout { grid-template-columns: minmax(0, 1.55fr) minmax(280px, .65fr); align-items: start; }
+  .plan-index-layout .archives-panel { margin-top: 0; }
+  .plan-index-main .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }

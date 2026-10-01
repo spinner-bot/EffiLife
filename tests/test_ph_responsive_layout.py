@@ -31,3 +31,11 @@ def test_group_editor_uses_two_columns_on_tablet_and_one_on_mobile():
     assert ".group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: 1 / -1; }" in tablet_block
     assert ".group-editor { grid-template-columns: 1fr; }" in mobile_block
     assert ".group-editor button { width: 100%; }" in mobile_block
+
+
+def test_plan_index_uses_activity_and_archive_columns_on_wide_desktop():
+    source = SOURCE.read_text(encoding="utf-8")
+    assert 'class="plan-index-layout"' in source
+    assert 'class="plan-index-main"' in source
+    assert ".plan-index-layout { grid-template-columns: minmax(0, 1.55fr) minmax(280px, .65fr); align-items: start; }" in source
+    assert ".plan-index-main .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in source
