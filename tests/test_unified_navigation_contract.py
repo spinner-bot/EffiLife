@@ -14,9 +14,9 @@ def test_unified_shell_removes_standalone_calendar_entry_but_keeps_legacy_redire
     assert "redirect: '/records'" in ROUTER
 
 
-def test_legacy_management_route_redirects_to_unified_plan_workspace():
+def test_legacy_management_route_redirects_to_time_workspace():
     assert "path: '/management'" in ROUTER
-    assert "redirect: { path: '/plans', query: { mode: 'time' } }" in ROUTER
+    assert "redirect: '/time'" in ROUTER
     assert "component: () => import('@/views/ManagementView.vue')" not in ROUTER
 
 

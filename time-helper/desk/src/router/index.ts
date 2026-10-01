@@ -22,7 +22,7 @@ const router = createRouter({
     {
       path: '/plan',
       name: 'plan',
-      redirect: { path: '/plans', query: { mode: 'time' } },
+      redirect: '/time',
     },
     {
       path: '/tasks',
@@ -43,7 +43,7 @@ const router = createRouter({
     {
       path: '/management',
       name: 'management',
-      redirect: { path: '/plans', query: { mode: 'time' } },
+      redirect: '/time',
     },
     {
       path: '/settings',

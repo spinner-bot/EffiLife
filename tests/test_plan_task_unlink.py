@@ -6,33 +6,32 @@ SYNC = ROOT / "time-helper" / "desk" / "src" / "services" / "workspaceSync.ts"
 PLANS = ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue"
 
 
-def test_deleting_a_plan_task_unlinks_existing_todos():
+def test_deleting_a_plan_task_does_not_mutate_todos():
     sync = SYNC.read_text(encoding="utf-8")
     plans = PLANS.read_text(encoding="utf-8")
     assert "unlinkTodosFromPlanTask(planId: string, planTaskId: string)" in sync
     assert "related_plan_task_id === String(planTaskId)" in sync
     assert "related_plan_id: undefined" in sync
     assert "related_plan_task_id: undefined" in sync
-    assert "await unlinkTodosFromPlanTask(planId, taskId)" in plans
+    assert "unlinkTodosFromPlanTask" not in plans
 
 
-def test_plan_task_edit_syncs_linked_todo_title_and_duration():
+def test_plan_task_edit_does_not_sync_todo_fields():
     sync = SYNC.read_text(encoding="utf-8")
     plans = PLANS.read_text(encoding="utf-8")
     assert "export async function syncTodosFromPlanTask" in sync
     assert "time_estimate: Math.max(0, Number(minutes) || 0)" in sync
     assert "estimated_time: Math.max(0, Number(minutes) || 0)" in sync
-    assert "editingTaskDisplayId = ref<string | null>(null)" in plans
-    assert "[editingTaskId.value, ...(editingTaskDisplayId.value" in plans
-    assert "editingTaskDisplayId.value = task.display_id" in plans
+    assert "editingTaskDisplayId" not in plans
+    assert "syncTodosFromPlanTask" not in plans
 
 
-def test_plan_rename_refreshes_only_system_derived_todo_descriptions():
+def test_plan_rename_does_not_refresh_todo_descriptions():
     sync = SYNC.read_text(encoding="utf-8")
     plans = PLANS.read_text(encoding="utf-8")
     assert "export async function syncTodoDescriptionsFromPlan" in sync
     assert "todo.description === previousName" in sync
-    assert "syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())" in plans
+    assert "syncTodoDescriptionsFromPlan" not in plans
 
 
 def test_plan_completion_does_not_resurrect_archived_or_cancelled_todos():

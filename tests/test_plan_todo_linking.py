@@ -6,16 +6,13 @@ PLANS = ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue"
 I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 
-def test_plan_detail_can_create_a_linked_unified_todo_without_duplicates():
+def test_plan_detail_does_not_create_or_duplicate_todos():
     source = PLANS.read_text(encoding="utf-8")
-    assert "import { TodoService }" in source
-    assert "TodoService.list()" in source
-    assert "TodoService.create({" in source
-    assert "related_plan_id: planId" in source
-    assert "related_plan_task_id: String(task.internal_id)" in source
-    assert "todo.related_plan_task_id === String(task.display_id)" in source
-    assert "todoAlreadyLinked" in source
-    assert "addTaskToTodos(task)" in source
+    assert "TodoService" not in source
+    assert "TodoService.create" not in source
+    assert "related_plan_id" not in source
+    assert "related_plan_task_id" not in source
+    assert "addTaskToTodos" not in source
 
 
 def test_plan_todo_linking_copy_exists_in_both_locales():

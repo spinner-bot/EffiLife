@@ -16,20 +16,19 @@ def test_plan_gateway_exposes_section_edit_and_soft_delete_operations():
     assert "without shifting" in source
 
 
-def test_plan_center_exposes_section_edit_and_cleans_task_links():
+def test_plan_center_exposes_section_edit_without_cross_module_cleanup():
     source = PLANS.read_text(encoding="utf-8")
     assert "startSectionEdit(section)" in source
     assert "deleteSection(section)" in source
-    assert "unlinkTodosFromPlanTask(planId, task.internal_id)" in source
-    assert "unlinkTodosFromPlanTask(planId, task.display_id)" in source
+    assert "unlinkTodosFromPlanTask" not in source
 
 
-def test_single_task_delete_cleans_internal_and_display_links():
+def test_single_task_delete_only_mutates_the_plan_task():
     source = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "async function deleteTask(taskId: string, displayTaskId = taskId)" in source
-    assert "await unlinkTodosFromPlanTask(planId, displayTaskId)" in source
-    assert "@click=\"deleteTask(task.internal_id, task.display_id)\"" in source
+    assert "async function deleteTask(taskId: string)" in source
+    assert "unlinkTodosFromPlanTask" not in source
+    assert "@click=\"deleteTask(task.internal_id)\"" in source
     assert "editingSectionIndex" in source
 
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, ListTodo, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
@@ -33,14 +33,10 @@ import {
   updateEventPlan,
   planDataSource,
 } from '@/services/planGateway'
-import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
-import { TodoService } from '@/services/todoService'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
-
-const DailyPlanView = defineAsyncComponent(() => import('@/views/PlanView.vue'))
 
 const router = useRouter()
 const route = useRoute()
@@ -48,7 +44,7 @@ const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
 const canArchivePlan = computed(() => canEditPlan.value)
-const view = ref<'hub' | 'events' | 'detail' | 'time'>(route.query.mode === 'time' ? 'time' : 'hub')
+const view = ref<'events' | 'detail'>('events')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
 const selectedPlan = ref<PlanFull | null>(null)
@@ -74,7 +70,6 @@ const sectionInfo = ref('')
 const editingSectionIndex = ref<number | null>(null)
 const taskSectionIndex = ref<number | null>(null)
 const editingTaskId = ref<string | null>(null)
-const editingTaskDisplayId = ref<string | null>(null)
 const editingTaskSectionIndex = ref<number | null>(null)
 const taskContent = ref('')
 const taskMinutes = ref(0)
@@ -87,7 +82,6 @@ const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
-const linkedTodoIdsByTask = ref(new Map<string, string>())
 
 const archivedPlanTarget = computed(() => {
   const targetFile = String(route.query.archive || '')
@@ -109,42 +103,6 @@ function isArchivedTaskTarget(task: PlanTaskSummary): boolean {
 function showPlanSaved(): void {
   successMessage.value = t('plans.saved')
   notifyToast(t('plans.saved'), 'success')
-}
-
-async function refreshPlanTodoLinks(planId?: string): Promise<void> {
-  if (!planId) {
-    linkedTodoIdsByTask.value = new Map()
-    return
-  }
-  try {
-    const todos = await TodoService.list()
-    linkedTodoIdsByTask.value = new Map(
-      todos
-        .filter((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
-        .map((todo) => [String(todo.related_plan_task_id), todo.id]),
-    )
-  } catch {
-    linkedTodoIdsByTask.value = new Map()
-  }
-}
-
-function isTaskLinkedToTodo(task: PlanFull['sections'][number]['tasks'][number]): boolean {
-  return linkedTodoIdsByTask.value.has(String(task.internal_id)) || linkedTodoIdsByTask.value.has(String(task.display_id))
-}
-
-function openLinkedTodo(task: PlanFull['sections'][number]['tasks'][number]): void {
-  const todoId = linkedTodoIdsByTask.value.get(String(task.internal_id)) || linkedTodoIdsByTask.value.get(String(task.display_id))
-  if (todoId) router.push({ path: '/tasks', query: { todo: todoId } })
-}
-
-async function openTaskRecord(task: PlanFull['sections'][number]['tasks'][number]): Promise<void> {
-  if (isLoading.value || !canEditPlan.value) return
-  let todoId = linkedTodoIdsByTask.value.get(String(task.internal_id)) || linkedTodoIdsByTask.value.get(String(task.display_id))
-  if (!todoId) {
-    await addTaskToTodos(task)
-    todoId = linkedTodoIdsByTask.value.get(String(task.internal_id)) || linkedTodoIdsByTask.value.get(String(task.display_id))
-  }
-  if (todoId) router.push({ path: '/records', query: { todo: todoId } })
 }
 
 let stopWorkspaceListener: (() => void) | null = null
@@ -219,11 +177,7 @@ async function loadPlans() {
 }
 
 async function refreshFromWorkspace(source?: string): Promise<void> {
-  if (!source || !['todos', 'plans', 'archive'].includes(source)) return
-  if (source === 'todos') {
-    if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
-    return
-  }
+  if (!source || !['plans', 'archive'].includes(source)) return
   if (selectedPlan.value && (source === 'plans' || source === 'archive')) {
     try {
       selectedPlan.value = await getPlanFull(selectedPlan.value.id)
@@ -238,8 +192,6 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
     return
   }
   if (view.value === 'events') await loadPlans()
-  if (view.value === 'hub') await loadPlans()
-  if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
 }
 
 // Keep external changes observed while a local plan mutation is in flight.
@@ -270,7 +222,7 @@ async function drainWorkspaceRefresh(): Promise<void> {
 }
 
 function queueWorkspaceRefresh(source?: string): void {
-  if (!source || !['todos', 'plans', 'archive'].includes(source)) return
+  if (!source || !['plans', 'archive'].includes(source)) return
   pendingWorkspaceSources.add(source)
   void drainWorkspaceRefresh()
 }
@@ -396,11 +348,6 @@ async function createFromTemplate() {
   }
 }
 
-function openTimePlan() {
-  view.value = 'time'
-  router.replace({ path: '/plans', query: { mode: 'time' } })
-}
-
 async function openPlan(plan: PlanSummary) {
   if (isLoading.value) return
   isLoading.value = true
@@ -471,20 +418,12 @@ async function savePlanMeta() {
   if (isLoading.value) return
   if (!selectedPlan.value || !planName.value.trim() || !planDate.value) return
   isLoading.value = true
-  let todoSyncFailed = false
   try {
     const planId = selectedPlan.value.id
-    const previousName = selectedPlan.value.name
     await updateEventPlan(planId, planName.value.trim(), toDateTuple(planDate.value))
-    try {
-      await syncTodoDescriptionsFromPlan(planId, previousName, planName.value.trim())
-    } catch {
-      todoSyncFailed = true
-      errorMessage.value = t('plans.todoSyncFailed')
-    }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
-    if (!todoSyncFailed) showPlanSaved()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -539,24 +478,12 @@ async function deleteSection(section: PlanFull['sections'][number]) {
   if (isLoading.value || !selectedPlan.value || !(await requestConfirm(t('plans.deleteSectionConfirm'), { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
-  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await deletePlanSection(planId, section.index)
-    for (const task of section.tasks) {
-      try {
-        await unlinkTodosFromPlanTask(planId, task.internal_id)
-        if (task.display_id !== task.internal_id) {
-          await unlinkTodosFromPlanTask(planId, task.display_id)
-        }
-      } catch {
-        todoSyncFailed = true
-        errorMessage.value = t('plans.todoSyncFailed')
-      }
-    }
     cancelSectionEdit()
     selectedPlan.value = await getPlanFull(planId)
-    if (!todoSyncFailed) showPlanSaved()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.sectionUnavailable')
   } finally {
@@ -571,22 +498,10 @@ async function saveTask() {
   const minutes = Math.max(0, Number(taskMinutes.value) || 0)
   if (!editingTaskId.value && taskSectionIndex.value === null) return
   isLoading.value = true
-  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     if (editingTaskId.value) {
       await updatePlanTask(planId, editingTaskId.value, taskContent.value.trim(), minutes)
-      try {
-        await syncTodosFromPlanTask(
-          planId,
-          [editingTaskId.value, ...(editingTaskDisplayId.value && editingTaskDisplayId.value !== editingTaskId.value ? [editingTaskDisplayId.value] : [])],
-          taskContent.value.trim(),
-          minutes,
-        )
-      } catch {
-        todoSyncFailed = true
-        errorMessage.value = t('plans.todoSyncFailed')
-      }
     } else if (taskSectionIndex.value !== null) {
       await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
     }
@@ -594,10 +509,9 @@ async function saveTask() {
     taskMinutes.value = 0
     taskSectionIndex.value = null
     editingTaskId.value = null
-    editingTaskDisplayId.value = null
     editingTaskSectionIndex.value = null
     selectedPlan.value = await getPlanFull(planId)
-    if (!todoSyncFailed) showPlanSaved()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -715,7 +629,6 @@ async function deleteGroup(sectionIndex: number, groupKey: string) {
 function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number]['tasks'][number]) {
   taskSectionIndex.value = null
   editingTaskId.value = task.internal_id
-  editingTaskDisplayId.value = task.display_id
   editingTaskSectionIndex.value = sectionIndex
   taskContent.value = task.content
   taskMinutes.value = task.time_minutes
@@ -724,29 +637,21 @@ function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number][
 function cancelTaskEdit() {
   taskSectionIndex.value = null
   editingTaskId.value = null
-  editingTaskDisplayId.value = null
   editingTaskSectionIndex.value = null
   taskContent.value = ''
   taskMinutes.value = 0
 }
 
-async function completeTask(taskId: string, displayTaskId = taskId) {
+async function completeTask(taskId: string) {
   if (isLoading.value) return
   if (!selectedPlan.value) return
   const planId = selectedPlan.value.id
   isLoading.value = true
-  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
-    try {
-      await completeLinkedTodos(planId, [taskId, displayTaskId])
-    } catch {
-      todoSyncFailed = true
-      errorMessage.value = t('plans.todoSyncFailed')
-    }
     selectedPlan.value = await getPlanFull(planId)
-    if (!todoSyncFailed) showPlanSaved()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -754,114 +659,16 @@ async function completeTask(taskId: string, displayTaskId = taskId) {
   }
 }
 
-async function addTaskToTodos(task: PlanFull['sections'][number]['tasks'][number]) {
-  if (isLoading.value || !selectedPlan.value) return
-  const planId = String(selectedPlan.value.id)
-  isLoading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-  try {
-    const todos = await TodoService.list()
-    const existing = todos.find((todo) =>
-      todo.related_plan_id === planId
-      && (
-        todo.related_plan_task_id === String(task.internal_id)
-        || todo.related_plan_task_id === String(task.display_id)
-      )
-      && !['archived', 'cancelled'].includes(todo.status)
-    )
-    if (existing) {
-      linkedTodoIdsByTask.value = new Map(linkedTodoIdsByTask.value).set(String(existing.related_plan_task_id), existing.id)
-      errorMessage.value = t('plans.todoAlreadyLinked')
-      return
-    }
-    const createdTodo = await TodoService.create({
-      title: task.content,
-      description: selectedPlan.value.name,
-      related_plan_id: planId,
-      related_plan_task_id: String(task.internal_id),
-      time_estimate: task.time_minutes,
-      estimated_time: task.time_minutes,
-    })
-    linkedTodoIdsByTask.value = new Map(linkedTodoIdsByTask.value).set(String(task.internal_id), createdTodo.id)
-    successMessage.value = t('plans.todoCreated')
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function linkPendingPlanTasksToTodos(plan: PlanFull): Promise<{ created: number; failed: number }> {
-  const existingTodos = await TodoService.list()
-  const activeLinks = new Set(
-    existingTodos
-      .filter((todo) => todo.related_plan_id === String(plan.id) && todo.related_plan_task_id && !['archived', 'cancelled'].includes(todo.status))
-      .map((todo) => String(todo.related_plan_task_id)),
-  )
-  const pendingTasks = plan.sections
-    .flatMap((section) => section.tasks)
-    .filter((task) => !task.finish && !activeLinks.has(String(task.internal_id)) && !activeLinks.has(String(task.display_id)))
-  let created = 0
-  let failed = 0
-  for (const task of pendingTasks) {
-    try {
-      await TodoService.create({
-        title: task.content,
-        description: plan.name,
-        related_plan_id: String(plan.id),
-        related_plan_task_id: String(task.internal_id),
-        time_estimate: task.time_minutes,
-        estimated_time: task.time_minutes,
-      })
-      activeLinks.add(String(task.internal_id))
-      created += 1
-    } catch {
-      failed += 1
-    }
-  }
-  await refreshPlanTodoLinks(plan.id)
-  return { created, failed }
-}
-
-async function addAllTasksToTodos() {
-  if (isLoading.value || !selectedPlan.value) return
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    const result = await linkPendingPlanTasksToTodos(selectedPlan.value)
-    if (result.created > 0) notifyToast(t('plans.todosBulkCreated', { count: result.created }), 'success')
-    if (result.failed > 0) notifyToast(t('plans.todoSyncFailed'), 'error')
-    if (result.created === 0 && result.failed === 0) notifyToast(t('plans.todosAllLinked'), 'info')
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function deleteTask(taskId: string, displayTaskId = taskId) {
+async function deleteTask(taskId: string) {
   if (isLoading.value) return
   if (!selectedPlan.value || !(await requestConfirm(`${t('plans.delete')}?`, { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
-  let todoSyncFailed = false
   errorMessage.value = ''
   try {
     await deletePlanTask(planId, taskId)
-    try {
-      await unlinkTodosFromPlanTask(planId, taskId)
-      if (displayTaskId !== taskId) {
-        await unlinkTodosFromPlanTask(planId, displayTaskId)
-      }
-    } catch {
-      // The plan deletion is already accepted; keep the view current and
-      // surface the secondary cleanup failure without masking the deletion.
-      todoSyncFailed = true
-      errorMessage.value = t('plans.todoSyncFailed')
-    }
     selectedPlan.value = await getPlanFull(planId)
-    if (!todoSyncFailed) showPlanSaved()
+    showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
   } finally {
@@ -883,10 +690,6 @@ const selectedPlanProgress = computed(() => activeTaskCount.value > 0
   ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
   : 0)
 
-watch(() => selectedPlan.value?.id, (planId) => {
-  void refreshPlanTodoLinks(planId)
-}, { immediate: true })
-
 function planProgress(plan: PlanSummary): number {
   const total = Number(plan.total_tasks || 0)
   return total > 0 ? Math.round((Number(plan.completed_tasks || 0) / total) * 100) : 0
@@ -897,7 +700,7 @@ async function revealSearchTarget(): Promise<void> {
     // An archive search result can be opened while the user is already in an
     // active-plan detail view. Clear that transient selection so the archive
     // preview is not hidden behind stale active-plan state.
-    if (selectedPlan.value || view.value === 'detail' || view.value === 'time') {
+    if (selectedPlan.value || view.value === 'detail') {
       selectedPlan.value = null
       editingMeta.value = false
       view.value = 'events'
@@ -938,7 +741,7 @@ onUnmounted(() => {
 
 <template>
   <div class="plans-hub">
-    <header v-if="view !== 'time'" class="plans-header">
+    <header class="plans-header">
       <button type="button" class="plans-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('plans.back')">
         <ArrowLeft :size="18" />
       </button>
@@ -947,13 +750,12 @@ onUnmounted(() => {
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
         <p v-if="view !== 'detail'" class="plans-module-description">{{ t('plans.moduleDescription') }}</p>
       </div>
-      <div v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
+      <div v-if="view === 'events' && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
-    <main class="plans-content" :class="{ 'plans-content-hub': view === 'hub' }">
-      <DailyPlanView v-if="view === 'time'" />
+    <main class="plans-content">
 
-      <section v-if="showTemplatePicker && (view === 'hub' || view === 'events')" class="template-workspace theme-card">
+      <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card">
         <header class="template-workspace-header">
           <div><p class="plans-eyebrow">{{ t('plans.template') }}</p><h2>{{ t('plans.templateWorkspaceTitle') }}</h2><p>{{ t('plans.templateWorkspaceHint') }}</p></div>
           <button type="button" class="plans-secondary" @click="closeTemplatePicker">{{ t('plans.cancel') }}</button>
@@ -968,63 +770,7 @@ onUnmounted(() => {
         </form>
       </section>
 
-      <template v-else-if="view === 'hub'">
-        <section class="unified-plan-section">
-          <div class="unified-section-heading">
-            <div><p class="plans-eyebrow">{{ t('plans.time') }}</p><h2>{{ t('plans.timeDescription') }}</h2></div>
-            <button type="button" class="plans-secondary" @click="openTimePlan"><Clock3 :size="15" /> {{ t('plans.time') }}</button>
-          </div>
-          <DailyPlanView :embedded="true" />
-        </section>
-        <section class="unified-plan-section event-plans-section">
-          <div class="unified-section-heading">
-            <div><p class="plans-eyebrow">{{ t('plans.events') }}</p><h2>{{ t('plans.eventsDescription') }}</h2></div>
-            <button v-if="canEditPlan" type="button" class="plans-secondary" @click="openCreatePlan"><Plus :size="15" /> {{ t('plans.create') }}</button>
-          </div>
-          <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
-          <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
-            <strong>{{ t('plans.archivedTargetTitle') }}</strong>
-            <span>{{ t('plans.archivedTargetDescription') }}</span>
-            <div v-if="archivedPlanTarget.tasks?.length" class="archive-task-preview">
-              <div v-for="task in archivedPlanTarget.tasks" :key="task.internal_id" class="archive-task-preview-row" :class="{ 'search-target': isArchivedTaskTarget(task) }">
-                <span>{{ task.display_id }}</span><strong>{{ task.content }}</strong><small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
-              </div>
-            </div>
-            <button v-if="canArchivePlan" type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
-          </div>
-          <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
-            <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
-            <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
-          </div>
-          <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
-          <section v-else-if="plans.length === 0" class="plans-empty theme-card">
-            <FolderPlus :size="34" />
-            <strong>{{ t('plans.empty') }}</strong>
-            <span>{{ t('plans.emptyHint') }}</span>
-            <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
-          </section>
-          <section v-else class="event-plan-grid">
-            <button v-for="plan in plans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
-              <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
-              <strong>{{ plan.name }}</strong>
-              <span>{{ formatPlanDate(plan.date) }}</span>
-              <div class="plan-progress-meta"><small>{{ plan.completed_tasks || 0 }}/{{ plan.total_tasks || 0 }} {{ t('plans.tasks') }}</small><small>{{ planProgress(plan) }}%</small></div>
-              <div class="plan-progress-track"><span :style="{ width: `${planProgress(plan)}%` }" /></div>
-            </button>
-          </section>
-          <section class="archives-panel theme-card">
-            <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
-            <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
-            <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
-            <div v-for="archive in archives" :key="archive.file" class="archive-row">
-              <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
-              <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
-            </div>
-          </section>
-        </section>
-      </template>
-
-      <template v-else-if="view === 'events'">
+      <template v-if="view === 'events'">
         <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
         <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
           <strong>{{ t('plans.archivedTargetTitle') }}</strong>
@@ -1083,7 +829,6 @@ onUnmounted(() => {
           <button type="button" class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
           <div v-if="canEditPlan" class="detail-actions">
             <button type="button" class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
-            <button type="button" class="plans-secondary" :disabled="isLoading || !activeTaskCount" @click="addAllTasksToTodos"><ListTodo :size="15" /> {{ t('plans.linkAllTodos') }}</button>
             <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>
@@ -1150,14 +895,12 @@ onUnmounted(() => {
           </form>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
-            <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
+            <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <button v-if="canEditPlan" type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button v-if="canEditPlan && !task.finish" type="button" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading" :aria-label="isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" @click="isTaskLinkedToTodo(task) ? openLinkedTodo(task) : addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo') }}</button>
-            <button v-if="canEditPlan" type="button" class="task-time" :disabled="isLoading" :aria-label="t('plans.recordTodoTime')" @click="openTaskRecord(task)"><Clock3 :size="14" /><span>{{ t('plans.recordTodoTime') }}</span></button>
             <button v-if="canEditPlan" type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button v-if="canEditPlan" type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
+            <button v-if="canEditPlan" type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
@@ -1223,10 +966,6 @@ onUnmounted(() => {
 .icon-button { display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 7px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
 .icon-button:hover { color: var(--color-error); border-color: var(--color-error); }
 .plans-content { max-width: 1080px; margin: 0 auto; padding: 10px 28px 50px; }
-.unified-plan-section { margin-bottom: 28px; }
-.unified-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-.unified-section-heading h2 { margin: 0; font-size: 21px; letter-spacing: -.02em; }
-.unified-section-heading .plans-eyebrow { margin-bottom: 5px; }
 .template-workspace { display: grid; gap: 18px; margin-bottom: 20px; padding: 20px; border: 1px solid var(--color-border); border-radius: 16px; }
 .template-workspace-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .template-workspace-header h2, .template-workspace-header p { margin: 0; }
@@ -1315,11 +1054,6 @@ onUnmounted(() => {
 .event-task-row > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-task-row > small { color: var(--color-text-tertiary); white-space: nowrap; }
 .task-log { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
-.task-todo { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
-.task-todo:hover { color: var(--color-primary); }
-.task-todo.linked { color: var(--color-success, #16a34a); background: color-mix(in srgb, var(--color-success, #16a34a) 12%, var(--color-bg-secondary)); cursor: default; }
-.task-time { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
-.task-time:hover { filter: brightness(1.05); }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .event-task-row.finished span { text-decoration: line-through; }
@@ -1365,16 +1099,6 @@ onUnmounted(() => {
 .create-add-section { justify-self: start; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (min-width: 1100px) {
-  .plans-content-hub {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr);
-    align-items: start;
-    gap: 28px;
-    max-width: 1280px;
-  }
-  .plans-content-hub .unified-plan-section { min-width: 0; margin-bottom: 0; }
-  .plans-content-hub .event-plans-section { border-top: 0; padding-top: 0; }
-  .plans-content-hub .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
@@ -1387,7 +1111,6 @@ onUnmounted(() => {
 }
 @media (min-width: 761px) and (max-width: 1099px) {
   .event-task-row { grid-template-columns: 24px minmax(120px, 1fr) auto 58px auto 58px 28px 28px; gap: 5px; }
-  .task-log, .task-todo, .task-time { padding: 4px 5px; font-size: 10px; }
 }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
 </style>

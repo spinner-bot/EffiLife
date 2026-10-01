@@ -24,7 +24,7 @@ def test_mobile_plan_capability_copy_does_not_claim_read_only_or_unavailable_edi
 
 def test_mobile_plan_archive_panel_explains_desktop_archive_boundary():
     view = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
-    assert view.count("archive-capability-note") == 2
+    assert view.count("archive-capability-note") == 1
     assert "v-if=\"isMobilePlanRuntime\" class=\"plans-readonly-note archive-capability-note\"" in view
     assert "const canArchivePlan = computed(() => canEditPlan.value)" in view
     assert "archive and restore require the desktop plan service" not in view

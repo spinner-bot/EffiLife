@@ -84,33 +84,29 @@ def test_template_entry_stays_outside_the_basic_create_modal():
     assert "listPlanTemplates" not in modal
 
 
-def test_detail_editor_created_todos_keep_both_plan_identifiers_for_bidirectional_sync():
+def test_plan_entries_are_not_converted_into_todos():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "related_plan_id: String(plan.id)" in view
-    assert "related_plan_task_id: String(task.internal_id)" in view
-    assert "time_estimate: task.time_minutes" in view
+    assert "TodoService" not in view
+    assert "related_plan_id" not in view
+    assert "related_plan_task_id" not in view
 
 
-def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
+def test_plan_detail_has_its_own_progress_workflow():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "const linkedTodoIdsByTask = ref(new Map<string, string>())" in view
-    assert "function isTaskLinkedToTodo" in view
-    assert "isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" in view
-    assert ':disabled="isLoading"' in view
-    assert "t('plans.viewTodo')" in view
-    assert "router.push({ path: '/tasks', query: { todo: todoId } })" in view
+    assert "const linkedTodoIdsByTask" not in view
+    assert "function isTaskLinkedToTodo" not in view
+    assert "t('plans.viewTodo')" not in view
+    assert "@submit.prevent=\"saveLog\"" in view
+    assert "@click=\"startLog(task.internal_id)\"" in view
     assert "stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)" in view
     assert "stopWorkspaceListener()" in view
-    assert "!['archived', 'cancelled'].includes(todo.status)" in view
 
 
-def test_plan_detail_can_bulk_link_unfinished_tasks_without_duplicates():
+def test_plan_detail_does_not_bulk_create_todos():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "async function addAllTasksToTodos()" in view
-    assert "const pendingTasks = plan.sections" in view
-    assert "!task.finish" in view
-    assert "t('plans.todosBulkCreated'" in view
-    assert "t('plans.todosAllLinked'" in view
+    assert "async function addAllTasksToTodos()" not in view
+    assert "linkPendingPlanTasksToTodos" not in view
+    assert "t('plans.linkAllTodos'" not in view

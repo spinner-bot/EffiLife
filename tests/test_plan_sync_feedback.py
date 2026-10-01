@@ -5,7 +5,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / "time-helper/desk/src/views/PlansHubView.vue").read_text(encoding="utf-8")
 
 
-def test_plan_operations_do_not_claim_full_sync_after_todo_sync_failure():
-    assert SOURCE.count("let todoSyncFailed = false") == 5
-    assert SOURCE.count("if (!todoSyncFailed) showPlanSaved()") == 5
-    assert SOURCE.count("todoSyncFailed = true") == 5
+def test_plan_operations_do_not_perform_todo_synchronization():
+    assert "todoSyncFailed" not in SOURCE
+    assert "syncTodosFromPlanTask" not in SOURCE
+    assert "syncTodoDescriptionsFromPlan" not in SOURCE
+    assert "completeLinkedTodos" not in SOURCE
