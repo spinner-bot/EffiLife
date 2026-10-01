@@ -76,6 +76,11 @@ const isEditing = ref(false)
 const editingIndex = ref(-1)
 const showForm = ref(false)
 const isSaving = ref(false)
+const historyDate = ref(getTodayDate())
+
+function openHistoryDate() {
+  if (historyDate.value) router.push(`/day/${historyDate.value}`)
+}
 
 // 表单数据
 const formMode = ref<'time' | 'duration'>('time')
@@ -362,10 +367,17 @@ onUnmounted(() => {
         <span>{{ t('records.back') }}</span>
       </button>
       <h1>{{ t('records.title') }}</h1>
-      <button type="button" class="add-btn" @click="openAddForm">
-        <Plus :size="16" />
-        <span>{{ t('records.add') }}</span>
-      </button>
+      <div class="records-header-actions">
+        <label class="history-date-picker">
+          <span>{{ t('records.historyDate') }}</span>
+          <input v-model="historyDate" type="date" :aria-label="t('records.historyDate')" />
+        </label>
+        <button type="button" class="history-btn" @click="openHistoryDate">{{ t('records.openHistory') }}</button>
+        <button type="button" class="add-btn" @click="openAddForm">
+          <Plus :size="16" />
+          <span>{{ t('records.add') }}</span>
+        </button>
+      </div>
     </header>
 
     <main class="main-content">
@@ -629,6 +641,13 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
 }
+
+.records-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.history-date-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-tertiary); font-size: 11px; }
+.history-date-picker input { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--spacing-sm) 8px; color: var(--color-text-primary); background: var(--color-bg-secondary); font: inherit; outline: 0; }
+.history-date-picker input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.history-btn { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--spacing-sm) var(--spacing-md); color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 0.875rem; }
+.history-btn:hover, .history-btn:focus-visible { border-color: var(--color-primary); color: var(--color-text-primary); outline: 0; }
 .todo-options-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 11px; }
 .todo-options-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 7px; padding: 5px 8px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-weight: 650; }
 .todo-options-unavailable button:hover, .todo-options-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
@@ -920,7 +939,8 @@ onUnmounted(() => {
   .header { flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .header h1 { order: 3; flex-basis: 100%; font-size: 1.25rem; }
   .back-btn, .add-btn { min-height: 40px; }
-  .add-btn { margin-left: auto; }
+  .records-header-actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  .add-btn { margin-left: 0; }
   .record-item { padding: 13px; }
   .modal-footer { flex-direction: column-reverse; }
   .modal-footer .btn { justify-content: center; min-height: 42px; }
