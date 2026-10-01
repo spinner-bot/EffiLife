@@ -783,7 +783,13 @@ function deadlineStateLabel(deadline?: string): string {
 
 async function revealSearchTarget(): Promise<void> {
   const targetId = String(route.query.todo || '')
-  if (!targetId || !todos.value.some((todo) => todo.id === targetId)) return
+  const target = todos.value.find((todo) => todo.id === targetId)
+  if (!target) return
+  // Global search also indexes completed and archived tasks. Switch the local
+  // view before scrolling so a valid deep link never appears to do nothing.
+  if (target.status === 'completed') filter.value = 'completed'
+  else if (target.status === 'archived' || target.status === 'cancelled') filter.value = 'all'
+  else filter.value = 'active'
   searchTargetTodoId.value = targetId
   await nextTick()
   document.getElementById(`todo-${targetId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
