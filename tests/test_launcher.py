@@ -27,6 +27,12 @@ def test_launcher_ignores_blank_custom_node_directory(monkeypatch):
     assert launcher.custom_node_dir() == launcher.CUSTOM_NODE_DIR
 
 
+def test_launcher_reads_custom_node_directory_on_posix(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher.os, "name", "posix")
+    assert launcher.node_tool_filename("node") == "node"
+    assert launcher.node_tool_filename("npm") == "npm"
+
+
 def test_unified_launcher_mode_dispatches_to_main_workspace(monkeypatch):
     modules = {"1": {"name": "EffiLife unified workspace"}}
     calls = []

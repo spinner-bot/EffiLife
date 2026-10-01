@@ -29,10 +29,19 @@ VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 CUSTOM_NODE_DIR = Path("F:/dev-tools/node")
 
 
-def custom_node_dir() -> Path:
+def custom_node_dir() -> Path | None:
     """Return the configured Node directory using the current environment."""
     configured = os.environ.get("EFFILIFE_NODE_DIR", "").strip()
-    return Path(configured).expanduser() if configured else CUSTOM_NODE_DIR
+    if configured:
+        return Path(configured).expanduser()
+    return CUSTOM_NODE_DIR if os.name == "nt" else None
+
+
+def node_tool_filename(name: str) -> str:
+    """Return the executable filename for the current platform."""
+    return f"{name}.cmd" if os.name == "nt" and name == "npm" else (
+        f"{name}.exe" if os.name == "nt" else name
+    )
 
 
 def configured_data_dir():
@@ -65,9 +74,10 @@ def find_npm():
     if not node_available:
         return None
 
-    # Check custom F drive location first
-    if os.name == "nt":
-        custom_npm = custom_node_dir() / "npm.cmd"
+    # Check the configured custom location before PATH on every platform.
+    node_dir = custom_node_dir()
+    if node_dir is not None:
+        custom_npm = node_dir / node_tool_filename("npm")
         if custom_npm.exists():
             return str(custom_npm)
 
@@ -87,8 +97,10 @@ def find_npm():
 def find_node():
     """Find the Node executable using the same rules as npm."""
     candidates = []
+    node_dir = custom_node_dir()
+    if node_dir is not None:
+        candidates.append(node_dir / node_tool_filename("node"))
     if os.name == "nt":
-        candidates.append(custom_node_dir() / "node.exe")
         system_node = shutil.which("node.exe") or shutil.which("node")
         if system_node:
             candidates.append(Path(system_node))
@@ -108,7 +120,7 @@ def node_environment():
     """Build an environment that can run npm and its child processes."""
     env = os.environ.copy()
     node_dir = custom_node_dir()
-    if node_dir.exists():
+    if node_dir is not None and node_dir.exists():
         env["PATH"] = str(node_dir) + os.pathsep + env.get("PATH", "")
     return env
 
