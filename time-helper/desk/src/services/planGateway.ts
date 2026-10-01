@@ -6,6 +6,8 @@ import { ref } from 'vue'
 import { notifyWorkspaceChanged } from './workspaceEvents'
 import { TodoService } from './todoService'
 
+const PLAN_HELPER_REQUEST_TIMEOUT_MS = 8000
+
 export interface PlanSummary {
   id: string
   name: string
@@ -384,8 +386,12 @@ async function fetchPlan(path: string, options: RequestInit = {}): Promise<Respo
   await syncPendingPlanHelperReset()
   const retryDelays = [150, 300, 600, 1000, 1000]
   for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), PLAN_HELPER_REQUEST_TIMEOUT_MS)
+    const externalAbort = () => controller.abort(options.signal?.reason)
+    options.signal?.addEventListener('abort', externalAbort, { once: true })
     try {
-      return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, options)
+      return await fetch(`${PLAN_HELPER_ORIGIN}${path}`, { ...options, signal: controller.signal })
     } catch (error) {
       if (options.signal?.aborted) {
         throw error
@@ -394,6 +400,9 @@ async function fetchPlan(path: string, options: RequestInit = {}): Promise<Respo
         throw new Error(translate('plans.serviceUnavailable'))
       }
       await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]))
+    } finally {
+      window.clearTimeout(timeout)
+      options.signal?.removeEventListener('abort', externalAbort)
     }
   }
 
