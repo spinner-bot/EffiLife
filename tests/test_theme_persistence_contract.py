@@ -97,6 +97,15 @@ def test_theme_editor_reapplies_dirty_draft_after_runtime_refresh():
     assert "savedThemeSnapshot.value = cloneTheme(newTheme)" in source
 
 
+def test_theme_save_blocks_its_own_workspace_refresh_race():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "const themeSaveInFlight = ref(false)" in source
+    assert "if (themeSaveInFlight.value && source === 'settings') return" in source
+    assert "themeSaveInFlight.value = true" in source
+    assert "themeSaveInFlight.value = false" in source
+    assert "finally" in source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]
+
+
 def test_generic_config_watcher_does_not_overwrite_theme_draft():
     source = SETTINGS.read_text(encoding="utf-8")
     config_watch = source.split("watch(() => config.value,", 1)[1].split("watch(() => config.value.theme", 1)[0]

@@ -212,6 +212,10 @@ function cloneTheme(theme: Config['theme']): Config['theme'] {
 }
 
 const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
+// Saving emits a workspace event. Ignore the settings editor's own refresh
+// callback until the durable write has completed, otherwise an in-flight
+// hydration can briefly put the old theme back into the editor during exit.
+const themeSaveInFlight = ref(false)
 
 function syncThemeDraft(theme: Config['theme']) {
   themeType.value = theme.type || 'solid'
@@ -223,6 +227,7 @@ function syncThemeDraft(theme: Config['theme']) {
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source !== 'settings' && source !== 'archive') return
+  if (themeSaveInFlight.value && source === 'settings') return
   const hadLocalDraft = themeDirty.value
   // The workspace event is emitted before other windows finish rehydrating
   // IndexedDB. Reload here as well so the dirty marker never snapshots the
@@ -287,6 +292,7 @@ async function saveTheme(): Promise<boolean> {
     ...config.value,
     theme: buildDraftTheme()
   }
+  themeSaveInFlight.value = true
   try {
     await appStore.saveConfig(newConfig)
     savedThemeSnapshot.value = cloneTheme(newConfig.theme)
@@ -296,6 +302,8 @@ async function saveTheme(): Promise<boolean> {
     console.error('Failed to save theme settings:', error)
     notifyToast(t('settings.saveFailed'), 'error')
     return false
+  } finally {
+    themeSaveInFlight.value = false
   }
 }
 
