@@ -95,6 +95,11 @@ def test_plan_detail_uses_a_desktop_summary_sidebar_and_mobile_single_column():
     assert ".plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr);" in desktop_block
 
 
+def test_plan_create_modal_respects_viewport_and_scrolls_inside_small_screens():
+    plans = (VIEWS / "PlansHubView.vue").read_text(encoding="utf-8")
+    assert ".create-modal { display: grid; gap: 14px; width: min(440px, calc(100vw - 40px)); max-height: calc(100vh - 40px); box-sizing: border-box; overflow-y: auto;" in plans
+
+
 def test_home_uses_a_wide_dashboard_at_desktop_breakpoint():
     source = (VIEWS / "HomeView.vue").read_text(encoding="utf-8")
     desktop = source.split("@media (min-width: 900px)", 1)[1]
