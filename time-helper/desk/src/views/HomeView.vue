@@ -383,7 +383,7 @@ onUnmounted(() => {
         <div class="inbox-panel-header">
           <h3 class="inbox-panel-title">{{ t('home.inbox') }}</h3>
           <div class="inbox-panel-actions">
-            <button v-if="unreadCount > 0" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">{{ t('home.markAllRead') }}</button>
+            <button v-if="unreadCount > 0" type="button" class="inbox-action-btn" @click="EventSystem.markAllAsRead()">{{ t('home.markAllRead') }}</button>
             <button class="inbox-close-btn" type="button" :aria-label="t('home.closeInbox')" @click="closeInboxPanel()">
               <X :size="16" />
             </button>
@@ -417,7 +417,7 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="inbox-panel-footer">
-          <button class="inbox-panel-more" @click="closeInboxPanel(); router.push('/event-manager')">
+          <button type="button" class="inbox-panel-more" @click="closeInboxPanel(); router.push('/event-manager')">
             {{ t('home.viewAll') }}
             <ChevronRight :size="14" />
           </button>
@@ -570,7 +570,7 @@ onUnmounted(() => {
             <p class="today-todos-eyebrow">{{ t('home.todayTodosEyebrow') }}</p>
             <h2 class="stats-title">{{ t('home.todayTodos') }}</h2>
           </div>
-          <button class="today-todos-link" @click="router.push('/tasks')">
+          <button type="button" class="today-todos-link" @click="router.push('/tasks')">
             {{ t('home.viewTodos') }} <ChevronRight :size="16" />
           </button>
         </div>
@@ -580,10 +580,10 @@ onUnmounted(() => {
         </form>
         <div v-if="todayTodos.length" class="today-todos-list">
           <div v-for="todo in todayTodos" :key="todo.id" class="today-todo-row">
-            <button class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabel')" @click="completeHomeTodo(todo)">
+            <button type="button" class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabel')" @click="completeHomeTodo(todo)">
               <Check v-if="completingTodoId === todo.id" :size="13" />
             </button>
-            <button class="today-todo-main" @click="router.push({ path: '/tasks', query: { todo: todo.id } })">
+            <button type="button" class="today-todo-main" @click="router.push({ path: '/tasks', query: { todo: todo.id } })">
               <span class="today-todo-copy">
                 <span class="today-todo-title">{{ todo.title }}</span>
                 <span class="today-todo-meta">
