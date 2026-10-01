@@ -11,6 +11,20 @@ LEGACY_CONFIRM_VIEWS = (
     ROOT / "time-helper" / "desk" / "src" / "views" / "EventManagerView.vue",
     ROOT / "time-helper" / "desk" / "src" / "views" / "PlanView.vue",
 )
+PRIMARY_VIEWS = tuple(
+    ROOT / "time-helper" / "desk" / "src" / "views" / name
+    for name in (
+        "HomeView.vue",
+        "PlansHubView.vue",
+        "PlanView.vue",
+        "TaskCenterView.vue",
+        "RecordsView.vue",
+        "DayDetailView.vue",
+        "SettingsView.vue",
+        "EventManagerView.vue",
+        "MotionSettingsView.vue",
+    )
+)
 
 
 def test_unified_shell_mounts_the_themed_confirm_host():
@@ -42,4 +56,12 @@ def test_compatibility_management_views_use_themed_confirmation_service():
     for view in LEGACY_CONFIRM_VIEWS:
         source = view.read_text(encoding="utf-8")
         assert "requestConfirm" in source, view.name
+        assert "confirm(" not in source, view.name
+
+
+def test_all_primary_workspace_views_avoid_native_confirmation_dialogs():
+    for view in PRIMARY_VIEWS:
+        source = view.read_text(encoding="utf-8")
+        assert "window.confirm" not in source, view.name
+        assert "window.alert" not in source, view.name
         assert "confirm(" not in source, view.name
