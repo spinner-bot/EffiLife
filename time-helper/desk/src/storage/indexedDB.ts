@@ -2,6 +2,7 @@
 
 const DB_NAME = 'efflife_db'
 const DB_VERSION = 3
+const DB_OPEN_TIMEOUT_MS = 3000
 const STORAGE_PREFIX = 'efflife_'
 const RAW_STORAGE_PREFIX = `${STORAGE_PREFIX}raw_`
 
@@ -52,13 +53,19 @@ export async function openDB(): Promise<IDBDatabase> {
 
   dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
+    const timeout = setTimeout(() => {
+      dbPromise = null
+      reject(new Error(`IndexedDB open timed out after ${DB_OPEN_TIMEOUT_MS}ms`))
+    }, DB_OPEN_TIMEOUT_MS)
 
     request.onerror = () => {
+      clearTimeout(timeout)
       dbPromise = null
       reject(request.error)
     }
 
     request.onsuccess = () => {
+      clearTimeout(timeout)
       dbInstance = request.result
       resolve(dbInstance)
     }

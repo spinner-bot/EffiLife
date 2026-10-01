@@ -24,6 +24,20 @@ export const useAppStore = defineStore('app', () => {
   // from overwriting the just-persisted configuration when it resolves later.
   let workspaceWriteVersion = 0
 
+  async function waitForInitStage<T>(name: string, task: Promise<T>): Promise<T> {
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    try {
+      return await Promise.race([
+        task,
+        new Promise<T>((_, reject) => {
+          timeout = setTimeout(() => reject(new Error(`Workspace initialization stalled at ${name}`)), 5000)
+        }),
+      ])
+    } finally {
+      if (timeout) clearTimeout(timeout)
+    }
+  }
+
   // 计算属性
   const overtimeThreshold = computed(() => config.value.overtime_threshold)
   const showSeconds = computed(() => config.value.show_seconds)
@@ -35,14 +49,14 @@ export const useAppStore = defineStore('app', () => {
     isLoading.value = true
     initPromise = (async () => {
       // 执行数据迁移（首次启动时）
-      await DataService.init()
+      await waitForInitStage('data migration', DataService.init())
 
-      config.value = await DataService.loadConfig()
-      plans.value = await DataService.loadPlans()
-      scheduleRules.value = await DataService.loadScheduleRules()
+      config.value = await waitForInitStage('configuration', DataService.loadConfig())
+      plans.value = await waitForInitStage('plans', DataService.loadPlans())
+      scheduleRules.value = await waitForInitStage('schedule rules', DataService.loadScheduleRules())
 
       // 如果没有记录数据，检查是否有历史记录
-      const todayRecs = await DataService.loadRecords()
+      const todayRecs = await waitForInitStage('records', DataService.loadRecords())
       if (todayRecs.length === 0) {
         // 检查 IndexedDB 中是否有任何记录
         const { isEmpty, STORE_NAMES: SN } = await import('@/storage')
@@ -56,7 +70,7 @@ export const useAppStore = defineStore('app', () => {
         }
       }
 
-      await refreshTodayData()
+      await waitForInitStage('today workspace', refreshTodayData())
     })()
     try {
       await initPromise
