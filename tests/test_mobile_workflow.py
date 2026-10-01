@@ -32,9 +32,12 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "npm run mobile:android:build" in workflow
     assert "actions/upload-artifact@v4" in workflow
     assert "gen/android/app/build/outputs/apk/**/*.apk" in workflow
+    assert "python scripts/verify_mobile_artifacts.py" in workflow
+    assert "--target android" in workflow
     assert "npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "npm run mobile:ios:build -- --debug" in workflow
     assert "gen/apple/build/**/*.app" in workflow
+    assert "--target ios" in workflow
 
 
 def test_mobile_build_workflow_does_not_use_desktop_sidecar():

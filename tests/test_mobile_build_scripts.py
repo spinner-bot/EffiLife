@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,3 +25,29 @@ def test_mobile_build_scripts_remain_separate_from_desktop_sidecar_build():
     assert "build:sidecar" in desktop["build"]["beforeBuildCommand"]
     for name in ("mobile:android:build", "mobile:ios:build"):
         assert "build:sidecar" not in scripts[name]
+
+
+def test_mobile_artifact_verifier_accepts_non_empty_android_apk_and_ios_bundle(tmp_path):
+    from scripts.verify_mobile_artifacts import verify
+
+    apk_root = tmp_path / "apk"
+    apk_root.mkdir()
+    apk = apk_root / "release.apk"
+    apk.write_bytes(b"apk")
+    assert verify(apk_root, "android") == [apk]
+
+    ios_root = tmp_path / "ios"
+    bundle = ios_root / "EffiLife.app" / "Contents"
+    bundle.mkdir(parents=True)
+    (bundle / "Info.plist").write_bytes(b"plist")
+    assert verify(ios_root, "ios") == [ios_root / "EffiLife.app"]
+
+
+def test_mobile_artifact_verifier_rejects_empty_or_missing_outputs(tmp_path):
+    from scripts.verify_mobile_artifacts import verify
+
+    root = tmp_path / "outputs"
+    root.mkdir()
+    (root / "empty.apk").write_bytes(b"")
+    with pytest.raises(FileNotFoundError):
+        verify(root, "android")
