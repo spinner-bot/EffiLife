@@ -285,6 +285,15 @@ function previewTheme() {
   }
 }
 
+// Keep theme selection as an explicit action instead of relying on a watcher
+// alone. This makes the visual preview update in the same event turn and keeps
+// the draft dirty before the user leaves the panel.
+function selectTheme(type: ThemeType) {
+  if (themeType.value === type) return
+  themeType.value = type
+  previewTheme()
+}
+
 // 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
 const availableThemes = getAvailableThemes()
 const availableThemeCategories = getAvailableThemeCategories()
@@ -823,7 +832,7 @@ onUnmounted(() => {
               class="theme-card"
               :class="{ active: themeType === theme.type }"
               :aria-pressed="themeType === theme.type"
-              @click="themeType = theme.type"
+              @click="selectTheme(theme.type)"
             >
               <span class="theme-swatch" :style="{ background: theme.preview }" aria-hidden="true"></span>
               <div class="theme-info">
