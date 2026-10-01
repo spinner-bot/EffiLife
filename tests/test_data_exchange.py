@@ -53,6 +53,33 @@ def test_workspace_bundle_matches_unified_frontend_dataset_contract(tmp_path):
     assert set(datasets) == set(CANONICAL_WORKSPACE_DATASETS)
 
 
+def test_workspace_bundle_roundtrip_preserves_cross_module_links(tmp_path):
+    bundle = tmp_path / "linked-workspace.efl"
+    records = {
+        "2026-10-01": [{"id": "record-1", "todo_id": "todo-1", "plan_task_id": "A1"}],
+    }
+    todos = [{"id": "todo-1", "related_time_record_ids": ["record-1"], "plan_task_id": "A1"}]
+    plan_helper = {
+        "available": True,
+        "plans": [{"id": "plan-1", "tasks": [{"id": "A1", "title": "Release"}]}],
+    }
+
+    export_workspace_bundle(
+        bundle,
+        app={"version": "e2e"},
+        records=records,
+        todos=todos,
+        todo_categories=[{"id": "work", "name": "Work"}],
+        plan_helper=plan_helper,
+    )
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["records"] == records
+    assert datasets["todos"] == todos
+    assert datasets["plan_helper"] == plan_helper
+
+
 def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
     bundle = tmp_path / "partial.efl"
     export_bundle(bundle, {"app": {}})
