@@ -1126,6 +1126,22 @@ onUnmounted(() => {
   .workflow-summary { width: 100%; margin-bottom: 0; }
 }
 
+/* Desktop control panel: use the available horizontal space instead of
+   presenting the dashboard as a narrow mobile-style column. */
+@media (min-width: 900px) {
+  .home-view { padding: 24px 32px; }
+  .main-content {
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 1180px;
+    gap: 20px;
+  }
+  .clock-section { text-align: left; }
+  .checkin-badges { justify-content: flex-start; }
+  .workflow-summary { width: 100%; margin-bottom: 0; }
+  .overview-grid { grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr); }
+}
+
 .stats-header-row {
   display: flex;
   align-items: center;
