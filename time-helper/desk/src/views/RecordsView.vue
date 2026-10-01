@@ -82,6 +82,10 @@ function openHistoryDate() {
   if (historyDate.value) router.push(`/day/${historyDate.value}`)
 }
 
+function recordKey(record: TimeRecord, index: number): string {
+  return record.id || `${record.date || getTodayDate()}-${record.start}-${record.end}-${index}`
+}
+
 // 表单数据
 const formMode = ref<'time' | 'duration'>('time')
 const formStart = ref({ h: '09', m: '00' })
@@ -385,7 +389,7 @@ onUnmounted(() => {
       <div class="records-list" v-if="records.length > 0">
         <div
           v-for="(record, index) in records"
-          :key="index"
+          :key="recordKey(record, index)"
           class="record-item"
         >
           <div class="record-info">
