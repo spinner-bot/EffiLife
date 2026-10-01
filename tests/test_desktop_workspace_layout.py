@@ -2,9 +2,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HOME = (ROOT / "time-helper" / "desk" / "src" / "views" / "HomeView.vue").read_text(encoding="utf-8")
-TIME = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlanView.vue").read_text(encoding="utf-8")
-SETTINGS = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
+VIEWS = ROOT / "time-helper" / "desk" / "src" / "views"
+HOME = (VIEWS / "HomeView.vue").read_text(encoding="utf-8")
+TIME = (VIEWS / "PlanView.vue").read_text(encoding="utf-8")
+SETTINGS = (VIEWS / "SettingsView.vue").read_text(encoding="utf-8")
 
 
 def test_home_uses_wide_desktop_console_layout():
@@ -45,13 +46,13 @@ def test_settings_archive_actions_use_horizontal_desktop_layout_and_mobile_stack
 
 
 def test_task_center_uses_the_shared_wide_desktop_content_budget():
-    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in tasks
     assert ".task-header, .task-content { max-width: 1180px; }" in tasks
 
 
 def test_task_center_only_stacks_editing_controls_on_mobile():
-    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "@media (max-width: 700px)" in tasks
     mobile_block = tasks.split("@media (max-width: 700px)", 1)[1]
     assert ".task-edit-form { grid-template-columns: 1fr; }" in mobile_block
@@ -60,7 +61,7 @@ def test_task_center_only_stacks_editing_controls_on_mobile():
 
 
 def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
-    plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    plans = (VIEWS / "PlansHubView.vue").read_text(encoding="utf-8")
     assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
     assert ".detail-actions { display: flex; flex-wrap: wrap;" in plans
     assert ".plan-section > header { display: flex; flex-wrap: wrap;" in plans
@@ -68,9 +69,34 @@ def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
 
 
 def test_plan_detail_uses_a_desktop_summary_sidebar_and_mobile_single_column():
-    plans = (ROOT / "time-helper/desk/src/views/PlansHubView.vue").read_text(encoding="utf-8")
+    plans = (VIEWS / "PlansHubView.vue").read_text(encoding="utf-8")
     assert 'class="plan-detail-layout"' in plans
     assert 'class="plan-detail-aside"' in plans
     assert 'class="plan-detail-main"' in plans
     desktop_block = plans.split("@media (min-width: 1100px)", 1)[1]
     assert ".plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr);" in desktop_block
+
+
+def test_home_uses_a_wide_dashboard_at_desktop_breakpoint():
+    source = (VIEWS / "HomeView.vue").read_text(encoding="utf-8")
+    desktop = source.split("@media (min-width: 900px)", 1)[1]
+    assert ".main-content" in desktop
+    assert "max-width: 1180px" in desktop
+    assert "grid-template-columns: minmax(150px, 190px) minmax(0, 1fr)" in desktop
+
+
+def test_core_workspaces_expand_beyond_mobile_card_width_on_desktop():
+    sources = {
+        "plans": ((VIEWS / "PlansHubView.vue").read_text(encoding="utf-8"), "max-width: 1080px"),
+        "tasks": ((VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8"), "max-width: 1180px"),
+        "records": ((VIEWS / "RecordsView.vue").read_text(encoding="utf-8"), "max-width: 1180px"),
+    }
+    for source, expected_width in sources.values():
+        assert expected_width in source
+        assert "@media (min-width: 1100px)" in source
+
+
+def test_desktop_workspaces_keep_mobile_breakpoints_explicit():
+    for name in ("PlansHubView.vue", "TaskCenterView.vue", "RecordsView.vue"):
+        source = (VIEWS / name).read_text(encoding="utf-8")
+        assert "@media (max-width: 760px)" in source or "@media (max-width: 700px)" in source or "@media (max-width: 680px)" in source
