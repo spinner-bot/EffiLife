@@ -25,3 +25,11 @@ def test_home_workflow_summary_has_bilingual_copy():
 def test_home_empty_plan_action_enters_plan_helper_workspace():
     assert 'action-route="/plans"' in HOME
     assert 'action-route="/plan"' not in HOME
+
+
+def test_home_plan_service_failure_has_an_explicit_desktop_retry():
+    assert "refreshEventPlanSummary" in HOME
+    assert "home.retryEventPlans" in HOME
+    assert 'v-if="!isMobilePlanRuntime"' in HOME
+    assert "event-overview-retry" in HOME
+    assert I18N.count("'home.retryEventPlans':") == 2

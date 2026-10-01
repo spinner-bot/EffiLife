@@ -559,7 +559,12 @@ onUnmounted(() => {
             <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
-          <span v-else class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
+          <div v-else class="event-overview-unavailable">
+            <span class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
+            <button v-if="!isMobilePlanRuntime" type="button" class="event-overview-retry" @click="refreshEventPlanSummary">
+              {{ t('home.retryEventPlans') }}
+            </button>
+          </div>
         </section>
         </div>
       </section>
@@ -1115,6 +1120,11 @@ onUnmounted(() => {
 .event-plan-preview-more { color: var(--color-text-tertiary); font-size: 11px; }
 .event-overview-snapshot { margin-top: 7px; color: var(--color-warning, var(--color-text-tertiary)); font-size: 11px; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
+.event-overview-unavailable { display: grid; align-content: start; gap: 12px; width: 100%; margin-top: auto; }
+.event-overview-unavailable .event-overview-muted { margin-top: 0; padding-top: var(--spacing-xl); }
+.event-overview-retry { justify-self: start; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font: inherit; font-size: 12px; }
+.event-overview-retry:hover { border-color: var(--color-border-hover); }
+.event-overview-retry:disabled { cursor: wait; opacity: .6; }
 
 .today-todos-card {
   margin-top: var(--spacing-md);
