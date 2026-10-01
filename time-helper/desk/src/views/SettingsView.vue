@@ -656,7 +656,7 @@ onUnmounted(() => {
 <template>
   <div class="settings-view">
     <header class="header">
-      <button class="back-btn" @click="goBack">
+      <button type="button" class="back-btn" @click="goBack">
         <ArrowLeft :size="16" />
         <span>{{ t('settings.back') }}</span>
       </button>
@@ -673,35 +673,35 @@ onUnmounted(() => {
           <LocaleSwitcher />
         </div>
         <div class="settings-list">
-          <button class="settings-item" @click="navigateTo('custom')">
+          <button type="button" class="settings-item" @click="navigateTo('custom')">
             <span>{{ t('settings.custom') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('theme')">
+          <button type="button" class="settings-item" @click="navigateTo('theme')">
             <span>{{ t('settings.theme.title') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="router.push('/audio-settings')">
+          <button type="button" class="settings-item" @click="router.push('/audio-settings')">
             <span>{{ t('settings.audio') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="router.push('/motion-settings')">
+          <button type="button" class="settings-item" @click="router.push('/motion-settings')">
             <span>{{ t('settings.motion') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="router.push('/event-manager')">
+          <button type="button" class="settings-item" @click="router.push('/event-manager')">
             <span>{{ t('settings.events') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('archive')">
+          <button type="button" class="settings-item" @click="navigateTo('archive')">
             <span>{{ t('settings.archive.title') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('restore')">
+          <button type="button" class="settings-item" @click="navigateTo('restore')">
             <span>{{ t('settings.restore.title') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('more')">
+          <button type="button" class="settings-item" @click="navigateTo('more')">
             <span>{{ t('settings.more') }}</span>
             <ChevronRight :size="16" />
           </button>
@@ -963,13 +963,13 @@ onUnmounted(() => {
 
         <!-- 操作按钮 -->
         <div class="archive-actions">
-          <button class="btn primary full" :disabled="archiveBusy" @click="handleExportArchive">
+          <button type="button" class="btn primary full" :disabled="archiveBusy" @click="handleExportArchive">
             {{ t('settings.archive.export') }}
           </button>
-          <button class="btn primary full" :disabled="archiveBusy" @click="handleImportArchive">
+          <button type="button" class="btn primary full" :disabled="archiveBusy" @click="handleImportArchive">
             {{ t('settings.archive.import') }}
           </button>
-          <button class="btn secondary full" :disabled="archiveBusy" @click="openLegacyTodoImport">
+          <button type="button" class="btn secondary full" :disabled="archiveBusy" @click="openLegacyTodoImport">
             {{ t('settings.archive.importLegacyTodos') }}
           </button>
         </div>
@@ -994,7 +994,7 @@ onUnmounted(() => {
           {{ t('settings.archive.hint') }}
         </p>
 
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
+        <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 数据恢复 -->
@@ -1012,18 +1012,18 @@ onUnmounted(() => {
 
         <div class="reset-section">
           <h3>{{ t('settings.reset.dataClearTitle') }}</h3>
-          <button class="btn danger full" @click="handleReset('all')">{{ t('settings.reset.all') }}</button>
-          <button class="btn secondary full" @click="handleReset('records')">{{ t('settings.reset.records') }}</button>
-          <button class="btn secondary full" @click="handleReset('plans')">{{ t('settings.reset.plans') }}</button>
+          <button type="button" class="btn danger full" @click="handleReset('all')">{{ t('settings.reset.all') }}</button>
+          <button type="button" class="btn secondary full" @click="handleReset('records')">{{ t('settings.reset.records') }}</button>
+          <button type="button" class="btn secondary full" @click="handleReset('plans')">{{ t('settings.reset.plans') }}</button>
         </div>
 
         <div class="reset-section">
           <h3>{{ t('settings.reset.settingsTitle') }}</h3>
-          <button class="btn secondary full" @click="handleReset('config')">{{ t('settings.reset.config') }}</button>
-          <button class="btn secondary full" @click="handleReset('settings')">{{ t('settings.reset.audioEvents') }}</button>
+          <button type="button" class="btn secondary full" @click="handleReset('config')">{{ t('settings.reset.config') }}</button>
+          <button type="button" class="btn secondary full" @click="handleReset('settings')">{{ t('settings.reset.audioEvents') }}</button>
         </div>
 
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
+        <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 反馈 -->
@@ -1038,14 +1038,14 @@ onUnmounted(() => {
             <div class="email-row">
               <Mail :size="20" class="email-icon" />
               <span class="email-address">{{ FEEDBACK_EMAIL }}</span>
-              <button class="copy-btn" @click="copyEmail" :title="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')">
+              <button type="button" class="copy-btn" @click="copyEmail" :title="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')">
                 <Copy :size="16" />
                 <span v-if="copySuccess">{{ t('settings.feedback.copied') }}</span>
               </button>
             </div>
           </div>
 
-          <button class="btn primary full email-btn" @click="openEmailClient">
+          <button type="button" class="btn primary full email-btn" @click="openEmailClient">
             <Mail :size="18" />
             <span>{{ t('settings.feedback.sendEmail') }}</span>
           </button>
@@ -1060,35 +1060,35 @@ onUnmounted(() => {
             </ul>
           </div>
         </div>
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
+        <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 更多设置 -->
       <template v-else-if="currentView === 'more'">
         <h2>{{ t('settings.more') }}</h2>
         <div class="settings-list">
-          <button class="settings-item" @click="navigateTo('version-info')">
+          <button type="button" class="settings-item" @click="navigateTo('version-info')">
             <span>{{ t('settings.more.version') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('feedback')">
+          <button type="button" class="settings-item" @click="navigateTo('feedback')">
             <span>{{ t('settings.more.feedback') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="startGuide">
+          <button type="button" class="settings-item" @click="startGuide">
             <span>{{ t('settings.more.guide') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('help')">
+          <button type="button" class="settings-item" @click="navigateTo('help')">
             <span>{{ t('settings.more.help') }}</span>
             <ChevronRight :size="16" />
           </button>
-          <button class="settings-item" @click="navigateTo('reset')">
+          <button type="button" class="settings-item" @click="navigateTo('reset')">
             <span>{{ t('settings.more.reset') }}</span>
             <ChevronRight :size="16" />
           </button>
         </div>
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
+        <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
 
       <!-- 版本信息 -->
@@ -1125,7 +1125,7 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <button class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
+        <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
     </main>
   </div>

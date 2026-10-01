@@ -154,6 +154,17 @@ def test_theme_save_failure_message_exists_in_both_locales():
     assert source.count("'settings.saveFailed'") == 2
 
 
+def test_settings_click_buttons_have_explicit_non_submit_types():
+    import re
+
+    source = SETTINGS.read_text(encoding="utf-8")
+    buttons = re.findall(r"<button\b[\s\S]*?>", source)
+    clickable_buttons = [button for button in buttons if "@click" in button]
+
+    assert clickable_buttons
+    assert all('type="button"' in button for button in clickable_buttons)
+
+
 def test_theme_exit_confirms_before_persisting_without_a_save_button():
     import re
 
