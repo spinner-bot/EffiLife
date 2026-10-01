@@ -541,6 +541,8 @@ def test_windows_launcher_supports_explicit_python_and_noninteractive_exit():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.bat").read_text(encoding="utf-8")
     assert 'if defined EFFILIFE_PYTHON' in script
     assert '"%EFFILIFE_PYTHON%" launcher\\start.py --unified %*' in script
+    assert 'if not exist "%EFFILIFE_PYTHON%"' in script
+    assert "EFFILIFE_PYTHON does not exist:" in script
     assert 'if /i not "%EFFILIFE_NO_PAUSE%"=="1" pause' in script
     assert "exit /b %EFFILIFE_LAUNCH_EXIT%" in script
 

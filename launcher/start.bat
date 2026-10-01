@@ -1,6 +1,10 @@
 @echo off
 cd /d "%~dp0.."
 if defined EFFILIFE_PYTHON (
+    if not exist "%EFFILIFE_PYTHON%" (
+        echo EFFILIFE_PYTHON does not exist: %EFFILIFE_PYTHON% 1>&2
+        exit /b 127
+    )
     "%EFFILIFE_PYTHON%" launcher\start.py --unified %*
     goto :finish
 )
