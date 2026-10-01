@@ -74,7 +74,7 @@ export const useAppStore = defineStore('app', () => {
         }
       }
 
-      await waitForInitStage('today workspace', refreshTodayData())
+      await initializeTodayWorkspace()
     })()
     try {
       await initPromise
@@ -92,6 +92,15 @@ export const useAppStore = defineStore('app', () => {
     todayRecords.value = await DataService.loadRecords(today)
     todayPlan.value = await DataService.getDayPlan(today)
     todayStat.value = await DataService.calcRealTimeStat(today)
+  }
+
+  // Keep the initial hydration stages separate so a cold-storage failure
+  // identifies the exact dataset instead of collapsing into "today workspace".
+  async function initializeTodayWorkspace() {
+    const today = getTodayDate()
+    todayRecords.value = await waitForInitStage('today records', DataService.loadRecords(today))
+    todayPlan.value = await waitForInitStage('today plan', DataService.getDayPlan(today))
+    todayStat.value = await waitForInitStage('today statistics', DataService.calcRealTimeStat(today))
   }
 
   /** Reload shared state after a change made by another window. */
