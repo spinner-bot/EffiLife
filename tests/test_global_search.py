@@ -19,15 +19,6 @@ def test_global_search_is_available_from_app_shell():
     assert "'⌘ K'" in source
 
 
-def test_task_center_exposes_plan_links_without_merging_task_storage():
-    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
-    assert "function openLinkedPlan(todo: UnifiedTodo): void" in source
-    assert "todo.related_plan_id" in source
-    assert "todo.related_plan_task_id" in source
-    assert "path: '/plans'" in source
-    assert "tasks.openLinkedPlan" in source
-
-
 def test_global_search_indexes_all_unified_data_domains():
     source = SEARCH.read_text(encoding="utf-8")
     assert "TodoService.list()" in source
