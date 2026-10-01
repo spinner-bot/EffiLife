@@ -108,6 +108,14 @@ def test_task_center_toolbar_wraps_module_controls_without_overlap():
     assert "overflow-x: auto" in tabs
 
 
+def test_task_category_rows_wrap_controls_on_mobile():
+    tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
+    mobile_block = tasks.split("@media (max-width: 700px)", 1)[1]
+    assert ".category-row { flex-wrap: wrap; }" in mobile_block
+    assert ".category-row strong { min-width: 0; flex: 1 1 auto; }" in mobile_block
+    assert ".category-row small { order: 5; flex: 1 1 100%; margin-right: 0; }" in mobile_block
+
+
 def test_plan_detail_actions_wrap_before_the_mobile_breakpoint():
     plans = (VIEWS / "PlansHubView.vue").read_text(encoding="utf-8")
     assert ".detail-toolbar { display: flex; flex-wrap: wrap;" in plans
