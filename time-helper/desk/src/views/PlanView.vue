@@ -31,6 +31,10 @@ const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
 const scheduleRules = computed(() => appStore.scheduleRules)
 
+function recordKey(record: TimeRecord, index: number): string {
+  return record.id || `${record.date}-${record.start}-${record.end}-${record.tag}-${index}`
+}
+
 /** Stored plan types remain compatible Chinese domain values; only the UI label is localized. */
 function planTypeLabel(value?: string): string {
   if (value === '切分制') return t('legacyPlan.split')
@@ -461,7 +465,7 @@ onMounted(() => {
             <TransitionGroup name="list">
               <div
                 v-for="(record, index) in records"
-                :key="`${record.start}-${record.tag}`"
+                :key="recordKey(record, index)"
                 class="pv-record-card"
               >
                 <div class="pv-record-color" :style="{ background: getTagColor(record.tag) }"></div>
