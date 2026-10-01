@@ -29,7 +29,9 @@ def test_theme_save_refreshes_persistent_snapshot():
     source = SETTINGS.read_text(encoding="utf-8")
 
     assert "await appStore.saveConfig(newConfig)" in source
-    assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
+    assert "await appStore.refreshWorkspaceData()" in source
+    assert "const persistedTheme = cloneTheme(appStore.config.theme)" in source
+    assert "savedThemeSnapshot.value = persistedTheme" in source
     theme_template = source.split("<!-- 主题设置 -->", 1)[1].split("<!-- 帮助 -->", 1)[0]
     assert '@click="saveTheme"' not in theme_template
 
@@ -45,7 +47,7 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "notifyToast(t('settings.saved'), 'success')" in source
     assert "notifyToast(t('settings.saveFailed'), 'error')" in source
-    assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
+    assert "savedThemeSnapshot.value = persistedTheme" in source
 
 
 def test_theme_editor_owns_detached_draft_objects():
@@ -104,6 +106,14 @@ def test_theme_save_blocks_its_own_workspace_refresh_race():
     assert "themeSaveInFlight.value = true" in source
     assert "themeSaveInFlight.value = false" in source
     assert "finally" in source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]
+
+
+def test_theme_exit_builds_persistence_payload_from_detached_draft():
+    source = SETTINGS.read_text(encoding="utf-8")
+    save_block = source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]
+    assert "const draftTheme = cloneTheme(buildDraftTheme())" in save_block
+    assert "theme: draftTheme" in save_block
+    assert "theme: buildDraftTheme()" not in save_block
 
 
 def test_generic_config_watcher_does_not_overwrite_theme_draft():

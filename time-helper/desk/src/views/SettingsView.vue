@@ -288,14 +288,24 @@ function themeDescription(theme: ThemeDefinition): string {
 }
 
 async function saveTheme(): Promise<boolean> {
+  // Build the payload from the detached editor draft, not from the previewed
+  // Pinia object. The latter can be rehydrated by App.vue while this view is
+  // leaving and would otherwise make a just-edited theme easy to lose.
+  const draftTheme = cloneTheme(buildDraftTheme())
   const newConfig: Config = {
     ...config.value,
-    theme: buildDraftTheme()
+    theme: draftTheme,
   }
   themeSaveInFlight.value = true
   try {
     await appStore.saveConfig(newConfig)
-    savedThemeSnapshot.value = cloneTheme(newConfig.theme)
+    // Confirm the value that is actually in the durable workspace before
+    // allowing navigation to finish. This closes the race with the global
+    // visibility/workspace refresh listeners.
+    await appStore.refreshWorkspaceData()
+    const persistedTheme = cloneTheme(appStore.config.theme)
+    savedThemeSnapshot.value = persistedTheme
+    syncThemeDraft(persistedTheme)
     notifyToast(t('settings.saved'), 'success')
     return true
   } catch (error) {
