@@ -44,3 +44,11 @@ def test_settings_subroutes_keep_the_settings_navigation_entry_active():
 def test_mobile_navigation_matches_desktop_task_and_record_order():
     mobile = APP.split('<nav class="mobile-bottom-nav', 1)[1].split('</nav>', 1)[0]
     assert mobile.index('data-guide="tasks"') < mobile.index('data-guide="records"')
+
+
+def test_unified_shell_exposes_a_localized_skip_link_and_main_landmark():
+    assert 'href="#main-content"' in APP
+    assert "t('app.skipToContent')" in APP
+    assert 'id="main-content"' in APP
+    assert 'class="app-main"' in APP
+    assert 'tabindex="-1"' in APP

@@ -329,6 +329,7 @@ watch(() => appStore.todayStat, () => {
     <!-- 主内容 -->
     <template v-if="runtimeReady">
     <div class="app-content">
+      <a class="skip-link" href="#main-content">{{ t('app.skipToContent') }}</a>
       <header class="global-nav theme-card" :aria-label="t('app.shellLabel')">
         <RouterLink class="global-brand" to="/" :aria-label="t('app.homeLink')">
           <span class="global-brand-mark">E</span>
@@ -378,11 +379,13 @@ watch(() => appStore.todayStat, () => {
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>
-      <RouterView v-slot="{ Component }">
-        <Transition name="page-fade" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </RouterView>
+      <main id="main-content" class="app-main" tabindex="-1">
+        <RouterView v-slot="{ Component }">
+          <Transition name="page-fade" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </RouterView>
+      </main>
     </div>
 
     <!-- 事件弹窗 -->
@@ -434,6 +437,26 @@ watch(() => appStore.todayStat, () => {
   min-height: 100vh;
   padding-top: 64px;
 }
+
+.app-main { min-width: 0; }
+.skip-link {
+  position: fixed;
+  z-index: 30;
+  top: 8px;
+  left: 8px;
+  transform: translateY(-160%);
+  border: 1px solid var(--color-primary);
+  border-radius: 9px;
+  padding: 8px 12px;
+  color: var(--color-button-text);
+  background: var(--color-primary);
+  box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 18%));
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: transform var(--transition-fast);
+}
+.skip-link:focus { transform: translateY(0); outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .app-startup { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 13px; transition: opacity .2s ease, transform .2s ease; }
 .app-startup-error { padding: 24px; text-align: center; }
