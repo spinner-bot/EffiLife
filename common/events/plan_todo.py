@@ -1,7 +1,8 @@
 """
-Plan-Todo 联动
+Plan-Todo 兼容联动（显式启用）
 
-当 plan-helper 创建计划或添加任务时，自动在 to-dos 中创建关联的待办事项。
+兼容旧集成调用方的 Plan-Todo 自动联动。该处理器不会由统一启动器默认注册，
+只有调用方明确启用 PH→TD 自动化时才会创建或完成关联待办。
 """
 
 from typing import Optional
@@ -12,9 +13,10 @@ from ..api_gateway import APIGateway
 
 class PlanTodoLinker:
     """
-    计划-待办联动器
+    计划-待办兼容联动器
 
     监听 plan-helper 事件，自动创建/更新 to-dos 中的关联待办。
+    注册入口由 ``register_all_handlers`` 的显式 opt-in 开关控制。
     """
 
     def __init__(self, gateway: Optional[APIGateway] = None, data_manager: Optional[DataManager] = None):

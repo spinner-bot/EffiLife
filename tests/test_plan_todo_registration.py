@@ -53,3 +53,9 @@ def test_bootstrap_exposes_the_explicit_boundary_switch():
     source = (ROOT / 'common' / 'bootstrap.py').read_text(encoding='utf-8')
     assert 'enable_plan_todo_automation: bool = False' in source
     assert 'enable_plan_todo_automation=self.enable_plan_todo_automation' in source
+
+
+def test_compatibility_handler_documents_explicit_opt_in_boundary():
+    source = (ROOT / 'common' / 'events' / 'plan_todo.py').read_text(encoding='utf-8')
+    assert '兼容联动（显式启用）' in source
+    assert '不会由统一启动器默认注册' in source
