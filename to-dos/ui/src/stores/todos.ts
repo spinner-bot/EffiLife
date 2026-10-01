@@ -277,7 +277,15 @@ export const useTodosStore = defineStore('todos', () => {
     const now = new Date().toISOString()
     const maxOrder = todos.value.reduce((max, t) => Math.max(max, t.sort_order || 0), 0)
     const compactNow = now.split('-').join('').split(':').join('').split('T').join('')
-    const id = `TODO-${compactNow.slice(0, 8)}-${String(todos.value.length + 1).padStart(4, '0')}`
+    const datePrefix = compactNow.slice(0, 8)
+    const sequence = todos.value.reduce((max, todo) => {
+      const match = typeof todo.id === 'string'
+        ? todo.id.match(new RegExp(`^TODO-${datePrefix}-(\\d+)$`))
+        : null
+      const value = match ? Number(match[1]) : 0
+      return Number.isSafeInteger(value) ? Math.max(max, value) : max
+    }, 0) + 1
+    const id = `TODO-${datePrefix}-${String(sequence).padStart(4, '0')}`
 
     const newTodo: Todo = {
       id,
