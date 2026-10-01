@@ -30,6 +30,14 @@ def test_desktop_shell_provides_fast_workspace_switching_shortcuts():
     assert "!isEditableTarget(event.target)" in APP
 
 
+def test_desktop_navigation_discloses_workspace_shortcuts():
+    for shortcut in ("aria-keyshortcuts=\"Alt+1\"", "aria-keyshortcuts=\"Alt+2\"", "aria-keyshortcuts=\"Alt+3\"", "aria-keyshortcuts=\"Alt+4\"", "aria-keyshortcuts=\"Alt+5\""):
+        assert shortcut in APP
+    assert 'class="global-nav-shortcut" aria-hidden="true">Alt 1</kbd>' in APP
+    assert 'class="global-nav-shortcut" aria-hidden="true">Alt 5</kbd>' in APP
+    assert ".global-nav-shortcut { display: none; }" in APP
+
+
 def test_mobile_navigation_keeps_records_as_a_first_class_sixth_entry():
     assert 'data-guide="records" to="/records"' in APP
     assert 'grid-template-columns: repeat(6, minmax(44px, 1fr));' in APP
