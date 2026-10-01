@@ -30,3 +30,10 @@ def test_archive_controls_announce_busy_state_and_refresh_stats_on_entry():
     assert "watch(currentView, (view) =>" in SETTINGS
     assert "if (view === 'archive') void refreshDataStats()" in SETTINGS
     assert "if (currentView.value === 'archive') void refreshDataStats()" in SETTINGS
+
+
+def test_archive_stats_do_not_present_zero_values_when_storage_read_fails():
+    assert "const dataStatsUnavailable = ref(false)" in SETTINGS
+    assert "dataStatsUnavailable.value = true" in SETTINGS
+    assert 'class="archive-stats-unavailable" role="status" aria-live="polite"' in SETTINGS
+    assert "@click=\"refreshDataStats\"" in SETTINGS

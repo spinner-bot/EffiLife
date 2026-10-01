@@ -464,17 +464,22 @@ const dataStats = ref({
   hasEventSettings: false,
   hasCheckin: false,
 })
+const dataStatsUnavailable = ref(false)
 let dataStatsRequestId = 0
 
 async function refreshDataStats() {
   const requestId = ++dataStatsRequestId
   try {
     const nextStats = await getDataStats()
-    if (requestId === dataStatsRequestId) dataStats.value = nextStats
+    if (requestId === dataStatsRequestId) {
+      dataStats.value = nextStats
+      dataStatsUnavailable.value = false
+    }
   } catch (error) {
     // Statistics are supplementary; an IndexedDB read failure must not block
     // the settings page or invalidate the rest of the archive controls.
     console.warn('Failed to load settings data statistics:', error)
+    if (requestId === dataStatsRequestId) dataStatsUnavailable.value = true
   }
 }
 
@@ -1020,7 +1025,11 @@ onUnmounted(() => {
         <!-- 数据统计 -->
         <div class="data-stats">
           <h3>{{ t('settings.archive.currentData') }}</h3>
-          <div class="stats-grid">
+          <div v-if="dataStatsUnavailable" class="archive-stats-unavailable" role="status" aria-live="polite">
+            <span>{{ t('settings.archive.statsUnavailable') }}</span>
+            <button type="button" @click="refreshDataStats">{{ t('settings.archive.retryStats') }}</button>
+          </div>
+          <div v-else class="stats-grid">
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.recordDays }}</span>
               <span class="stat-label">{{ t('settings.archive.recordDays') }}</span>
@@ -1698,6 +1707,9 @@ h2 {
   font-size: 12px;
   text-align: center;
 }
+.archive-stats-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
+.archive-stats-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
+.archive-stats-unavailable button:hover, .archive-stats-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 
 .archive-capability-note {
   margin-bottom: var(--spacing-lg);
