@@ -80,3 +80,13 @@ def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakp
     assert "max-width: 900px" in tablet_block
     assert "align-items: stretch" in tablet_block
     assert ".clock-section { text-align: left; }" in tablet_block
+
+
+def test_home_serializes_summary_refreshes_and_queues_external_changes():
+    assert "let summaryRefreshRunning = false" in HOME
+    assert "let summaryRefreshQueued = false" in HOME
+    assert "async function refreshWorkspaceSummaries(): Promise<void>" in HOME
+    assert "if (summaryRefreshRunning)" in HOME
+    assert "summaryRefreshQueued = true" in HOME
+    assert "} while (summaryRefreshQueued)" in HOME
+    assert "refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)" in HOME

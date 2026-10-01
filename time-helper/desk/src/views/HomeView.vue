@@ -26,6 +26,8 @@ const currentDate = ref('')
 let timer: number | null = null
 let refreshTimer: number | null = null
 let workspaceRefreshTimer: number | null = null
+let summaryRefreshRunning = false
+let summaryRefreshQueued = false
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
@@ -175,21 +177,32 @@ async function refreshEventPlanSummary() {
   }
 }
 
-function scheduleWorkspaceSummaryRefresh() {
-  if (workspaceRefreshTimer !== null) return
-  workspaceRefreshTimer = window.setTimeout(async () => {
-    workspaceRefreshTimer = null
-    try {
+/** Serialize dashboard reads so a slow refresh cannot be overtaken by an older batch. */
+async function refreshWorkspaceSummaries(): Promise<void> {
+  if (summaryRefreshRunning) {
+    summaryRefreshQueued = true
+    return
+  }
+  summaryRefreshRunning = true
+  try {
+    do {
+      summaryRefreshQueued = false
       await Promise.all([
         refreshTimeSummary(),
         refreshTodoSummary(),
         refreshEventPlanSummary(),
       ])
-    } catch (error) {
-      // A cross-window refresh is recoverable. Keep the dashboard mounted and
-      // let the next workspace event or periodic refresh retry the read.
-      console.warn('Failed to refresh home workspace summary:', error)
-    }
+    } while (summaryRefreshQueued)
+  } finally {
+    summaryRefreshRunning = false
+  }
+}
+
+function scheduleWorkspaceSummaryRefresh() {
+  if (workspaceRefreshTimer !== null) return
+  workspaceRefreshTimer = window.setTimeout(async () => {
+    workspaceRefreshTimer = null
+    await refreshWorkspaceSummaries()
   }, 80)
 }
 
@@ -339,16 +352,11 @@ const overallDashOffset = computed(() => {
 })
 
 onMounted(async () => {
-  await refreshTodoSummary()
-  await refreshEventPlanSummary()
+  await refreshWorkspaceSummaries()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
-  refreshTimer = window.setInterval(() => {
-    void refreshTimeSummary()
-    refreshTodoSummary()
-    refreshEventPlanSummary()
-  }, 60000)
+  refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)
 })
 
 onUnmounted(() => {
