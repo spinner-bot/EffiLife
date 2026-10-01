@@ -470,6 +470,10 @@ onUnmounted(() => {
       <div class="empty-state" v-else>
         <p>{{ t('records.empty') }}</p>
         <p class="hint">{{ t('records.emptyHint') }}</p>
+        <button type="button" class="btn primary empty-state-action" @click="openAddForm">
+          <Plus :size="16" />
+          <span>{{ t('records.add') }}</span>
+        </button>
       </div>
     </main>
 
