@@ -329,10 +329,11 @@ export const DataService = {
   },
 
   async saveConfig(config: Config): Promise<void> {
-    await idbSet(STORE_NAMES.CONFIG, 'config', config)
+    const normalized = normalizeConfig(config)
+    await idbSet(STORE_NAMES.CONFIG, 'config', normalized)
     // 同时写入 localStorage 保持兼容
-    localStorage.setItem(STORAGE_PREFIX + 'config', JSON.stringify(config))
-    triggerBackup('config', config)
+    localStorage.setItem(STORAGE_PREFIX + 'config', JSON.stringify(normalized))
+    triggerBackup('config', normalized)
   },
 
   // 计划

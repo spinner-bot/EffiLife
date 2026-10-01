@@ -3,7 +3,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Config, Plans, ScheduleRule, TimeRecord, DayPlanInfo, RealTimeStat } from '@/types'
-import { DataService, DEFAULT_CONFIG, DEFAULT_PLANS, DEFAULT_SCHEDULE_RULES, getTodayDate } from '@/services/dataService'
+import { DataService, DEFAULT_CONFIG, DEFAULT_PLANS, DEFAULT_SCHEDULE_RULES, getTodayDate, normalizeConfig } from '@/services/dataService'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
 const ENABLE_SAMPLE_DATA = import.meta.env.VITE_EFFILIFE_DEMO_DATA === 'true'
@@ -134,11 +134,12 @@ export const useAppStore = defineStore('app', () => {
 
   // 保存配置
   async function saveConfig(newConfig: Config) {
+    const normalizedConfig = normalizeConfig(newConfig)
     const previousConfig = config.value
     workspaceWriteVersion += 1
-    config.value = newConfig
+    config.value = normalizedConfig
     try {
-      await DataService.saveConfig(newConfig)
+      await DataService.saveConfig(normalizedConfig)
       notifyWorkspaceChanged('settings')
     } catch (error) {
       // Keep the in-memory workspace consistent with durable storage when a
