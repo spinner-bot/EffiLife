@@ -60,6 +60,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 // Audio, check-in and event hydration are useful background services, but a
 // delayed IndexedDB request in one of them must not hide the whole workspace.
 const OPTIONAL_STARTUP_TIMEOUT_MS = 5000
+const CORE_STARTUP_TIMEOUT_MS = 15000
 
 async function waitForOptionalSubsystem(name: string, ready: Promise<void>): Promise<void> {
   let timeout: ReturnType<typeof setTimeout> | undefined
@@ -72,6 +73,20 @@ async function waitForOptionalSubsystem(name: string, ready: Promise<void>): Pro
     ])
   } catch (error) {
     console.warn(`Optional subsystem ${name} was not ready during startup:`, error)
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
+
+async function waitForCoreWorkspace(ready: Promise<void>): Promise<void> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      ready,
+      new Promise<void>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error('Core workspace initialization timed out after 15 seconds')), CORE_STARTUP_TIMEOUT_MS)
+      }),
+    ])
   } finally {
     if (timeout) clearTimeout(timeout)
   }
@@ -180,7 +195,7 @@ onMounted(async () => {
       waitForOptionalSubsystem('check-in', CheckinSystem.whenReady()),
       waitForOptionalSubsystem('events', EventSystem.whenReady()),
     ]).then(() => undefined)
-    await appStore.init()
+    await waitForCoreWorkspace(appStore.init())
     legacyMigrationSummary = await TodoService.migrateLegacyLocalStorage()
     try {
       await repairTodoTimeRecordLinks()
