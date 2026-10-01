@@ -606,7 +606,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       dailyTrigger: app.dailyTrigger || null,
       checkin: app.checkin || null,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
-      records,
+      records: repairedRecordLinks.records,
       todos: repairedPlanLinks.todos,
       categories,
       todoSettings: app.todoSettings || await TodoSettingsService.get(),
@@ -634,6 +634,10 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   }
   const legacyRecords = legacy.records === undefined ? undefined : normalizeImportedRecords(legacy.records)
   const repairedRecordLinks = repairImportedTodoRecordLinks(importedTodos as UnifiedTodo[], legacyRecords || {})
+  if (legacyRecords !== undefined) {
+    for (const date of Object.keys(legacyRecords)) delete legacyRecords[date]
+    Object.assign(legacyRecords, repairedRecordLinks.records)
+  }
   const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, legacy.planHelper)
   const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
@@ -708,22 +712,49 @@ function normalizeImportedRecords(raw: unknown): Record<string, unknown[]> {
   return result
 }
 
-function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): { todos: UnifiedTodo[]; repaired: number } {
+function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<string, unknown[]>): { todos: UnifiedTodo[]; records: Record<string, unknown[]>; repaired: number } {
+  const todoIds = new Set(todos.map((todo) => todo.id))
   const recordIds = new Set<string>()
   const recordTodoIds = new Map<string, string>()
-  for (const dayRecords of Object.values(records)) {
-    for (const record of dayRecords) {
-      if (!record || typeof record !== 'object') continue
-      const candidate = record as { id?: unknown; todo_id?: unknown }
-      if (typeof candidate.id === 'string') {
-        recordIds.add(candidate.id)
-        if (typeof candidate.todo_id === 'string' && candidate.todo_id) {
-          recordTodoIds.set(candidate.id, candidate.todo_id)
-        }
+  const todoRecordIds = new Map<string, string>()
+  for (const todo of todos) {
+    for (const recordId of todo.related_time_record_ids || []) {
+      if (typeof recordId === 'string' && recordId && !todoRecordIds.has(recordId)) {
+        todoRecordIds.set(recordId, todo.id)
       }
     }
   }
   let repaired = 0
+  const repairedRecords: Record<string, unknown[]> = {}
+  for (const [date, dayRecords] of Object.entries(records)) {
+    const nextDayRecords = dayRecords.map((record) => {
+      if (!record || typeof record !== 'object') return record
+      const candidate = record as { id?: unknown; todo_id?: unknown }
+      if (typeof candidate.id !== 'string' || !candidate.id) return record
+      recordIds.add(candidate.id)
+      const explicitTodoId = typeof candidate.todo_id === 'string' && candidate.todo_id ? candidate.todo_id : undefined
+      const resolvedTodoId = explicitTodoId && todoIds.has(explicitTodoId)
+        ? explicitTodoId
+        : todoRecordIds.get(candidate.id)
+      const hasInvalidExplicitLink = explicitTodoId !== undefined && !todoIds.has(explicitTodoId)
+      if (resolvedTodoId) {
+        recordTodoIds.set(candidate.id, resolvedTodoId)
+        if (candidate.todo_id !== resolvedTodoId) {
+          repaired += 1
+          return { ...candidate, todo_id: resolvedTodoId }
+        }
+        return record
+      }
+      if (hasInvalidExplicitLink || candidate.todo_id !== undefined) {
+        repaired += 1
+        const nextRecord = { ...candidate }
+        delete nextRecord.todo_id
+        return nextRecord
+      }
+      return record
+    })
+    repairedRecords[date] = nextDayRecords
+  }
   const repairedTodos = todos.map((todo) => {
     const validIds = (todo.related_time_record_ids || []).filter((id) => recordIds.has(id))
     const reverseIds = [...recordTodoIds.entries()]
@@ -736,7 +767,7 @@ function repairImportedTodoRecordLinks(todos: UnifiedTodo[], records: Record<str
       + Math.max(0, (todo.related_time_record_ids || []).length - validIds.length)
     return { ...todo, related_time_record_ids: mergedIds.length ? mergedIds : undefined }
   })
-  return { todos: repairedTodos, repaired }
+  return { todos: repairedTodos, records: repairedRecords, repaired }
 }
 
 function planLetter(index: number): string {

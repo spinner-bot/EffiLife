@@ -62,6 +62,17 @@ def test_archive_import_repairs_todo_record_links_against_imported_records():
     assert "recordIds.has(id)" in source
 
 
+def test_archive_import_repairs_both_sides_of_todo_record_links():
+    source = ARCHIVE.read_text(encoding="utf-8")
+
+    assert "const todoIds = new Set(todos.map((todo) => todo.id))" in source
+    assert "const todoRecordIds = new Map<string, string>()" in source
+    assert "const resolvedTodoId = explicitTodoId && todoIds.has(explicitTodoId)" in source
+    assert "todoRecordIds.get(candidate.id)" in source
+    assert "delete nextRecord.todo_id" in source
+    assert "records: repairedRecordLinks.records" in source
+
+
 def test_archive_import_reports_repaired_todo_record_links():
     source = ARCHIVE.read_text(encoding="utf-8")
     i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
