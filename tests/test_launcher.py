@@ -284,6 +284,32 @@ def test_health_probe_requires_plan_helper_identity(monkeypatch):
     assert launcher.service_is_ready(health_url) is True
 
 
+def test_frontend_probe_requires_effilife_identity(monkeypatch):
+    class Response:
+        status = 200
+
+        def __init__(self, body):
+            self.body = body
+
+        def read(self, _limit):
+            return self.body.encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    responses = iter([
+        Response("<html><title>Other service</title></html>"),
+        Response('<meta name="application-name" content="EffiLife">'),
+    ])
+    monkeypatch.setattr(launcher, "urlopen", lambda _url, timeout: next(responses))
+    frontend_url = "http://127.0.0.1:1420"
+    assert launcher.service_is_ready(frontend_url) is False
+    assert launcher.service_is_ready(frontend_url) is True
+
+
 def test_local_port_probe_reports_occupied_and_free_endpoints(monkeypatch):
     class FakeSocket:
         def __enter__(self):

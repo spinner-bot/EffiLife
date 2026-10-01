@@ -853,6 +853,12 @@ def service_is_ready(url):
             if url.rstrip("/").endswith("/api/health"):
                 body = response.read(8192).decode("utf-8", errors="replace")
                 return "plan-helper" in body and '"status"' in body
+            # Port 1420 is the unified frontend slot. Do not mistake an
+            # unrelated HTTP service for an already-running EffiLife app.
+            parsed = urlparse(url)
+            if parsed.port == 1420:
+                body = response.read(65536).decode("utf-8", errors="replace").lower()
+                return 'name="application-name" content="effilife"' in body
             return True
     except (OSError, URLError):
         return False
