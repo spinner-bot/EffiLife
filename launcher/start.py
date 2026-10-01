@@ -58,7 +58,7 @@ def configured_data_dir():
 
 def plan_helper_command():
     """Build the sidecar command, forwarding the unified data root if set."""
-    command = [sys.executable, "web/server.py"]
+    command = [sys.executable, "web/server.py", "--port", str(plan_helper_port())]
     data_dir = configured_data_dir()
     if data_dir is not None:
         command.extend(["--data-dir", str(data_dir)])
@@ -188,6 +188,32 @@ def setup_timeout(default=300):
         return default
 
 
+def configured_port(name, default):
+    """Return a safe local service port from the environment or its default."""
+    raw = os.environ.get(name, "").strip()
+    try:
+        port = int(raw)
+    except ValueError:
+        return default
+    return port if 1024 <= port <= 65535 else default
+
+
+def workspace_port():
+    return configured_port("EFFILIFE_WORKSPACE_PORT", 1420)
+
+
+def todos_port():
+    return configured_port("EFFILIFE_TODOS_PORT", 1421)
+
+
+def plan_helper_port():
+    return configured_port("EFFILIFE_PLAN_HELPER_PORT", 8765)
+
+
+def local_url(port):
+    return f"http://127.0.0.1:{port}"
+
+
 def packaged_mode():
     """Return whether the launcher must use packaged artifacts only."""
     return "--packaged" in sys.argv or os.environ.get("EFFILIFE_LAUNCH_MODE", "").strip().lower() == "packaged"
@@ -310,16 +336,18 @@ def get_time_helper_cmd():
                 return [str(exe_path)], None, None
         dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
         if is_non_empty_file(dist_path / "index.html"):
+            port = workspace_port()
             return [
                 sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
-                "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
-            ], "http://127.0.0.1:1420", None
+                "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
+            ], local_url(port), None
         return None, None, None
 
     npm = find_npm()
     if npm:
         # Dev mode - shows latest code changes
-        return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1420", "--strictPort"], "http://127.0.0.1:1420", [npm, "install"]
+        port = workspace_port()
+        return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     # Fall back to compiled exe
     for exe_path in exe_paths:
@@ -331,10 +359,11 @@ def get_time_helper_cmd():
     # binaries still take precedence above it.
     dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
     if is_non_empty_file(dist_path / "index.html"):
+        port = workspace_port()
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
-            "--port", "1420", "--bind", "127.0.0.1", "--directory", str(dist_path),
-        ], "http://127.0.0.1:1420", None
+            "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
+        ], local_url(port), None
     return None, None, None
 
 
@@ -412,13 +441,15 @@ def get_todos_web_cmd():
     else:
         npm = find_npm()
         if npm:
-            return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", "1421", "--strictPort"], "http://127.0.0.1:1421", [npm, "install"]
+            port = todos_port()
+            return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     if is_non_empty_file(dist_path / "index.html"):
+        port = todos_port()
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
-            "--port", "1421", "--bind", "127.0.0.1", "--directory", str(dist_path),
-        ], "http://127.0.0.1:1421", None
+            "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
+        ], local_url(port), None
     return None, None, None
 
 
@@ -431,8 +462,8 @@ def build_modules():
         "name": "plan-helper API",
         "cmd": plan_helper_command(),
         "cwd": BASE_DIR / "plan-helper",
-        "url": "http://127.0.0.1:8765",
-        "health_url": "http://127.0.0.1:8765/api/health",
+        "url": local_url(plan_helper_port()),
+        "health_url": f"{local_url(plan_helper_port())}/api/health",
     }] if th_url else []
 
     modules = {
@@ -658,6 +689,11 @@ def collect_diagnostics(modules):
         "base_dir": str(BASE_DIR),
         "version": app_version(),
         "data_dir": str(configured_data_dir()) if configured_data_dir() else None,
+        "ports": {
+            "workspace": workspace_port(),
+            "todos": todos_port(),
+            "plan_helper": plan_helper_port(),
+        },
         "python": sys.executable,
         "node": node,
         "npm": npm,
@@ -974,10 +1010,10 @@ def service_is_ready(url):
             if url.rstrip("/").endswith("/api/health"):
                 body = response.read(8192).decode("utf-8", errors="replace")
                 return "plan-helper" in body and '"status"' in body
-            # Port 1420 is the unified frontend slot. Do not mistake an
-            # unrelated HTTP service for an already-running EffiLife app.
+            # The configured workspace port identifies the unified frontend.
+            # Do not mistake an unrelated HTTP service for EffiLife.
             parsed = urlparse(url)
-            if parsed.port == 1420:
+            if parsed.port == workspace_port():
                 body = response.read(65536).decode("utf-8", errors="replace").lower()
                 return 'name="application-name" content="effilife"' in body
             return True
@@ -1145,6 +1181,9 @@ def print_help():
         "  --release-check  Validate desktop and mobile release configuration\n"
         "  --verify-bundle  Verify a release bundle path\n"
         "  --packaged       Require a packaged Tauri binary or built dist\n"
+        "\nEnvironment:\n"
+        "  EFFILIFE_WORKSPACE_PORT / EFFILIFE_TODOS_PORT / EFFILIFE_PLAN_HELPER_PORT\n"
+        "                   Override development service ports (1024-65535)\n"
         "  --legacy-menu    Open the legacy module launcher\n"
         "  --version        Print the application version\n"
     )

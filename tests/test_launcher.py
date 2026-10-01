@@ -306,7 +306,10 @@ def test_launcher_forwards_configured_unified_data_dir_to_plan_helper(monkeypatc
 
 def test_launcher_keeps_legacy_data_location_when_no_data_dir_is_configured(monkeypatch):
     monkeypatch.delenv("EFFILIFE_DATA_DIR", raising=False)
-    assert launcher.plan_helper_command() == [sys.executable, "web/server.py"]
+    command = launcher.plan_helper_command()
+    assert command[:2] == [sys.executable, "web/server.py"]
+    assert command[command.index("--port") + 1] == "8765"
+    assert "--data-dir" not in command
 
 
 def test_health_probe_requires_plan_helper_identity(monkeypatch):
