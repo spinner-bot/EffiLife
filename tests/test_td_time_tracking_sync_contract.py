@@ -13,4 +13,4 @@ def test_td_time_tracking_broadcasts_th_record_changes():
 
 
 def test_th_history_refreshes_when_records_or_plans_change():
-    assert "if (source === 'records' || source === 'plans' || source === 'network') void retryLoadData()" in DAY_DETAIL
+    assert "if (source === 'records' || source === 'plans' || source === 'archive' || source === 'network') void retryLoadData()" in DAY_DETAIL
