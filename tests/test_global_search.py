@@ -54,6 +54,17 @@ def test_global_search_refreshes_when_unified_data_changes():
     assert "notifyWorkspaceChanged('archive')" in archive_service
 
 
+def test_global_search_surfaces_partial_index_failures_and_can_retry():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "const indexUnavailable = ref(false)" in source
+    assert "const indexPartial = ref(false)" in source
+    assert "failedSources" in source
+    assert 'class="search-state search-error" role="status" aria-live="polite"' in source
+    assert 'class="search-partial" role="status" aria-live="polite"' in source
+    assert "async function retryIndex(): Promise<void>" in source
+    assert "search.partial" in I18N.read_text(encoding="utf-8")
+
+
 def test_search_targets_are_consumed_by_plan_and_task_views():
     plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")

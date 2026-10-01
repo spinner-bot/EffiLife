@@ -15,6 +15,8 @@ const router = useRouter()
 const { t } = useI18n()
 const query = ref('')
 const isLoading = ref(false)
+const indexUnavailable = ref(false)
+const indexPartial = ref(false)
 const input = ref<HTMLInputElement | null>(null)
 const dialog = ref<HTMLElement | null>(null)
 const todos = ref<UnifiedTodo[]>([])
@@ -162,6 +164,8 @@ async function loadPlanTaskIndex(planList: PlanSummary[], requestId: number) {
 async function loadIndex() {
   const requestId = ++searchRequestId
   isLoading.value = true
+  indexUnavailable.value = false
+  indexPartial.value = false
   try {
   const [todoResult, planResult, archiveResult, recordResult] = await Promise.allSettled([
       TodoService.list(),
@@ -170,6 +174,9 @@ async function loadIndex() {
       getAll<TimeRecord[]>(STORE_NAMES.RECORDS),
     ])
     if (requestId !== searchRequestId) return
+    const failedSources = [todoResult, planResult, archiveResult, recordResult].filter((result) => result.status === 'rejected').length
+    indexUnavailable.value = failedSources === 4
+    indexPartial.value = failedSources > 0
     todos.value = todoResult.status === 'fulfilled' ? todoResult.value : []
     plans.value = planResult.status === 'fulfilled' ? planResult.value : []
     archivedPlans.value = archiveResult.status === 'fulfilled' ? archiveResult.value : []
@@ -180,6 +187,10 @@ async function loadIndex() {
   } finally {
     if (requestId === searchRequestId) isLoading.value = false
   }
+}
+
+async function retryIndex(): Promise<void> {
+  await loadIndex()
 }
 
 function close() {
@@ -261,6 +272,12 @@ watch(() => props.open, async (open) => {
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
       <input ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
+      <div v-if="indexUnavailable" class="search-state search-error" role="status" aria-live="polite">
+        <span>{{ t('search.unavailable') }}</span>
+        <button type="button" @click="retryIndex">{{ t('search.retry') }}</button>
+      </div>
+      <template v-else>
+      <div v-if="indexPartial" class="search-partial" role="status" aria-live="polite">{{ t('search.partial') }} <button type="button" @click="retryIndex">{{ t('search.retry') }}</button></div>
       <div v-if="isLoading" class="search-state">{{ t('search.loading') }}</div>
       <div v-else-if="query.trim() && filteredResults.length === 0" class="search-state">{{ t('search.empty') }}</div>
       <div v-else-if="!query.trim()" class="search-state search-hint">{{ t('search.hint') }}</div>
@@ -275,6 +292,7 @@ watch(() => props.open, async (open) => {
           <ArrowRight :size="15" class="search-result-arrow" />
         </button>
       </div>
+      </template>
     </section>
   </div>
 </template>
@@ -289,6 +307,11 @@ watch(() => props.open, async (open) => {
 .search-input { width: calc(100% - 32px); box-sizing: border-box; margin: 0 16px 12px; border: 1px solid var(--color-border); border-radius: 11px; padding: 11px 13px; outline: 0; color: var(--color-text-primary); background: var(--color-bg-secondary); font-size: 14px; }
 .search-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .search-state { padding: 28px 18px 32px; color: var(--color-text-tertiary); text-align: center; font-size: 13px; }
+.search-error { display: grid; gap: 10px; color: var(--color-text-secondary); }
+.search-error button, .search-partial button { justify-self: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 10px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
+.search-error button:hover, .search-error button:focus-visible, .search-partial button:hover, .search-partial button:focus-visible { border-color: var(--color-primary); outline: 0; }
+.search-partial { display: flex; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid var(--color-border); padding: 8px 16px; color: var(--color-text-tertiary); font-size: 11px; }
+.search-partial button { justify-self: auto; padding: 4px 8px; font-size: 11px; }
 .search-hint { border-top: 1px solid var(--color-border); }
 .search-results { display: grid; max-height: min(55vh, 440px); overflow-y: auto; padding: 2px 8px 10px; }
 .search-result { display: flex; align-items: center; gap: 10px; border: 0; border-radius: 11px; padding: 10px 9px; color: var(--color-text-primary); background: transparent; text-align: left; cursor: pointer; }
