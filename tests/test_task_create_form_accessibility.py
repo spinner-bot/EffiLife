@@ -12,3 +12,9 @@ def test_task_quick_create_uses_one_native_submit_path():
     assert '<button type="submit" class="task-add"' in create_block
     assert '@keyup.enter="addTodo"' not in create_block
     assert create_block.count("addTodo()") == 1
+
+
+def test_task_click_actions_have_explicit_non_submit_types():
+    clickable_buttons = [line for line in VIEW.splitlines() if '<button' in line and '@click' in line]
+    assert clickable_buttons
+    assert all('type="button"' in line for line in clickable_buttons)

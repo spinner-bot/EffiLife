@@ -914,7 +914,7 @@ watch(() => route.query.todo, () => {
 <template>
   <div class="task-center">
     <header class="task-header">
-      <button class="task-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('common.backHome')">
+      <button type="button" class="task-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('common.backHome')">
         <ArrowLeft :size="18" />
       </button>
       <div class="task-title-block">
@@ -978,7 +978,7 @@ watch(() => route.query.todo, () => {
           <option value="">{{ t('tasks.allCategories') }}</option>
           <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
         </select>
-        <button class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
+        <button type="button" class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
         </button>
         <label v-if="visibleTodos.length" class="task-select-all">
@@ -1112,7 +1112,7 @@ watch(() => route.query.todo, () => {
       <section v-else id="task-list-panel" class="task-list" role="tabpanel" aria-live="polite" :aria-labelledby="`tasks-tab-${filter}`">
         <article v-for="todo in visibleTodos" :id="`todo-${todo.id}`" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed', 'search-target': searchTargetTodoId === todo.id }">
           <input class="task-select-checkbox" type="checkbox" :checked="selectedTodoIds.has(todo.id)" :aria-label="t('tasks.selectTask', { title: todo.title })" :disabled="bulkWorking" @click.stop @change="toggleTodoSelection(todo.id)" />
-          <button class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
+          <button type="button" class="task-check" :disabled="todo.status === 'completed' || completingTodoId === todo.id" :aria-label="todo.status === 'completed' ? t('tasks.completedLabel') : t('tasks.completeLabel')" @click="completeTodo(todo)">
             <Check v-if="todo.status === 'completed'" :size="16" />
           </button>
           <div v-if="editingId === todo.id" class="task-edit-form">
@@ -1147,8 +1147,8 @@ watch(() => route.query.todo, () => {
               <option v-for="task in planTasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
             </select>
             <div class="task-edit-actions">
-              <button class="task-edit-cancel" @click="cancelEdit">{{ t('tasks.cancel') }}</button>
-              <button class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? t('tasks.saving') : t('tasks.save') }}</button>
+            <button type="button" class="task-edit-cancel" @click="cancelEdit">{{ t('tasks.cancel') }}</button>
+            <button type="button" class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? t('tasks.saving') : t('tasks.save') }}</button>
             </div>
           </div>
           <div v-else class="task-main">
@@ -1177,12 +1177,12 @@ watch(() => route.query.todo, () => {
               <button type="button" :aria-label="t('tasks.decreaseRank')" :disabled="!todo.priority_rank" @click="adjustTodoRank(todo, -1)"><ChevronDown :size="13" /></button>
             </div>
             <span class="task-score" :class="{ expired: scoreFor(todo).expired }" :title="t('tasks.priorityScore')">{{ scoreFor(todo).display }}</span>
-            <button class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
+            <button type="button" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
               <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
             </button>
-            <button class="task-pin" :class="{ active: todo.pinned }" :aria-label="todo.pinned ? t('tasks.unpinTodo') : t('tasks.pinTodo')" @click="toggleTodoPinned(todo)"><Pin :size="16" /></button>
-            <button class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
-            <button class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
+            <button type="button" class="task-pin" :class="{ active: todo.pinned }" :aria-label="todo.pinned ? t('tasks.unpinTodo') : t('tasks.pinTodo')" @click="toggleTodoPinned(todo)"><Pin :size="16" /></button>
+            <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
+            <button type="button" class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           </div>
           <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
             <div class="task-score-detail"><span>{{ t('tasks.priorityScore') }}</span><strong>{{ scoreFor(todo).score }}</strong></div>
