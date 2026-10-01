@@ -20,4 +20,5 @@ def test_global_search_button_declares_supported_shortcuts():
 
 def test_mobile_navigation_keeps_records_as_a_first_class_sixth_entry():
     assert 'data-guide="records" to="/records"' in APP
-    assert 'grid-template-columns: repeat(6, minmax(0, 1fr));' in APP
+    assert 'grid-template-columns: repeat(6, minmax(44px, 1fr));' in APP
+    assert 'overflow-x: auto;' in APP
