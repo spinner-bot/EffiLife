@@ -43,6 +43,7 @@ const recurrence = ref<TodoRecurrence>('none')
 const category = ref('default')
 const filter = ref<'all' | 'active' | 'completed'>('active')
 const categoryFilter = ref('')
+const taskSearch = ref('')
 const isLoading = ref(true)
 const dataUnavailable = ref(false)
 const errorMessage = ref('')
@@ -119,7 +120,11 @@ const visibleTodos = computed(() => {
   const filtered = categoryFilter.value
     ? source.filter((todo) => todo.category === categoryFilter.value)
     : source
-  return [...filtered].sort((left, right) => {
+  const query = taskSearch.value.trim().toLocaleLowerCase()
+  const searched = query
+    ? filtered.filter((todo) => `${todo.title} ${todo.description || ''} ${(todo.tags || []).join(' ')}`.toLocaleLowerCase().includes(query))
+    : filtered
+  return [...searched].sort((left, right) => {
     if (Boolean(right.pinned) !== Boolean(left.pinned)) {
       return Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))
     }
@@ -869,6 +874,7 @@ watch(() => route.query.todo, () => {
           <option value="">{{ t('tasks.allCategories') }}</option>
           <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
         </select>
+        <input v-model="taskSearch" class="task-search-input" type="search" :placeholder="t('tasks.searchPlaceholder')" :aria-label="t('tasks.searchLabel')" />
         <button type="button" class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
         </button>
@@ -1138,6 +1144,8 @@ watch(() => route.query.todo, () => {
 .task-tabs button { border: 0; border-radius: 7px; padding: 7px 13px; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
 .task-tabs button.active { color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08)); }
 .task-filter-select { min-width: 120px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.task-search-input { min-width: min(230px, 100%); flex: 1 1 180px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-primary); background: var(--color-bg-secondary); font: inherit; font-size: 12px; outline: 0; }
+.task-search-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
 .task-category-manage { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; white-space: nowrap; }
 .task-select-all { display: inline-flex; align-items: center; gap: 5px; color: var(--color-text-secondary); font-size: 11px; white-space: nowrap; }
 .task-bulk-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-left: auto; color: var(--color-text-tertiary); font-size: 11px; }
