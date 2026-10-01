@@ -123,6 +123,19 @@ def test_launcher_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     assert url is None and setup is None
 
 
+def test_launcher_packaged_mode_never_uses_debug_binary(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    debug_binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "debug" / "efflife-desk.exe"
+    debug_binary.parent.mkdir(parents=True)
+    debug_binary.write_bytes(b"debug-placeholder")
+    monkeypatch.setattr(sys, "argv", ["start.py", "--packaged"])
+
+    command, url, setup = launcher.get_time_helper_cmd()
+
+    assert command is None
+    assert url is None and setup is None
+
+
 def test_compatibility_todos_web_packaged_mode_never_falls_back_to_npm(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")

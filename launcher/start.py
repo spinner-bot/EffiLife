@@ -252,7 +252,7 @@ def get_time_helper_cmd():
     # Formal installers must never unexpectedly switch to a source checkout's
     # Vite server merely because Node happens to be installed on the machine.
     if packaged_mode():
-        for exe_path in exe_paths:
+        for exe_path in time_helper_binary_paths(include_debug=False):
             if is_non_empty_file(exe_path):
                 return [str(exe_path)], None, None
         dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
@@ -285,12 +285,17 @@ def get_time_helper_cmd():
     return None, None, None
 
 
-def time_helper_binary_paths():
-    """Return release/debug Tauri binaries for Windows and POSIX targets."""
+def time_helper_binary_paths(include_debug=True):
+    """Return Tauri binary candidates for Windows and POSIX targets.
+
+    Development mode may use a debug binary, while packaged mode must never
+    silently launch one as if it were a release artifact.
+    """
     binary_names = ["efflife-desk.exe", "efflife-desk"] if os.name == "nt" else ["efflife-desk", "efflife-desk.exe"]
+    profiles = ("release", "debug") if include_debug else ("release",)
     return [
         BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / profile / name
-        for profile in ("release", "debug")
+        for profile in profiles
         for name in binary_names
     ]
 
