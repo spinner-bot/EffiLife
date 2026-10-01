@@ -17,7 +17,7 @@ import {
 import { getPriorityScore } from '@/services/priority'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
-import { onWorkspaceChanged } from '@/services/workspaceEvents'
+import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -636,6 +636,9 @@ async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = n
       }
 
       replaceTodo(await TodoService.trackTime(todo.id, minutes, recordRefs.map((record) => record.id)))
+      // Tracking from TD writes TH records directly; broadcast both domains
+      // so open time views refresh without requiring a route change.
+      notifyWorkspaceChanged('records')
       notifyToast(t('tasks.timeRecorded', { minutes }), 'success')
     } catch (error) {
       const rollbackErrors: unknown[] = []

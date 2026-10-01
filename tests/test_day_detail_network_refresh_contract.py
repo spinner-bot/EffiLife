@@ -6,5 +6,5 @@ DAY_DETAIL = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.v
 
 
 def test_historical_day_detail_refreshes_after_network_recovery():
-    assert "if (source === 'network') void retryLoadData()" in DAY_DETAIL
+    assert "if (source === 'records' || source === 'plans' || source === 'network') void retryLoadData()" in DAY_DETAIL
     assert "async function retryLoadData(): Promise<void>" in DAY_DETAIL
