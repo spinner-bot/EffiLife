@@ -6,10 +6,15 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: effilife-desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   compatibility:
     name: to-dos compatibility UI
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -34,6 +39,7 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -168,6 +174,7 @@ jobs:
       - compatibility
       - build
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
