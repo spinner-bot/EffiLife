@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>EffiLife</title>
+  <defs>
+    <linearGradient id="effilife-gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8" />
+      <stop offset="1" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#0f172a" />
+  <path d="M18 16h29v8H27v8h16v8H27v8h20v8H18V16Z" fill="url(#effilife-gradient)" />
+  <circle cx="47" cy="20" r="3" fill="#f8fafc" opacity=".92" />
+</svg>

@@ -30,6 +30,9 @@ def test_unified_shell_updates_document_title_for_route_and_locale():
 def test_html_bootstrap_title_uses_unified_product_brand():
     html = (ROOT / "time-helper" / "desk" / "index.html").read_text(encoding="utf-8")
     assert "<title>EffiLife</title>" in html
+    assert 'href="/effilife-mark.svg"' in html
+    assert '<meta name="theme-color" content="#0f172a" />' in html
+    assert '<meta name="color-scheme" content="light dark" />' in html
     assert 'name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"' in html
     assert "浪兮效率时钟" not in html
     assert "path.startsWith('/tasks')" in APP
