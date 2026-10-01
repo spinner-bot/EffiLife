@@ -21,3 +21,11 @@ def test_legacy_todo_import_waits_for_reload_confirmation_after_success():
     import_block = SETTINGS.split("async function onLegacyTodoSelected", 1)[1].split("const backupsList", 1)[0]
     assert "notifyToast(t('settings.archive.legacyTodoImportSuccess', { ...result }), 'success')" in import_block
     assert "if (await requestConfirm(t('settings.archive.reloadNow')))" in import_block
+
+
+def test_archive_controls_announce_busy_state_and_refresh_stats_on_entry():
+    assert 'class="archive-actions" :aria-busy="archiveBusy"' in SETTINGS
+    assert 'role="status" aria-live="polite"' in SETTINGS
+    assert "settings.archive.busy" in SETTINGS
+    assert "watch(currentView, (view) =>" in SETTINGS
+    assert "if (view === 'archive') void refreshDataStats()" in SETTINGS

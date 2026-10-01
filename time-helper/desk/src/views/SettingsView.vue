@@ -463,6 +463,19 @@ const dataStats = ref({
   hasEventSettings: false,
   hasCheckin: false,
 })
+let dataStatsRequestId = 0
+
+async function refreshDataStats() {
+  const requestId = ++dataStatsRequestId
+  try {
+    const nextStats = await getDataStats()
+    if (requestId === dataStatsRequestId) dataStats.value = nextStats
+  } catch (error) {
+    // Statistics are supplementary; an IndexedDB read failure must not block
+    // the settings page or invalidate the rest of the archive controls.
+    console.warn('Failed to load settings data statistics:', error)
+  }
+}
 
 async function handleReset(type: ResetType) {
   const messages: Record<ResetType, string> = {
@@ -693,15 +706,13 @@ watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], () => {
   previewTheme()
 }, { deep: true })
 
+watch(currentView, (view) => {
+  if (view === 'archive') void refreshDataStats()
+})
+
 // 初始化完成后关闭加载状态
 onMounted(async () => {
-  try {
-    dataStats.value = await getDataStats()
-  } catch (error) {
-    // Statistics are supplementary; an IndexedDB read failure must not keep
-    // the entire settings page in its loading state.
-    console.warn('Failed to load settings data statistics:', error)
-  }
+  await refreshDataStats()
   // 短暂延迟以展示骨架屏过渡效果
   setTimeout(() => {
     isLoading.value = false
@@ -1039,7 +1050,7 @@ onUnmounted(() => {
         </div>
 
         <!-- 操作按钮 -->
-        <div class="archive-actions">
+        <div class="archive-actions" :aria-busy="archiveBusy">
           <button type="button" class="btn primary full" :disabled="archiveBusy" @click="handleExportArchive">
             {{ t('settings.archive.export') }}
           </button>
@@ -1050,6 +1061,9 @@ onUnmounted(() => {
             {{ t('settings.archive.importLegacyTodos') }}
           </button>
         </div>
+        <p v-if="archiveBusy" class="archive-status" role="status" aria-live="polite">
+          {{ t('settings.archive.busy') }}
+        </p>
 
         <!-- 隐藏的文件输入 -->
         <input
@@ -1669,6 +1683,13 @@ h2 {
   padding: var(--spacing-md);
   background: var(--color-bg-secondary);
   border-radius: var(--radius-md);
+}
+
+.archive-status {
+  margin: 10px 0 0;
+  color: var(--color-primary);
+  font-size: 12px;
+  text-align: center;
 }
 
 .archive-capability-note {
