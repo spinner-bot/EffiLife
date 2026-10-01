@@ -7,6 +7,8 @@ I18N = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(e
 
 
 def test_guide_close_control_is_explicitly_labeled_in_both_locales():
+    assert 'class="close-btn guide-close"' in OVERLAY
+    assert "document.querySelector('.guide-close')" in OVERLAY
     assert ":aria-label=\"t('guide.closeLabel')\"" in OVERLAY
     assert ":title=\"t('guide.closeLabel')\"" in OVERLAY
     assert I18N.count("'guide.closeLabel':") == 2

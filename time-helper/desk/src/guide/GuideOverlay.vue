@@ -259,7 +259,7 @@ const tooltipStyle = computed(() => ({
           <div class="tooltip-header">
             <span class="progress-badge">{{ progress.current }}/{{ progress.total }}</span>
             <h3 class="tooltip-title">{{ currentTitle }}</h3>
-            <button class="close-btn" type="button" :aria-label="t('guide.closeLabel')" :title="t('guide.closeLabel')" @click="skipGuide">
+            <button class="close-btn guide-close" type="button" :aria-label="t('guide.closeLabel')" :title="t('guide.closeLabel')" @click="skipGuide">
               <X :size="14" />
             </button>
           </div>
