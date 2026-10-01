@@ -86,6 +86,7 @@ const editingCategoryDifficulty = ref(5)
 const priorityClock = ref(Date.now())
 const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
 const settingsSaving = ref(false)
+const taskTabButtons = ref<HTMLButtonElement[]>([])
 let priorityTimer: number | null = null
 let focusTimer: number | null = null
 
@@ -128,6 +129,24 @@ const visibleTodos = computed(() => {
 })
 
 const selectedTodoCount = computed(() => selectedTodoIds.value.size)
+
+const taskFilters: Array<'active' | 'all' | 'completed'> = ['active', 'all', 'completed']
+
+function handleTaskTabKeydown(event: KeyboardEvent): void {
+  const currentIndex = taskFilters.indexOf(filter.value)
+  if (currentIndex < 0) return
+
+  let nextIndex = currentIndex
+  if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % taskFilters.length
+  else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + taskFilters.length) % taskFilters.length
+  else if (event.key === 'Home') nextIndex = 0
+  else if (event.key === 'End') nextIndex = taskFilters.length - 1
+  else return
+
+  event.preventDefault()
+  filter.value = taskFilters[nextIndex]
+  nextTick(() => taskTabButtons.value[nextIndex]?.focus())
+}
 const allVisibleTodosSelected = computed(() => visibleTodos.value.length > 0 && visibleTodos.value.every((todo) => selectedTodoIds.value.has(todo.id)))
 
 const categorySummaries = computed(() => categories.value.map((category) => {
@@ -835,9 +854,9 @@ watch(() => route.query.todo, () => {
 
       <section class="task-toolbar">
         <div class="task-tabs" role="tablist" :aria-label="t('tasks.title')">
-          <button type="button" role="tab" id="tasks-tab-active" aria-controls="task-list-panel" :aria-selected="filter === 'active'" :tabindex="filter === 'active' ? 0 : -1" :class="{ active: filter === 'active' }" @click="filter = 'active'">{{ t('tasks.active') }}</button>
-          <button type="button" role="tab" id="tasks-tab-all" aria-controls="task-list-panel" :aria-selected="filter === 'all'" :tabindex="filter === 'all' ? 0 : -1" :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ t('tasks.all') }}</button>
-          <button type="button" role="tab" id="tasks-tab-completed" aria-controls="task-list-panel" :aria-selected="filter === 'completed'" :tabindex="filter === 'completed' ? 0 : -1" :class="{ active: filter === 'completed' }" @click="filter = 'completed'">{{ t('tasks.completedTab') }}</button>
+          <button ref="taskTabButtons" type="button" role="tab" id="tasks-tab-active" aria-controls="task-list-panel" :aria-selected="filter === 'active'" :tabindex="filter === 'active' ? 0 : -1" :class="{ active: filter === 'active' }" @click="filter = 'active'" @keydown="handleTaskTabKeydown">{{ t('tasks.active') }}</button>
+          <button ref="taskTabButtons" type="button" role="tab" id="tasks-tab-all" aria-controls="task-list-panel" :aria-selected="filter === 'all'" :tabindex="filter === 'all' ? 0 : -1" :class="{ active: filter === 'all' }" @click="filter = 'all'" @keydown="handleTaskTabKeydown">{{ t('tasks.all') }}</button>
+          <button ref="taskTabButtons" type="button" role="tab" id="tasks-tab-completed" aria-controls="task-list-panel" :aria-selected="filter === 'completed'" :tabindex="filter === 'completed' ? 0 : -1" :class="{ active: filter === 'completed' }" @click="filter = 'completed'" @keydown="handleTaskTabKeydown">{{ t('tasks.completedTab') }}</button>
         </div>
         <select v-model="categoryFilter" class="task-filter-select" :aria-label="t('tasks.categoryFilter')">
           <option value="">{{ t('tasks.allCategories') }}</option>
