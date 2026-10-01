@@ -61,7 +61,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'plan' as const,
     title: plan.name,
     detail: t('search.planDetail'),
-    searchText: '',
+    searchText: `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`,
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
   })),
   ...archivedPlans.value.map((plan) => ({
@@ -85,7 +85,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'planTask' as const,
     title: task.content,
     detail: `${t('search.planTaskDetail')} ${t('search.detailSeparator')} ${plan.name} ${t('search.detailSeparator')} ${task.display_id}`,
-    searchText: `${task.content} ${plan.name} ${task.display_id}`,
+    searchText: `${task.content} ${plan.name} ${task.display_id} ${plan.date?.join('-') || ''}`,
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}&task=${encodeURIComponent(task.internal_id)}`,
   })),
   ...records.value.map((record, index) => ({
