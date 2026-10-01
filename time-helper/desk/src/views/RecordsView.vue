@@ -21,6 +21,7 @@ const records = computed(() => appStore.todayRecords)
 const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
 const todos = ref<UnifiedTodo[]>([])
+const todoOptionsUnavailable = ref(false)
 const selectedTodoId = ref('')
 const todoOptions = computed(() => {
   const selected = todos.value.find((todo) => todo.id === selectedTodoId.value)
@@ -36,8 +37,10 @@ const linkedTodoFromQuery = computed(() => {
 async function loadTodoOptions(): Promise<void> {
   try {
     todos.value = await TodoService.list()
+    todoOptionsUnavailable.value = false
   } catch {
     todos.value = []
+    todoOptionsUnavailable.value = true
   }
 }
 
@@ -488,10 +491,14 @@ onUnmounted(() => {
 
           <div class="form-section">
             <label>{{ t('records.linkTodo') }}：</label>
-            <select v-model="selectedTodoId" class="select-input">
+            <select v-model="selectedTodoId" class="select-input" :disabled="todoOptionsUnavailable">
               <option value="">{{ t('records.noLinkedTodo') }}</option>
               <option v-for="todo in todoOptions" :key="todo.id" :value="todo.id">{{ todo.title }}</option>
             </select>
+            <p v-if="todoOptionsUnavailable" class="todo-options-unavailable" role="status" aria-live="polite">
+              <span>{{ t('records.todoOptionsUnavailable') }}</span>
+              <button type="button" @click="loadTodoOptions">{{ t('records.retryTodoOptions') }}</button>
+            </p>
           </div>
         </div>
 
@@ -608,6 +615,9 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
 }
+.todo-options-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 11px; }
+.todo-options-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 7px; padding: 5px 8px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-weight: 650; }
+.todo-options-unavailable button:hover, .todo-options-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 
 .record-todo-link {
   display: inline-block;
