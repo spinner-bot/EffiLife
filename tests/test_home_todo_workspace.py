@@ -57,6 +57,17 @@ def test_home_todo_summary_survives_category_storage_failure():
     assert "TodoCategoryService.list().catch(() => [])" in source
 
 
+def test_home_todo_summary_distinguishes_storage_failure_from_an_empty_list():
+    source = HOME.read_text(encoding="utf-8")
+    assert "const todoSummaryUnavailable = ref(false)" in source
+    assert "todoSummaryUnavailable.value = true" in source
+    assert 'class="today-todos-unavailable" role="status" aria-live="polite"' in source
+    assert "@click=\"refreshTodoSummary\"" in source
+    i18n = I18N.read_text(encoding="utf-8")
+    assert i18n.count("'home.todosUnavailable':") == 2
+    assert i18n.count("'home.retryTodos':") == 2
+
+
 def test_home_todos_stay_independent_from_event_plans():
     source = HOME.read_text(encoding="utf-8")
     assert "function openTodoPlan(todo: UnifiedTodo)" not in source

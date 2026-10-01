@@ -28,6 +28,7 @@ let refreshTimer: number | null = null
 let workspaceRefreshTimer: number | null = null
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
+const todoSummaryUnavailable = ref(false)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -76,10 +77,13 @@ async function refreshTodoSummary() {
         return b.updated_at.localeCompare(a.updated_at)
       })
       .slice(0, 3)
+    todoSummaryUnavailable.value = false
   } catch {
-    // 待办存储不可用时不阻断首页的计划和时间功能
+    // 待办存储不可用时不阻断首页的计划和时间功能，但要明确告知用户，
+    // 避免把读取故障伪装成“今天没有待办”。
     activeTodoCount.value = 0
     todayTodos.value = []
+    todoSummaryUnavailable.value = true
   }
 }
 
@@ -563,7 +567,11 @@ onUnmounted(() => {
           <input v-model="quickTodoTitle" type="text" :placeholder="t('home.quickTodoPlaceholder')" :disabled="quickTodoSaving" :aria-label="t('home.quickTodoPlaceholder')" />
           <button type="submit" :disabled="quickTodoSaving || !quickTodoTitle.trim()"><Plus :size="14" /> {{ t('home.quickAddTodo') }}</button>
         </form>
-        <div v-if="todayTodos.length" class="today-todos-list">
+        <div v-if="todoSummaryUnavailable" class="today-todos-unavailable" role="status" aria-live="polite">
+          <span>{{ t('home.todosUnavailable') }}</span>
+          <button type="button" @click="refreshTodoSummary">{{ t('home.retryTodos') }}</button>
+        </div>
+        <div v-else-if="todayTodos.length" class="today-todos-list">
           <div v-for="todo in todayTodos" :key="todo.id" class="today-todo-row">
             <button type="button" class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabelFor', { title: todo.title })" @click="completeHomeTodo(todo)">
               <Check v-if="completingTodoId === todo.id" :size="13" />
@@ -1104,6 +1112,9 @@ onUnmounted(() => {
 .today-todo-capture button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; border: 1px solid var(--color-primary); border-radius: 9px; padding: 8px 11px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
 .today-todo-capture button:disabled { cursor: not-allowed; opacity: .5; }
 .today-todos-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
+.today-todos-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: var(--spacing-md); padding: 12px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
+.today-todos-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
+.today-todos-unavailable button:hover, .today-todos-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 .today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
 .today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
