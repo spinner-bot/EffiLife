@@ -768,10 +768,6 @@ def run_module(choice, modules, open_browser=True):
         try:
             if open_browser:
                 webbrowser.open(module["url"])
-            # Stop automatically when a reused frontend exits, instead of
-            # leaving an orphan launcher process behind forever.
-            while service_is_ready(module["url"]):
-                time.sleep(1)
         except KeyboardInterrupt:
             print("\n已停止")
         finally:
