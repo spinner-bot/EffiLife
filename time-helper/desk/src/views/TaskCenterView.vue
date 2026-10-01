@@ -135,6 +135,18 @@ const visibleTodos = computed(() => {
 })
 
 const selectedTodoCount = computed(() => selectedTodoIds.value.size)
+const hasTaskContentFilters = computed(() => Boolean(categoryFilter.value || taskSearch.value.trim()))
+const taskEmptyTitle = computed(() => {
+  if (hasTaskContentFilters.value) return t('tasks.emptyFiltered')
+  if (filter.value === 'completed') return t('tasks.emptyCompleted')
+  if (filter.value === 'all') return t('tasks.emptyAll')
+  return t('tasks.emptyActive')
+})
+
+function clearTaskContentFilters(): void {
+  categoryFilter.value = ''
+  taskSearch.value = ''
+}
 
 const taskFilters: Array<'active' | 'all' | 'completed'> = ['active', 'all', 'completed']
 
@@ -1027,8 +1039,9 @@ watch(() => route.query.todo, () => {
       </section>
       <section v-else-if="visibleTodos.length === 0" class="task-empty theme-card">
         <ListTodo :size="34" />
-        <strong>{{ filter === 'completed' ? t('tasks.emptyCompleted') : t('tasks.emptyActive') }}</strong>
+        <strong>{{ taskEmptyTitle }}</strong>
         <span>{{ t('tasks.emptyHint') }}</span>
+        <button v-if="hasTaskContentFilters" type="button" class="task-retry" @click="clearTaskContentFilters">{{ t('tasks.clearFilters') }}</button>
       </section>
       <section v-else id="task-list-panel" class="task-list" role="tabpanel" aria-live="polite" :aria-labelledby="`tasks-tab-${filter}`">
         <article v-for="todo in visibleTodos" :id="`todo-${todo.id}`" :key="todo.id" class="task-item theme-card" :class="{ completed: todo.status === 'completed', 'search-target': searchTargetTodoId === todo.id }">
