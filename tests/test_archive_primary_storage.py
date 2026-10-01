@@ -13,7 +13,10 @@ def test_archive_collects_core_data_from_indexeddb_before_legacy_mirror():
     assert "await get<T>(storeName, storeKey)" in source
     collect = source.split("async function collectAllData", 1)[1].split("export async function exportArchive", 1)[0]
     for key in ("config", "plans", "scheduleRules", "manualPlans", "audioSettings", "eventSettings", "eventInbox", "warningInbox", "dailyTrigger", "checkin"):
-        assert re.search(rf"{key}: await readCoreJSON", collect)
+        if key == "config":
+            assert "config: normalizeConfig(await readCoreJSON" in collect
+        else:
+            assert re.search(rf"{key}: await readCoreJSON", collect)
 
 
 def test_archive_stats_read_primary_values_from_indexeddb():

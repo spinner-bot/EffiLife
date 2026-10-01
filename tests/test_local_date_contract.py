@@ -39,7 +39,7 @@ def test_user_visible_date_modules_parse_calendar_dates_locally():
 
 def test_archive_filename_uses_local_business_date():
     archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
-    assert "import { getTodayDate } from '@/services/dataService'" in archive
+    assert "getTodayDate, normalizeConfig" in archive
     assert "const dateStr = getTodayDate()" in archive
     assert "new Date().toISOString().split('T')[0]" not in archive
 
