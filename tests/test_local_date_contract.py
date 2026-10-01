@@ -49,7 +49,7 @@ def test_schedule_and_emergency_backup_use_local_business_dates():
     assert "const targetDate = parseLocalDate(targetDay)" in DATA_SERVICE
     assert "const todayDate = parseLocalDate(today)" in DATA_SERVICE
     settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
-    assert "import { getTodayDate } from '@/services/dataService'" in settings
+    assert "DataService, getTodayDate" in settings
     assert "efflife_emergency_${getTodayDate()}.json" in settings
 
 
