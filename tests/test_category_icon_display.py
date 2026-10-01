@@ -19,6 +19,10 @@ def test_category_picker_meets_icon_and_ascii_catalog_requirements():
 
     assert registry.count("['") >= 100
     assert "Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')" in picker
+    assert ':aria-label="t(\'tasks.iconLabel\', { name: icon.name })"' in picker
+    assert ':aria-label="t(\'tasks.colorLabel\', { color })"' in picker
+    assert ':aria-pressed="props.modelValue === icon.name"' in picker
+    assert ':aria-pressed="props.modelColor === color"' in picker
 
 
 def test_task_center_renders_category_icon_in_list_and_badge():

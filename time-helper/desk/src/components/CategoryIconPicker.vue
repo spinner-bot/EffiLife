@@ -44,9 +44,9 @@ function selectColor(color: string) {
       <button v-for="tab in tabs" :key="tab" type="button" :class="{ active: activeTab === tab }" @click="activeTab = tab">{{ t(`tasks.iconTab.${tab}`) }}</button>
     </div>
     <div v-if="activeTab === 'icons'" class="picker-content">
-      <input v-model="search" class="picker-search" :placeholder="t('tasks.iconSearch')" />
+      <input v-model="search" class="picker-search" :placeholder="t('tasks.iconSearch')" :aria-label="t('tasks.iconSearch')" />
       <div class="icon-grid">
-        <button v-for="icon in filteredIcons" :key="icon.name" type="button" class="icon-choice" :class="{ selected: props.modelValue === icon.name }" :title="icon.name" @click="emit('update:modelValue', icon.name)">
+        <button v-for="icon in filteredIcons" :key="icon.name" type="button" class="icon-choice" :class="{ selected: props.modelValue === icon.name }" :title="icon.name" :aria-label="t('tasks.iconLabel', { name: icon.name })" :aria-pressed="props.modelValue === icon.name" @click="emit('update:modelValue', icon.name)">
           <component :is="icon.component" :size="18" />
         </button>
       </div>
@@ -58,7 +58,7 @@ function selectColor(color: string) {
     </div>
     <div v-else class="picker-content">
       <div class="color-grid">
-        <button v-for="color in colors" :key="color" type="button" class="color-choice" :class="{ selected: props.modelColor === color }" :style="{ background: color }" :title="color" @click="selectColor(color)" />
+        <button v-for="color in colors" :key="color" type="button" class="color-choice" :class="{ selected: props.modelColor === color }" :style="{ background: color }" :title="color" :aria-label="t('tasks.colorLabel', { color })" :aria-pressed="props.modelColor === color" @click="selectColor(color)" />
       </div>
       <label class="custom-color">{{ t('tasks.customColor') }} <input type="color" :value="props.modelColor" @input="selectColor(($event.target as HTMLInputElement).value)" /></label>
     </div>
