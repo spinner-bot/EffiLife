@@ -343,11 +343,11 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined" aria-keyshortcuts="Alt+3">
             <Clock3 :size="16" /> <span>{{ t('nav.time') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 3</kbd>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined" aria-keyshortcuts="Alt+5">
-            <History :size="16" /> <span>{{ t('nav.records') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 5</kbd>
-          </RouterLink>
           <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined" aria-keyshortcuts="Alt+4">
             <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 4</kbd>
+          </RouterLink>
+          <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined" aria-keyshortcuts="Alt+5">
+            <History :size="16" /> <span>{{ t('nav.records') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 5</kbd>
           </RouterLink>
           <RouterLink class="global-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }" :aria-current="isSettingsRoute ? 'page' : undefined">
             <Settings :size="16" /> <span>{{ t('nav.settings') }}</span>
