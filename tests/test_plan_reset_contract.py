@@ -16,3 +16,11 @@ def test_offline_plan_reset_has_a_server_sync_tombstone():
     assert "syncPendingPlanHelperReset()" in gateway_source
     assert "markPlanHelperResetPending()" in archive_source
     assert "clearPlanHelperResetPending()" in archive_source
+
+
+def test_pending_reset_request_is_bounded_and_cleans_up_abort_timer():
+    reset_source = (DESK_SRC / "planReset.ts").read_text(encoding="utf-8")
+    assert "const RESET_TIMEOUT_MS = 4000" in reset_source
+    assert "const controller = new AbortController()" in reset_source
+    assert "signal: controller.signal" in reset_source
+    assert "window.clearTimeout(timeout)" in reset_source
