@@ -19,6 +19,13 @@ def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     assert "if (currentView.value !== 'theme' || !themeDirty.value) return true" in source
 
 
+def test_theme_cards_expose_visual_previews_and_selection_semantics():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert ':aria-pressed="themeType === theme.type"' in source
+    assert 'class="theme-swatch"' in source
+    assert ':style="{ background: theme.preview }"' in source
+
+
 def test_theme_save_refreshes_persistent_snapshot_without_a_save_button():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "await appStore.saveConfig(newConfig)" in source

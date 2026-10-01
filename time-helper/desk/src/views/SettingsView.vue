@@ -799,8 +799,10 @@ onUnmounted(() => {
               type="button"
               class="theme-card"
               :class="{ active: themeType === theme.type }"
+              :aria-pressed="themeType === theme.type"
               @click="themeType = theme.type"
             >
+              <span class="theme-swatch" :style="{ background: theme.preview }" aria-hidden="true"></span>
               <div class="theme-info">
                 <span class="theme-name">{{ themeName(theme) }}</span>
                 <span class="theme-desc">{{ themeDescription(theme) }}</span>
@@ -1357,6 +1359,16 @@ h2 {
   transition: all var(--transition-fast);
   text-align: left;
   width: 100%;
+}
+
+.theme-swatch {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 30px;
+  margin-right: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
 }
 
 .theme-card:hover {
