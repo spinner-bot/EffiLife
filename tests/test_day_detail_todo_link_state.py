@@ -28,3 +28,11 @@ def test_day_detail_reloads_when_route_date_or_workspace_todos_change():
     assert "const stopWorkspaceListener = onWorkspaceChanged" in source
     assert "source === 'todos' || source === 'archive'" in source
     assert "stopWorkspaceListener()" in source
+
+
+def test_day_detail_ignores_stale_async_route_responses():
+    source = VIEW.read_text(encoding="utf-8")
+    assert "let loadRequestId = 0" in source
+    assert "const requestId = ++loadRequestId" in source
+    assert "const [nextStat, nextRecords, planInfo] = await Promise.all([" in source
+    assert "if (requestId !== loadRequestId) return" in source

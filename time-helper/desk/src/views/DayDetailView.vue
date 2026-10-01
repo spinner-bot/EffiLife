@@ -30,6 +30,7 @@ const dayPlanName = ref('')
 const dayPlanType = ref('')
 const todoTitles = ref(new Map<string, string>())
 const todoReferencesLoaded = ref(false)
+let loadRequestId = 0
 
 /** Stored plan types remain legacy domain values; localize only at display time. */
 function planTypeLabel(value?: string): string {
@@ -43,11 +44,16 @@ const showPlanSelector = ref(false)
 
 // 加载数据
 async function loadData() {
+  const requestId = ++loadRequestId
   const day = dateStr.value
-  stat.value = await DataService.calcRealTimeStat(day)
-  records.value = await DataService.loadRecords(day)
-
-  const planInfo = await DataService.getDayPlan(day)
+  const [nextStat, nextRecords, planInfo] = await Promise.all([
+    DataService.calcRealTimeStat(day),
+    DataService.loadRecords(day),
+    DataService.getDayPlan(day),
+  ])
+  if (requestId !== loadRequestId) return
+  stat.value = nextStat
+  records.value = nextRecords
   dayPlanName.value = planInfo.name
   dayPlanType.value = planInfo.type
   loadError.value = false
