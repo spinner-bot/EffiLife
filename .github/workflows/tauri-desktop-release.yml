@@ -132,6 +132,7 @@ jobs:
           python scripts/generate_checksums.py
           --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
           --output release-checksums/EffiLife-${{ matrix.name }}.sha256
+          --extension ${{ matrix.extension }}
 
       - name: Generate release manifest
         run: >-
@@ -140,6 +141,7 @@ jobs:
           --output release-checksums/EffiLife-${{ matrix.name }}.manifest.json
           --version-file time-helper/VERSION
           --target ${{ matrix.target }}
+          --extension ${{ matrix.extension }}
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

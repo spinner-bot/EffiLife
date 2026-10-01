@@ -88,6 +88,7 @@ jobs:
           python scripts/generate_checksums.py
           --directory time-helper/desk/src-tauri/gen/android/app/build/outputs/apk
           --output release-checksums/EffiLife-android.sha256
+          --extension .apk
 
       - name: Generate Android release manifest
         run: >-
@@ -96,6 +97,7 @@ jobs:
           --output release-checksums/EffiLife-android.manifest.json
           --version-file time-helper/VERSION
           --target android
+          --extension .apk
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
@@ -166,6 +168,8 @@ jobs:
           python scripts/generate_checksums.py
           --directory time-helper/desk/src-tauri/gen/apple/build
           --output release-checksums/EffiLife-ios.sha256
+          --extension .ipa
+          --bundle-extension .app
 
       - name: Generate iOS release manifest
         run: >-
@@ -174,6 +178,8 @@ jobs:
           --output release-checksums/EffiLife-ios.manifest.json
           --version-file time-helper/VERSION
           --target ios
+          --extension .ipa
+          --bundle-extension .app
 
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4

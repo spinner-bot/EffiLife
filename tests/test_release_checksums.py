@@ -37,6 +37,23 @@ def test_generate_checksums_writes_sha256_and_relative_names(tmp_path):
     ]
 
 
+def test_generate_checksums_can_limit_entries_to_uploaded_artifacts(tmp_path):
+    generator = load_generator()
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    apk = bundle / "release.apk"
+    apk.write_bytes(b"apk")
+    (bundle / "mapping.txt").write_bytes(b"debug metadata")
+    app_file = bundle / "EffiLife.app" / "Info.plist"
+    app_file.parent.mkdir()
+    app_file.write_bytes(b"plist")
+    output = tmp_path / "checksums.sha256"
+
+    files = generator.generate(bundle, output, (".apk",), (".app",))
+
+    assert files == [app_file, apk]
+
+
 def test_release_workflow_uploads_checksum_next_to_each_installer():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "scripts/generate_checksums.py" in workflow
@@ -66,6 +83,26 @@ def test_release_manifest_contains_version_target_and_artifact_hashes(tmp_path):
     assert manifest["artifacts"][0]["bytes"] == artifact.stat().st_size
     assert manifest["artifacts"][0]["sha256"] == hashlib.sha256(b"installer").hexdigest()
     assert output.exists()
+
+
+def test_release_manifest_can_limit_entries_to_uploaded_artifacts(tmp_path):
+    import importlib.util
+
+    manifest_script = ROOT / "scripts" / "generate_release_manifest.py"
+    spec = importlib.util.spec_from_file_location("efflife_release_manifest_filtered", manifest_script)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    apk = bundle / "release.apk"
+    apk.write_bytes(b"apk")
+    (bundle / "mapping.txt").write_bytes(b"debug metadata")
+    output = tmp_path / "manifest.json"
+
+    manifest = module.generate(bundle, output, "1.7.0", "android", (".apk",), ())
+
+    assert [item["path"] for item in manifest["artifacts"]] == ["release.apk"]
 
 
 def test_release_workflow_uploads_machine_readable_manifest():

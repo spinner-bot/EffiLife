@@ -16,8 +16,24 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def generate(directory: Path, output: Path) -> list[Path]:
-    files = sorted(path for path in directory.rglob("*") if path.is_file() and path != output)
+def _is_selected(path: Path, extensions: tuple[str, ...], bundle_extensions: tuple[str, ...]) -> bool:
+    if not extensions and not bundle_extensions:
+        return True
+    if path.suffix.lower() in extensions:
+        return True
+    return any(part.lower().endswith(bundle_extension) for part in path.parts for bundle_extension in bundle_extensions)
+
+
+def generate(
+    directory: Path,
+    output: Path,
+    extensions: tuple[str, ...] = (),
+    bundle_extensions: tuple[str, ...] = (),
+) -> list[Path]:
+    files = sorted(
+        path for path in directory.rglob("*")
+        if path.is_file() and path != output and _is_selected(path, extensions, bundle_extensions)
+    )
     if not files:
         raise FileNotFoundError(f"No release artifacts found in {directory}")
 
@@ -31,8 +47,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--extension", action="append", default=[], help="Include files with this extension")
+    parser.add_argument("--bundle-extension", action="append", default=[], help="Include files inside bundles with this extension")
     args = parser.parse_args()
-    generate(args.directory, args.output)
+    extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.extension)
+    bundle_extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.bundle_extension)
+    generate(args.directory, args.output, extensions, bundle_extensions)
     return 0
 
 

@@ -20,10 +20,28 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def generate(directory: Path, output: Path, version: str, target: str) -> dict:
+def _is_selected(path: Path, extensions: tuple[str, ...], bundle_extensions: tuple[str, ...]) -> bool:
+    if not extensions and not bundle_extensions:
+        return True
+    if path.suffix.lower() in extensions:
+        return True
+    return any(part.lower().endswith(bundle_extension) for part in path.parts for bundle_extension in bundle_extensions)
+
+
+def generate(
+    directory: Path,
+    output: Path,
+    version: str,
+    target: str,
+    extensions: tuple[str, ...] = (),
+    bundle_extensions: tuple[str, ...] = (),
+) -> dict:
     if not directory.is_dir():
         raise FileNotFoundError(f"Release directory does not exist: {directory}")
-    files = sorted(path for path in directory.rglob("*") if path.is_file())
+    files = sorted(
+        path for path in directory.rglob("*")
+        if path.is_file() and _is_selected(path, extensions, bundle_extensions)
+    )
     if not files:
         raise FileNotFoundError(f"No release artifacts found in {directory}")
 
@@ -52,8 +70,12 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--version-file", required=True, type=Path)
     parser.add_argument("--target", required=True)
+    parser.add_argument("--extension", action="append", default=[], help="Include files with this extension")
+    parser.add_argument("--bundle-extension", action="append", default=[], help="Include files inside bundles with this extension")
     args = parser.parse_args()
-    generate(args.directory, args.output, args.version_file.read_text(encoding="utf-8").strip(), args.target)
+    extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.extension)
+    bundle_extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.bundle_extension)
+    generate(args.directory, args.output, args.version_file.read_text(encoding="utf-8").strip(), args.target, extensions, bundle_extensions)
     return 0
 
 
