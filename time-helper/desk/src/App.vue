@@ -46,6 +46,7 @@ const startupError = ref(false)
 const startupErrorMessage = ref('')
 const showGlobalSearch = ref(false)
 const mainContent = ref<HTMLElement | null>(null)
+const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
 let stopWorkspaceListener: (() => void) | null = null
 let legacyMigrationSummary: { migrated: number; categories: number; skipped: number } | null = null
 const searchShortcut = computed(() => {
@@ -127,6 +128,10 @@ function refreshWhenVisible() {
   })
 }
 
+function updateOnlineStatus() {
+  isOnline.value = navigator.onLine
+}
+
 // 应用主题到 CSS 变量
 function applyTheme() {
   const root = document.documentElement
@@ -188,6 +193,8 @@ function onCheckinClose() {
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
   document.addEventListener('visibilitychange', refreshWhenVisible)
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
   if (typeof window.matchMedia === 'function') {
     systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     if (typeof systemThemeMediaQuery.addEventListener === 'function') {
@@ -298,6 +305,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   document.removeEventListener('visibilitychange', refreshWhenVisible)
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
   if (systemThemeMediaQuery) {
     if (typeof systemThemeMediaQuery.removeEventListener === 'function') {
       systemThemeMediaQuery.removeEventListener('change', refreshSystemTheme)
@@ -337,6 +346,9 @@ watch(() => appStore.todayStat, () => {
     <template v-if="runtimeReady">
     <div class="app-content">
       <a class="skip-link" href="#main-content">{{ t('app.skipToContent') }}</a>
+      <div v-if="!isOnline" class="offline-status" role="status" aria-live="polite">
+        {{ t('app.offlineStatus') }}
+      </div>
       <header class="global-nav theme-card" :aria-label="t('app.shellLabel')">
         <RouterLink class="global-brand" to="/" :aria-label="t('app.homeLink')">
           <span class="global-brand-mark">E</span>
@@ -464,6 +476,7 @@ watch(() => appStore.todayStat, () => {
   transition: transform var(--transition-fast);
 }
 .skip-link:focus { transform: translateY(0); outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.offline-status { position: fixed; z-index: 11; top: 70px; left: 50%; width: min(560px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-warning, #c98924) 55%, var(--color-border)); border-radius: 10px; padding: 7px 12px; color: var(--color-text-secondary); background: color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-warning, #c98924)); box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 12%)); font-size: 12px; text-align: center; }
 
 .app-startup { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 13px; transition: opacity .2s ease, transform .2s ease; }
 .app-startup-error { padding: 24px; text-align: center; }
