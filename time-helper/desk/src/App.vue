@@ -453,8 +453,10 @@ watch(() => appStore.todayStat, () => {
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(44px, 1fr));
     gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border);
     background: color-mix(in srgb, var(--color-bg) 88%, transparent);
@@ -471,6 +473,7 @@ watch(() => appStore.todayStat, () => {
     font-size: 10px;
     text-decoration: none;
   }
+  .mobile-bottom-nav::-webkit-scrollbar { display: none; }
   .mobile-bottom-nav-link.active { color: var(--color-primary); background: var(--color-primary-muted); font-weight: 650; }
 }
 </style>

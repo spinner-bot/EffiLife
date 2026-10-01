@@ -27,6 +27,14 @@ def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
     assert ".global-search-trigger span, .global-search-trigger kbd { display: none; }" in tablet_block
 
 
+def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
+    app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
+    mobile_block = app.split("@media (max-width: 680px)", 1)[1]
+    assert "grid-template-columns: repeat(6, minmax(44px, 1fr));" in mobile_block
+    assert "overflow-x: auto;" in mobile_block
+    assert "scrollbar-width: none;" in mobile_block
+
+
 def test_time_workspace_has_a_wide_screen_content_budget():
     assert "@media (min-width: 1100px)" in TIME
     assert "max-width: 1180px" in TIME
