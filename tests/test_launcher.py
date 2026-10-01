@@ -14,17 +14,17 @@ def test_launcher_reads_custom_node_directory_at_lookup_time(monkeypatch, tmp_pa
     # The launcher module is imported before the environment is configured in
     # embedded/packaged hosts. It must still agree with diagnostics afterward.
     monkeypatch.setenv("EFFILIFE_NODE_DIR", str(node_dir))
-    monkeypatch.setattr(launcher.os, "name", "nt")
     monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
 
-    assert launcher.find_node() == str(node_dir / "node.exe")
-    assert launcher.find_npm() == str(node_dir / "npm.cmd")
+    assert launcher.find_node() == str(node_dir / launcher.node_tool_filename("node"))
+    assert launcher.find_npm() == str(node_dir / launcher.node_tool_filename("npm"))
     assert str(node_dir) in launcher.node_environment()["PATH"]
 
 
 def test_launcher_ignores_blank_custom_node_directory(monkeypatch):
     monkeypatch.setenv("EFFILIFE_NODE_DIR", "   ")
-    assert launcher.custom_node_dir() == launcher.CUSTOM_NODE_DIR
+    expected = launcher.CUSTOM_NODE_DIR if launcher.os.name == "nt" else None
+    assert launcher.custom_node_dir() == expected
 
 
 def test_launcher_reads_custom_node_directory_on_posix(monkeypatch, tmp_path):
