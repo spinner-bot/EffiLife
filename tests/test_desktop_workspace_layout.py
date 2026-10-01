@@ -37,6 +37,13 @@ def test_settings_uses_two_column_desktop_navigation():
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in SETTINGS
 
 
+def test_settings_archive_actions_use_horizontal_desktop_layout_and_mobile_stack():
+    assert ".archive-actions {" in SETTINGS
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in SETTINGS
+    mobile_block = SETTINGS.split("@media (max-width: 680px)", 1)[1]
+    assert ".archive-actions { display: flex; flex-direction: column; }" in mobile_block
+
+
 def test_task_center_uses_the_shared_wide_desktop_content_budget():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in tasks

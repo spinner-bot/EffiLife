@@ -1555,6 +1555,11 @@ h2 {
   margin-bottom: var(--spacing-lg);
 }
 
+.archive-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 /* 数据统计样式 */
 .data-stats {
   background: var(--color-bg-secondary);
@@ -2098,6 +2103,7 @@ h2 {
   .back-btn { min-height: 40px; padding: 8px 10px; }
   .settings-item { min-height: 52px; padding: 13px 14px; }
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .archive-actions { display: flex; flex-direction: column; }
   .data-stats { padding: 14px; }
   .stat-value { font-size: 1.3rem; }
   .modal-footer { flex-direction: column-reverse; padding: 14px 16px; }
