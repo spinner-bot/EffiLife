@@ -533,7 +533,7 @@ onUnmounted(() => {
               :title="t('home.noPlanData')"
               :description="t('home.createPlanForProgress')"
               :action-text="t('home.goToManage')"
-              action-route="/plan"
+              action-route="/plans"
             />
           </div>
         </section>

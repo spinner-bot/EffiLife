@@ -20,3 +20,8 @@ def test_home_summary_aggregates_three_unified_workstreams():
 def test_home_workflow_summary_has_bilingual_copy():
     for key in ("home.workflowSummary", "home.timeModuleSummary", "home.planModuleSummary", "home.todoModuleSummary"):
         assert I18N.count(f"'{key}':") == 2
+
+
+def test_home_empty_plan_action_enters_plan_helper_workspace():
+    assert 'action-route="/plans"' in HOME
+    assert 'action-route="/plan"' not in HOME
