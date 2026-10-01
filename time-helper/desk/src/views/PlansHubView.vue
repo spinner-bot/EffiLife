@@ -945,6 +945,7 @@ onUnmounted(() => {
       <form class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown.esc.prevent.stop="closeCreatePlan">
         <h2 id="plan-create-title">{{ t('plans.create') }}</h2>
         <p>{{ t('plans.createHint') }}</p>
+        <p v-if="errorMessage" class="plans-error create-modal-error" role="alert">{{ errorMessage }}</p>
         <label>{{ t('plans.name') }}<input ref="createNameInput" v-model="planName" required /></label>
         <label>{{ t('plans.date') }}<input v-model="planDate" type="date" required /></label>
         <div class="create-editor-note">
