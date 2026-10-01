@@ -530,7 +530,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     } catch {
       throw new Error(translate('settings.archive.manifestInvalid'))
     }
-    const hasChecksums = !!manifest.dataset_sha256 && manifest.datasets?.every((name) => typeof manifest.dataset_sha256?.[name] === 'string')
+    const hasChecksums = !!manifest.dataset_sha256 && manifest.datasets?.every((name) => /^[0-9a-f]{64}$/.test(manifest.dataset_sha256?.[name] || ''))
     if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets) || (manifest.dataset_sha256 && !hasChecksums)) {
       throw new Error(translate('settings.archive.unsupportedFormat'))
     }

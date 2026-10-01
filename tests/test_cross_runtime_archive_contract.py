@@ -53,3 +53,9 @@ def test_frontend_and_python_workspace_validation_cover_the_same_core_shapes():
         "plan_helper": {"plans": [], "archives": []},
     }
     _validate_workspace_dataset_shapes(valid)
+
+
+def test_frontend_checksum_format_matches_python_manifest_contract():
+    source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
+    assert "/^[0-9a-f]{64}$/" in source
+    assert "manifest.dataset_sha256?.[name] || ''" in source
