@@ -999,7 +999,7 @@ onUnmounted(() => {
 
         <div class="form-actions">
           <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
-          <span class="theme-preview-status">{{ t('settings.theme.previewStatus') }}</span>
+          <span class="theme-preview-status" role="status" aria-live="polite">{{ t('settings.theme.previewStatus') }}</span>
         </div>
       </template>
 

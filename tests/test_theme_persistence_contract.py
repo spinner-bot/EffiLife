@@ -70,6 +70,11 @@ def test_theme_preview_status_explains_confirmed_exit_save_in_both_locales():
     assert "Save theme changes and exit theme settings?" in source
 
 
+def test_theme_preview_status_is_announced_as_a_live_region():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert 'class="theme-preview-status" role="status" aria-live="polite"' in source
+
+
 def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "notifyToast(t('settings.saved'), 'success')" in source
