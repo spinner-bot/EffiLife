@@ -2545,7 +2545,12 @@ export function refreshLocaleFromStorage(): void {
 }
 
 export function translate(key: string, params: Record<string, string | number> = {}): string {
-  const value = catalogs[currentLocale.value][key] || navigationFallbacks[currentLocale.value][key] || catalogs['zh-CN'][key] || navigationFallbacks['zh-CN'][key] || key
+  const fallbackLocale = LOCALE_DEFINITIONS.find(({ code }) => code === currentLocale.value)?.fallback || 'zh-CN'
+  const value = catalogs[currentLocale.value][key]
+    || navigationFallbacks[currentLocale.value][key]
+    || catalogs[fallbackLocale][key]
+    || navigationFallbacks[fallbackLocale][key]
+    || key
   return value.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? `{${name}}`))
 }
 

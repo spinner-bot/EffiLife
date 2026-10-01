@@ -20,3 +20,9 @@ def test_locale_registry_keeps_current_languages_and_fallbacks():
     assert "{ code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN' }" in I18N
     assert "LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'" in I18N
 
+
+def test_translation_uses_the_registered_locale_fallback():
+    assert "const fallbackLocale = LOCALE_DEFINITIONS.find(({ code }) => code === currentLocale.value)?.fallback || 'zh-CN'" in I18N
+    assert "catalogs[fallbackLocale][key]" in I18N
+    assert "navigationFallbacks[fallbackLocale][key]" in I18N
+    assert "catalogs['zh-CN'][key]" not in I18N
