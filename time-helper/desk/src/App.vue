@@ -45,6 +45,7 @@ const runtimeReady = ref(false)
 const startupError = ref(false)
 const startupErrorMessage = ref('')
 const showGlobalSearch = ref(false)
+const mainContent = ref<HTMLElement | null>(null)
 let stopWorkspaceListener: (() => void) | null = null
 let legacyMigrationSummary: { migrated: number; categories: number; skipped: number } | null = null
 const searchShortcut = computed(() => {
@@ -315,6 +316,12 @@ watch([() => route.path, locale], () => {
   document.title = t('app.documentTitle', { page: pageTitle.value })
 }, { immediate: true })
 
+watch(() => route.path, async (path, previousPath) => {
+  if (!runtimeReady.value || path === previousPath) return
+  await nextTick()
+  mainContent.value?.focus({ preventScroll: true })
+})
+
 // 监听统计数据变化，检查事件
 watch(() => appStore.todayStat, () => {
   checkProgressEvents()
@@ -379,7 +386,7 @@ watch(() => appStore.todayStat, () => {
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>
-      <main id="main-content" class="app-main" tabindex="-1">
+      <main ref="mainContent" id="main-content" class="app-main" tabindex="-1">
         <RouterView v-slot="{ Component }">
           <Transition name="page-fade" mode="out-in">
             <component :is="Component" />

@@ -52,3 +52,10 @@ def test_unified_shell_exposes_a_localized_skip_link_and_main_landmark():
     assert 'id="main-content"' in APP
     assert 'class="app-main"' in APP
     assert 'tabindex="-1"' in APP
+
+
+def test_route_changes_move_focus_to_main_content_without_query_churn():
+    assert "const mainContent = ref<HTMLElement | null>(null)" in APP
+    assert "watch(() => route.path, async (path, previousPath)" in APP
+    assert "if (!runtimeReady.value || path === previousPath) return" in APP
+    assert "mainContent.value?.focus({ preventScroll: true })" in APP
