@@ -137,7 +137,16 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', refreshWhenVisible)
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
-    if (source === 'archive' || source === 'settings') refreshLocaleFromStorage()
+    if (source === 'settings') {
+      // Settings writes the config and updates the Pinia store before it
+      // emits this same-window event. Re-reading the workspace here can race
+      // with the exit-confirmation save and briefly restore an older snapshot
+      // over a newly selected theme. Other windows receive the Broadcast-
+      // Channel message and still refresh normally.
+      refreshLocaleFromStorage()
+      return
+    }
+    if (source === 'archive') refreshLocaleFromStorage()
     void appStore.refreshWorkspaceData().catch((error) => {
       console.warn('Failed to refresh workspace after external change:', error)
     })

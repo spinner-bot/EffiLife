@@ -121,3 +121,11 @@ def test_generic_config_watcher_does_not_overwrite_theme_draft():
     assert "showAmPm.value = newConfig.show_ampm" in config_watch
     assert "themeType.value = newConfig.theme.type" not in config_watch
     assert "syncThemeDraft(newConfig.theme)" not in config_watch
+
+
+def test_same_window_settings_event_does_not_refresh_over_saved_theme():
+    app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
+    settings_block = app.split("if (source === 'settings')", 1)[1].split("if (source === 'archive')", 1)[0]
+    assert "refreshLocaleFromStorage()" in settings_block
+    assert "return" in settings_block
+    assert "void appStore.refreshWorkspaceData()" not in settings_block
