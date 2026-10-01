@@ -27,4 +27,6 @@ def test_event_service_keeps_legacy_mirrors_and_app_waits_for_hydration():
 
     assert "localStorage.setItem(WARNING_INBOX_KEY" in source
     assert "localStorage.setItem(EVENT_INBOX_KEY" in source
-    assert "AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()" in app
+    assert "waitForOptionalSubsystem('audio', AudioManager.whenReady())" in app
+    assert "waitForOptionalSubsystem('check-in', CheckinSystem.whenReady())" in app
+    assert "waitForOptionalSubsystem('events', EventSystem.whenReady())" in app

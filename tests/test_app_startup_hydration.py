@@ -9,7 +9,11 @@ I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 def test_business_shell_mounts_only_after_storage_hydration():
     source = APP.read_text(encoding="utf-8")
     assert "const runtimeReady = ref(false)" in source
-    assert "await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])" in source
+    assert "optionalStartup = Promise.all([" in source
+    assert "waitForOptionalSubsystem('audio', AudioManager.whenReady())" in source
+    assert "waitForOptionalSubsystem('check-in', CheckinSystem.whenReady())" in source
+    assert "waitForOptionalSubsystem('events', EventSystem.whenReady())" in source
+    assert "await optionalStartup" in source
     assert '<template v-if="runtimeReady">' in source
     assert 'class="app-startup" role="status"' in source
 

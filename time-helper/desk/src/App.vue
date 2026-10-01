@@ -57,6 +57,26 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 }
 
+// Audio, check-in and event hydration are useful background services, but a
+// delayed IndexedDB request in one of them must not hide the whole workspace.
+const OPTIONAL_STARTUP_TIMEOUT_MS = 5000
+
+async function waitForOptionalSubsystem(name: string, ready: Promise<void>): Promise<void> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      ready,
+      new Promise<void>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`${name} initialization timed out`)), OPTIONAL_STARTUP_TIMEOUT_MS)
+      }),
+    ])
+  } catch (error) {
+    console.warn(`Optional subsystem ${name} was not ready during startup:`, error)
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
+
 function onGlobalKeydown(event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     if (isEditableTarget(event.target)) return
@@ -151,8 +171,15 @@ onMounted(async () => {
       console.warn('Failed to refresh workspace after external change:', error)
     })
   })
+  let optionalStartup: Promise<void> = Promise.resolve()
   try {
-    await Promise.all([AudioManager.whenReady(), CheckinSystem.whenReady(), EventSystem.whenReady()])
+    // Start optional hydration in parallel with the core workspace. The
+    // application shell should not wait for audio/check-in/event settings.
+    optionalStartup = Promise.all([
+      waitForOptionalSubsystem('audio', AudioManager.whenReady()),
+      waitForOptionalSubsystem('check-in', CheckinSystem.whenReady()),
+      waitForOptionalSubsystem('events', EventSystem.whenReady()),
+    ]).then(() => undefined)
     await appStore.init()
     legacyMigrationSummary = await TodoService.migrateLegacyLocalStorage()
     try {
@@ -169,6 +196,9 @@ onMounted(async () => {
   }
   applyTheme()
   runtimeReady.value = true
+  // The shell is visible now; wait only before running maintenance that uses
+  // the optional services, so a delayed service cannot hide the workspace.
+  await optionalStartup
   if (legacyMigrationSummary && (legacyMigrationSummary.migrated > 0 || legacyMigrationSummary.categories > 0)) {
     await nextTick()
     notifyToast(t('app.legacyMigrationSummary', legacyMigrationSummary), 'success')
