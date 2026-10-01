@@ -104,9 +104,8 @@ function navigateTo(view: ViewType) {
 // 返回上一级
 async function goBack() {
   if (currentView.value === 'theme' && themeDirty.value) {
-    const shouldSave = await requestConfirm(t('settings.theme.unsavedConfirm'))
-    if (shouldSave) await saveTheme()
-    else await discardThemeChanges()
+    const saved = await saveTheme()
+    if (!saved) return
   }
   if (viewHistory.value.length > 1) {
     viewHistory.value.pop()
@@ -257,12 +256,6 @@ function previewTheme() {
   }
 }
 
-async function discardThemeChanges() {
-  const restored = cloneTheme(savedThemeSnapshot.value)
-  appStore.previewConfig({ ...config.value, theme: restored })
-  syncThemeDraft(restored)
-}
-
 // 主题引擎是唯一的可选主题注册表，避免设置页与应用壳的主题列表漂移。
 const availableThemes = getAvailableThemes()
 const availableThemeCategories = getAvailableThemeCategories()
@@ -279,7 +272,7 @@ function themeDescription(theme: ThemeDefinition): string {
   return t(theme.descriptionKey)
 }
 
-async function saveTheme() {
+async function saveTheme(): Promise<boolean> {
   const newConfig: Config = {
     ...config.value,
     theme: buildDraftTheme()
@@ -288,9 +281,11 @@ async function saveTheme() {
     await appStore.saveConfig(newConfig)
     savedThemeSnapshot.value = cloneTheme(newConfig.theme)
     notifyToast(t('settings.saved'), 'success')
+    return true
   } catch (error) {
     console.error('Failed to save theme settings:', error)
     notifyToast(t('settings.saveFailed'), 'error')
+    return false
   }
 }
 
@@ -893,7 +888,6 @@ onUnmounted(() => {
         <div class="form-actions">
           <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
           <span class="theme-preview-status">{{ t('settings.theme.previewStatus') }}</span>
-          <button type="button" class="btn primary" :disabled="!themeDirty" @click="saveTheme">{{ t('settings.save') }}</button>
         </div>
       </template>
 
