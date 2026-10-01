@@ -79,6 +79,20 @@ def test_basic_light_and_dark_themes_are_registered_and_localized():
         assert f"{theme_type}: () => ({{" in engine
         assert catalog.count(f"'theme.name.{theme_type}':") == 2
         assert catalog.count(f"'theme.desc.{theme_type}':") == 2
+    assert "{ type: 'system'" in engine
+    assert "system: () => {" in engine
+    assert catalog.count("'theme.name.system':") == 2
+    assert catalog.count("'theme.desc.system':") == 2
+
+
+def test_system_theme_refreshes_when_operating_system_scheme_changes():
+    app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    assert "theme.type === 'system'" in app
+    assert "prefers-color-scheme: dark" in app
+    assert "addEventListener('change', refreshSystemTheme)" in app
+    assert "system: () =>" in engine
+    assert "window.matchMedia('(prefers-color-scheme: dark)')" in engine
 
 
 def test_every_rich_theme_selection_has_an_engine_preset():

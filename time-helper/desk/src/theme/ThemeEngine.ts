@@ -55,6 +55,14 @@ const themePresets: Record<string, () => ThemeStyle> = {
     cardBg: '#172033',
   }),
 
+  // ============ 跟随系统主题 ============
+  system: () => {
+    const prefersDark = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-color-scheme: dark)').matches
+    return (prefersDark ? themePresets.dark : themePresets.light)()
+  },
+
   // ============ 水墨风格 ============
   ink: () => ({
     bgColor: '#f5f0e6',
@@ -2710,6 +2718,7 @@ export function getAvailableThemes(): ThemeDefinition[] {
     { type: 'solid', name: '纯色', description: '简洁的纯色主题', preview: '#f0f0f0', nameKey: 'theme.name.solid', descriptionKey: 'theme.desc.solid', categoryKey: 'theme.category.basic' },
     { type: 'light', name: '浅色', description: '清晰明亮的工作台主题', preview: '#f8fafc', nameKey: 'theme.name.light', descriptionKey: 'theme.desc.light', categoryKey: 'theme.category.basic' },
     { type: 'dark', name: '深色', description: '低亮度护眼工作台主题', preview: '#0f172a', nameKey: 'theme.name.dark', descriptionKey: 'theme.desc.dark', categoryKey: 'theme.category.basic' },
+    { type: 'system', name: '跟随系统', description: '根据操作系统明暗模式自动切换', preview: 'linear-gradient(135deg, #f8fafc 50%, #0f172a 50%)', nameKey: 'theme.name.system', descriptionKey: 'theme.desc.system', categoryKey: 'theme.category.basic' },
     { type: 'gradient', name: '渐变', description: '渐变背景主题', preview: 'linear-gradient(135deg, #667eea, #764ba2)', nameKey: 'theme.name.gradient', descriptionKey: 'theme.desc.gradient', categoryKey: 'theme.category.basic' },
     { type: 'glass', name: '玻璃', description: '毛玻璃效果主题', preview: 'rgba(255,255,255,0.1)', nameKey: 'theme.name.glass', descriptionKey: 'theme.desc.glass', categoryKey: 'theme.category.basic' },
     { type: 'neon', name: '霓虹', description: '霓虹灯效果主题', preview: '#00ff88', nameKey: 'theme.name.neon', descriptionKey: 'theme.desc.neon', categoryKey: 'theme.category.basic' },

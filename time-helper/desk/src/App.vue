@@ -21,8 +21,6 @@ const appStore = useAppStore()
 const route = useRoute()
 const { t, locale } = useI18n()
 
-const themeVariables = computed(() => getThemeCssVariables(appStore.config.theme))
-
 const pageTitle = computed(() => {
   const path = route.path
   if (path === '/') return t('nav.home')
@@ -117,9 +115,14 @@ function refreshWhenVisible() {
 // 应用主题到 CSS 变量
 function applyTheme() {
   const root = document.documentElement
-  for (const [name, value] of Object.entries(themeVariables.value)) {
+  for (const [name, value] of Object.entries(getThemeCssVariables(appStore.config.theme))) {
     root.style.setProperty(name, value)
   }
+}
+
+let systemThemeMediaQuery: MediaQueryList | null = null
+function refreshSystemTheme() {
+  if (appStore.config.theme.type === 'system') applyTheme()
 }
 
 // 检查进度事件
@@ -170,6 +173,14 @@ function onCheckinClose() {
 onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
   document.addEventListener('visibilitychange', refreshWhenVisible)
+  if (typeof window.matchMedia === 'function') {
+    systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    if (typeof systemThemeMediaQuery.addEventListener === 'function') {
+      systemThemeMediaQuery.addEventListener('change', refreshSystemTheme)
+    } else {
+      systemThemeMediaQuery.addListener(refreshSystemTheme)
+    }
+  }
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive'].includes(source)) return
     if (source === 'settings') {
@@ -272,6 +283,14 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   document.removeEventListener('visibilitychange', refreshWhenVisible)
+  if (systemThemeMediaQuery) {
+    if (typeof systemThemeMediaQuery.removeEventListener === 'function') {
+      systemThemeMediaQuery.removeEventListener('change', refreshSystemTheme)
+    } else {
+      systemThemeMediaQuery.removeListener(refreshSystemTheme)
+    }
+    systemThemeMediaQuery = null
+  }
   stopWorkspaceListener?.()
   stopWorkspaceListener = null
 })
