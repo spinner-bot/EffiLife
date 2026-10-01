@@ -9,8 +9,9 @@ I18N = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(e
 
 def test_home_periodic_statistics_refresh_has_error_boundary():
     refresh_block = HOME.split("refreshTimer = window.setInterval(() =>", 1)[1].split("}, 60000)", 1)[0]
-    assert "void appStore.refreshTodayData().catch((error) =>" in refresh_block
-    assert "Failed to refresh home statistics:" in refresh_block
+    assert "void refreshTimeSummary()" in refresh_block
+    assert "async function refreshTimeSummary(): Promise<void>" in HOME
+    assert "Failed to refresh home time summary:" in HOME
 
 
 def test_home_cross_window_summary_refresh_has_error_boundary():

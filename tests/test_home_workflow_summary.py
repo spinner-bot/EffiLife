@@ -46,6 +46,16 @@ def test_home_plan_service_failure_has_an_explicit_desktop_retry():
     assert I18N.count("'home.retryEventPlans':") == 2
 
 
+def test_home_time_summary_failure_has_an_explicit_retry_without_fake_empty_state():
+    assert "const timeSummaryUnavailable = ref(false)" in HOME
+    assert "async function refreshTimeSummary(): Promise<void>" in HOME
+    assert "timeSummaryUnavailable.value = true" in HOME
+    assert 'class="stats-unavailable" role="status" aria-live="polite"' in HOME
+    assert '@click="refreshTimeSummary"' in HOME
+    assert I18N.count("'home.timeUnavailable':") == 2
+    assert I18N.count("'home.retryTime':") == 2
+
+
 def test_home_inbox_has_dialog_semantics_and_escape_focus_return():
     assert 'aria-haspopup="dialog"' in HOME
     assert 'aria-controls="home-inbox-panel"' in HOME

@@ -29,6 +29,7 @@ let workspaceRefreshTimer: number | null = null
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
+const timeSummaryUnavailable = ref(false)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -84,6 +85,16 @@ async function refreshTodoSummary() {
     activeTodoCount.value = 0
     todayTodos.value = []
     todoSummaryUnavailable.value = true
+  }
+}
+
+async function refreshTimeSummary(): Promise<void> {
+  try {
+    await appStore.refreshTodayData()
+    timeSummaryUnavailable.value = false
+  } catch (error) {
+    timeSummaryUnavailable.value = true
+    console.warn('Failed to refresh home time summary:', error)
   }
 }
 
@@ -170,7 +181,7 @@ function scheduleWorkspaceSummaryRefresh() {
     workspaceRefreshTimer = null
     try {
       await Promise.all([
-        appStore.refreshTodayData(),
+        refreshTimeSummary(),
         refreshTodoSummary(),
         refreshEventPlanSummary(),
       ])
@@ -334,9 +345,7 @@ onMounted(async () => {
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
   refreshTimer = window.setInterval(() => {
-    void appStore.refreshTodayData().catch((error) => {
-      console.warn('Failed to refresh home statistics:', error)
-    })
+    void refreshTimeSummary()
     refreshTodoSummary()
     refreshEventPlanSummary()
   }, 60000)
@@ -459,7 +468,11 @@ onUnmounted(() => {
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
             <ChevronRight :size="18" />
           </button>
-          <div class="stats-content" v-if="stat && stat.plan_exists">
+          <div v-if="timeSummaryUnavailable" class="stats-unavailable" role="status" aria-live="polite">
+            <span>{{ t('home.timeUnavailable') }}</span>
+            <button type="button" @click="refreshTimeSummary">{{ t('home.retryTime') }}</button>
+          </div>
+          <div class="stats-content" v-else-if="stat && stat.plan_exists">
             <!-- 环形总完成度 -->
             <div class="overall-progress-ring">
               <svg class="ring-svg" viewBox="0 0 128 128">
@@ -1178,6 +1191,9 @@ onUnmounted(() => {
 .stats-content {
   padding: var(--spacing-sm) 0;
 }
+.stats-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 120px; padding: var(--spacing-md); border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
+.stats-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
+.stats-unavailable button:hover, .stats-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 
 /* 环形总完成度 */
 .overall-progress-ring {
