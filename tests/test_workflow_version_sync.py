@@ -28,3 +28,15 @@ def test_manual_mobile_build_syncs_each_platform_job_before_npm_ci():
         assert "python scripts/sync_desktop_version.py" in job_source
         assert job_source.index("python scripts/sync_desktop_version.py") < job_source.index("uses: actions/setup-node@v5")
         assert job_source.index("python scripts/sync_desktop_version.py") < job_source.index("run: npm ci")
+
+
+def test_ci_runs_the_real_unified_cross_module_integration_suite():
+    workflow = _workflow("ci.yml")
+    assert "python scripts/run_integration.py test" in workflow
+    assert workflow.index("python scripts/run_integration.py test") > workflow.index("run: python -m pytest -q")
+
+
+def test_desktop_release_runs_the_real_unified_cross_module_integration_suite():
+    workflow = _workflow("tauri-desktop-release.yml")
+    assert "python scripts/run_integration.py test" in workflow
+    assert workflow.index("python scripts/run_integration.py test") > workflow.index("run: python -m pytest -q")

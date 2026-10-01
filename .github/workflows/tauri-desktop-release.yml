@@ -109,6 +109,9 @@ jobs:
       - name: Run integration and release contract tests
         run: python -m pytest -q
 
+      - name: Run unified cross-module integration suite
+        run: python scripts/run_integration.py test
+
       - name: Build and package installer
         working-directory: time-helper/desk
         run: npm run tauri build -- --bundles ${{ matrix.bundle }}
