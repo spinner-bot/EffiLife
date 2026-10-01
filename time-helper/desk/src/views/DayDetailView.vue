@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { DataService, hoursToHm } from '@/services/dataService'
@@ -57,6 +57,7 @@ async function loadData() {
   dayPlanName.value = planInfo.name
   dayPlanType.value = planInfo.type
   loadError.value = false
+  void revealSearchRecord()
 }
 
 async function retryLoadData(): Promise<void> {
@@ -88,6 +89,18 @@ function recordKey(record: TimeRecord, index: number): string {
 
 function isSearchHighlightedRecord(record: TimeRecord, index: number): boolean {
   return Boolean(highlightedRecordKey.value && recordKey(record, index) === highlightedRecordKey.value)
+}
+
+function recordDomId(record: TimeRecord, index: number): string {
+  return `day-record-${recordKey(record, index).replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+async function revealSearchRecord(): Promise<void> {
+  if (!highlightedRecordKey.value) return
+  const index = records.value.findIndex((record, recordIndex) => isSearchHighlightedRecord(record, recordIndex))
+  if (index < 0) return
+  await nextTick()
+  document.getElementById(recordDomId(records.value[index], index))?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 async function loadTodoReferences(): Promise<void> {
@@ -146,6 +159,10 @@ onMounted(() => {
 
 watch(dateStr, () => {
   void retryLoadData()
+})
+
+watch(highlightedRecordKey, () => {
+  void revealSearchRecord()
 })
 
 onUnmounted(() => {
@@ -209,7 +226,8 @@ onUnmounted(() => {
         <div class="records-list" v-if="!loadError && records.length > 0">
           <div
             v-for="(record, index) in records"
-            :key="index"
+            :key="recordKey(record, index)"
+            :id="recordDomId(record, index)"
             class="record-item"
             :class="{ 'record-item-highlight': isHighlightedRecord(record), 'record-search-target': isSearchHighlightedRecord(record, index) }"
           >
