@@ -62,8 +62,10 @@ def test_desktop_workflow_installs_sidecar_builder_before_tauri():
 
 def test_release_workflow_syncs_repository_version_before_contract_tests():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
-    assert "python scripts/sync_desktop_version.py" in workflow
-    assert workflow.index("python scripts/sync_desktop_version.py") < workflow.index("python -m pytest -q")
+    build_workflow = workflow.split("\n  build:", 1)[1]
+    assert "python scripts/sync_desktop_version.py" in build_workflow
+    assert build_workflow.index("python scripts/sync_desktop_version.py") < build_workflow.index("run: npm ci")
+    assert build_workflow.index("python scripts/sync_desktop_version.py") < build_workflow.index("python -m pytest -q")
 
 
 def test_release_workflow_runs_desktop_toolchain_preflight():
