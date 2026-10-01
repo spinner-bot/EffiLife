@@ -27,6 +27,12 @@ def test_home_empty_plan_action_enters_plan_helper_workspace():
     assert 'action-route="/plan"' not in HOME
 
 
+def test_home_does_not_duplicate_the_shell_branding():
+    template = HOME.split("<template>", 1)[1].split("</template>", 1)[0]
+    assert 'class="logo"' not in template
+    assert "justify-content: flex-end" in HOME
+
+
 def test_home_plan_service_failure_has_an_explicit_desktop_retry():
     assert "refreshEventPlanSummary" in HOME
     assert "home.retryEventPlans" in HOME

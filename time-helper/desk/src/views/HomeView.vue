@@ -331,7 +331,6 @@ onUnmounted(() => {
 <template>
   <div class="home-view">
     <header class="header">
-      <h1 class="logo">{{ t('home.appTitle') }}</h1>
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
         <button class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" @click="AudioManager.playSound('click'); toggleInboxPanel()">
@@ -600,16 +599,9 @@ onUnmounted(() => {
 .header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   padding: var(--spacing-md) 0;
   position: relative;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  letter-spacing: -0.02em;
 }
 
 .workflow-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 auto 20px; width: min(860px, 100%); }
