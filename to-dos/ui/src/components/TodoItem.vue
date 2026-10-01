@@ -119,6 +119,7 @@ function highlightText(text: string, query: string): string {
   >
     <!-- 复选框 -->
     <button
+      type="button"
       class="checkbox"
       :class="{ checked: isCompleted }"
       @click.stop="toggleComplete"
@@ -175,6 +176,7 @@ function highlightText(text: string, query: string): string {
 
           <!-- 操作菜单 -->
           <button
+            type="button"
             class="action-trigger"
             @click.stop="toggleActionMenu"
             aria-label="更多操作"
@@ -216,15 +218,15 @@ function highlightText(text: string, query: string): string {
     <!-- 弹出操作菜单 -->
     <Transition name="scale-fade">
       <div v-if="showActions" class="action-menu" @click.stop>
-        <button @click="emit('edit', todo.id); showActions = false" class="action-item">
+        <button type="button" @click="emit('edit', todo.id); showActions = false" class="action-item">
           <Edit3 :size="14" />
           编辑
         </button>
-        <button @click="handleArchive" class="action-item">
+        <button type="button" @click="handleArchive" class="action-item">
           <Archive :size="14" />
           归档
         </button>
-        <button @click="handleDelete" class="action-item danger">
+        <button type="button" @click="handleDelete" class="action-item danger">
           <Trash2 :size="14" />
           删除
         </button>

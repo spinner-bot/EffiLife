@@ -213,6 +213,7 @@ function isActive(id: string | null): boolean {
         <!-- 折叠收纳 -->
         <div v-if="collapsedCategories.length > 0" class="collapse-group">
           <button
+            type="button"
             class="collapse-trigger"
             @click="toggleGroup('collapsed')"
           >
@@ -245,6 +246,7 @@ function isActive(id: string | null): boolean {
         <!-- 无有效待办的分类 -->
         <div v-if="emptyCategories.length > 0" class="collapse-group">
           <button
+            type="button"
             class="collapse-trigger empty"
             @click="toggleGroup('empty')"
           >

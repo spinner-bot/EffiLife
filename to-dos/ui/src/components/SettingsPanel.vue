@@ -61,7 +61,7 @@ function handleBackdropClick(e: MouseEvent) {
             <Zap :size="18" />
             设置
           </h2>
-          <button class="close-btn" @click="emit('close')">
+    <button type="button" class="close-btn" @click="emit('close')">
             <X :size="18" />
           </button>
         </header>
@@ -75,6 +75,7 @@ function handleBackdropClick(e: MouseEvent) {
             </div>
             <div class="setting-options">
               <button
+                type="button"
                 v-for="opt in frequencyOptions"
                 :key="opt.value"
                 class="option-btn"
@@ -97,6 +98,7 @@ function handleBackdropClick(e: MouseEvent) {
             </div>
             <div class="setting-options">
               <button
+                type="button"
                 v-for="opt in expandCountOptions"
                 :key="opt.value"
                 class="option-btn"
@@ -117,7 +119,7 @@ function handleBackdropClick(e: MouseEvent) {
               <Zap :size="14" />
               <span>手动操作</span>
             </div>
-            <button class="refresh-btn" @click="store.recalculateScores()">
+          <button type="button" class="refresh-btn" @click="store.recalculateScores()">
               <RefreshCw :size="14" />
               立即刷新分数
             </button>

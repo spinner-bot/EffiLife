@@ -160,7 +160,7 @@ const warningDayOptions = [
       <!-- 头部 -->
       <header class="form-header">
         <h2 class="form-title">{{ isEditing ? '编辑待办' : '新建待办' }}</h2>
-        <button class="close-btn" @click="emit('close')" aria-label="关闭">
+    <button type="button" class="close-btn" @click="emit('close')" aria-label="关闭">
           <X :size="20" />
         </button>
       </header>

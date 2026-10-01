@@ -216,6 +216,7 @@ onUnmounted(() => {
         <div class="top-actions">
           <!-- 深色模式切换 -->
           <button
+            type="button"
             class="icon-btn"
             @click="cycleDarkMode"
             :title="`主题: ${darkModeLabel} (Ctrl+D)`"
@@ -225,6 +226,7 @@ onUnmounted(() => {
 
           <!-- v0.5.0: 设置 -->
           <button
+            type="button"
             class="icon-btn"
             @click="showSettings = !showSettings"
             title="设置 (Ctrl+,)"
@@ -234,6 +236,7 @@ onUnmounted(() => {
 
           <!-- 导出 -->
           <button
+            type="button"
             class="icon-btn"
             @click="handleExport"
             title="导出 JSON (Ctrl+E)"
@@ -243,6 +246,7 @@ onUnmounted(() => {
 
           <!-- 导入 -->
           <button
+            type="button"
             class="icon-btn"
             @click="showImportModal = true"
             title="导入 JSON (Ctrl+I)"
@@ -251,7 +255,7 @@ onUnmounted(() => {
           </button>
 
           <!-- 新建按钮 -->
-          <button class="add-btn" @click="openAddForm">
+          <button type="button" class="add-btn" @click="openAddForm">
             <Plus :size="18" />
             <span>新建待办</span>
             <kbd>N</kbd>
@@ -267,15 +271,15 @@ onUnmounted(() => {
             <span>已选择 <strong>{{ store.selectedIds.size }}</strong> 项</span>
           </div>
           <div class="batch-actions">
-            <button class="batch-btn" @click="handleBatchComplete">
+            <button type="button" class="batch-btn" @click="handleBatchComplete">
               <CheckCircle :size="14" />
               完成
             </button>
-            <button class="batch-btn danger" @click="handleBatchDelete">
+            <button type="button" class="batch-btn danger" @click="handleBatchDelete">
               <Trash2 :size="14" />
               删除
             </button>
-            <button class="batch-btn" @click="store.clearSelection">
+            <button type="button" class="batch-btn" @click="store.clearSelection">
               <X :size="14" />
               取消
             </button>
@@ -303,7 +307,7 @@ onUnmounted(() => {
         <div class="import-modal">
           <header class="import-header">
             <h3>导入数据</h3>
-            <button class="close-btn" @click="showImportModal = false">
+            <button type="button" class="close-btn" @click="showImportModal = false">
               <X :size="18" />
             </button>
           </header>
@@ -327,8 +331,8 @@ onUnmounted(() => {
             </p>
           </div>
           <footer class="import-footer">
-            <button class="btn-secondary" @click="showImportModal = false">取消</button>
-            <button class="btn-primary" @click="handleImport" :disabled="!importText.trim()">
+            <button type="button" class="btn-secondary" @click="showImportModal = false">取消</button>
+            <button type="button" class="btn-primary" @click="handleImport" :disabled="!importText.trim()">
               导入
             </button>
           </footer>

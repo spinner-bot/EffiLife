@@ -86,6 +86,7 @@ const currentSortLabel = computed(() => {
 
         <!-- 优先级筛选 -->
         <button
+          type="button"
           v-for="opt in priorityOptions"
           :key="opt.value"
           class="filter-chip"
@@ -100,6 +101,7 @@ const currentSortLabel = computed(() => {
 
         <!-- 状态筛选 -->
         <button
+          type="button"
           v-for="opt in statusOptions"
           :key="opt.value"
           class="filter-chip"
@@ -117,6 +119,7 @@ const currentSortLabel = computed(() => {
           标签
         </span>
         <button
+          type="button"
           v-for="tag in store.allTags"
           :key="tag"
           class="filter-chip tag-chip"
@@ -138,6 +141,7 @@ const currentSortLabel = computed(() => {
         </button>
         <div class="sort-menu">
           <button
+            type="button"
             v-for="opt in sortOptions"
             :key="opt.value"
             class="sort-item"
@@ -150,7 +154,7 @@ const currentSortLabel = computed(() => {
       </div>
 
       <!-- 清除筛选 -->
-      <button v-if="hasFilters" class="clear-btn" @click="clearAll">
+          <button v-if="hasFilters" type="button" class="clear-btn" @click="clearAll">
         <X :size="14" />
         清除{{ activeFilterCount }}
       </button>

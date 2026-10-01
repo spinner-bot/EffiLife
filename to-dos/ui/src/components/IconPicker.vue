@@ -170,6 +170,7 @@ const tabs = [
     <!-- 标签页 -->
     <div class="picker-tabs">
       <button
+        type="button"
         v-for="tab in tabs"
         :key="tab.key"
         class="tab-btn"
@@ -190,6 +191,7 @@ const tabs = [
       />
       <div class="icon-grid">
         <button
+          type="button"
           v-for="icon in filteredIcons"
           :key="icon.name"
           class="icon-btn"
@@ -206,6 +208,7 @@ const tabs = [
     <div v-if="activeTab === 'ascii'" class="picker-content">
       <div class="ascii-grid">
         <button
+          type="button"
           v-for="char in ASCII_ICONS"
           :key="char"
           class="ascii-btn"
@@ -221,6 +224,7 @@ const tabs = [
     <div v-if="activeTab === 'colors'" class="picker-content">
       <div class="color-grid">
         <button
+          type="button"
           v-for="color in PRESET_COLORS"
           :key="color"
           class="color-btn"
