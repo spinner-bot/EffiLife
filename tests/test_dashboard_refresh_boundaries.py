@@ -22,7 +22,12 @@ def test_home_cross_window_summary_refresh_has_error_boundary():
 
 
 def test_day_detail_initial_load_has_error_boundary():
-    assert "void loadData().catch((error) =>" in DAY
+    assert "void retryLoadData()" in DAY
     assert "Failed to load day detail:" in DAY
     assert "notifyToast(t('dayDetail.loadFailed'), 'error')" in DAY
     assert I18N.count("'dayDetail.loadFailed':") == 2
+    assert "const loadError = ref(false)" in DAY
+    assert "async function retryLoadData(): Promise<void>" in DAY
+    assert 'class="load-error" role="status" aria-live="polite"' in DAY
+    assert "@click=\"retryLoadData\"" in DAY
+    assert I18N.count("'dayDetail.retry':") == 2

@@ -23,6 +23,7 @@ const plans = computed(() => appStore.plans)
 
 const stat = ref<RealTimeStat | null>(null)
 const records = ref<TimeRecord[]>([])
+const loadError = ref(false)
 const dayPlanName = ref('')
 const dayPlanType = ref('')
 
@@ -45,6 +46,17 @@ async function loadData() {
   const planInfo = await DataService.getDayPlan(day)
   dayPlanName.value = planInfo.name
   dayPlanType.value = planInfo.type
+  loadError.value = false
+}
+
+async function retryLoadData(): Promise<void> {
+  try {
+    await loadData()
+  } catch (error) {
+    loadError.value = true
+    console.warn('Failed to load day detail:', error)
+    notifyToast(t('dayDetail.loadFailed'), 'error')
+  }
 }
 
 // 完成度颜色
@@ -98,10 +110,7 @@ async function selectPlan(planName: string) {
 }
 
 onMounted(() => {
-  void loadData().catch((error) => {
-    console.warn('Failed to load day detail:', error)
-    notifyToast(t('dayDetail.loadFailed'), 'error')
-  })
+  void retryLoadData()
 })
 </script>
 
@@ -116,6 +125,10 @@ onMounted(() => {
     </header>
 
     <main class="main-content">
+      <section v-if="loadError" class="load-error" role="status" aria-live="polite">
+        <strong>{{ t('dayDetail.loadFailed') }}</strong>
+        <button type="button" @click="retryLoadData">{{ t('dayDetail.retry') }}</button>
+      </section>
       <!-- 计划信息 -->
       <section class="info-card">
         <div class="info-header">
@@ -154,7 +167,7 @@ onMounted(() => {
       <!-- 记录列表 -->
       <section class="records-section">
         <h2>{{ t('dayDetail.records') }}</h2>
-        <div class="records-list" v-if="records.length > 0">
+        <div class="records-list" v-if="!loadError && records.length > 0">
           <div
             v-for="(record, index) in records"
             :key="index"
@@ -173,7 +186,7 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        <div class="empty-state" v-else>
+        <div class="empty-state" v-else-if="!loadError">
           <p>{{ t('dayDetail.empty') }}</p>
         </div>
       </section>
@@ -458,6 +471,10 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
+
+.load-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: var(--radius-md); color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 13px; }
+.load-error button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 10px; color: var(--color-primary); background: var(--color-bg); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
+.load-error button:hover, .load-error button:focus-visible { border-color: var(--color-primary); outline: 0; }
 
 /* 弹窗样式 */
 .modal-overlay {
