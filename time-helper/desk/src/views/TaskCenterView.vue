@@ -666,6 +666,17 @@ async function openTodoRecords(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
+function openLinkedPlan(todo: UnifiedTodo): void {
+  if (!todo.related_plan_id) return
+  router.push({
+    path: '/plans',
+    query: {
+      plan: todo.related_plan_id,
+      ...(todo.related_plan_task_id ? { task: todo.related_plan_task_id } : {}),
+    },
+  })
+}
+
 const focusElapsedLabel = computed(() => {
   const minutes = Math.floor(focusElapsedSeconds.value / 60)
   const seconds = focusElapsedSeconds.value % 60
@@ -1044,6 +1055,15 @@ watch(() => route.query.todo, () => {
               <span>{{ todoCategoryLabel(todo.category) }}</span>
             </span>
             <span v-for="tag in todo.tags" :key="tag" class="task-tag">#{{ tag }}</span>
+            <button
+              v-if="todo.related_plan_id"
+              type="button"
+              class="task-plan-link"
+              :aria-label="t('tasks.openLinkedPlan')"
+              @click="openLinkedPlan(todo)"
+            >
+              {{ t('tasks.planTask') }} · {{ todo.related_plan_task_id || todo.related_plan_id }}
+            </button>
             <span v-if="todo.time_spent" class="task-time-spent">{{ t('tasks.timeSpent') }} {{ todo.time_spent }} {{ t('tasks.minutesShort') }}</span>
             <button v-if="todo.related_time_record_ids?.length" type="button" class="task-record-link" @click="openTodoRecords(todo)">
               {{ t('tasks.viewTimeRecords') }} ({{ todo.related_time_record_ids.length }})
@@ -1185,6 +1205,8 @@ watch(() => route.query.todo, () => {
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
 .task-tag { display: inline-block; margin: 7px 0 0 6px; border-radius: 999px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
+.task-plan-link { display: inline-flex; align-items: center; margin: 7px 0 0 6px; border: 1px solid var(--color-border); border-radius: 999px; padding: 2px 7px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; }
+.task-plan-link:hover, .task-plan-link:focus-visible { border-color: var(--color-primary); outline: 0; }
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-record-link { display: inline-block; margin: 7px 0 0 10px; border: 0; padding: 0; color: var(--color-primary); background: transparent; cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 .task-deadline { display: inline-block; margin-top: 7px; color: var(--color-text-tertiary); font-size: 12px; }
