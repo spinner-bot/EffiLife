@@ -90,6 +90,22 @@ def test_theme_save_has_no_background_refresh_race_or_timer():
     assert "queueThemeSave" not in source
 
 
+def test_theme_save_ignores_its_own_workspace_refresh_event():
+    source = SETTINGS.read_text(encoding="utf-8")
+    listener = source.split("const stopWorkspaceListener", 1)[1].split("function buildDraftTheme", 1)[0]
+    save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
+    assert "if (savingTheme.value) return" in listener
+    assert "savingTheme.value = true" in save_block
+    assert "savingTheme.value = false" in save_block
+    assert "finally" in save_block
+
+
+def test_theme_draft_preserves_rich_theme_fields_not_edited_by_basic_controls():
+    source = SETTINGS.read_text(encoding="utf-8")
+    draft_block = source.split("function buildDraftTheme", 1)[1].split("const themeDirty", 1)[0]
+    assert "...config.value.theme" in draft_block
+
+
 def test_theme_exit_builds_persistence_payload_from_detached_draft():
     source = SETTINGS.read_text(encoding="utf-8")
     save_block = source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]

@@ -218,6 +218,11 @@ function cloneTheme(theme: Config['theme']): Config['theme'] {
 }
 
 const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
+// A successful local save already makes Pinia the newest source of truth.
+// Ignore the matching workspace event while that save is in flight; otherwise
+// the refresh listener can read an older cross-window snapshot and briefly
+// overwrite the just-confirmed theme while the settings view is leaving.
+const savingTheme = ref(false)
 
 function syncThemeDraft(theme: Config['theme']) {
   themeType.value = theme.type || 'solid'
@@ -229,6 +234,7 @@ function syncThemeDraft(theme: Config['theme']) {
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source !== 'settings' && source !== 'archive') return
+  if (savingTheme.value) return
   const hadLocalDraft = themeDirty.value
   // The workspace event is emitted before other windows finish rehydrating
   // IndexedDB. Reload here as well so the dirty marker never snapshots the
@@ -253,6 +259,9 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
 
 function buildDraftTheme(): Config['theme'] {
   return {
+    // Keep rich-theme/custom fields that are not edited by this panel. The
+    // editor must not turn a valid theme into a partial object on save.
+    ...config.value.theme,
     type: themeType.value,
     solid: { ...solidConfig.value },
     gradient: { ...gradientConfig.value },
@@ -297,6 +306,7 @@ async function saveTheme(): Promise<boolean> {
     ...config.value,
     theme: draftTheme,
   }
+  savingTheme.value = true
   try {
     await appStore.saveConfig(newConfig)
     // saveConfig resolves only after IndexedDB/localStorage have accepted the
@@ -312,6 +322,8 @@ async function saveTheme(): Promise<boolean> {
     console.error('Failed to save theme settings:', error)
     notifyToast(t('settings.saveFailed'), 'error')
     return false
+  } finally {
+    savingTheme.value = false
   }
 }
 
