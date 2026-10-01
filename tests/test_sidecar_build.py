@@ -37,6 +37,37 @@ def test_sidecar_builder_rejects_empty_runtime_artifacts(tmp_path):
     assert builder.is_non_empty_file(non_empty) is True
 
 
+def test_sidecar_install_replaces_atomically(tmp_path):
+    builder = load_builder()
+    generated = tmp_path / "generated.exe"
+    destination = tmp_path / "binaries" / "efflife-plan-helper.exe"
+    generated.write_bytes(b"new sidecar")
+
+    builder.install_sidecar(generated, destination)
+
+    assert destination.read_bytes() == b"new sidecar"
+    assert not list(destination.parent.glob("*.tmp"))
+
+
+def test_sidecar_install_reports_locked_destination(monkeypatch, tmp_path):
+    builder = load_builder()
+    generated = tmp_path / "generated.exe"
+    destination = tmp_path / "binaries" / "efflife-plan-helper.exe"
+    generated.write_bytes(b"new sidecar")
+
+    def locked_replace(_source, _target):
+        raise PermissionError("locked")
+
+    monkeypatch.setattr(builder.os, "replace", locked_replace)
+
+    try:
+        builder.install_sidecar(generated, destination)
+    except RuntimeError as error:
+        assert "close the running EffiLife or Plan Helper process" in str(error)
+    else:
+        raise AssertionError("locked sidecar destination should be actionable")
+
+
 def test_tauri_release_declares_sidecar_and_build_hook():
     config = json.loads(
         (ROOT / "time-helper/desk/src-tauri/tauri.conf.json").read_text(encoding="utf-8")
