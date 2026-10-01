@@ -8,7 +8,7 @@ SOURCE = (ROOT / "time-helper" / "desk" / "src" / "views" / "RecordsView.vue").r
 
 
 def test_records_view_reacts_to_reused_todo_deep_links():
-    assert "import { ref, computed, onMounted, onUnmounted, watch } from 'vue'" in SOURCE
+    assert "import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'" in SOURCE
     assert "function preselectLinkedTodo(): void" in SOURCE
     assert "watch(linkedTodoFromQuery" in SOURCE
     assert "preselectLinkedTodo()" in SOURCE

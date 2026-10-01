@@ -14,3 +14,12 @@ def test_record_modal_uses_native_submit_and_explicit_button_types():
     assert '<button type="button"' in modal_form
     assert '@click="saveRecord"' not in modal_form
     assert ".modal-form" in VIEW
+
+
+def test_record_modal_has_focusable_dialog_semantics_and_focus_return():
+    assert 'role="dialog" aria-modal="true" aria-labelledby="record-modal-title"' in VIEW
+    assert 'id="record-modal-title"' in VIEW
+    assert 'recordReturnFocus' in VIEW
+    assert 'recordModal.value?.querySelector<HTMLElement>' in VIEW
+    assert 'function onRecordModalKeydown' in VIEW
+    assert '@click.self="closeForm"' in VIEW

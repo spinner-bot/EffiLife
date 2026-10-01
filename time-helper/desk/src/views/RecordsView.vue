@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
@@ -76,6 +76,8 @@ const isEditing = ref(false)
 const editingIndex = ref(-1)
 const showForm = ref(false)
 const isSaving = ref(false)
+const recordModal = ref<HTMLElement | null>(null)
+const recordReturnFocus = ref<HTMLElement | null>(null)
 const historyDate = ref(getTodayDate())
 
 function openHistoryDate() {
@@ -113,9 +115,11 @@ function resetForm() {
 
 // 打开新增表单
 function openAddForm() {
+  recordReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   resetForm()
   formTag.value = availableTags.value[0] || ''
   showForm.value = true
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
 
 // 打开编辑表单
@@ -123,6 +127,7 @@ function openEditForm(index: number) {
   const record = records.value[index]
   if (!record) return
 
+  recordReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   const [sh, sm] = record.start.split(':')
   const [eh, em] = record.end.split(':')
 
@@ -134,6 +139,38 @@ function openEditForm(index: number) {
   isEditing.value = true
   editingIndex.value = index
   showForm.value = true
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
+}
+
+function closeForm() {
+  showForm.value = false
+  const returnTarget = recordReturnFocus.value
+  recordReturnFocus.value = null
+  void nextTick(() => {
+    if (returnTarget?.isConnected) returnTarget.focus()
+  })
+}
+
+function onRecordModalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeForm()
+    return
+  }
+  if (event.key !== 'Tab' || !recordModal.value) return
+  const focusable = Array.from(recordModal.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 // 检查时间冲突
@@ -331,7 +368,7 @@ async function saveRecordInternal() {
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
 
-  showForm.value = false
+  closeForm()
   resetForm()
 }
 
@@ -436,12 +473,12 @@ onUnmounted(() => {
     </main>
 
     <!-- 表单弹窗 -->
-    <div class="modal-overlay" v-if="showForm" @click.self="showForm = false">
-      <div class="modal" @keydown.esc="showForm = false">
+    <div class="modal-overlay" v-if="showForm" @click.self="closeForm">
+      <div ref="recordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="record-modal-title" @keydown="onRecordModalKeydown">
         <form class="modal-form" @submit.prevent="saveRecord">
         <div class="modal-header">
-          <h2>{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
-          <button type="button" class="close-btn" :aria-label="t('search.close')" @click="showForm = false">
+          <h2 id="record-modal-title">{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
+          <button type="button" class="close-btn" :aria-label="t('search.close')" @click="closeForm">
             <X :size="20" />
           </button>
         </div>
@@ -541,7 +578,7 @@ onUnmounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn secondary" @click="showForm = false">{{ t('records.cancel') }}</button>
+          <button type="button" class="btn secondary" @click="closeForm">{{ t('records.cancel') }}</button>
           <button type="submit" class="btn primary" :disabled="isSaving">
             <Check :size="16" />
             <span>{{ t('records.save') }}</span>
