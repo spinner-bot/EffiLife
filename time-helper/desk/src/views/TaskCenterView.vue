@@ -1030,14 +1030,14 @@ watch(() => route.query.todo, () => {
         </div>
       </section>
 
-      <section v-if="isLoading" class="task-empty theme-card">{{ t('tasks.loading') }}</section>
-      <section v-else-if="dataUnavailable" class="task-empty task-unavailable theme-card" role="status" aria-live="polite">
+      <section v-if="isLoading" class="task-empty task-result-state theme-card">{{ t('tasks.loading') }}</section>
+      <section v-else-if="dataUnavailable" class="task-empty task-result-state task-unavailable theme-card" role="status" aria-live="polite">
         <ListTodo :size="34" />
         <strong>{{ t('tasks.unavailable') }}</strong>
         <span>{{ t('tasks.unavailableHint') }}</span>
         <button type="button" class="task-retry" @click="loadTodos">{{ t('tasks.retry') }}</button>
       </section>
-      <section v-else-if="visibleTodos.length === 0" class="task-empty theme-card">
+      <section v-else-if="visibleTodos.length === 0" class="task-empty task-result-state theme-card">
         <ListTodo :size="34" />
         <strong>{{ taskEmptyTitle }}</strong>
         <span>{{ t('tasks.emptyHint') }}</span>
@@ -1296,6 +1296,12 @@ watch(() => route.query.todo, () => {
 .category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 @media (min-width: 1100px) {
   .task-header, .task-content { max-width: 1180px; }
+  .task-content { display: grid; grid-template-columns: minmax(270px, .36fr) minmax(0, 1fr); align-items: start; gap: 0 24px; }
+  .task-create, .task-toolbar, .task-category-nav, .category-manager { grid-column: 1; }
+  .task-list, .task-result-state { grid-column: 2; grid-row: 1 / span 4; min-width: 0; }
+  .task-toolbar { padding-top: 0; }
+  .task-search-input { min-width: 0; flex-basis: 100%; }
+  .task-bulk-actions { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
 @media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-create-advanced[open] { grid-template-columns: 1fr; } .task-create-advanced[open] .task-description-label { padding-top: 0; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } .task-item-actions { flex-basis: 100%; justify-content: flex-end; margin-left: 36px; } .category-row { flex-wrap: wrap; } .category-row strong { min-width: 0; flex: 1 1 auto; } .category-row small { order: 5; flex: 1 1 100%; margin-right: 0; } }

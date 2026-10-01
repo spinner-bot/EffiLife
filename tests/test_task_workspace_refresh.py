@@ -23,5 +23,5 @@ def test_task_center_does_not_render_storage_failure_as_an_empty_list():
     source = TASKS.read_text(encoding="utf-8")
     assert "const dataUnavailable = ref(false)" in source
     assert "dataUnavailable.value = true" in source
-    assert 'class="task-empty task-unavailable theme-card" role="status" aria-live="polite"' in source
+    assert 'class="task-empty task-result-state task-unavailable theme-card" role="status" aria-live="polite"' in source
     assert "@click=\"loadTodos\"" in source
