@@ -689,6 +689,17 @@ def print_doctor_report(report):
         "stale (version mismatch)" if installers_stale else "not found (binary-only or source checkout)"
     )
     print(f"Native installer: {installer_state}")
+    stale_details = [
+        item for item in installer_status
+        if item.get("exists") and item.get("non_empty") and not item.get("version_matches", True)
+    ]
+    for item in stale_details:
+        artifact_version = item.get("artifact_version") or "unknown"
+        artifact_path = item.get("path") or "unknown path"
+        print(
+            "Stale installer detail: "
+            f"{artifact_path} (artifact {artifact_version}, current {report.get('version') or 'unknown'})"
+        )
     print()
 
     workspace = report.get("modules", {}).get("1", {})
