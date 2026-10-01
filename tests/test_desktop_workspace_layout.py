@@ -13,6 +13,11 @@ def test_home_uses_wide_desktop_console_layout():
     assert "grid-template-columns: minmax(150px, 190px) minmax(0, 1fr)" in HOME
 
 
+def test_home_inbox_panel_stays_inside_narrow_mobile_viewports():
+    assert "width: min(360px, calc(100vw - 32px));" in HOME
+    assert "max-width: calc(100vw - 32px);" in HOME
+
+
 def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 681px) and (max-width: 820px)" in app
