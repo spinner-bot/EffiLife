@@ -111,6 +111,7 @@ function openLinkedTodo(todoId?: string) {
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source === 'todos' || source === 'archive') void loadTodoReferences()
+  if (source === 'network') void retryLoadData()
 })
 
 // 删除记录
