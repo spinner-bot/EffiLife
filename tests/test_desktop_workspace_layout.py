@@ -48,6 +48,16 @@ def test_time_workspace_has_a_wide_screen_content_budget():
     assert "max-width: 1180px" in TIME
 
 
+def test_time_workspace_header_wraps_tabs_before_mobile_controls_overflow():
+    assert ".pv-header {" in TIME
+    header = TIME.split(".pv-header {", 1)[1].split("}", 1)[0]
+    assert "flex-wrap: wrap" in header
+    tabs = TIME.split(".pv-tabs {", 1)[1].split("}", 1)[0]
+    assert "min-width: 0" in tabs
+    mobile = TIME.split("@media (max-width: 680px)", 1)[1]
+    assert ".pv-tabs { flex-basis: 100%; order: 3; width: 100%; }" in mobile
+
+
 def test_settings_uses_two_column_desktop_navigation():
     assert "@media (min-width: 900px)" in SETTINGS
     assert "max-width: 920px" in SETTINGS

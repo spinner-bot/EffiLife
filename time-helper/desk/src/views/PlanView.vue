@@ -951,6 +951,7 @@ onMounted(() => {
 /* ============ Header ============ */
 .pv-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
@@ -980,6 +981,7 @@ onMounted(() => {
 
 .pv-tabs {
   flex: 1;
+  min-width: 0;
   display: flex;
   position: relative;
   background: var(--color-bg-secondary);
@@ -1029,7 +1031,9 @@ onMounted(() => {
 
 .pv-header-actions {
   display: flex;
+  flex: 0 0 auto;
   gap: var(--spacing-sm);
+  margin-left: auto;
 }
 
 .pv-add-btn {
@@ -1072,6 +1076,12 @@ onMounted(() => {
   .pv-plan-hero {
     max-width: 980px;
   }
+}
+
+@media (max-width: 680px) {
+  .pv-header { padding: var(--spacing-sm) var(--spacing-md); }
+  .pv-tabs { flex-basis: 100%; order: 3; width: 100%; }
+  .pv-header-actions { margin-left: auto; }
 }
 
 .pv-panel {
