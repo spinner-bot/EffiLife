@@ -44,6 +44,7 @@ function handleClick() {
       {{ actionText }}
     </router-link>
     <button
+      type="button"
       v-else-if="actionText"
       class="empty-action-btn"
       @click="handleClick"
