@@ -29,10 +29,18 @@ def test_theme_cards_expose_visual_previews_and_selection_semantics():
 def test_theme_save_refreshes_persistent_snapshot_without_a_save_button():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "await appStore.saveConfig(newConfig)" in source
-    assert "await appStore.refreshWorkspaceData()" in source
-    assert "const persistedTheme = cloneTheme(appStore.config.theme)" in source
-    assert "savedThemeSnapshot.value = persistedTheme" in source
+    save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
+    assert "savedThemeSnapshot.value = draftTheme" in save_block
+    assert "syncThemeDraft(draftTheme)" in save_block
+    assert "await appStore.refreshWorkspaceData()" not in save_block
     assert '@click="saveTheme"' not in source
+
+
+def test_theme_save_marks_draft_clean_before_exit_can_complete():
+    source = SETTINGS.read_text(encoding="utf-8")
+    save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
+    assert save_block.index("await appStore.saveConfig(newConfig)") < save_block.index("savedThemeSnapshot.value = draftTheme")
+    assert save_block.index("savedThemeSnapshot.value = draftTheme") < save_block.index("notifyToast(t('settings.saved'), 'success')")
 
 
 def test_theme_preview_status_explains_confirmed_exit_save_in_both_locales():
@@ -48,7 +56,7 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "notifyToast(t('settings.saved'), 'success')" in source
     assert "notifyToast(t('settings.saveFailed'), 'error')" in source
-    assert "savedThemeSnapshot.value = persistedTheme" in source
+    assert "savedThemeSnapshot.value = draftTheme" in source
 
 
 def test_theme_editor_owns_detached_draft_objects():

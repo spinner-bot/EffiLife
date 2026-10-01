@@ -299,13 +299,13 @@ async function saveTheme(): Promise<boolean> {
   }
   try {
     await appStore.saveConfig(newConfig)
-    // Confirm the value that is actually in the durable workspace before
-    // allowing navigation to finish. This closes the race with the global
-    // visibility/workspace refresh listeners.
-    await appStore.refreshWorkspaceData()
-    const persistedTheme = cloneTheme(appStore.config.theme)
-    savedThemeSnapshot.value = persistedTheme
-    syncThemeDraft(persistedTheme)
+    // saveConfig resolves only after IndexedDB/localStorage have accepted the
+    // write. Mark the exact detached draft as clean immediately. Waiting for a
+    // second workspace refresh here creates a race: the refresh listener can
+    // briefly rehydrate the old snapshot while the settings view is leaving,
+    // making a successfully saved theme appear to revert.
+    savedThemeSnapshot.value = draftTheme
+    syncThemeDraft(draftTheme)
     notifyToast(t('settings.saved'), 'success')
     return true
   } catch (error) {
