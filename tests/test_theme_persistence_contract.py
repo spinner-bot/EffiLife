@@ -40,6 +40,19 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     assert "savedThemeSnapshot.value = cloneTheme(newConfig.theme)" in source
 
 
+def test_theme_editor_owns_detached_draft_objects():
+    source = SETTINGS.read_text(encoding="utf-8")
+
+    assert "const solidConfig = ref<SolidThemeConfig>(config.value.theme.solid ? { ...config.value.theme.solid }" in source
+    assert "const gradientConfig = ref<GradientThemeConfig>(config.value.theme.gradient ? { ...config.value.theme.gradient }" in source
+    assert "const glassConfig = ref<GlassThemeConfig>(config.value.theme.glass ? { ...config.value.theme.glass }" in source
+    assert "const neonConfig = ref<NeonThemeConfig>(config.value.theme.neon ? { ...config.value.theme.neon }" in source
+    assert "solid: { ...solidConfig.value }" in source
+    assert "gradient: { ...gradientConfig.value }" in source
+    assert "glass: { ...glassConfig.value }" in source
+    assert "neon: { ...neonConfig.value }" in source
+
+
 def test_theme_snapshot_tracks_external_settings_and_archive_changes():
     source = SETTINGS.read_text(encoding="utf-8")
 

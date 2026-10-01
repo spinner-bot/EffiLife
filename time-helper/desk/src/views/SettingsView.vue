@@ -173,14 +173,17 @@ function subThreshold() {
 // ============ 主题设置 ============
 const themeType = ref<ThemeType>(config.value.theme.type || 'solid')
 
-const solidConfig = ref<SolidThemeConfig>(config.value.theme.solid || {
+// Keep the editor draft detached from Pinia. Otherwise v-model can mutate the
+// persisted configuration object before the user leaves the theme panel, which
+// makes preview, dirty detection, and exit persistence observe different state.
+const solidConfig = ref<SolidThemeConfig>(config.value.theme.solid ? { ...config.value.theme.solid } : {
   bg_window: '#f0f0f0',
   bg_button: '#e0e0e0',
   fg_button: '#000000',
   bg_frame: '#d9d9d9'
 })
 
-const gradientConfig = ref<GradientThemeConfig>(config.value.theme.gradient || {
+const gradientConfig = ref<GradientThemeConfig>(config.value.theme.gradient ? { ...config.value.theme.gradient } : {
   color_start: '#667eea',
   color_end: '#764ba2',
   direction: 'to-br',
@@ -188,7 +191,7 @@ const gradientConfig = ref<GradientThemeConfig>(config.value.theme.gradient || {
   card_bg: 'rgba(255, 255, 255, 0.15)'
 })
 
-const glassConfig = ref<GlassThemeConfig>(config.value.theme.glass || {
+const glassConfig = ref<GlassThemeConfig>(config.value.theme.glass ? { ...config.value.theme.glass } : {
   bg_color: '#1a1a2e',
   glass_opacity: 0.1,
   blur_amount: 10,
@@ -196,7 +199,7 @@ const glassConfig = ref<GlassThemeConfig>(config.value.theme.glass || {
   border_color: 'rgba(255, 255, 255, 0.2)'
 })
 
-const neonConfig = ref<NeonThemeConfig>(config.value.theme.neon || {
+const neonConfig = ref<NeonThemeConfig>(config.value.theme.neon ? { ...config.value.theme.neon } : {
   bg_color: '#0a0a0f',
   neon_color: '#00ff88',
   glow_intensity: 10,
@@ -238,10 +241,10 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
 function buildDraftTheme(): Config['theme'] {
   return {
     type: themeType.value,
-    solid: solidConfig.value,
-    gradient: gradientConfig.value,
-    glass: glassConfig.value,
-    neon: neonConfig.value,
+    solid: { ...solidConfig.value },
+    gradient: { ...gradientConfig.value },
+    glass: { ...glassConfig.value },
+    neon: { ...neonConfig.value },
   }
 }
 
