@@ -71,6 +71,20 @@ def test_selectable_tech_theme_has_a_theme_engine_preset():
     assert "tech: () => ({" in engine
 
 
+def test_every_rich_theme_selection_has_an_engine_preset():
+    import re
+
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    registry = engine.split("export function getAvailableThemes(): ThemeDefinition[]", 1)[1]
+    types = set(re.findall(r"\{ type: '([^']+)'", registry))
+    basic_types = {"solid", "gradient", "glass", "neon"}
+    preset_source = engine.split("const themePresets", 1)[1].split("// 辅助函数", 1)[0]
+    preset_types = set(re.findall(r"^\s{2}([A-Za-z0-9_]+): \(\) =>", preset_source, re.MULTILINE))
+
+    assert types - basic_types
+    assert types - basic_types <= preset_types
+
+
 def test_settings_uses_theme_engine_registry():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "getAvailableThemes" in source
