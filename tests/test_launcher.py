@@ -588,6 +588,29 @@ def test_launcher_stops_unhealthy_main_service_instead_of_waiting_forever(monkey
     assert waited == []
 
 
+def test_launcher_propagates_child_exit_code(monkeypatch):
+    class FinishedProcess:
+        stdout = None
+        returncode = 7
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self):
+            return self.returncode
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: FinishedProcess())
+    monkeypatch.setattr(launcher, "stream_output", lambda _process: None)
+
+    result = launcher.run_module(
+        "test",
+        {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": None, "setup": None}},
+        open_browser=False,
+    )
+
+    assert result == 7
+
+
 def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkeypatch):
     terminated = []
     opened = []

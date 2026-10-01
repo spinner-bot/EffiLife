@@ -917,6 +917,7 @@ def run_module(choice, modules, open_browser=True):
         process.wait()
         record_launcher_event("module_exit", module=module.get("name"), returncode=process.returncode)
         output_thread.join(timeout=2)
+        return process.returncode or 0
 
     except KeyboardInterrupt:
         print("\n已停止")
@@ -1157,7 +1158,9 @@ def main():
             raise SystemExit(1)
         return
     if "--unified" in sys.argv or "--legacy-menu" not in sys.argv:
-        run_module("1", modules, open_browser="--no-browser" not in sys.argv)
+        result = run_module("1", modules, open_browser="--no-browser" not in sys.argv)
+        if result:
+            raise SystemExit(result)
         return
     while True:
         show_menu(modules)
