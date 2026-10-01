@@ -976,6 +976,11 @@ onUnmounted(() => {
 @media (min-width: 1100px) {
   .main-content { max-width: 1180px; }
   .records-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .record-item { display: grid; grid-template-columns: minmax(150px, .52fr) minmax(0, 1fr) auto; align-items: center; gap: 6px 14px; }
+  .record-info { grid-column: 1; grid-row: 1 / span 2; margin-bottom: 0; align-self: start; }
+  .record-content { grid-column: 2; grid-row: 1; min-width: 0; margin-bottom: 0; }
+  .record-todo-link { grid-column: 2; grid-row: 2; min-width: 0; margin-bottom: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .record-actions { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
 }
 
 @keyframes fadeIn {

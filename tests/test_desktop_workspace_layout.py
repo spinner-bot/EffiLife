@@ -160,6 +160,8 @@ def test_core_workspaces_expand_beyond_mobile_card_width_on_desktop():
 def test_records_view_activates_grid_before_declaring_desktop_columns():
     records = (VIEWS / "RecordsView.vue").read_text(encoding="utf-8")
     assert ".records-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }" in records
+    assert ".record-item { display: grid; grid-template-columns: minmax(150px, .52fr) minmax(0, 1fr) auto;" in records
+    assert ".record-actions { grid-column: 3; grid-row: 1 / span 2; align-self: center; }" in records
 
 
 def test_records_form_prevents_mobile_input_overflow():
