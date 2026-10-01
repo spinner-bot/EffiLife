@@ -362,14 +362,14 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined" aria-keyshortcuts="Alt+1">
             <Home :size="16" /> <span>{{ t('nav.home') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 1</kbd>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined" aria-keyshortcuts="Alt+2">
-            <ClipboardList :size="16" /> <span>{{ t('nav.plans') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 2</kbd>
+          <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :title="t('plans.moduleDescription')" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined" aria-keyshortcuts="Alt+2">
+            <ClipboardList :size="16" /> <span class="global-nav-module-code" aria-hidden="true">PH</span><span>{{ t('nav.plans') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 2</kbd>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined" aria-keyshortcuts="Alt+3">
-            <Clock3 :size="16" /> <span>{{ t('nav.time') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 3</kbd>
+          <RouterLink class="global-nav-link" data-guide="time" to="/time" :title="t('home.timeModuleSummary')" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined" aria-keyshortcuts="Alt+3">
+            <Clock3 :size="16" /> <span class="global-nav-module-code" aria-hidden="true">TH</span><span>{{ t('nav.time') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 3</kbd>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined" aria-keyshortcuts="Alt+4">
-            <ListTodo :size="16" /> <span>{{ t('nav.tasks') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 4</kbd>
+          <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :title="t('tasks.moduleDescription')" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined" aria-keyshortcuts="Alt+4">
+            <ListTodo :size="16" /> <span class="global-nav-module-code" aria-hidden="true">TD</span><span>{{ t('nav.tasks') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 4</kbd>
           </RouterLink>
           <RouterLink class="global-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined" aria-keyshortcuts="Alt+5">
             <History :size="16" /> <span>{{ t('nav.records') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 5</kbd>
@@ -386,13 +386,13 @@ watch(() => appStore.todayStat, () => {
         <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined">
           <Home :size="19" /> <span>{{ t('nav.home') }}</span>
         </RouterLink>
-          <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
+          <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :title="t('plans.moduleDescription')" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
             <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
           </RouterLink>
-          <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
+          <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :title="t('home.timeModuleSummary')" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
             <Clock3 :size="19" /> <span>{{ t('nav.time') }}</span>
           </RouterLink>
-          <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
+          <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :title="t('tasks.moduleDescription')" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
             <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
           </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
@@ -516,6 +516,7 @@ watch(() => appStore.todayStat, () => {
 .global-brand-mark { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; color: var(--color-button-text); background: var(--color-primary); font-size: 13px; }
 .global-nav-links { display: flex; align-items: center; gap: 3px; }
 .global-nav-link { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 10px; color: var(--color-text-tertiary); font-size: 12px; transition: color .2s, background-color .2s; }
+.global-nav-module-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 9px; font-weight: 800; letter-spacing: .04em; }
 .global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
 .global-nav-shortcut { border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 3px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 9px; line-height: 1.1; }
 .mobile-bottom-nav { display: none; }
@@ -531,6 +532,7 @@ watch(() => appStore.todayStat, () => {
   .global-brand > span:last-child { display: none; }
   .global-nav-links { gap: 1px; }
   .global-nav-link { gap: 4px; padding: 7px 6px; font-size: 11px; }
+  .global-nav-module-code { display: none; }
   .global-nav-shortcut { display: none; }
   .global-search-trigger { margin-left: 0; padding: 7px; }
   .global-search-trigger span, .global-search-trigger kbd { display: none; }
