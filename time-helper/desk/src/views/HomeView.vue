@@ -565,7 +565,7 @@ onUnmounted(() => {
         </form>
         <div v-if="todayTodos.length" class="today-todos-list">
           <div v-for="todo in todayTodos" :key="todo.id" class="today-todo-row">
-            <button type="button" class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabel')" @click="completeHomeTodo(todo)">
+            <button type="button" class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabelFor', { title: todo.title })" @click="completeHomeTodo(todo)">
               <Check v-if="completingTodoId === todo.id" :size="13" />
             </button>
             <button type="button" class="today-todo-main" @click="router.push({ path: '/tasks', query: { todo: todo.id } })">

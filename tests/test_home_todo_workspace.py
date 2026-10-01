@@ -38,6 +38,12 @@ def test_home_todos_support_quick_completion_without_leaving_home():
     assert "await refreshTodoSummary()" in source
 
 
+def test_home_todo_completion_action_identifies_the_target_task():
+    source = HOME.read_text(encoding="utf-8")
+    assert "t('tasks.completeLabelFor', { title: todo.title })" in source
+    assert I18N.read_text(encoding="utf-8").count("'tasks.completeLabelFor':") == 2
+
+
 def test_home_summary_uses_the_shared_dynamic_priority_order():
     source = HOME.read_text(encoding="utf-8")
     assert "import { getPriorityScore } from '@/services/priority'" in source
