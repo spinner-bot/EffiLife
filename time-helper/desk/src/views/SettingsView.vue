@@ -713,7 +713,13 @@ watch(currentView, (view) => {
 
 // 初始化完成后关闭加载状态
 onMounted(async () => {
-  await refreshDataStats()
+  try {
+    await refreshDataStats()
+  } catch (error) {
+    // Keep the initialization boundary explicit even if the refresh helper
+    // later gains a caller-specific error policy.
+    console.warn('Failed to load settings data statistics:', error)
+  }
   // 短暂延迟以展示骨架屏过渡效果
   setTimeout(() => {
     isLoading.value = false
