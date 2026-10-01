@@ -133,7 +133,7 @@ async function saveRecord() {
     const sm = parseInt(String(formStart.value.m)) || 0
     const eh = parseInt(String(formEnd.value.h)) || 0
     const em = parseInt(String(formEnd.value.m)) || 0
-    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) { notifyToast(t('legacyPlan.validationHour'), 'error'); return }
+    if (sh < 0 || sh > 23 || eh < 0 || eh > 24 || (eh === 24 && em !== 0)) { notifyToast(t('legacyPlan.validationHour'), 'error'); return }
     if (sm < 0 || sm > 59 || em < 0 || em > 59) { notifyToast(t('legacyPlan.validationMinute'), 'error'); return }
     start = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`
     end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
@@ -155,14 +155,17 @@ async function saveRecord() {
     const durationHours = dh + dm / 60
     const refMinutes = refH * 60 + refM
     if (formDurationRef.value === 'start') {
+      if (refMinutes + totalMinutes > 24 * 60) { notifyToast(t('legacyPlan.validationCrossesMidnight'), 'error'); return }
       start = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       startMinutes = refMinutes
       const endMins = refMinutes + durationHours * 60
-      const eh2 = Math.floor(endMins / 60) % 24
+      const endsAtMidnight = endMins === 24 * 60
+      const eh2 = endsAtMidnight ? 24 : Math.floor(endMins / 60) % 24
       const em2 = Math.floor(endMins % 60)
       end = `${String(eh2).padStart(2, '0')}:${String(em2).padStart(2, '0')}`
-      endMinutes = endMins % (24 * 60)
+      endMinutes = endsAtMidnight ? 24 * 60 : endMins % (24 * 60)
     } else {
+      if (refMinutes - totalMinutes < 0) { notifyToast(t('legacyPlan.validationCrossesMidnight'), 'error'); return }
       end = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       endMinutes = refMinutes
       const startMins = refMinutes - durationHours * 60
@@ -862,7 +865,7 @@ onMounted(() => {
             <div class="pv-form-group" v-if="formMode === 'time'">
               <label>{{ t('legacyPlan.end') }}</label>
               <div class="pv-time-row">
-                <input type="number" v-model="formEnd.h" min="0" max="23" class="pv-num-input" />
+                <input type="number" v-model="formEnd.h" min="0" max="24" class="pv-num-input" />
                 <span class="pv-time-sep">:</span>
                 <input type="number" v-model="formEnd.m" min="0" max="59" class="pv-num-input" />
               </div>
