@@ -328,8 +328,8 @@ watch(() => appStore.todayStat, () => {
     <!-- 主内容 -->
     <template v-if="runtimeReady">
     <div class="app-content">
-      <header class="global-nav theme-card" aria-label="EffiLife">
-        <RouterLink class="global-brand" to="/" aria-label="EffiLife home">
+      <header class="global-nav theme-card" :aria-label="t('app.shellLabel')">
+        <RouterLink class="global-brand" to="/" :aria-label="t('app.homeLink')">
           <span class="global-brand-mark">E</span>
           <span>EffiLife</span>
         </RouterLink>

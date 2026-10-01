@@ -24,6 +24,15 @@ def test_startup_state_is_localized_in_both_fallback_catalogs():
     assert "'app.starting': 'Preparing workspace…'" in source
 
 
+def test_app_shell_accessibility_labels_use_the_locale_registry():
+    app = APP.read_text(encoding="utf-8")
+    source = I18N.read_text(encoding="utf-8")
+    assert ":aria-label=\"t('app.shellLabel')\"" in app
+    assert ":aria-label=\"t('app.homeLink')\"" in app
+    assert source.count("'app.shellLabel':") == 4
+    assert source.count("'app.homeLink':") == 4
+
+
 def test_startup_error_exposes_localized_diagnostic_detail():
     app = APP.read_text(encoding="utf-8")
     source = I18N.read_text(encoding="utf-8")
