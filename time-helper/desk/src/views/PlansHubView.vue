@@ -1378,16 +1378,16 @@ onUnmounted(() => {
   .plan-detail-layout { grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr); align-items: start; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .domain-card, .event-plan-card { transition: none; } }
-/* The two-column detail workspace starts at 1100px. Below that width keep
-   task actions in a compact flow so fixed action buttons never squeeze the
-   task title into an overlapping row. */
+/* The two-column detail workspace starts at 1100px. Tablet keeps the task
+   row horizontal with compact controls; only the mobile breakpoint stacks
+   actions below the task title. */
 @media (max-width: 1099px) {
   .meta-editor, .section-editor, .task-editor, .log-editor, .group-editor { align-items: stretch; flex-direction: column; }
   .log-editor, .group-editor { display: flex; }
-  /* Keep PH task actions usable on tablets before the mobile breakpoint. */
-  .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
-  .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; }
-  .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; }
+}
+@media (min-width: 761px) and (max-width: 1099px) {
+  .event-task-row { grid-template-columns: 24px minmax(120px, 1fr) auto 58px auto 58px 28px 28px; gap: 5px; }
+  .task-log, .task-todo, .task-time { padding: 4px 5px; font-size: 10px; }
 }
 @media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .unified-section-heading { align-items: flex-start; flex-direction: column; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row .task-log, .event-task-row .task-todo, .event-task-row .task-time { grid-column: 2; justify-self: start; } .event-task-row .task-edit, .event-task-row .task-delete { grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
 </style>
