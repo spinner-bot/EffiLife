@@ -12,6 +12,13 @@ def test_duration_records_reject_crossing_midnight_in_both_reference_modes():
     assert "t('records.validation.crossesMidnight')" in VIEW
 
 
+def test_time_records_preserve_exact_midnight_as_a_valid_end_boundary():
+    assert "eh > 24 || (eh === 24 && em !== 0)" in VIEW
+    assert "const endsAtMidnight = endMins === 24 * 60" in VIEW
+    assert "endMinutes = endsAtMidnight ? 24 * 60 : endMins % (24 * 60)" in VIEW
+    assert 'v-model="formEnd.h" min="0" max="24"' in VIEW
+
+
 def test_cross_midnight_record_validation_is_localized():
     assert "'records.validation.crossesMidnight':" in I18N
     assert I18N.count("'records.validation.crossesMidnight':") == 2

@@ -230,7 +230,7 @@ async function saveRecordInternal() {
     const em = parseInt(String(formEnd.value.m)) || 0
 
     // 验证小时范围
-    if (sh < 0 || sh > 23 || eh < 0 || eh > 23) {
+    if (sh < 0 || sh > 23 || eh < 0 || eh > 24 || (eh === 24 && em !== 0)) {
       notifyToast(t('records.validation.hour'), 'error')
       return
     }
@@ -298,10 +298,11 @@ async function saveRecordInternal() {
       start = `${String(refH).padStart(2, '0')}:${String(refM).padStart(2, '0')}`
       startMinutes = refMinutes
       const endMins = refMinutes + durationHours * 60
-      const eh = Math.floor(endMins / 60) % 24
+      const endsAtMidnight = endMins === 24 * 60
+      const eh = endsAtMidnight ? 24 : Math.floor(endMins / 60) % 24
       const em = Math.floor(endMins % 60)
       end = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
-      endMinutes = endMins % (24 * 60)
+      endMinutes = endsAtMidnight ? 24 * 60 : endMins % (24 * 60)
     } else {
       if (refMinutes - totalMinutes < 0) {
         notifyToast(t('records.validation.crossesMidnight'), 'error')
@@ -512,7 +513,7 @@ onUnmounted(() => {
             </div>
             <div class="time-input-row">
               <label>{{ t('records.end') }}：</label>
-              <input type="number" v-model="formEnd.h" min="0" max="23" class="time-input" />
+              <input type="number" v-model="formEnd.h" min="0" max="24" class="time-input" />
               <span>:</span>
               <input type="number" v-model="formEnd.m" min="0" max="59" class="time-input" />
             </div>
