@@ -88,8 +88,12 @@ integration.initialize()
 ### 2. 注册模块 API
 
 ```python
-# 注册 to-dos
-from to-dos.src.api import TodoAPI
+# 注册 to-dos（历史 Python 适配示例；目录名含连字符，先加入模块搜索路径）
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path('to-dos')))
+from src.api import TodoAPI
 todo_api = TodoAPI()
 integration.register_todo_api(todo_api)
 
