@@ -73,6 +73,9 @@ jobs:
         working-directory: time-helper/desk
         run: npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
 
+      - name: Verify Android native build environment
+        run: python scripts/check_build_environment.py --target android
+
       - name: Build Android APK
         working-directory: time-helper/desk
         run: npm run mobile:android:build
@@ -160,6 +163,9 @@ jobs:
       - name: Initialize Tauri iOS project
         working-directory: time-helper/desk
         run: npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
+
+      - name: Verify iOS native build environment
+        run: python scripts/check_build_environment.py --target ios
 
       - name: Build iOS app bundle
         working-directory: time-helper/desk
