@@ -786,7 +786,7 @@ def run_module(choice, modules, open_browser=True):
         print(f"\n❌ {module['name']} 未就绪")
         if "npm" in str(module.get("setup", "")):
             print("请安装 Node.js: https://nodejs.org")
-        return
+        return 1
 
     print(f"\n启动 {module['name']}...")
 
@@ -807,18 +807,18 @@ def run_module(choice, modules, open_browser=True):
             record_launcher_event("dependency_setup_timeout", module=module.get("name"), timeout=setup_timeout())
             print(f"\nSetup timed out after {setup_timeout()} seconds.")
             print("Check the network/npm registry, then retry or install dependencies manually.")
-            return
+            return 1
         except OSError as error:
             record_launcher_event("dependency_setup_error", module=module.get("name"), error=str(error))
             print(f"\nUnable to run dependency setup: {error}")
             print(f"Run manually in {module['cwd']}: {' '.join(module['setup'])}")
-            return
+            return 1
         if result.returncode != 0:
             record_launcher_event("dependency_setup_failed", module=module.get("name"), returncode=result.returncode)
             print(f"\n❌ Setup 失败，请手动执行:")
             print(f"   cd {module['cwd']}")
             print(f"   {' '.join(module['setup'])}")
-            return
+            return 1
         # Keep the in-memory menu state accurate during a legacy-menu
         # session. A successful first-run install must not be repeated every
         # time the user reopens the same compatibility module.
@@ -835,7 +835,7 @@ def run_module(choice, modules, open_browser=True):
     if module.get("url") and service_is_ready(module["url"]):
         companion_processes = start_companions(module, env)
         if companion_processes is None:
-            return
+            return 1
         record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
         print(f"浣跨敤宸茶繍琛岀殑涓绘湇鍔? {module['url']}")
         try:
@@ -848,11 +848,11 @@ def run_module(choice, modules, open_browser=True):
         finally:
             for companion_process in companion_processes:
                 terminate_process(companion_process)
-        return
+        return 0
 
     companion_processes = start_companions(module, env)
     if companion_processes is None:
-        return
+        return 1
 
     # A separately started frontend may already occupy the configured port.
     # Reuse it instead of launching a second strict-port dev server that exits
@@ -870,7 +870,7 @@ def run_module(choice, modules, open_browser=True):
         finally:
             for companion_process in companion_processes:
                 terminate_process(companion_process)
-        return
+        return 0
 
     if module.get("url") and local_port_is_occupied(module["url"]):
         record_launcher_event("port_conflict", module=module.get("name"), url=module["url"])
@@ -878,7 +878,7 @@ def run_module(choice, modules, open_browser=True):
         print("Stop the conflicting process or choose another development port, then retry.")
         for companion_process in companion_processes:
             terminate_process(companion_process)
-        return
+        return 1
 
     try:
         process = subprocess.Popen(
@@ -909,7 +909,7 @@ def run_module(choice, modules, open_browser=True):
                 # Do not block forever when a child stays alive but never
                 # becomes reachable. The finally block cleans up companions.
                 terminate_process(process)
-                return
+                return 1
             print(f"\n>>> 打开浏览器: {module['url']}")
             if open_browser:
                 webbrowser.open(module["url"])
