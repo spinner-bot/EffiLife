@@ -26,6 +26,13 @@ const records = ref<TimeRecord[]>([])
 const dayPlanName = ref('')
 const dayPlanType = ref('')
 
+/** Stored plan types remain legacy domain values; localize only at display time. */
+function planTypeLabel(value?: string): string {
+  if (value === '切分制') return t('legacyPlan.split')
+  if (value === '分配制') return t('legacyPlan.allocate')
+  return value || t('legacyPlan.split')
+}
+
 // 计划选择弹窗
 const showPlanSelector = ref(false)
 
@@ -115,7 +122,7 @@ onMounted(() => {
           <h2>{{ t('dayDetail.plan') }}</h2>
           <button type="button" class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
         </div>
-        <p class="plan-name">{{ dayPlanName }}（{{ dayPlanType }}）</p>
+        <p class="plan-name">{{ dayPlanName }}（{{ planTypeLabel(dayPlanType) }}）</p>
 
         <!-- 统计信息 -->
         <div class="stats" v-if="stat">
@@ -195,7 +202,7 @@ onMounted(() => {
               >
                 <div class="plan-info">
                   <span class="plan-name">{{ name }}</span>
-                  <span class="plan-type">{{ plan.plan_type }}</span>
+                  <span class="plan-type">{{ planTypeLabel(plan.plan_type) }}</span>
                 </div>
                 <Check v-if="name === dayPlanName" :size="18" class="check-icon" />
               </button>
