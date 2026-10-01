@@ -18,6 +18,7 @@ def register_all_handlers(
     gateway: Optional[APIGateway] = None,
     data_manager: Optional[DataManager] = None,
     event_bus: Optional[EventBus] = None,
+    enable_plan_todo_automation: bool = False,
 ) -> dict:
     """
     注册所有跨模块事件处理器
@@ -29,13 +30,15 @@ def register_all_handlers(
     dm = data_manager or DataManager.get_instance()
     eb = event_bus or EventBus.get_instance()
 
-    # 创建联动器
-    plan_todo = PlanTodoLinker(gw, dm)
+    # PH 与 TD 默认保持独立。旧的自动生成/完成联动仅在调用方明确
+    # opt-in 时注册，避免统一应用启动后隐式改变 TD 数据。
+    plan_todo = PlanTodoLinker(gw, dm) if enable_plan_todo_automation else None
     todo_time = TodoTimeLinker(gw, dm)
     stats = StatsCorrelator(gw, dm)
 
     # 注册事件处理器
-    plan_todo.register()
+    if plan_todo is not None:
+        plan_todo.register()
     todo_time.register()
 
     return {

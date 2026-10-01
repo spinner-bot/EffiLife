@@ -39,8 +39,9 @@ class EffiLifeIntegration:
         result = integration.gateway.query_daily_summary()
     """
 
-    def __init__(self, data_root: str = None):
+    def __init__(self, data_root: str = None, enable_plan_todo_automation: bool = False):
         self.data_root = data_root
+        self.enable_plan_todo_automation = enable_plan_todo_automation
 
         # 核心组件
         self.event_bus = EventBus.get_instance()
@@ -122,6 +123,7 @@ class EffiLifeIntegration:
                 gateway=self.gateway,
                 data_manager=self.data_manager,
                 event_bus=self.event_bus,
+                enable_plan_todo_automation=self.enable_plan_todo_automation,
             )
 
     def get_stats(self) -> dict:
