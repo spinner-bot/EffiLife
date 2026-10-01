@@ -25,6 +25,16 @@ def test_plan_creation_collects_initial_content_then_opens_full_editor():
     assert "body: JSON.stringify({ name, date, sections })" in gateway
 
 
+def test_plan_create_and_template_dates_default_to_the_local_current_day():
+    view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
+    assert "const planDate = ref(toDateInput(new Date()))" in view
+    assert "const templateDraftDate = ref(toDateInput(new Date()))" in view
+    assert "planDate.value = toDateInput(new Date())" in view
+    assert "function toDateInput(date: Date): string" in view
+    assert "String(date.getMonth() + 1).padStart(2, '0')" in view
+    assert "String(date.getDate()).padStart(2, '0')" in view
+
+
 def test_plan_task_duration_is_explicitly_optional():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     i18n = (DESK / "i18n" / "index.ts").read_text(encoding="utf-8")
