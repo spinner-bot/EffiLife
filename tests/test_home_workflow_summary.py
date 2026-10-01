@@ -33,3 +33,12 @@ def test_home_plan_service_failure_has_an_explicit_desktop_retry():
     assert 'v-if="!isMobilePlanRuntime"' in HOME
     assert "event-overview-retry" in HOME
     assert I18N.count("'home.retryEventPlans':") == 2
+
+
+def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakpoints():
+    tablet = "@media (min-width: 761px) and (max-width: 899px)"
+    assert tablet in HOME
+    tablet_block = HOME.split(tablet, 1)[1].split(".stats-header-row", 1)[0]
+    assert "max-width: 900px" in tablet_block
+    assert "align-items: stretch" in tablet_block
+    assert ".clock-section { text-align: left; }" in tablet_block
