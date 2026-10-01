@@ -880,6 +880,7 @@ def run_module(choice, modules, open_browser=True):
             terminate_process(companion_process)
         return 1
 
+    module_command_missing = False
     try:
         process = subprocess.Popen(
             module["cmd"],
@@ -923,11 +924,14 @@ def run_module(choice, modules, open_browser=True):
         print("\n已停止")
     except FileNotFoundError as e:
         record_launcher_event("module_command_missing", module=module.get("name"), error=str(e))
+        module_command_missing = True
         print(f"\n❌ 找不到命令: {e}")
         print(f"请确保已安装所需依赖")
     finally:
         for companion_process in companion_processes:
             terminate_process(companion_process)
+        if module_command_missing:
+            return 1
 
 
 def stream_output(process):

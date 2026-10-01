@@ -612,6 +612,21 @@ def test_launcher_propagates_child_exit_code(monkeypatch):
     assert result == 7
 
 
+def test_launcher_returns_nonzero_when_module_command_is_missing(monkeypatch):
+    class MissingPopen:
+        def __init__(self, *args, **kwargs):
+            raise FileNotFoundError("module command missing")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", MissingPopen)
+    result = launcher.run_module(
+        "test",
+        {"test": {"name": "test", "available": True, "cmd": ["missing"], "cwd": launcher.BASE_DIR, "url": None, "setup": None}},
+        open_browser=False,
+    )
+
+    assert result == 1
+
+
 def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkeypatch):
     terminated = []
     opened = []
