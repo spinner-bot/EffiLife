@@ -37,6 +37,8 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow has no to-dos compatibility UI build job")
     if "scripts/generate_checksums.py" not in workflow:
         errors.append("release workflow has no installer checksum step")
+    if "scripts/generate_release_manifest.py" not in workflow or ".manifest.json" not in workflow:
+        errors.append("release workflow has no machine-readable installer manifest step")
     if "npm run tauri build -- --bundles ${{ matrix.bundle }}" not in workflow:
         errors.append("release workflow does not pass the matrix bundle target to Tauri")
     if "scripts/verify_release_artifacts.py" not in workflow:
@@ -45,6 +47,8 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow has no tagged GitHub Release publication step")
     if "needs:" not in workflow or "compatibility" not in workflow or "build" not in workflow:
         errors.append("release publication does not wait for compatibility and desktop builds")
+    if "release-assets" not in workflow or "find release-assets -type f -print" not in workflow:
+        errors.append("tagged release publication does not include downloaded release metadata")
     for runner, bundle, extension, artifact in (
         ("windows-latest", "nsis", ".exe", "bundle/nsis/*.exe"),
         ("ubuntu-22.04", "deb", ".deb", "bundle/deb/*.deb"),

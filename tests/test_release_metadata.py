@@ -138,6 +138,16 @@ def test_release_workflow_verifies_non_empty_platform_installer():
     assert "--version-file time-helper/VERSION" in workflow
 
 
+def test_release_workflow_publishes_checksums_and_manifests_with_installers():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "scripts/generate_release_manifest.py" in workflow
+    assert "release-checksums/EffiLife-${{ matrix.name }}.manifest.json" in workflow
+    assert "release-checksums/EffiLife-${{ matrix.name }}.sha256" in workflow
+    assert "pattern: EffiLife-*-installer" in workflow
+    assert "find release-assets -type f -print" in workflow
+    assert "gh release create" in workflow
+
+
 def test_publish_job_rejects_tag_that_does_not_match_repository_version():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "expected_tag=\"v$(cat time-helper/VERSION)\"" in workflow
