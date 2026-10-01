@@ -3,49 +3,38 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue"
+I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 
 def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     source = SETTINGS.read_text(encoding="utf-8")
-
     assert "appStore.previewConfig({ ...config.value, theme })" in source
     assert "const themeDirty = computed" in source
-    assert "if (currentView.value === 'theme' && themeDirty.value)" in source
     assert "async function confirmThemeExit()" in source
     assert "requestConfirm(t('settings.theme.unsavedConfirm'))" in source
-    assert "if (!await requestConfirm(t('settings.theme.unsavedConfirm'))) return false" in source
     assert "return await flushThemeSave()" in source
-    assert "function queueThemeSave()" in source
-    assert "function flushThemeSave()" in source
-    assert "const canLeave = await confirmThemeExit()" in source
-    assert "if (!canLeave) return" in source
+    assert "return await saveTheme()" in source
+    assert "queueThemeSave" not in source
     assert "onBeforeRouteLeave(async () =>" in source
     assert "if (currentView.value !== 'theme' || !themeDirty.value) return true" in source
-    assert "return await confirmThemeExit()" in source
-    assert "async function navigateTo(view: ViewType)" in source
-    assert "if (currentView.value === 'theme' && themeDirty.value)" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
-    assert "const canLeave = await confirmThemeExit()" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
-    translations = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
-    assert "主题修改会自动保存" in translations
-    assert "Theme changes are saved automatically" in translations
 
 
-def test_theme_save_refreshes_persistent_snapshot():
+def test_theme_save_refreshes_persistent_snapshot_without_a_save_button():
     source = SETTINGS.read_text(encoding="utf-8")
-
     assert "await appStore.saveConfig(newConfig)" in source
     assert "await appStore.refreshWorkspaceData()" in source
     assert "const persistedTheme = cloneTheme(appStore.config.theme)" in source
     assert "savedThemeSnapshot.value = persistedTheme" in source
-    theme_template = source.split("<!-- 主题设置 -->", 1)[1].split("<!-- 帮助 -->", 1)[0]
-    assert '@click="saveTheme"' not in theme_template
+    assert '@click="saveTheme"' not in source
 
 
-def test_theme_preview_status_explains_automatic_save_in_both_locales():
-    source = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+def test_theme_preview_status_explains_confirmed_exit_save_in_both_locales():
+    source = I18N.read_text(encoding="utf-8")
     assert source.count("'settings.theme.previewStatus'") == 2
-    assert "已自动保存" in source
-    assert "saved automatically" in source
+    assert "退出时确认后保存" in source
+    assert "saved after confirming exit" in source
+    assert "是否保存主题修改并退出主题设置？" in source
+    assert "Save theme changes and exit theme settings?" in source
 
 
 def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
@@ -57,7 +46,6 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
 
 def test_theme_editor_owns_detached_draft_objects():
     source = SETTINGS.read_text(encoding="utf-8")
-
     assert "const solidConfig = ref<SolidThemeConfig>(config.value.theme.solid ? { ...config.value.theme.solid }" in source
     assert "const gradientConfig = ref<GradientThemeConfig>(config.value.theme.gradient ? { ...config.value.theme.gradient }" in source
     assert "const glassConfig = ref<GlassThemeConfig>(config.value.theme.glass ? { ...config.value.theme.glass }" in source
@@ -68,49 +56,23 @@ def test_theme_editor_owns_detached_draft_objects():
     assert "neon: { ...neonConfig.value }" in source
 
 
-def test_theme_snapshot_tracks_external_settings_and_archive_changes():
+def test_theme_snapshot_tracks_external_workspace_changes():
     source = SETTINGS.read_text(encoding="utf-8")
-
     assert "onWorkspaceChanged" in source
     assert "source !== 'settings' && source !== 'archive'" in source
+    assert "void appStore.refreshWorkspaceData().then(() =>" in source
     assert "const externalTheme = cloneTheme(appStore.config.theme)" in source
     assert "savedThemeSnapshot.value = externalTheme" in source
+    assert "syncThemeDraft(externalTheme)" in source
     assert "stopWorkspaceListener()" in source
 
 
-def test_theme_snapshot_waits_for_external_workspace_hydration():
+def test_theme_save_has_no_background_refresh_race_or_timer():
     source = SETTINGS.read_text(encoding="utf-8")
-
-    assert "void appStore.refreshWorkspaceData().then(() =>" in source
-    assert "Failed to refresh theme snapshot after workspace change" in source
-
-
-def test_external_theme_refresh_syncs_clean_draft_but_preserves_local_edits():
-    source = SETTINGS.read_text(encoding="utf-8")
-    assert "const hadLocalDraft = themeDirty.value" in source
-    assert "function syncThemeDraft(theme: Config['theme'])" in source
-    assert "if (!hadLocalDraft) {" in source
-    assert "savedThemeSnapshot.value = externalTheme" in source
-    assert "syncThemeDraft(externalTheme)" in source
-    assert "previewTheme()" in source
-    assert "Do not overwrite an intentional local draft" in source
-
-
-def test_theme_editor_reapplies_dirty_draft_after_runtime_refresh():
-    source = SETTINGS.read_text(encoding="utf-8")
-    assert "watch(() => config.value.theme" in source
-    assert "A visibility refresh can replace Pinia's preview" in source
-    assert "App-level visibility refreshes reload durable data" in source
-    assert "savedThemeSnapshot.value = cloneTheme(newTheme)" in source
-
-
-def test_theme_save_blocks_its_own_workspace_refresh_race():
-    source = SETTINGS.read_text(encoding="utf-8")
-    assert "const themeSaveInFlight = ref(false)" in source
-    assert "if (themeSaveInFlight.value && source === 'settings') return" in source
-    assert "themeSaveInFlight.value = true" in source
-    assert "themeSaveInFlight.value = false" in source
-    assert "finally" in source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]
+    assert "themeSaveInFlight" not in source
+    assert "themeSaveTimer" not in source
+    assert "themeSavePromise" not in source
+    assert "queueThemeSave" not in source
 
 
 def test_theme_exit_builds_persistence_payload_from_detached_draft():

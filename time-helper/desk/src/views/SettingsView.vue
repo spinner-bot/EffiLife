@@ -218,12 +218,6 @@ function cloneTheme(theme: Config['theme']): Config['theme'] {
 }
 
 const savedThemeSnapshot = ref<Config['theme']>(cloneTheme(config.value.theme))
-// Saving emits a workspace event. Ignore the settings editor's own refresh
-// callback until the durable write has completed, otherwise an in-flight
-// hydration can briefly put the old theme back into the editor during exit.
-const themeSaveInFlight = ref(false)
-let themeSaveTimer: ReturnType<typeof setTimeout> | null = null
-let themeSavePromise: Promise<boolean> | null = null
 
 function syncThemeDraft(theme: Config['theme']) {
   themeType.value = theme.type || 'solid'
@@ -235,7 +229,6 @@ function syncThemeDraft(theme: Config['theme']) {
 
 const stopWorkspaceListener = onWorkspaceChanged((source) => {
   if (source !== 'settings' && source !== 'archive') return
-  if (themeSaveInFlight.value && source === 'settings') return
   const hadLocalDraft = themeDirty.value
   // The workspace event is emitted before other windows finish rehydrating
   // IndexedDB. Reload here as well so the dirty marker never snapshots the
@@ -304,7 +297,6 @@ async function saveTheme(): Promise<boolean> {
     ...config.value,
     theme: draftTheme,
   }
-  themeSaveInFlight.value = true
   try {
     await appStore.saveConfig(newConfig)
     // Confirm the value that is actually in the durable workspace before
@@ -320,33 +312,12 @@ async function saveTheme(): Promise<boolean> {
     console.error('Failed to save theme settings:', error)
     notifyToast(t('settings.saveFailed'), 'error')
     return false
-  } finally {
-    themeSaveInFlight.value = false
   }
-}
-
-function queueThemeSave(): void {
-  if (themeSaveTimer) clearTimeout(themeSaveTimer)
-  themeSaveTimer = setTimeout(() => {
-    themeSaveTimer = null
-    if (!themeDirty.value || themeSaveInFlight.value) return
-    themeSavePromise = saveTheme().finally(() => {
-      themeSavePromise = null
-    })
-  }, 250)
 }
 
 async function flushThemeSave(): Promise<boolean> {
-  if (themeSaveTimer) {
-    clearTimeout(themeSaveTimer)
-    themeSaveTimer = null
-  }
-  if (themeSavePromise) return await themeSavePromise
   if (!themeDirty.value) return true
-  themeSavePromise = saveTheme().finally(() => {
-    themeSavePromise = null
-  })
-  return await themeSavePromise
+  return await saveTheme()
 }
 
 async function confirmThemeExit(): Promise<boolean> {
@@ -686,7 +657,6 @@ watch(() => config.value.theme, (newTheme) => {
 
 watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], () => {
   previewTheme()
-  queueThemeSave()
 }, { deep: true })
 
 // 初始化完成后关闭加载状态
@@ -720,7 +690,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (themeSaveTimer) clearTimeout(themeSaveTimer)
   stopWorkspaceListener()
 })
 </script>
