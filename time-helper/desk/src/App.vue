@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import ThemeCanvas from './theme/ThemeCanvas.vue'
 import { getThemeCssVariables } from './theme/ThemeEngine'
 import { AudioManager, EventSystem, EventPopup } from './audio'
@@ -161,6 +161,7 @@ onMounted(async () => {
   applyTheme()
   runtimeReady.value = true
   if (legacyMigrationSummary && (legacyMigrationSummary.migrated > 0 || legacyMigrationSummary.categories > 0)) {
+    await nextTick()
     notifyToast(t('app.legacyMigrationSummary', legacyMigrationSummary), 'success')
   }
   // Plan-helper may need network retries; do not delay the first usable frame.

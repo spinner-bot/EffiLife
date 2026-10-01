@@ -50,5 +50,6 @@ def test_legacy_migration_summary_is_shown_after_workspace_hydration():
     source = I18N.read_text(encoding="utf-8")
     assert "legacyMigrationSummary = await TodoService.migrateLegacyLocalStorage()" in app
     assert "legacyMigrationSummary && (legacyMigrationSummary.migrated > 0 || legacyMigrationSummary.categories > 0)" in app
+    assert "await nextTick()" in app
     assert "notifyToast(t('app.legacyMigrationSummary', legacyMigrationSummary), 'success')" in app
     assert source.count("'app.legacyMigrationSummary'") == 2
