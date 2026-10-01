@@ -13,6 +13,8 @@ def test_theme_changes_preview_and_save_automatically_on_exit():
     assert "if (currentView.value === 'theme' && themeDirty.value)" in source
     assert "const saved = await saveTheme()" in source
     assert "if (!saved) return" in source
+    assert "onBeforeRouteLeave(async () =>" in source
+    assert "if (currentView.value !== 'theme' || !themeDirty.value) return true" in source
 
 
 def test_theme_save_refreshes_persistent_snapshot():

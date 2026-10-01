@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AlertTriangle, ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
@@ -288,6 +288,14 @@ async function saveTheme(): Promise<boolean> {
     return false
   }
 }
+
+// Global navigation can leave SettingsView without going through goBack().
+// Persist the theme draft for every exit path and keep the editor mounted if
+// durable storage rejects the write.
+onBeforeRouteLeave(async () => {
+  if (currentView.value !== 'theme' || !themeDirty.value) return true
+  return await saveTheme()
+})
 
 // 纯色预设
 function applySolidPreset(preset: 'default' | 'dark' | 'light') {
