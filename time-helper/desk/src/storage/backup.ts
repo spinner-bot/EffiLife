@@ -195,7 +195,9 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
 
       for (let i = localStorage.length - 1; i >= 0; i -= 1) {
         const key = localStorage.key(i)
-        if (key) localStorage.removeItem(key)
+        if (key && !key.startsWith('efflife_backup_') && !key.startsWith('efflife_emergency_backup_')) {
+          localStorage.removeItem(key)
+        }
       }
       for (const [key, value] of Object.entries(snapshot.localStorage)) {
         if (typeof value === 'string') localStorage.setItem(key, value)
