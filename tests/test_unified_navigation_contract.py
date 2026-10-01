@@ -39,3 +39,8 @@ def test_html_bootstrap_title_uses_unified_product_brand():
 def test_settings_subroutes_keep_the_settings_navigation_entry_active():
     assert "const isSettingsRoute = computed(() => ['/settings', '/audio-settings', '/motion-settings', '/event-manager'].includes(route.path))" in APP
     assert ":class=\"{ active: isSettingsRoute }\"" in APP
+
+
+def test_mobile_navigation_matches_desktop_task_and_record_order():
+    mobile = APP.split('<nav class="mobile-bottom-nav', 1)[1].split('</nav>', 1)[0]
+    assert mobile.index('data-guide="tasks"') < mobile.index('data-guide="records"')

@@ -368,12 +368,12 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
             <Clock3 :size="19" /> <span>{{ t('nav.time') }}</span>
           </RouterLink>
+          <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
+            <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
+          </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
             <History :size="19" /> <span>{{ t('nav.records') }}</span>
           </RouterLink>
-          <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
-          <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
-        </RouterLink>
         <RouterLink class="mobile-bottom-nav-link" data-guide="settings" to="/settings" :class="{ active: isSettingsRoute }" :aria-current="isSettingsRoute ? 'page' : undefined">
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
