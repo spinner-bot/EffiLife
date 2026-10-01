@@ -1031,6 +1031,18 @@ onUnmounted(() => {
       <template v-else-if="currentView === 'archive'">
         <h2>{{ t('settings.archive.title') }}</h2>
 
+        <section class="archive-scope theme-card" :aria-label="t('settings.archive.scopeTitle')">
+          <div class="archive-scope-copy">
+            <strong>{{ t('settings.archive.scopeTitle') }}</strong>
+            <span>{{ t('settings.archive.scopeDescription') }}</span>
+          </div>
+          <div class="archive-scope-domains" :aria-label="t('settings.archive.scopeTitle')">
+            <span class="archive-scope-chip"><b>TH</b>{{ t('settings.archive.scopeTime') }}</span>
+            <span class="archive-scope-chip"><b>PH</b>{{ t('settings.archive.scopePlans') }}</span>
+            <span class="archive-scope-chip"><b>TD</b>{{ t('settings.archive.scopeTodos') }}</span>
+          </div>
+        </section>
+
         <div v-if="isMobilePlanRuntime" class="archive-capability-note">
           <strong>{{ t('settings.archive.mobilePlanTitle') }}</strong>
           <p>{{ t('settings.archive.mobilePlanDescription') }}</p>
@@ -1665,6 +1677,14 @@ h2 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.archive-scope { display: grid; gap: 14px; margin-bottom: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--spacing-md) var(--spacing-lg); background: var(--color-bg-secondary); }
+.archive-scope-copy { display: grid; gap: 4px; }
+.archive-scope-copy strong { color: var(--color-text-primary); font-size: 13px; }
+.archive-scope-copy span { color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
+.archive-scope-domains { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.archive-scope-chip { display: inline-flex; align-items: center; gap: 7px; min-width: 0; border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 10px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 11px; }
+.archive-scope-chip b { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; letter-spacing: .04em; }
+
 /* 数据统计样式 */
 .data-stats {
   background: var(--color-bg-secondary);
@@ -2219,6 +2239,8 @@ h2 {
   .settings-item { min-height: 52px; padding: 13px 14px; }
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .archive-actions { display: flex; flex-direction: column; }
+  .archive-scope { padding: 14px; }
+  .archive-scope-domains { grid-template-columns: 1fr; }
   .data-stats { padding: 14px; }
   .stat-value { font-size: 1.3rem; }
   .modal-footer { flex-direction: column-reverse; padding: 14px 16px; }
