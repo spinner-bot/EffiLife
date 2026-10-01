@@ -60,8 +60,12 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         "ANDROID_SDK_ROOT": os.environ.get("ANDROID_SDK_ROOT"),
     }
     missing = [name for name, path in tools.items() if not path]
-    if target == "android" and not any(sdk_roots.values()):
-        missing.append("ANDROID_HOME or ANDROID_SDK_ROOT")
+    if target == "android":
+        sdk_candidates = [Path(value).expanduser() for value in sdk_roots.values() if value]
+        if not sdk_candidates:
+            missing.append("ANDROID_HOME or ANDROID_SDK_ROOT")
+        elif not any(candidate.is_dir() for candidate in sdk_candidates):
+            missing.append("Android SDK directory")
     mobile_project = None
     if target in MOBILE_PROJECTS:
         mobile_project = (root or ROOT) / MOBILE_PROJECTS[target]
