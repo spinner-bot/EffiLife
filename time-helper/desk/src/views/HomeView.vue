@@ -442,19 +442,19 @@ onUnmounted(() => {
       </section>
 
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
-        <button class="workflow-summary-item" type="button" @click="router.push('/time')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable }" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.timeModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.timeModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" type="button" @click="router.push('/plans')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable' }" type="button" @click="router.push('/plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }}</strong><small>{{ t('home.planModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" type="button" @click="router.push('/tasks')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable }" type="button" @click="router.push('/tasks')">
           <span class="workflow-summary-icon"><ListTodo :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ activeTodoCount }}</strong><small>{{ t('home.todoModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ t('home.todoModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
       </section>
@@ -647,6 +647,8 @@ onUnmounted(() => {
 .workflow-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 auto 20px; width: min(860px, 100%); }
 .workflow-summary-item { display: flex; align-items: center; gap: 10px; min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 14px); padding: 12px 13px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; text-align: left; transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast); }
 .workflow-summary-item:hover { border-color: var(--color-border-hover); background: var(--color-bg-tertiary); transform: translateY(-1px); }
+.workflow-summary-item.is-unavailable { border-style: dashed; }
+.workflow-summary-item.is-unavailable .workflow-summary-copy strong { color: var(--color-text-tertiary); }
 .workflow-summary-icon { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; color: var(--color-primary); background: var(--color-primary-muted); }
 .workflow-summary-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .workflow-summary-copy strong { color: var(--color-text-primary); font-size: 15px; font-variant-numeric: tabular-nums; }

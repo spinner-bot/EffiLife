@@ -56,6 +56,13 @@ def test_home_time_summary_failure_has_an_explicit_retry_without_fake_empty_stat
     assert I18N.count("'home.retryTime':") == 2
 
 
+def test_home_workflow_summary_does_not_turn_unavailable_data_into_zero_values():
+    assert "'is-unavailable': timeSummaryUnavailable" in HOME
+    assert "timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale)" in HOME
+    assert "eventPlanState === 'unavailable' ? '—'" in HOME
+    assert "todoSummaryUnavailable ? '—' : activeTodoCount" in HOME
+
+
 def test_home_inbox_has_dialog_semantics_and_escape_focus_return():
     assert 'aria-haspopup="dialog"' in HOME
     assert 'aria-controls="home-inbox-panel"' in HOME
