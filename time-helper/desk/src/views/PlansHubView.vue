@@ -147,12 +147,7 @@ async function openTaskRecord(task: PlanFull['sections'][number]['tasks'][number
   if (todoId) router.push({ path: '/records', query: { todo: todoId } })
 }
 
-const stopWorkspaceListener = onWorkspaceChanged((source) => {
-  if (isLoading.value) return
-  void refreshFromWorkspace(source).catch((error) => {
-    console.warn('Failed to refresh plans after external change:', error)
-  })
-})
+let stopWorkspaceListener: (() => void) | null = null
 
 function toDateInput(date: Date): string {
   const year = date.getFullYear()
@@ -246,6 +241,44 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
   if (view.value === 'hub') await loadPlans()
   if (selectedPlan.value) await refreshPlanTodoLinks(selectedPlan.value.id)
 }
+
+// Keep external changes observed while a local plan mutation is in flight.
+// Dropping the event would leave this window stale until a later navigation.
+const pendingWorkspaceSources = new Set<string>()
+let workspaceRefreshRunning = false
+
+async function drainWorkspaceRefresh(): Promise<void> {
+  if (workspaceRefreshRunning || isLoading.value) return
+  workspaceRefreshRunning = true
+  try {
+    while (pendingWorkspaceSources.size > 0) {
+      const sources = [...pendingWorkspaceSources]
+      pendingWorkspaceSources.clear()
+      for (const source of sources) {
+        try {
+          await refreshFromWorkspace(source)
+        } catch (error) {
+          console.warn('Failed to refresh plans after external change:', error)
+        }
+      }
+      if (isLoading.value) return
+    }
+  } finally {
+    workspaceRefreshRunning = false
+    if (pendingWorkspaceSources.size > 0 && !isLoading.value) void drainWorkspaceRefresh()
+  }
+}
+
+function queueWorkspaceRefresh(source?: string): void {
+  if (!source || !['todos', 'plans', 'archive'].includes(source)) return
+  pendingWorkspaceSources.add(source)
+  void drainWorkspaceRefresh()
+}
+
+stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)
+watch(isLoading, (loading) => {
+  if (!loading) void drainWorkspaceRefresh()
+})
 
 async function archiveSelectedPlan() {
   if (isLoading.value) return

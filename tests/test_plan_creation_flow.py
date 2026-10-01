@@ -101,7 +101,7 @@ def test_plan_detail_surfaces_existing_todo_links_without_duplicate_action():
     assert ':disabled="isLoading"' in view
     assert "t('plans.viewTodo')" in view
     assert "router.push({ path: '/tasks', query: { todo: todoId } })" in view
-    assert "onWorkspaceChanged((source)" in view
+    assert "stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)" in view
     assert "stopWorkspaceListener()" in view
     assert "!['archived', 'cancelled'].includes(todo.status)" in view
 
