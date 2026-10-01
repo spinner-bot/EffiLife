@@ -158,10 +158,16 @@ export async function set<T>(storeName: string, key: string, value: T): Promise<
       const request = store.put(record)
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
+      // A successful request only means that the put was accepted by the
+      // transaction. The transaction can still be pending, so resolving here
+      // lets an immediate reload race the commit and read the previous value.
+      // Resolve after IndexedDB has durably committed the whole transaction.
+      transaction.oncomplete = () => {
         localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
         resolve()
       }
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
     })
   } catch (error) {
     console.warn(`IndexedDB set failed for ${storeName}/${key}, falling back to localStorage:`, error)
