@@ -20,6 +20,9 @@ def test_theme_changes_preview_and_confirm_before_persisting_on_exit():
     assert "onBeforeRouteLeave(async () =>" in source
     assert "if (currentView.value !== 'theme' || !themeDirty.value) return true" in source
     assert "return await confirmThemeExit()" in source
+    assert "async function navigateTo(view: ViewType)" in source
+    assert "if (currentView.value === 'theme' && themeDirty.value)" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
+    assert "const canLeave = await confirmThemeExit()" in source.split("async function navigateTo", 1)[1].split("function goBack", 1)[0]
     translations = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert "确认退出并自动保存当前主题吗" in translations
     assert "Exit and save it automatically" in translations

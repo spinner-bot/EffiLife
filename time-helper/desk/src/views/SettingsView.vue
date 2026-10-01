@@ -95,7 +95,13 @@ const currentView = ref<ViewType>('main')
 const viewHistory = ref<ViewType[]>(['main'])
 
 // 导航到指定视图（记录历史）
-function navigateTo(view: ViewType) {
+async function navigateTo(view: ViewType) {
+  // Internal settings navigation does not trigger vue-router guards. Protect
+  // this exit path with the same theme confirmation used by the back button.
+  if (currentView.value === 'theme' && themeDirty.value) {
+    const canLeave = await confirmThemeExit()
+    if (!canLeave) return
+  }
   viewHistory.value.push(view)
   currentView.value = view
   if (view === 'restore') loadDataStatus()
