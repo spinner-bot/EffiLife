@@ -523,16 +523,26 @@ def collect_diagnostics(modules):
     module_status = {}
     for key, module in modules.items():
         url = module.get("url")
+        port_occupied = bool(url and local_port_is_occupied(url))
+        service_ready = bool(url and service_is_ready(url))
+        runtime_state = (
+            "unavailable" if not module.get("available") else
+            "ready" if service_ready else
+            "port-conflict" if port_occupied else
+            "stopped" if url else
+            "launchable"
+        )
         module_status[key] = {
             "name": module.get("name"),
             "cwd": str(module.get("cwd")) if module.get("cwd") else None,
             "command": [str(item) for item in module.get("cmd") or []],
             "setup": [str(item) for item in module.get("setup") or []],
             "available": bool(module.get("available")),
+            "runtime_state": runtime_state,
             "unavailable_reason": module.get("unavailable_reason"),
             "url": url,
-            "port_occupied": bool(url and local_port_is_occupied(url)),
-            "service_ready": bool(url and service_is_ready(url)),
+            "port_occupied": port_occupied,
+            "service_ready": service_ready,
             "needs_setup": bool(module.get("needs_setup")),
         }
     companion_status = {}
@@ -541,6 +551,8 @@ def collect_diagnostics(modules):
             companion_key = f"{module_key}.{index + 1}"
             url = companion.get("url")
             health_url = companion.get("health_url", url)
+            port_occupied = bool(health_url and local_port_is_occupied(health_url))
+            service_ready = bool(health_url and service_is_ready(health_url))
             companion_status[companion_key] = {
                 "name": companion.get("name"),
                 "parent_module": module_key,
@@ -548,8 +560,9 @@ def collect_diagnostics(modules):
                 "command": [str(item) for item in companion.get("cmd") or []],
                 "url": url,
                 "health_url": health_url,
-                "port_occupied": bool(health_url and local_port_is_occupied(health_url)),
-                "service_ready": bool(health_url and service_is_ready(health_url)),
+                "runtime_state": "ready" if service_ready else "port-conflict" if port_occupied else "stopped",
+                "port_occupied": port_occupied,
+                "service_ready": service_ready,
             }
     issues = []
     hints = []
@@ -679,8 +692,8 @@ def print_doctor_report(report):
     print()
 
     workspace = report.get("modules", {}).get("1", {})
-    workspace_state = "ready" if workspace.get("available") else "blocked"
-    if workspace.get("service_ready"):
+    workspace_state = workspace.get("runtime_state") or ("ready" if workspace.get("available") else "blocked")
+    if workspace_state == "ready" and workspace.get("service_ready"):
         workspace_state = "already running"
     print(f"Unified workspace: {workspace_state}")
     if workspace.get("url"):
@@ -690,9 +703,9 @@ def print_doctor_report(report):
     if companions:
         print("\nCompanion services:")
         for companion in companions.values():
-            state = "ready" if companion.get("service_ready") else (
+            state = companion.get("runtime_state") or ("ready" if companion.get("service_ready") else (
                 "port conflict" if companion.get("port_occupied") else "stopped"
-            )
+            ))
             print(f"  {companion.get('name')}: {state}")
 
     issues = report.get("issues", [])

@@ -679,11 +679,13 @@ def test_launcher_diagnostics_are_read_only_and_report_module_state(monkeypatch)
     assert result["version"] == (Path(launcher.BASE_DIR) / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     assert result["modules"]["1"]["port_occupied"] is True
     assert result["modules"]["1"]["service_ready"] is True
+    assert result["modules"]["1"]["runtime_state"] == "ready"
     assert result["modules"]["1"]["cwd"] == str(Path("F:/workspace"))
     assert result["modules"]["1"]["command"] == ["npm", "run", "dev"]
     assert result["modules"]["1"]["setup"] == ["npm", "install"]
     assert result["modules"]["1"]["needs_setup"] is True
     assert result["modules"]["2"]["service_ready"] is False
+    assert result["modules"]["2"]["runtime_state"] == "unavailable"
     assert result["modules"]["2"]["unavailable_reason"] == "missing runtime"
     assert result["modules"]["2"]["cwd"] is None
     assert result["modules"]["2"]["command"] == []
@@ -716,6 +718,7 @@ def test_launcher_diagnostics_include_nested_companion_health(monkeypatch):
     assert companion["health_url"].endswith("/api/health")
     assert companion["port_occupied"] is True
     assert companion["service_ready"] is False
+    assert companion["runtime_state"] == "port-conflict"
     assert any(item["code"] == "companion-port-conflict" for item in result["issues"])
 
 
