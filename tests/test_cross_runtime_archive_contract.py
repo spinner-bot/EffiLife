@@ -29,3 +29,27 @@ def test_frontend_export_uses_the_declared_canonical_dataset_list():
     source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
     assert "const datasets = [...CANONICAL_ARCHIVE_DATASETS]" in source
     assert "data/${name}.json" in source
+
+
+def test_frontend_and_python_workspace_validation_cover_the_same_core_shapes():
+    from common.data_exchange import _validate_workspace_dataset_shapes
+
+    source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
+    assert "if (!isObjectRecord(datasets.app))" in source
+    assert "if (!Array.isArray(datasets.todos))" in source
+    assert "if (!Array.isArray(datasets.todo_categories))" in source
+    assert "if (!isObjectRecord(datasets.records))" in source
+    assert "for (const records of Object.values(datasets.records))" in source
+    assert "if (!Array.isArray(records))" in source
+    assert "if (!isObjectRecord(datasets.plan_helper))" in source
+    assert "'plans' in datasets.plan_helper" in source
+    assert "'archives' in datasets.plan_helper" in source
+
+    valid = {
+        "app": {},
+        "records": {"2026-10-01": []},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": {"plans": [], "archives": []},
+    }
+    _validate_workspace_dataset_shapes(valid)
