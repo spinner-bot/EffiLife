@@ -861,8 +861,11 @@ onUnmounted(() => {
       <template v-else-if="currentView === 'theme'">
         <h2>{{ t('settings.theme.title') }}</h2>
 
-        <div v-for="category in availableThemeCategories" :key="category" class="form-section">
-          <label>{{ t(category) }}</label>
+        <div v-for="category in availableThemeCategories" :key="category" class="form-section theme-category" role="group" :aria-labelledby="`theme-category-${category}`">
+          <div class="theme-category-heading">
+            <h3 :id="`theme-category-${category}`">{{ t(category) }}</h3>
+            <span class="theme-category-count">{{ availableThemes.filter(theme => themeCategory(theme) === category).length }}</span>
+          </div>
           <div class="theme-list">
             <button
               v-for="theme in availableThemes.filter(theme => themeCategory(theme) === category)"
@@ -1432,9 +1435,36 @@ h2 {
 
 /* 主题列表 */
 .theme-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--spacing-sm);
+}
+
+.theme-category-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.theme-category-heading h3 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.theme-category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .theme-card {
@@ -1464,6 +1494,11 @@ h2 {
 .theme-card:hover {
   background: var(--color-bg-tertiary);
   border-color: var(--color-border-hover);
+}
+
+.theme-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .theme-card.active {
@@ -2232,6 +2267,7 @@ h2 {
 }
 
 @media (max-width: 680px) {
+  .theme-list { grid-template-columns: 1fr; }
   .settings-view { padding: 16px; }
   .header { gap: 10px; margin-bottom: 20px; }
   .header h1 { font-size: 1.25rem; }
