@@ -44,6 +44,7 @@ const category = ref('default')
 const filter = ref<'all' | 'active' | 'completed'>('active')
 const categoryFilter = ref('')
 const isLoading = ref(true)
+const dataUnavailable = ref(false)
 const errorMessage = ref('')
 const editingId = ref<string | null>(null)
 const editingTitle = ref('')
@@ -222,8 +223,10 @@ async function loadTodos() {
   errorMessage.value = ''
   try {
     todos.value = await TodoService.list()
+    dataUnavailable.value = false
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.load')
+    dataUnavailable.value = true
   } finally {
     isLoading.value = false
   }
@@ -984,6 +987,12 @@ watch(() => route.query.todo, () => {
       </section>
 
       <section v-if="isLoading" class="task-empty theme-card">{{ t('tasks.loading') }}</section>
+      <section v-else-if="dataUnavailable" class="task-empty task-unavailable theme-card" role="status" aria-live="polite">
+        <ListTodo :size="34" />
+        <strong>{{ t('tasks.unavailable') }}</strong>
+        <span>{{ t('tasks.unavailableHint') }}</span>
+        <button type="button" class="task-retry" @click="loadTodos">{{ t('tasks.retry') }}</button>
+      </section>
       <section v-else-if="visibleTodos.length === 0" class="task-empty theme-card">
         <ListTodo :size="34" />
         <strong>{{ filter === 'completed' ? t('tasks.emptyCompleted') : t('tasks.emptyActive') }}</strong>
@@ -1218,6 +1227,9 @@ watch(() => route.query.todo, () => {
 .subtask-add-form button:disabled { cursor: wait; opacity: .6; }
 .task-empty { display: grid; place-items: center; gap: 9px; min-height: 220px; border: 1px dashed var(--color-border); border-radius: 16px; color: var(--color-text-tertiary); text-align: center; }
 .task-empty strong { color: var(--color-text-secondary); }
+.task-unavailable { border-color: color-mix(in srgb, var(--color-error) 42%, var(--color-border)); }
+.task-retry { border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 11px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
+.task-retry:hover, .task-retry:focus-visible { border-color: var(--color-primary); outline: 0; }
 .category-manager { display: grid; gap: 14px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; }
 .category-manager-header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .category-manager-header h2 { margin: 0; font-size: 15px; }

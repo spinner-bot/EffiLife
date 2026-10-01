@@ -17,3 +17,11 @@ def test_task_center_refreshes_after_unified_workspace_changes():
     assert "async function drainWorkspaceRefresh(): Promise<void>" in source
     assert "pendingWorkspaceSources.add(source)" in source
     assert "stopWorkspaceListener?.()" in source
+
+
+def test_task_center_does_not_render_storage_failure_as_an_empty_list():
+    source = TASKS.read_text(encoding="utf-8")
+    assert "const dataUnavailable = ref(false)" in source
+    assert "dataUnavailable.value = true" in source
+    assert 'class="task-empty task-unavailable theme-card" role="status" aria-live="polite"' in source
+    assert "@click=\"loadTodos\"" in source
