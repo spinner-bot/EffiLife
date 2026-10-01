@@ -193,6 +193,10 @@ async function refreshWorkspaceSummaries(): Promise<void> {
         refreshEventPlanSummary(),
       ])
     } while (summaryRefreshQueued)
+  } catch (error) {
+    // Keep an unexpected coordinator failure recoverable; each module also
+    // owns its normal unavailable state and retry affordance.
+    console.warn('Failed to refresh home workspace summary:', error)
   } finally {
     summaryRefreshRunning = false
   }

@@ -9,16 +9,19 @@ I18N = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(e
 
 def test_home_periodic_statistics_refresh_has_error_boundary():
     refresh_block = HOME.split("refreshTimer = window.setInterval(() =>", 1)[1].split("}, 60000)", 1)[0]
-    assert "void refreshTimeSummary()" in refresh_block
+    assert "void refreshWorkspaceSummaries()" in refresh_block
+    assert "async function refreshWorkspaceSummaries(): Promise<void>" in HOME
     assert "async function refreshTimeSummary(): Promise<void>" in HOME
     assert "Failed to refresh home time summary:" in HOME
 
 
 def test_home_cross_window_summary_refresh_has_error_boundary():
     refresh_block = HOME.split("workspaceRefreshTimer = window.setTimeout(async () =>", 1)[1].split("}, 80)", 1)[0]
-    assert "await Promise.all([" in refresh_block
-    assert "catch (error)" in refresh_block
-    assert "Failed to refresh home workspace summary:" in refresh_block
+    assert "await refreshWorkspaceSummaries()" in refresh_block
+    coordinator = HOME.split("async function refreshWorkspaceSummaries(): Promise<void>", 1)[1].split("function scheduleWorkspaceSummaryRefresh", 1)[0]
+    assert "await Promise.all([" in coordinator
+    assert "catch (error)" in coordinator
+    assert "Failed to refresh home workspace summary:" in HOME
 
 
 def test_day_detail_initial_load_has_error_boundary():
