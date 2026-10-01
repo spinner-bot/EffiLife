@@ -19,6 +19,14 @@ def test_home_inbox_panel_stays_inside_narrow_mobile_viewports():
     assert "max-width: calc(100vw - 32px);" in HOME
 
 
+def test_home_does_not_render_zero_values_before_workspace_summary_is_ready():
+    assert "const workspaceSummaryReady = ref(false)" in HOME
+    assert ":aria-busy=\"!workspaceSummaryReady\"" in HOME
+    assert "!workspaceSummaryReady || timeSummaryUnavailable" in HOME
+    assert "class=\"stats-loading\"" in HOME
+    assert "class=\"today-todos-loading\"" in HOME
+
+
 def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 681px) and (max-width: 820px)" in app

@@ -32,6 +32,7 @@ const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
 const timeSummaryUnavailable = ref(false)
+const workspaceSummaryReady = ref(false)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -199,6 +200,7 @@ async function refreshWorkspaceSummaries(): Promise<void> {
     console.warn('Failed to refresh home workspace summary:', error)
   } finally {
     summaryRefreshRunning = false
+    workspaceSummaryReady.value = true
   }
 }
 
@@ -372,7 +374,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view">
+  <div class="home-view" :aria-busy="!workspaceSummaryReady">
     <header class="header">
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
@@ -454,19 +456,19 @@ onUnmounted(() => {
       </section>
 
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable }" type="button" @click="router.push('/time')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ t('home.timeModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.timeModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable' }" type="button" @click="router.push('/plans')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable', 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ t('home.planModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable }" type="button" @click="router.push('/tasks')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/tasks')">
           <span class="workflow-summary-icon"><ListTodo :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ t('home.todoModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.todoModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
       </section>
@@ -483,6 +485,10 @@ onUnmounted(() => {
           <div v-if="timeSummaryUnavailable" class="stats-unavailable" role="status" aria-live="polite">
             <span>{{ t('home.timeUnavailable') }}</span>
             <button type="button" @click="refreshTimeSummary">{{ t('home.retryTime') }}</button>
+          </div>
+          <div v-else-if="!workspaceSummaryReady" class="stats-loading" role="status" aria-live="polite">
+            <span class="stats-loading-ring" aria-hidden="true"></span>
+            <span>{{ t('home.summaryLoading') }}</span>
           </div>
           <div class="stats-content" v-else-if="stat && stat.plan_exists">
             <!-- 环形总完成度 -->
@@ -596,6 +602,10 @@ onUnmounted(() => {
           <span>{{ t('home.todosUnavailable') }}</span>
           <button type="button" @click="refreshTodoSummary">{{ t('home.retryTodos') }}</button>
         </div>
+        <div v-else-if="!workspaceSummaryReady" class="today-todos-loading" role="status" aria-live="polite">
+          <span class="today-todos-loading-bar" aria-hidden="true"></span>
+          <span>{{ t('home.summaryLoading') }}</span>
+        </div>
         <div v-else-if="todayTodos.length" class="today-todos-list">
           <div v-for="todo in todayTodos" :key="todo.id" class="today-todo-row">
             <button type="button" class="today-todo-complete" :disabled="completingTodoId === todo.id" :aria-label="t('tasks.completeLabelFor', { title: todo.title })" @click="completeHomeTodo(todo)">
@@ -661,6 +671,8 @@ onUnmounted(() => {
 .workflow-summary-item:hover { border-color: var(--color-border-hover); background: var(--color-bg-tertiary); transform: translateY(-1px); }
 .workflow-summary-item.is-unavailable { border-style: dashed; }
 .workflow-summary-item.is-unavailable .workflow-summary-copy strong { color: var(--color-text-tertiary); }
+.workflow-summary-item.is-loading { cursor: wait; }
+.workflow-summary-item.is-loading .workflow-summary-icon { opacity: .6; }
 .workflow-summary-icon { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; color: var(--color-primary); background: var(--color-primary-muted); }
 .workflow-summary-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .workflow-summary-copy strong { color: var(--color-text-primary); font-size: 15px; font-variant-numeric: tabular-nums; }
@@ -1208,6 +1220,13 @@ onUnmounted(() => {
 .stats-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 120px; padding: var(--spacing-md); border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: 12px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
 .stats-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
 .stats-unavailable button:hover, .stats-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
+.stats-loading { display: grid; place-items: center; gap: 10px; min-height: 168px; color: var(--color-text-tertiary); font-size: 12px; }
+.stats-loading-ring { width: 24px; height: 24px; border: 2px solid var(--color-primary-muted); border-top-color: var(--color-primary); border-radius: 50%; animation: home-spin .8s linear infinite; }
+.today-todos-loading { display: flex; align-items: center; gap: 10px; margin-top: var(--spacing-md); min-height: 58px; color: var(--color-text-tertiary); font-size: 12px; }
+.today-todos-loading-bar { width: 100px; height: 8px; border-radius: 999px; background: var(--color-primary-muted); animation: home-pulse 1.2s ease-in-out infinite; }
+@keyframes home-spin { to { transform: rotate(360deg); } }
+@keyframes home-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .stats-loading-ring, .today-todos-loading-bar { animation: none; } }
 
 /* 环形总完成度 */
 .overall-progress-ring {
