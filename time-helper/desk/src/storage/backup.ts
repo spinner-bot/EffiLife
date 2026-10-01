@@ -220,6 +220,9 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
       break
     case 'records':
       if (Array.isArray(data)) {
+        // A records backup is a complete snapshot. Clear first so removed
+        // dates (including an intentionally empty snapshot) do not survive.
+        await clear(STORE_NAMES.RECORDS)
         for (const record of data) {
           const r = record as { date: string; records: unknown[] }
           await set(STORE_NAMES.RECORDS, r.date, r.records)
@@ -233,6 +236,8 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
       break
     case 'manual_plans':
       if (typeof data === 'object' && data !== null) {
+        // Manual plans are also restored as a complete date -> plan snapshot.
+        await clear(STORE_NAMES.MANUAL_PLANS)
         for (const [date, planName] of Object.entries(data)) {
           await set(STORE_NAMES.MANUAL_PLANS, date, planName)
         }
