@@ -30,8 +30,8 @@ def test_theme_save_refreshes_persistent_snapshot_without_a_save_button():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "await appStore.saveConfig(newConfig)" in source
     save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
-    assert "savedThemeSnapshot.value = draftTheme" in save_block
-    assert "syncThemeDraft(draftTheme)" in save_block
+    assert "savedThemeSnapshot.value = durableTheme" in save_block
+    assert "syncThemeDraft(durableTheme)" in save_block
     assert "await appStore.refreshWorkspaceData()" not in save_block
     assert '@click="saveTheme"' not in source
 
@@ -39,8 +39,8 @@ def test_theme_save_refreshes_persistent_snapshot_without_a_save_button():
 def test_theme_save_marks_draft_clean_before_exit_can_complete():
     source = SETTINGS.read_text(encoding="utf-8")
     save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
-    assert save_block.index("await appStore.saveConfig(newConfig)") < save_block.index("savedThemeSnapshot.value = draftTheme")
-    assert save_block.index("savedThemeSnapshot.value = draftTheme") < save_block.index("notifyToast(t('settings.saved'), 'success')")
+    assert save_block.index("await appStore.saveConfig(newConfig)") < save_block.index("savedThemeSnapshot.value = durableTheme")
+    assert save_block.index("savedThemeSnapshot.value = durableTheme") < save_block.index("notifyToast(t('settings.saved'), 'success')")
 
 
 def test_theme_save_verifies_the_durable_startup_read_path_before_exit():
@@ -49,7 +49,15 @@ def test_theme_save_verifies_the_durable_startup_read_path_before_exit():
     assert "const persistedConfig = await DataService.loadConfig()" in save_block
     assert "JSON.stringify(persistedConfig.theme) !== JSON.stringify(draftTheme)" in save_block
     assert save_block.index("await appStore.saveConfig(newConfig)") < save_block.index("await DataService.loadConfig()")
-    assert save_block.index("await DataService.loadConfig()") < save_block.index("savedThemeSnapshot.value = draftTheme")
+    assert save_block.index("await DataService.loadConfig()") < save_block.index("savedThemeSnapshot.value = durableTheme")
+
+
+def test_theme_save_rehydrates_runtime_from_the_durable_theme():
+    source = SETTINGS.read_text(encoding="utf-8")
+    save_block = source.split("async function saveTheme", 1)[1].split("async function confirmThemeExit", 1)[0]
+    assert "const durableTheme = cloneTheme(persistedConfig.theme)" in save_block
+    assert "appStore.previewConfig({ ...appStore.config, theme: durableTheme })" in save_block
+    assert "savedThemeSnapshot.value = durableTheme" in save_block
 
 
 def test_theme_preview_status_explains_confirmed_exit_save_in_both_locales():
@@ -65,7 +73,7 @@ def test_theme_save_reports_success_and_failure_without_losing_dirty_state():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "notifyToast(t('settings.saved'), 'success')" in source
     assert "notifyToast(t('settings.saveFailed'), 'error')" in source
-    assert "savedThemeSnapshot.value = draftTheme" in source
+    assert "savedThemeSnapshot.value = durableTheme" in source
 
 
 def test_theme_editor_owns_detached_draft_objects():

@@ -329,13 +329,14 @@ async function saveTheme(): Promise<boolean> {
     if (JSON.stringify(persistedConfig.theme) !== JSON.stringify(draftTheme)) {
       throw new Error('Theme persistence verification failed')
     }
-    // saveConfig resolves only after IndexedDB/localStorage have accepted the
-    // write. Mark the exact detached draft as clean immediately. Waiting for a
-    // second workspace refresh here creates a race: the refresh listener can
-    // briefly rehydrate the old snapshot while the settings view is leaving,
-    // making a successfully saved theme appear to revert.
-    savedThemeSnapshot.value = draftTheme
-    syncThemeDraft(draftTheme)
+    // Use the value read back through the startup path as the final source of
+    // truth. This matters when normalization adds defaults or another window
+    // observes the settings event while this view is leaving: the preview and
+    // the clean snapshot must be exactly what the next startup will hydrate.
+    const durableTheme = cloneTheme(persistedConfig.theme)
+    appStore.previewConfig({ ...appStore.config, theme: durableTheme })
+    savedThemeSnapshot.value = durableTheme
+    syncThemeDraft(durableTheme)
     notifyToast(t('settings.saved'), 'success')
     return true
   } catch (error) {
