@@ -21,6 +21,29 @@ def test_launcher_reads_custom_node_directory_at_lookup_time(monkeypatch, tmp_pa
     assert str(node_dir) in launcher.node_environment()["PATH"]
 
 
+def test_dependencies_ready_requires_actual_frontend_entry_points(tmp_path):
+    desk = tmp_path / "time-helper" / "desk"
+    bin_dir = desk / "node_modules" / ".bin"
+    bin_dir.mkdir(parents=True)
+    vite_name = "vite.cmd" if launcher.os.name == "nt" else "vite"
+    typecheck_name = "vue-tsc.cmd" if launcher.os.name == "nt" else "vue-tsc"
+    (bin_dir / vite_name).write_text("vite", encoding="utf-8")
+
+    assert launcher.dependencies_ready(desk) is False
+    (bin_dir / typecheck_name).write_text("vue-tsc", encoding="utf-8")
+    assert launcher.dependencies_ready(desk) is True
+
+
+def test_dependencies_ready_accepts_vite_for_compatibility_ui(tmp_path):
+    ui = tmp_path / "to-dos" / "ui"
+    bin_dir = ui / "node_modules" / ".bin"
+    bin_dir.mkdir(parents=True)
+    vite_name = "vite.cmd" if launcher.os.name == "nt" else "vite"
+    (bin_dir / vite_name).write_text("vite", encoding="utf-8")
+
+    assert launcher.dependencies_ready(ui) is True
+
+
 def test_launcher_ignores_blank_custom_node_directory(monkeypatch):
     monkeypatch.setenv("EFFILIFE_NODE_DIR", "   ")
     expected = launcher.CUSTOM_NODE_DIR if launcher.os.name == "nt" else None

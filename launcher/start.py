@@ -153,9 +153,21 @@ def process_group_options():
 
 
 def dependencies_ready(cwd):
-    """Avoid running npm install on every launch."""
+    """Return whether the frontend dependency entry points are usable.
+
+    Checking only ``node_modules/vite`` is insufficient after an interrupted
+    npm install: the package directory can remain while ``.bin`` shims (or
+    the desktop type-checker) are missing. In that state the launcher used to
+    skip setup and fail later inside ``npm run dev`` with little context.
+    """
     module_dir = Path(cwd) / "node_modules"
-    return module_dir.is_dir() and (module_dir / "vite").is_dir()
+    bin_dir = module_dir / ".bin"
+    suffix = ".cmd" if os.name == "nt" else ""
+    required = ["vite"]
+    resolved_cwd = Path(cwd).resolve()
+    if resolved_cwd.name == "desk" and resolved_cwd.parent.name == "time-helper":
+        required.append("vue-tsc")
+    return module_dir.is_dir() and all((bin_dir / f"{name}{suffix}").is_file() for name in required)
 
 
 def startup_timeout(default=30):
