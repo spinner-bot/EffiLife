@@ -914,6 +914,13 @@ onUnmounted(() => {
   background: var(--color-primary-hover);
 }
 
+/* Desktop uses the available workbench width; the compact single-column
+   layout remains the default for phones and narrow windows. */
+@media (min-width: 1100px) {
+  .main-content { max-width: 1180px; }
+  .records-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
