@@ -35,6 +35,21 @@ def test_dynamic_translation_key_families_exist_in_both_locales():
     assert not missing, f"missing bilingual dynamic translation keys: {missing}"
 
 
+def test_dynamic_audio_bgm_keys_exist_for_every_builtin_track():
+    catalog = CATALOG.read_text(encoding="utf-8")
+    audio_manager = (SRC / "audio" / "AudioManager.ts").read_text(encoding="utf-8")
+    settings = (SRC / "views" / "AudioSettingsView.vue").read_text(encoding="utf-8")
+    builtin_ids = set(re.findall(r"\{ id: '([^']+)', name:", audio_manager))
+    mapped_ids = set(re.findall(r"\s+(\w+): 'settings\.audio\.bgmName\.\w+',", settings))
+    assert builtin_ids == mapped_ids
+    missing = sorted(
+        f"settings.audio.bgmName.{track_id}"
+        for track_id in builtin_ids
+        if catalog.count(f"'settings.audio.bgmName.{track_id}'") < 2
+    )
+    assert not missing, f"missing bilingual BGM translation keys: {missing}"
+
+
 def test_unified_workspace_templates_do_not_embed_visible_cjk_text():
     """Visible copy in the active shell must remain translatable.
 
