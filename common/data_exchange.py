@@ -241,15 +241,21 @@ def export_workspace_bundle(
     browser/Tauri `.efl` archive without exposing module-specific storage
     layouts to callers.
     """
+    datasets = {
+        "app": app,
+        "records": records,
+        "todos": todos,
+        "todo_categories": todo_categories,
+        "plan_helper": plan_helper,
+    }
+    # Reject malformed canonical workspaces before creating a portable file.
+    # The frontend performs the same validation during import; keeping this
+    # boundary symmetric prevents invalid bundles from entering the exchange
+    # pipeline only to fail on another runtime.
+    _validate_workspace_dataset_shapes(datasets)
     return export_bundle(
         output_path,
-        {
-            "app": app,
-            "records": records,
-            "todos": todos,
-            "todo_categories": todo_categories,
-            "plan_helper": plan_helper,
-        },
+        datasets,
         metadata=metadata,
     )
 

@@ -60,6 +60,22 @@ def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
         read_workspace_bundle(bundle)
 
 
+def test_workspace_export_rejects_invalid_shapes_before_writing(tmp_path):
+    bundle = tmp_path / "invalid-export.efl"
+
+    with pytest.raises(ValueError, match="invalid shape: app"):
+        export_workspace_bundle(
+            bundle,
+            app=[],
+            records={},
+            todos=[],
+            todo_categories=[],
+            plan_helper={"plans": []},
+        )
+
+    assert not bundle.exists()
+
+
 def test_workspace_bundle_rejects_invalid_core_dataset_shapes(tmp_path):
     bundle = tmp_path / "invalid-shapes.efl"
     export_bundle(bundle, {
