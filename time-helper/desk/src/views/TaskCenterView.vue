@@ -403,6 +403,38 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
   if (selectedPlanId.value) await loadPlanTasks(selectedPlanId.value)
 }
 
+// Coalesce bursts from imports and cross-window edits so an older refresh
+// cannot finish after a newer one and overwrite the task-center state.
+const pendingWorkspaceSources = new Set<string>()
+let workspaceRefreshRunning = false
+
+async function drainWorkspaceRefresh(): Promise<void> {
+  if (workspaceRefreshRunning) return
+  workspaceRefreshRunning = true
+  try {
+    while (pendingWorkspaceSources.size > 0) {
+      const sources = [...pendingWorkspaceSources]
+      pendingWorkspaceSources.clear()
+      for (const source of sources) {
+        try {
+          await refreshFromWorkspace(source)
+        } catch (error) {
+          console.warn('Failed to refresh task center after external change:', error)
+        }
+      }
+    }
+  } finally {
+    workspaceRefreshRunning = false
+    if (pendingWorkspaceSources.size > 0) void drainWorkspaceRefresh()
+  }
+}
+
+function queueWorkspaceRefresh(source?: string): void {
+  if (!source || !['todos', 'plans', 'records', 'archive', 'settings'].includes(source)) return
+  pendingWorkspaceSources.add(source)
+  void drainWorkspaceRefresh()
+}
+
 async function completeTodo(todo: UnifiedTodo) {
   if (todo.status === 'completed' || completingTodoId.value === todo.id) return
   completingTodoId.value = todo.id
@@ -846,11 +878,7 @@ async function revealSearchTarget(): Promise<void> {
 let stopWorkspaceListener: (() => void) | null = null
 
 onMounted(async () => {
-  stopWorkspaceListener = onWorkspaceChanged((source) => {
-    void refreshFromWorkspace(source).catch((error) => {
-      console.warn('Failed to refresh task center after external change:', error)
-    })
-  })
+  stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)
   await loadTodos()
   await loadCategories()
   loadPlanSummaries()

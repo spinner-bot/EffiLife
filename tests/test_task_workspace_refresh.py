@@ -13,4 +13,7 @@ def test_task_center_refreshes_after_unified_workspace_changes():
     assert "await loadTodos()" in source
     assert "await loadCategories()" in source
     assert "stopWorkspaceListener = onWorkspaceChanged" in source
+    assert "const pendingWorkspaceSources = new Set<string>()" in source
+    assert "async function drainWorkspaceRefresh(): Promise<void>" in source
+    assert "pendingWorkspaceSources.add(source)" in source
     assert "stopWorkspaceListener?.()" in source
