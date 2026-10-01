@@ -155,6 +155,17 @@ function handleTaskTabKeydown(event: KeyboardEvent): void {
 }
 const allVisibleTodosSelected = computed(() => visibleTodos.value.length > 0 && visibleTodos.value.every((todo) => selectedTodoIds.value.has(todo.id)))
 
+function reconcileTodoSelection(): void {
+  const availableIds = new Set(todos.value.map((todo) => todo.id))
+  const next = new Set([...selectedTodoIds.value].filter((id) => availableIds.has(id)))
+  if (next.size !== selectedTodoIds.value.size) selectedTodoIds.value = next
+}
+
+watch(
+  () => [filter.value, categoryFilter.value, taskSearch.value],
+  () => clearTodoSelection(),
+)
+
 const categorySummaries = computed(() => categories.value.map((category) => {
   const items = activeTodos.value.filter((todo) => todo.category === category.id)
   const score = items.reduce((total, todo) => total + Math.max(0, scoreFor(todo).score), 0)
@@ -228,6 +239,7 @@ async function loadTodos() {
   errorMessage.value = ''
   try {
     todos.value = await TodoService.list()
+    reconcileTodoSelection()
     dataUnavailable.value = false
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.load')
@@ -479,6 +491,7 @@ async function removeTodo(todo: UnifiedTodo) {
     }
     await TodoService.remove(todo.id)
     todos.value = todos.value.filter((item) => item.id !== todo.id)
+    reconcileTodoSelection()
     notifyToast(t('tasks.deleted'), 'success')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
