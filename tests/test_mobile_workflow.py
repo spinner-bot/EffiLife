@@ -31,6 +31,8 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert workflow.count("python -m pip install --disable-pip-version-check pytest") == 2
     assert workflow.count("python scripts/check_mobile_release_config.py") == 2
     assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 2
+    assert workflow.count("name: Build shared mobile frontend") == 2
+    assert workflow.count("run: npm run build") == 2
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "python scripts/check_build_environment.py --target android" in workflow
     assert "npm run mobile:android:build" in workflow

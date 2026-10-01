@@ -74,6 +74,10 @@ jobs:
           python scripts/check_mobile_release_config.py
           python -m pytest -q tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py
 
+      - name: Build shared mobile frontend
+        working-directory: time-helper/desk
+        run: npm run build
+
       - name: Initialize Tauri Android project
         working-directory: time-helper/desk
         run: npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
@@ -165,6 +169,10 @@ jobs:
         run: |
           python scripts/check_mobile_release_config.py
           python -m pytest -q tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py
+
+      - name: Build shared mobile frontend
+        working-directory: time-helper/desk
+        run: npm run build
 
       - name: Initialize Tauri iOS project
         working-directory: time-helper/desk
