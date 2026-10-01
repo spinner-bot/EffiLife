@@ -485,7 +485,7 @@ async function onFileSelected(event: Event) {
     const result = await importArchive(file)
     notifyToast(result.message, result.success ? 'success' : 'error')
 
-    if (result.success) {
+    if (result.success && await requestConfirm(result.message + '\n\n' + t('settings.archive.reloadConfirm'))) {
       window.location.reload()
     }
   } catch (error) {
