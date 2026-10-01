@@ -88,7 +88,7 @@ async function waitForCoreWorkspace(ready: Promise<void>): Promise<void> {
     await Promise.race([
       ready,
       new Promise<void>((_, reject) => {
-        timeout = setTimeout(() => reject(new Error('Core workspace initialization timed out after 15 seconds')), CORE_STARTUP_TIMEOUT_MS)
+          timeout = setTimeout(() => reject(new Error(`Core workspace initialization timed out after ${CORE_STARTUP_TIMEOUT_MS / 1000} seconds`)), CORE_STARTUP_TIMEOUT_MS)
       }),
     ])
   } finally {

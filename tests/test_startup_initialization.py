@@ -15,7 +15,7 @@ def test_optional_startup_services_have_a_bounded_wait():
 def test_core_startup_has_a_bounded_diagnostic_path():
     assert "CORE_STARTUP_TIMEOUT_MS = 30000" in APP
     assert "async function waitForCoreWorkspace" in APP
-    assert "Core workspace initialization timed out after 15 seconds" in APP
+    assert "timed out after ${CORE_STARTUP_TIMEOUT_MS / 1000} seconds" in APP
     assert "await waitForCoreWorkspace(appStore.init())" in APP
 
 

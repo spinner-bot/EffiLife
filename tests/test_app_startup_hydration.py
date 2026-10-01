@@ -22,6 +22,7 @@ def test_core_startup_allows_cold_storage_hydration_but_remains_bounded():
     source = APP.read_text(encoding="utf-8")
     assert "const CORE_STARTUP_TIMEOUT_MS = 30000" in source
     assert "CORE_STARTUP_TIMEOUT_MS)" in source
+    assert "timed out after ${CORE_STARTUP_TIMEOUT_MS / 1000} seconds" in source
 
 
 def test_startup_state_is_localized_in_both_fallback_catalogs():
