@@ -817,14 +817,24 @@ def run_module(choice, modules, open_browser=True):
     print("-" * 50)
     print("按 Ctrl+C 停止\n")
 
-    # Reuse an already healthy main workspace before starting companions. The
-    # existing process owns its companion lifecycle; this launcher must not
-    # partially attach to that external process tree.
+    # Reuse an already healthy main workspace, while still ensuring that
+    # companions declared by this module are available beside it.
     if module.get("url") and service_is_ready(module["url"]):
+        companion_processes = start_companions(module, env)
+        if companion_processes is None:
+            return
         record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
         print(f"浣跨敤宸茶繍琛岀殑涓绘湇鍔? {module['url']}")
-        if open_browser:
-            webbrowser.open(module["url"])
+        try:
+            if open_browser:
+                webbrowser.open(module["url"])
+            if companion_processes:
+                wait_for_existing_service(module["url"])
+        except KeyboardInterrupt:
+            print("\nLauncher stopped.")
+        finally:
+            for companion_process in companion_processes:
+                terminate_process(companion_process)
         return
 
     companion_processes = start_companions(module, env)
@@ -840,6 +850,8 @@ def run_module(choice, modules, open_browser=True):
         try:
             if open_browser:
                 webbrowser.open(module["url"])
+            if companion_processes:
+                wait_for_existing_service(module["url"])
         except KeyboardInterrupt:
             print("\n已停止")
         finally:
@@ -1049,6 +1061,12 @@ def wait_for_service(process, url, timeout=None):
         time.sleep(0.25)
     print(f"\n⚠️ 服务在 {timeout} 秒内未响应，请手动打开: {url}")
     return False
+
+
+def wait_for_existing_service(url):
+    """Keep launcher-owned companions alive beside an external frontend."""
+    while service_is_ready(url):
+        time.sleep(0.5)
 
 
 def _legacy_main():

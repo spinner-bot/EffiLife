@@ -401,7 +401,11 @@ def test_launcher_reports_companion_port_conflict_before_starting_it(monkeypatch
 def test_launcher_reuses_external_healthy_workspace_without_waiting_forever(monkeypatch):
     opened = []
     started = []
-    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: started.append(True))
+    def fake_start_companions(_module, _env):
+        started.append(True)
+        return []
+
+    monkeypatch.setattr(launcher, "start_companions", fake_start_companions)
     monkeypatch.setattr(launcher, "service_is_ready", lambda _url: True)
     monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
 
@@ -418,7 +422,7 @@ def test_launcher_reuses_external_healthy_workspace_without_waiting_forever(monk
     )
 
     assert opened == ["http://127.0.0.1:1420"]
-    assert started == []
+    assert started == [True]
 
 
 def test_startup_timeout_is_bounded_and_configurable(monkeypatch):
@@ -601,6 +605,32 @@ def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkey
     launcher.run_module("test", {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": "http://127.0.0.1:1420", "setup": None}})
     assert opened == ["http://127.0.0.1:1420"]
     assert terminated == []
+
+
+def test_launcher_starts_missing_companion_for_existing_frontend_and_tracks_lifecycle(monkeypatch):
+    terminated = []
+    opened = []
+    companion = object()
+    checks = iter([True, False])
+    module = {
+        "name": "workspace",
+        "available": True,
+        "cmd": ["frontend"],
+        "cwd": launcher.BASE_DIR,
+        "url": "http://127.0.0.1:1420",
+        "setup": None,
+        "companions": [{"name": "plan-helper", "url": "http://127.0.0.1:8765"}],
+    }
+    monkeypatch.setattr(launcher, "service_is_ready", lambda url: next(checks) if url.endswith(":1420") else False)
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [companion])
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
+    monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
+    monkeypatch.setattr(launcher.time, "sleep", lambda _seconds: None)
+
+    launcher.run_module("test", {"test": module})
+
+    assert opened == ["http://127.0.0.1:1420"]
+    assert terminated == [companion]
 
 
 def test_launcher_exits_when_reused_frontend_stops(monkeypatch):
