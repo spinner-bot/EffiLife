@@ -22,6 +22,7 @@ const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
 const todos = ref<UnifiedTodo[]>([])
 const todoOptionsUnavailable = ref(false)
+const todoOptionsLoaded = ref(false)
 const selectedTodoId = ref('')
 const todoOptions = computed(() => {
   const selected = todos.value.find((todo) => todo.id === selectedTodoId.value)
@@ -38,16 +39,23 @@ async function loadTodoOptions(): Promise<void> {
   try {
     todos.value = await TodoService.list()
     todoOptionsUnavailable.value = false
+    todoOptionsLoaded.value = true
   } catch {
     todos.value = []
     todoOptionsUnavailable.value = true
+    todoOptionsLoaded.value = false
   }
 }
 
 let stopWorkspaceListener: (() => void) | null = null
 
 function openLinkedTodo(todoId: string) {
+  if (todoOptionsLoaded.value && !todoTitleById.value.has(todoId)) return
   router.push({ path: '/tasks', query: { todo: todoId } })
+}
+
+function isLinkedTodoUnavailable(todoId: string): boolean {
+  return todoOptionsLoaded.value && !todoTitleById.value.has(todoId)
 }
 
 function preselectLinkedTodo(): void {
@@ -378,10 +386,12 @@ onUnmounted(() => {
             v-if="record.todo_id"
             type="button"
             class="record-todo-link"
-            :title="t('records.openTodo')"
+            :class="{ unavailable: isLinkedTodoUnavailable(record.todo_id) }"
+            :disabled="isLinkedTodoUnavailable(record.todo_id)"
+            :title="isLinkedTodoUnavailable(record.todo_id) ? t('records.todoUnavailable') : t('records.openTodo')"
             @click="openLinkedTodo(record.todo_id)"
           >
-            {{ t('records.linkedTodo') }}: {{ todoTitleById.get(record.todo_id) || record.todo_id }}
+            {{ isLinkedTodoUnavailable(record.todo_id) ? t('records.todoUnavailable') : `${t('records.linkedTodo')}: ${todoTitleById.get(record.todo_id) || record.todo_id}` }}
           </button>
           <div class="record-actions">
             <button type="button" class="icon-btn" :aria-label="t('records.edit')" @click="openEditForm(index)" :title="t('records.edit')">
