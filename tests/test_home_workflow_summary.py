@@ -17,6 +17,11 @@ def test_home_summary_aggregates_three_unified_workstreams():
     assert "router.push('/tasks')" in HOME
 
 
+def test_home_ignores_invalid_time_record_durations_in_summary():
+    assert "const duration = Number(record.duration)" in HOME
+    assert "Number.isFinite(duration) && duration >= 0" in HOME
+
+
 def test_home_workflow_summary_has_bilingual_copy():
     for key in ("home.workflowSummary", "home.timeModuleSummary", "home.planModuleSummary", "home.todoModuleSummary"):
         assert I18N.count(f"'{key}':") == 2

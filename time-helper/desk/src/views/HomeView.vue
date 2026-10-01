@@ -191,7 +191,10 @@ const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache' || p
 const eventPlanSnapshotLabel = computed(() => planDataSource.value === 'mobile'
   ? t('plans.mobileLocalTitle')
   : t('plans.cachedTitle'))
-const todayRecordHours = computed(() => appStore.todayRecords.reduce((total, record) => total + Number(record.duration || 0), 0))
+const todayRecordHours = computed(() => appStore.todayRecords.reduce((total, record) => {
+  const duration = Number(record.duration)
+  return Number.isFinite(duration) && duration >= 0 ? total + duration : total
+}, 0))
 
 const updateTime = () => {
   const now = new Date()
