@@ -371,14 +371,11 @@ def test_launcher_reports_companion_port_conflict_before_starting_it(monkeypatch
 
 
 def test_launcher_reuses_external_healthy_workspace_without_waiting_forever(monkeypatch):
-    terminated = []
     opened = []
-    companion = object()
-    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [companion])
+    started = []
+    monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: started.append(True))
     monkeypatch.setattr(launcher, "service_is_ready", lambda _url: True)
-    monkeypatch.setattr(launcher, "terminate_process", lambda process: terminated.append(process))
     monkeypatch.setattr(launcher.webbrowser, "open", lambda url: opened.append(url))
-    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: True)
 
     launcher.run_module(
         "test",
@@ -393,7 +390,7 @@ def test_launcher_reuses_external_healthy_workspace_without_waiting_forever(monk
     )
 
     assert opened == ["http://127.0.0.1:1420"]
-    assert terminated == [companion]
+    assert started == []
 
 
 def test_startup_timeout_is_bounded_and_configurable(monkeypatch):

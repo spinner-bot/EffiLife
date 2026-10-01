@@ -755,6 +755,16 @@ def run_module(choice, modules, open_browser=True):
     print("-" * 50)
     print("按 Ctrl+C 停止\n")
 
+    # Reuse an already healthy main workspace before starting companions. The
+    # existing process owns its companion lifecycle; this launcher must not
+    # partially attach to that external process tree.
+    if module.get("url") and service_is_ready(module["url"]):
+        record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
+        print(f"浣跨敤宸茶繍琛岀殑涓绘湇鍔? {module['url']}")
+        if open_browser:
+            webbrowser.open(module["url"])
+        return
+
     companion_processes = start_companions(module, env)
     if companion_processes is None:
         return
