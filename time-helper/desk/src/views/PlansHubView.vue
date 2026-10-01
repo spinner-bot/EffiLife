@@ -939,7 +939,7 @@ onUnmounted(() => {
 <template>
   <div class="plans-hub">
     <header v-if="view !== 'time'" class="plans-header">
-      <button class="plans-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('plans.back')">
+      <button type="button" class="plans-back" @click="AudioManager.playSound('click'); router.push('/')" :aria-label="t('plans.back')">
         <ArrowLeft :size="18" />
       </button>
       <div class="plans-title-block">
@@ -947,7 +947,7 @@ onUnmounted(() => {
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
         <p v-if="view !== 'detail'" class="plans-module-description">{{ t('plans.moduleDescription') }}</p>
       </div>
-      <div v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plan-entry-actions"><button class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
+      <div v-if="(view === 'events' || view === 'hub') && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
     <main class="plans-content" :class="{ 'plans-content-hub': view === 'hub' }">
@@ -972,14 +972,14 @@ onUnmounted(() => {
         <section class="unified-plan-section">
           <div class="unified-section-heading">
             <div><p class="plans-eyebrow">{{ t('plans.time') }}</p><h2>{{ t('plans.timeDescription') }}</h2></div>
-            <button class="plans-secondary" @click="openTimePlan"><Clock3 :size="15" /> {{ t('plans.time') }}</button>
+            <button type="button" class="plans-secondary" @click="openTimePlan"><Clock3 :size="15" /> {{ t('plans.time') }}</button>
           </div>
           <DailyPlanView :embedded="true" />
         </section>
         <section class="unified-plan-section event-plans-section">
           <div class="unified-section-heading">
             <div><p class="plans-eyebrow">{{ t('plans.events') }}</p><h2>{{ t('plans.eventsDescription') }}</h2></div>
-            <button v-if="canEditPlan" class="plans-secondary" @click="openCreatePlan"><Plus :size="15" /> {{ t('plans.create') }}</button>
+            <button v-if="canEditPlan" type="button" class="plans-secondary" @click="openCreatePlan"><Plus :size="15" /> {{ t('plans.create') }}</button>
           </div>
           <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
           <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
@@ -990,21 +990,21 @@ onUnmounted(() => {
                 <span>{{ task.display_id }}</span><strong>{{ task.content }}</strong><small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
               </div>
             </div>
-            <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
+            <button v-if="canArchivePlan" type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
           </div>
           <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
             <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
-            <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+            <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
           </div>
           <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
           <section v-else-if="plans.length === 0" class="plans-empty theme-card">
             <FolderPlus :size="34" />
             <strong>{{ t('plans.empty') }}</strong>
             <span>{{ t('plans.emptyHint') }}</span>
-            <button v-if="canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+            <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
           </section>
           <section v-else class="event-plan-grid">
-            <button v-for="plan in plans" :key="plan.id" class="event-plan-card theme-card" @click="openPlan(plan)">
+            <button v-for="plan in plans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
               <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
               <strong>{{ plan.name }}</strong>
               <span>{{ formatPlanDate(plan.date) }}</span>
@@ -1018,7 +1018,7 @@ onUnmounted(() => {
             <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
             <div v-for="archive in archives" :key="archive.file" class="archive-row">
               <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
-              <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
+              <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
             </div>
           </section>
         </section>
@@ -1034,21 +1034,21 @@ onUnmounted(() => {
               <span>{{ task.display_id }}</span><strong>{{ task.content }}</strong><small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             </div>
           </div>
-          <button v-if="canArchivePlan" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
+          <button v-if="canArchivePlan" type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
         </div>
         <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
           <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
-          <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+          <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
         <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
         <section v-else-if="plans.length === 0" class="plans-empty theme-card">
           <FolderPlus :size="34" />
           <strong>{{ t('plans.empty') }}</strong>
           <span>{{ t('plans.emptyHint') }}</span>
-          <button v-if="canEditPlan" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+          <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
         </section>
         <section v-else class="event-plan-grid">
-          <button v-for="plan in plans" :key="plan.id" class="event-plan-card theme-card" @click="openPlan(plan)">
+          <button v-for="plan in plans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
             <div class="event-plan-card-top"><span>#{{ plan.id }}</span><ChevronRight :size="17" /></div>
             <strong>{{ plan.name }}</strong>
             <span>{{ formatPlanDate(plan.date) }}</span>
@@ -1062,7 +1062,7 @@ onUnmounted(() => {
           <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
           <div v-for="archive in archives" :key="archive.file" class="archive-row">
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
-            <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
+            <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="restoreArchive(archive)">{{ t('plans.restore') }}</button>
           </div>
         </section>
       </template>
@@ -1077,14 +1077,14 @@ onUnmounted(() => {
         <div v-else-if="planDataSource === 'cache'" class="plans-readonly-note">
           <strong>{{ t('plans.cachedTitle') }}</strong>
           <span>{{ t('plans.cachedDescription') }}</span>
-          <button class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+          <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
         <div class="detail-toolbar">
-          <button class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
+          <button type="button" class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
           <div v-if="canEditPlan" class="detail-actions">
-            <button class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
-            <button class="plans-secondary" :disabled="isLoading || !activeTaskCount" @click="addAllTasksToTodos"><ListTodo :size="15" /> {{ t('plans.linkAllTodos') }}</button>
-            <button v-if="canArchivePlan" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
+            <button type="button" class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
+            <button type="button" class="plans-secondary" :disabled="isLoading || !activeTaskCount" @click="addAllTasksToTodos"><ListTodo :size="15" /> {{ t('plans.linkAllTodos') }}</button>
+            <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>
         <form v-if="editingMeta && canEditPlan" class="meta-editor theme-card" @submit.prevent="savePlanMeta">
@@ -1133,7 +1133,7 @@ onUnmounted(() => {
         </form>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" required autofocus /></label>
             <label class="task-minutes-field"><span>{{ t('plans.taskMinutes') }}</span><small>{{ t('plans.taskMinutesHint') }}</small><input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
@@ -1150,21 +1150,21 @@ onUnmounted(() => {
           </form>
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
-            <button class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
+            <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.complete')" @click="completeTask(task.internal_id, task.display_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
-            <button v-if="canEditPlan" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button v-if="canEditPlan && !task.finish" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading" :aria-label="isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" @click="isTaskLinkedToTodo(task) ? openLinkedTodo(task) : addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo') }}</button>
-            <button v-if="canEditPlan" class="task-time" :disabled="isLoading" :aria-label="t('plans.recordTodoTime')" @click="openTaskRecord(task)"><Clock3 :size="14" /><span>{{ t('plans.recordTodoTime') }}</span></button>
-            <button v-if="canEditPlan" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button v-if="canEditPlan" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
+            <button v-if="canEditPlan" type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordProgress')" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
+            <button v-if="canEditPlan && !task.finish" type="button" class="task-todo" :class="{ linked: isTaskLinkedToTodo(task) }" :disabled="isLoading" :aria-label="isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo')" @click="isTaskLinkedToTodo(task) ? openLinkedTodo(task) : addTaskToTodos(task)">{{ isTaskLinkedToTodo(task) ? t('plans.viewTodo') : t('plans.linkTodo') }}</button>
+            <button v-if="canEditPlan" type="button" class="task-time" :disabled="isLoading" :aria-label="t('plans.recordTodoTime')" @click="openTaskRecord(task)"><Clock3 :size="14" /><span>{{ t('plans.recordTodoTime') }}</span></button>
+            <button v-if="canEditPlan" type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTask')" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
+            <button v-if="canEditPlan" type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.delete')" @click="deleteTask(task.internal_id, task.display_id)"><Trash2 :size="15" /></button>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
               <span class="group-range">{{ groupDisplayRange(section, group) }}</span>
               <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
-              <button v-if="canEditPlan" class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
-              <button v-if="canEditPlan" class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
+              <button v-if="canEditPlan" type="button" class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
+              <button v-if="canEditPlan" type="button" class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
             </div>
           </div>
         </section>
