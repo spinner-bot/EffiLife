@@ -324,7 +324,11 @@ onMounted(async () => {
   formTag.value = availableTags.value[0] || ''
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (source === 'todos' || source === 'archive') void loadTodoOptions()
-    // PH changes do not alter independent TH records or TD data.
+    if (source === 'records' || source === 'plans' || source === 'settings' || source === 'archive') {
+      void appStore.refreshWorkspaceData().catch((error) => {
+        console.warn('Failed to refresh records workspace after external change:', error)
+      })
+    }
   })
   await loadTodoOptions()
   // A task with no existing record opens the record form with its relation

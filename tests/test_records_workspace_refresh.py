@@ -10,6 +10,9 @@ def test_records_view_refreshes_todo_picker_after_workspace_changes():
     assert "import { onWorkspaceChanged } from '@/services/workspaceEvents'" in source
     assert "async function loadTodoOptions(): Promise<void>" in source
     assert "if (source === 'todos' || source === 'archive') void loadTodoOptions()" in source
+    assert "if (source === 'records' || source === 'plans' || source === 'settings' || source === 'archive')" in source
+    assert "void appStore.refreshWorkspaceData().catch" in source
+    assert "Failed to refresh records workspace after external change:" in source
     assert "stopWorkspaceListener?.()" in source
     assert "await loadTodoOptions()" in source
     assert "loadPlanContexts" not in source
