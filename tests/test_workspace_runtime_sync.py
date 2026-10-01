@@ -19,6 +19,15 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     assert "if (source === 'archive') refreshLocaleFromStorage()" in source
 
 
+def test_workspace_refresh_discards_reads_started_before_local_config_write():
+    source = (ROOT / "time-helper" / "desk" / "src" / "stores" / "app.ts").read_text(encoding="utf-8")
+    assert "let workspaceWriteVersion = 0" in source
+    assert "const readVersion = workspaceWriteVersion" in source
+    assert "if (readVersion !== workspaceWriteVersion)" in source
+    assert "refreshRequested = true" in source
+    assert "workspaceWriteVersion += 1" in source
+
+
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
     source = STORE.read_text(encoding="utf-8")
     assert "async function refreshWorkspaceData()" in source

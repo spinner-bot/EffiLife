@@ -20,6 +20,9 @@ export const useAppStore = defineStore('app', () => {
   let initPromise: Promise<void> | null = null
   let refreshPromise: Promise<void> | null = null
   let refreshRequested = false
+  // Prevent a visibility/cross-window read that started before a local write
+  // from overwriting the just-persisted configuration when it resolves later.
+  let workspaceWriteVersion = 0
 
   // 计算属性
   const overtimeThreshold = computed(() => config.value.overtime_threshold)
@@ -84,10 +87,27 @@ export const useAppStore = defineStore('app', () => {
       // older response cannot overwrite a newer cross-module state change.
       do {
         refreshRequested = false
-        config.value = await DataService.loadConfig()
-        plans.value = await DataService.loadPlans()
-        scheduleRules.value = await DataService.loadScheduleRules()
-        await refreshTodayData()
+        const readVersion = workspaceWriteVersion
+        const [nextConfig, nextPlans, nextScheduleRules] = await Promise.all([
+          DataService.loadConfig(),
+          DataService.loadPlans(),
+          DataService.loadScheduleRules(),
+        ])
+        const nextRecords = await DataService.loadRecords(getTodayDate())
+        const nextPlan = await DataService.getDayPlan(getTodayDate())
+        const nextStat = await DataService.calcRealTimeStat(getTodayDate())
+        if (readVersion !== workspaceWriteVersion) {
+          // A local save completed while these reads were in flight. Discard
+          // the stale batch and perform one fresh pass before exposing data.
+          refreshRequested = true
+          continue
+        }
+        config.value = nextConfig
+        plans.value = nextPlans
+        scheduleRules.value = nextScheduleRules
+        todayRecords.value = nextRecords
+        todayPlan.value = nextPlan
+        todayStat.value = nextStat
       } while (refreshRequested)
     })()
     const currentRefresh = refreshPromise
@@ -101,6 +121,7 @@ export const useAppStore = defineStore('app', () => {
   // 保存配置
   async function saveConfig(newConfig: Config) {
     const previousConfig = config.value
+    workspaceWriteVersion += 1
     config.value = newConfig
     try {
       await DataService.saveConfig(newConfig)
