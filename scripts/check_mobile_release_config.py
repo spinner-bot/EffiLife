@@ -11,6 +11,7 @@ def validate(root: Path) -> list[str]:
     desk = root / "time-helper" / "desk" / "src-tauri"
     desktop = json.loads((desk / "tauri.conf.json").read_text(encoding="utf-8"))
     mobile = json.loads((desk / "tauri.mobile.conf.json").read_text(encoding="utf-8"))
+    version = (root / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     errors: list[str] = []
 
     desktop_external = desktop.get("bundle", {}).get("externalBin", [])
@@ -22,6 +23,10 @@ def validate(root: Path) -> list[str]:
         errors.append("mobile configuration must not declare desktop externalBin entries")
     if "build:sidecar" in str(mobile.get("build", {}).get("beforeBuildCommand", "")):
         errors.append("mobile configuration must not invoke build:sidecar")
+    for key in ("productName", "version", "identifier"):
+        expected = version if key == "version" else desktop.get(key)
+        if mobile.get(key) != expected:
+            errors.append(f"mobile configuration {key} is not synchronized with the desktop release metadata")
     return errors
 
 

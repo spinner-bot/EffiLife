@@ -10,11 +10,14 @@ def test_desktop_release_versions_are_aligned():
     source_version = (ROOT / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     package = json.loads((ROOT / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))
     tauri = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+    mobile = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.mobile.conf.json").read_text(encoding="utf-8"))
     cargo_text = (ROOT / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
     cargo_version = re.search(r'^version\s*=\s*"([^"]+)"', cargo_text, re.MULTILINE)
 
     assert cargo_version is not None
-    assert source_version == package["version"] == tauri["version"] == cargo_version.group(1)
+    assert source_version == package["version"] == tauri["version"] == mobile["version"] == cargo_version.group(1)
+    assert mobile["productName"] == tauri["productName"]
+    assert mobile["identifier"] == tauri["identifier"]
 
 
 def test_desktop_shell_opens_with_a_wide_workspace_budget():
@@ -95,6 +98,9 @@ def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
         encoding="utf-8",
     )
     (root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").write_text('{"version":"0.0.1"}\n', encoding="utf-8")
+    (root / "time-helper" / "desk" / "src-tauri" / "tauri.mobile.conf.json").write_text(
+        '{"productName":"Old","version":"0.0.1","identifier":"old.id"}\n', encoding="utf-8"
+    )
     (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").write_text('[package]\nversion = "0.0.1"\n', encoding="utf-8")
     script = ROOT / "scripts" / "sync_desktop_version.py"
     subprocess.run(["python", str(script), "--root", str(root)], check=True)
@@ -103,6 +109,8 @@ def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):
     assert lock["version"] == "9.8.7"
     assert lock["packages"][""]["version"] == "9.8.7"
     assert json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))["version"] == "9.8.7"
+    mobile = json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.mobile.conf.json").read_text(encoding="utf-8"))
+    assert mobile == {"productName": "EffiLife", "version": "9.8.7", "identifier": "com.langxi.efflife"}
     assert 'version = "9.8.7"' in (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
 
 

@@ -39,6 +39,14 @@ def sync(root: Path) -> str:
     tauri["version"] = version
     tauri_path.write_text(json.dumps(tauri, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+    mobile_tauri_path = root / "time-helper" / "desk" / "src-tauri" / "tauri.mobile.conf.json"
+    if mobile_tauri_path.exists():
+        mobile_tauri = json.loads(mobile_tauri_path.read_text(encoding="utf-8"))
+        mobile_tauri["productName"] = tauri.get("productName", "EffiLife")
+        mobile_tauri["version"] = version
+        mobile_tauri["identifier"] = tauri.get("identifier", "com.langxi.efflife")
+        mobile_tauri_path.write_text(json.dumps(mobile_tauri, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
     cargo_path = root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml"
     cargo_text = cargo_path.read_text(encoding="utf-8")
     updated, count = re.subn(r'(?m)^(version\s*=\s*)"[^"]+"', rf'\1"{version}"', cargo_text, count=1)
