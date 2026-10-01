@@ -229,10 +229,17 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
   // stale in-memory theme from before the external save/import.
   void appStore.refreshWorkspaceData().then(() => {
     const externalTheme = cloneTheme(appStore.config.theme)
-    savedThemeSnapshot.value = externalTheme
     // Do not overwrite an intentional local draft. If the editor was clean,
     // keep its controls aligned with the theme written by the other window.
-    if (!hadLocalDraft) syncThemeDraft(externalTheme)
+    if (!hadLocalDraft) {
+      savedThemeSnapshot.value = externalTheme
+      syncThemeDraft(externalTheme)
+    } else {
+      // A visibility refresh can replace Pinia's preview with the durable
+      // value while this editor is open. Re-apply the draft so the editor
+      // does not appear to lose changes before the exit confirmation.
+      previewTheme()
+    }
   }).catch((error) => {
     console.warn('Failed to refresh theme snapshot after workspace change:', error)
   })
@@ -615,6 +622,17 @@ watch(() => config.value, (newConfig) => {
     savedCustomSettingsSnapshot.value = customSettingsFrom(newConfig)
   }
 }, { immediate: true, deep: true })
+
+watch(() => config.value.theme, (newTheme) => {
+  if (themeDirty.value) {
+    // App-level visibility refreshes reload durable data. A dirty theme edit
+    // must remain the source of truth until the user confirms leaving.
+    previewTheme()
+    return
+  }
+  savedThemeSnapshot.value = cloneTheme(newTheme)
+  syncThemeDraft(newTheme)
+}, { deep: true })
 
 watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], previewTheme, { deep: true })
 

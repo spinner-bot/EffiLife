@@ -79,13 +79,24 @@ def test_external_theme_refresh_syncs_clean_draft_but_preserves_local_edits():
     source = SETTINGS.read_text(encoding="utf-8")
     assert "const hadLocalDraft = themeDirty.value" in source
     assert "function syncThemeDraft(theme: Config['theme'])" in source
-    assert "if (!hadLocalDraft) syncThemeDraft(externalTheme)" in source
+    assert "if (!hadLocalDraft) {" in source
+    assert "savedThemeSnapshot.value = externalTheme" in source
+    assert "syncThemeDraft(externalTheme)" in source
+    assert "previewTheme()" in source
     assert "Do not overwrite an intentional local draft" in source
+
+
+def test_theme_editor_reapplies_dirty_draft_after_runtime_refresh():
+    source = SETTINGS.read_text(encoding="utf-8")
+    assert "watch(() => config.value.theme" in source
+    assert "A visibility refresh can replace Pinia's preview" in source
+    assert "App-level visibility refreshes reload durable data" in source
+    assert "savedThemeSnapshot.value = cloneTheme(newTheme)" in source
 
 
 def test_generic_config_watcher_does_not_overwrite_theme_draft():
     source = SETTINGS.read_text(encoding="utf-8")
-    config_watch = source.split("watch(() => config.value", 1)[1].split("watch([themeType", 1)[0]
+    config_watch = source.split("watch(() => config.value,", 1)[1].split("watch(() => config.value.theme", 1)[0]
     assert "overtimeThreshold.value = newConfig.overtime_threshold" in config_watch
     assert "showAmPm.value = newConfig.show_ampm" in config_watch
     assert "themeType.value = newConfig.theme.type" not in config_watch
