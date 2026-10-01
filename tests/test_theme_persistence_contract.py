@@ -47,7 +47,8 @@ def test_theme_save_verifies_the_durable_startup_read_path_before_exit():
     source = SETTINGS.read_text(encoding="utf-8")
     save_block = source.split("async function saveTheme", 1)[1].split("async function flushThemeSave", 1)[0]
     assert "const persistedConfig = await DataService.loadConfig()" in save_block
-    assert "JSON.stringify(persistedConfig.theme) !== JSON.stringify(draftTheme)" in save_block
+    assert "const expectedTheme = normalizeConfig(newConfig).theme" in save_block
+    assert "JSON.stringify(persistedConfig.theme) !== JSON.stringify(expectedTheme)" in save_block
     assert save_block.index("await appStore.saveConfig(newConfig)") < save_block.index("await DataService.loadConfig()")
     assert save_block.index("await DataService.loadConfig()") < save_block.index("savedThemeSnapshot.value = durableTheme")
 

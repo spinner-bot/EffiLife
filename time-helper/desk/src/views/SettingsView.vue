@@ -17,7 +17,7 @@ import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from '@/services/run
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
-import { DataService, getTodayDate } from '@/services/dataService'
+import { DataService, getTodayDate, normalizeConfig } from '@/services/dataService'
 import { getAvailableThemes, getAvailableThemeCategories, type ThemeDefinition } from '@/theme/ThemeEngine'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 
@@ -319,6 +319,7 @@ async function saveTheme(): Promise<boolean> {
     ...config.value,
     theme: draftTheme,
   }
+  const expectedTheme = normalizeConfig(newConfig).theme
   savingTheme.value = true
   try {
     await appStore.saveConfig(newConfig)
@@ -326,7 +327,7 @@ async function saveTheme(): Promise<boolean> {
     // This closes the remaining exit race where the in-memory preview looked
     // correct but a reload could still hydrate an older snapshot.
     const persistedConfig = await DataService.loadConfig()
-    if (JSON.stringify(persistedConfig.theme) !== JSON.stringify(draftTheme)) {
+    if (JSON.stringify(persistedConfig.theme) !== JSON.stringify(expectedTheme)) {
       throw new Error('Theme persistence verification failed')
     }
     // Use the value read back through the startup path as the final source of
