@@ -71,6 +71,16 @@ def test_selectable_tech_theme_has_a_theme_engine_preset():
     assert "tech: () => ({" in engine
 
 
+def test_basic_light_and_dark_themes_are_registered_and_localized():
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    catalog = I18N.read_text(encoding="utf-8")
+    for theme_type in ("light", "dark"):
+        assert f"{{ type: '{theme_type}'" in engine
+        assert f"{theme_type}: () => ({{" in engine
+        assert catalog.count(f"'theme.name.{theme_type}':") == 2
+        assert catalog.count(f"'theme.desc.{theme_type}':") == 2
+
+
 def test_every_rich_theme_selection_has_an_engine_preset():
     import re
 

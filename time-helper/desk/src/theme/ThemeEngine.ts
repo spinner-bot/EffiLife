@@ -29,6 +29,32 @@ export interface ThemeStyle {
 
 // 主题预设
 const themePresets: Record<string, () => ThemeStyle> = {
+  // ============ 基础浅色主题 ============
+  light: () => ({
+    bgColor: '#f8fafc',
+    textColor: '#172033',
+    textSecondary: '#475569',
+    textTertiary: '#64748b',
+    borderColor: '#e2e8f0',
+    buttonBg: '#eef2ff',
+    buttonText: '#312e81',
+    accentColor: '#4f46e5',
+    cardBg: '#ffffff',
+  }),
+
+  // ============ 基础深色主题 ============
+  dark: () => ({
+    bgColor: '#0f172a',
+    textColor: '#f8fafc',
+    textSecondary: '#cbd5e1',
+    textTertiary: '#94a3b8',
+    borderColor: 'rgba(148, 163, 184, 0.24)',
+    buttonBg: 'rgba(99, 102, 241, 0.2)',
+    buttonText: '#e0e7ff',
+    accentColor: '#818cf8',
+    cardBg: '#172033',
+  }),
+
   // ============ 水墨风格 ============
   ink: () => ({
     bgColor: '#f5f0e6',
@@ -2682,6 +2708,8 @@ export interface ThemeDefinition {
 export function getAvailableThemes(): ThemeDefinition[] {
   return [
     { type: 'solid', name: '纯色', description: '简洁的纯色主题', preview: '#f0f0f0', nameKey: 'theme.name.solid', descriptionKey: 'theme.desc.solid', categoryKey: 'theme.category.basic' },
+    { type: 'light', name: '浅色', description: '清晰明亮的工作台主题', preview: '#f8fafc', nameKey: 'theme.name.light', descriptionKey: 'theme.desc.light', categoryKey: 'theme.category.basic' },
+    { type: 'dark', name: '深色', description: '低亮度护眼工作台主题', preview: '#0f172a', nameKey: 'theme.name.dark', descriptionKey: 'theme.desc.dark', categoryKey: 'theme.category.basic' },
     { type: 'gradient', name: '渐变', description: '渐变背景主题', preview: 'linear-gradient(135deg, #667eea, #764ba2)', nameKey: 'theme.name.gradient', descriptionKey: 'theme.desc.gradient', categoryKey: 'theme.category.basic' },
     { type: 'glass', name: '玻璃', description: '毛玻璃效果主题', preview: 'rgba(255,255,255,0.1)', nameKey: 'theme.name.glass', descriptionKey: 'theme.desc.glass', categoryKey: 'theme.category.basic' },
     { type: 'neon', name: '霓虹', description: '霓虹灯效果主题', preview: '#00ff88', nameKey: 'theme.name.neon', descriptionKey: 'theme.desc.neon', categoryKey: 'theme.category.basic' },

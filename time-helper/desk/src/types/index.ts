@@ -48,7 +48,7 @@ export interface Config {
 
 // 主题类型
 export type ThemeType =
-  | 'solid' | 'gradient' | 'glass' | 'neon'
+  | 'solid' | 'light' | 'dark' | 'gradient' | 'glass' | 'neon'
   | 'ink' | 'vintage' | 'cyberpunk' | 'pixel'
   | 'aurora' | 'sakura' | 'ocean' | 'forest'
   | 'nordic_polar_night' | 'japanese_garden' | 'victorian_study' | 'underwater_temple'
