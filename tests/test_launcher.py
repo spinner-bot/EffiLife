@@ -8,8 +8,8 @@ import launcher.start as launcher
 def test_launcher_reads_custom_node_directory_at_lookup_time(monkeypatch, tmp_path):
     node_dir = tmp_path / "node-runtime"
     node_dir.mkdir()
-    (node_dir / "node.exe").write_bytes(b"node")
-    (node_dir / "npm.cmd").write_text("@echo off", encoding="utf-8")
+    (node_dir / launcher.node_tool_filename("node")).write_bytes(b"node")
+    (node_dir / launcher.node_tool_filename("npm")).write_text("@echo off", encoding="utf-8")
 
     # The launcher module is imported before the environment is configured in
     # embedded/packaged hosts. It must still agree with diagnostics afterward.
