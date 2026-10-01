@@ -68,10 +68,12 @@ export interface PlanArchiveSummary {
 
 export type PlanGatewayState = 'idle' | 'loading' | 'ready' | 'unavailable'
 export type PlanDataSource = 'unknown' | 'service' | 'mobile' | 'cache'
+export type PlanArchivesState = 'idle' | 'available' | 'unavailable'
 
 // A cached snapshot is safe for reading but must never be mistaken for a
 // writable desktop service. The UI uses this state to expose read-only mode.
 export const planDataSource = ref<PlanDataSource>('unknown')
+export const planArchivesState = ref<PlanArchivesState>('idle')
 
 type RawPlan = {
   head?: { index?: number | string; name?: string; date?: [number, number, number] }
@@ -453,31 +455,40 @@ export async function listPlanSummaries(signal?: AbortSignal): Promise<PlanSumma
 
 export async function listPlanArchives(): Promise<PlanArchiveSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    planDataSource.value = 'mobile'
-    const archives = await getMobileRawArchives()
-    return archives.flatMap((archive) => {
-      const plan = archive.payload?.plan
-      if (!plan) return []
-      const head = plan.head || {}
-      return [{
-        file: String(archive.file || ''),
-        plan_id: Number(head.index),
-        name: String(head.name || ''),
-        date: Array.isArray(head.date) ? head.date : undefined,
-        archived_at: archive.payload?.archived_at,
-        linked_todo_ids: Array.isArray(archive.payload?.linked_todos)
-          ? archive.payload.linked_todos.map((link) => String(link.id || '')).filter(Boolean)
-          : [],
-        tasks: toMobilePlanFull(plan, archives.indexOf(archive)).sections.flatMap((section) => section.tasks),
-      }]
-    }).filter((archive) => archive.file)
+    try {
+      planDataSource.value = 'mobile'
+      const archives = await getMobileRawArchives()
+      const result = archives.flatMap((archive) => {
+        const plan = archive.payload?.plan
+        if (!plan) return []
+        const head = plan.head || {}
+        return [{
+          file: String(archive.file || ''),
+          plan_id: Number(head.index),
+          name: String(head.name || ''),
+          date: Array.isArray(head.date) ? head.date : undefined,
+          archived_at: archive.payload?.archived_at,
+          linked_todo_ids: Array.isArray(archive.payload?.linked_todos)
+            ? archive.payload.linked_todos.map((link) => String(link.id || '')).filter(Boolean)
+            : [],
+          tasks: toMobilePlanFull(plan, archives.indexOf(archive)).sections.flatMap((section) => section.tasks),
+        }]
+      }).filter((archive) => archive.file)
+      planArchivesState.value = 'available'
+      return result
+    } catch (error) {
+      planArchivesState.value = 'unavailable'
+      throw error
+    }
   }
   try {
     const data = await request<{ archives?: PlanArchiveSummary[] }>('/api/archives')
+    planArchivesState.value = 'available'
     return data.archives || []
   } catch {
-    // Archives are a secondary panel; keep cached active plans visible when
-    // the service is temporarily unavailable.
+    // Archives are a secondary panel; keep cached active plans visible while
+    // exposing the failure so an empty archive list is not misleading.
+    planArchivesState.value = 'unavailable'
     return []
   }
 }

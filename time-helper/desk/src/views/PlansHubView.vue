@@ -32,6 +32,7 @@ import {
   updatePlanGroup,
   updateEventPlan,
   planDataSource,
+  planArchivesState,
 } from '@/services/planGateway'
 import { getPlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
@@ -44,6 +45,7 @@ const { t, locale } = useI18n()
 const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
 const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
 const canArchivePlan = computed(() => canEditPlan.value)
+const archivesUnavailable = computed(() => !isMobilePlanRuntime && planArchivesState.value === 'unavailable')
 const view = ref<'events' | 'detail'>('events')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
@@ -805,6 +807,10 @@ onUnmounted(() => {
         <section class="archives-panel theme-card">
           <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
           <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
+          <div v-else-if="archivesUnavailable" class="section-empty archive-unavailable" role="status" aria-live="polite">
+            <span>{{ t('plans.archivesUnavailable') }}</span>
+            <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ t('plans.retryArchives') }}</button>
+          </div>
           <p v-else-if="archives.length === 0" class="section-empty">{{ t('plans.noArchives') }}</p>
           <div v-for="archive in archives" :key="archive.file" class="archive-row">
             <div><strong>{{ archive.name || archive.file }}</strong><span>{{ formatPlanDate(archive.date) }}</span></div>
@@ -1048,6 +1054,7 @@ onUnmounted(() => {
 .group-editor label { display: grid; gap: 5px; color: var(--color-text-tertiary); font-size: 11px; }
 .group-editor input, .group-editor select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
+.archive-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .event-task-row > div strong { color: var(--color-primary); font-size: 12px; }
