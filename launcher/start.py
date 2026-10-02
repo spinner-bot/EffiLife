@@ -20,6 +20,23 @@ from urllib.request import urlopen
 from urllib.parse import urlparse
 from pathlib import Path
 
+
+def configure_console_encoding() -> None:
+    """Keep launcher diagnostics readable on Windows consoles with CJK paths."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):
+            # Embedded hosts and pytest capture streams may reject reconfigure;
+            # their existing encoding is still safer than aborting the launcher.
+            continue
+
+
+configure_console_encoding()
+
 BASE_DIR = Path(__file__).parent.parent
 VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 
