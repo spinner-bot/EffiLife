@@ -166,6 +166,11 @@ def process_group_options():
     """Keep launcher-owned child processes together for reliable shutdown."""
     if os.name == "nt":
         return {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    # The bounded startup smoke check owns the launcher process group and must
+    # be able to reap its companion services as one tree on POSIX. Normal
+    # launches keep the isolated groups used for interactive shutdown.
+    if os.environ.get("EFFILIFE_INHERIT_PROCESS_GROUP") == "1":
+        return {}
     return {"start_new_session": True}
 
 

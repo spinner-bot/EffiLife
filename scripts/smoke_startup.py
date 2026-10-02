@@ -112,7 +112,9 @@ def run_smoke_check(timeout: float = 45) -> dict[str, object]:
         options["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
         options["start_new_session"] = True
-    process = subprocess.Popen(command, cwd=ROOT, **options)
+    environment = os.environ.copy()
+    environment["EFFILIFE_INHERIT_PROCESS_GROUP"] = "1"
+    process = subprocess.Popen(command, cwd=ROOT, env=environment, **options)
     try:
         frontend_ready = wait_for_endpoint(
             frontend_url,
