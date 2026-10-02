@@ -14,7 +14,7 @@ import {
 import { PLAN_HELPER_ORIGIN } from './runtimeConfig'
 import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from './runtimeCapabilities'
 import { clearPlanHelperResetPending, markPlanHelperResetPending, syncPendingPlanHelperReset } from './planReset'
-import { currentLocale, translate } from '@/i18n'
+import { currentLocale, setLocale, translate } from '@/i18n'
 import { getTodayDate, normalizeConfig } from '@/services/dataService'
 import type { Config } from '@/types'
 import { notifyWorkspaceChanged } from './workspaceEvents'
@@ -925,7 +925,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     await restoreOptionalJsonDataset(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data', data.checkin, idbSet, idbClear)
     await TodoSettingsService.save(data.todoSettings)
     if (data.locale === 'zh-CN' || data.locale === 'en-US') {
-      localStorage.setItem('effilife_locale', data.locale)
+      setLocale(data.locale)
     }
 
     // 恢复日期记录
