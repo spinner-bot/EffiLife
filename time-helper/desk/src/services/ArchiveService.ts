@@ -124,6 +124,7 @@ export interface ArchiveData {
 
 type PlanHelperData = {
   available: boolean
+  source?: 'live' | 'cache' | 'snapshot'
   plans: unknown[]
   archives?: unknown[]
   unavailableReason?: string
@@ -138,7 +139,7 @@ export interface ArchivePreview {
   recordCount: number
   categoryCount: number
   repairedLinkCount: number
-  planStatus: 'available' | 'stale' | 'unavailable'
+  planStatus: 'available' | 'cache' | 'snapshot' | 'stale' | 'unavailable'
   integrity: 'verified' | 'legacy'
 }
 
@@ -147,9 +148,13 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function summarizeArchive(data: ArchiveData): ArchivePreview {
-  const planStatus = data.planHelper?.available
-    ? data.planHelper.stale ? 'stale' : 'available'
-    : 'unavailable'
+  const planStatus = !data.planHelper?.available
+    ? 'unavailable'
+    : data.planHelper.source === 'snapshot'
+      ? 'snapshot'
+      : data.planHelper.stale || data.planHelper.source === 'cache'
+        ? 'stale'
+        : 'available'
   return {
     exportDate: data.exportDate,
     planCount: Array.isArray(data.planHelper?.plans) ? data.planHelper.plans.length : 0,
@@ -264,7 +269,7 @@ async function collectPlanHelperData(): Promise<PlanHelperData> {
       const { get, STORE_NAMES } = await import('@/storage')
       const plans = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans')
       const archives = await get<unknown[]>(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives')
-      if (Array.isArray(plans)) return { available: true, plans, archives: Array.isArray(archives) ? archives : [] }
+      if (Array.isArray(plans)) return { available: true, source: 'snapshot', plans, archives: Array.isArray(archives) ? archives : [] }
     } catch {
       // Fall through to the explicit unavailable result.
     }
@@ -288,7 +293,7 @@ async function collectPlanHelperData(): Promise<PlanHelperData> {
     } catch {
       // The HTTP export remains valid even if the optional cache is unavailable.
     }
-    return { available: true, plans: payload.data.plans, archives: Array.isArray(payload.data.archives) ? payload.data.archives : [] }
+    return { available: true, source: 'live', plans: payload.data.plans, archives: Array.isArray(payload.data.archives) ? payload.data.archives : [] }
   } catch {
     return { available: false, plans: [], unavailableReason: translate('settings.archive.planServiceUnavailable') }
   }
@@ -302,6 +307,7 @@ async function collectPlanHelperDataWithCache(): Promise<PlanHelperData> {
   if (!cached.plans) return live
   return {
     available: true,
+    source: 'cache',
     plans: cached.plans,
     archives: cached.archives || [],
     stale: true,

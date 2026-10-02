@@ -45,12 +45,15 @@ def test_archive_preview_discloses_plan_snapshot_status():
     settings = SETTINGS.read_text(encoding="utf-8")
     i18n = I18N.read_text(encoding="utf-8")
 
-    assert "planStatus: 'available' | 'stale' | 'unavailable'" in service
-    assert "data.planHelper.stale ? 'stale' : 'available'" in service
+    assert "planStatus: 'available' | 'cache' | 'snapshot' | 'stale' | 'unavailable'" in service
+    assert "data.planHelper.source === 'snapshot'" in service
     assert "preview.planStatus === 'available'" in settings
+    assert "preview.planStatus === 'snapshot'" in settings
     assert "settings.archive.planSnapshotLive" in settings
+    assert "settings.archive.planSnapshotLocal" in settings
     assert "settings.archive.planSnapshotStale" in settings
     assert i18n.count("'settings.archive.planSnapshotLive'") == 2
+    assert i18n.count("'settings.archive.planSnapshotLocal'") == 2
     assert i18n.count("'settings.archive.planSnapshotStale'") == 2
 
 

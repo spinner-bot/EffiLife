@@ -616,6 +616,8 @@ function formatArchivePreview(preview: ArchivePreview): string {
     : t('settings.archive.integrityLegacy')
   const planStatus = preview.planStatus === 'available'
     ? t('settings.archive.planSnapshotLive')
+    : preview.planStatus === 'snapshot'
+      ? t('settings.archive.planSnapshotLocal')
     : preview.planStatus === 'stale'
       ? t('settings.archive.planSnapshotStale')
       : t('settings.archive.planSnapshotUnavailable')
