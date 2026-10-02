@@ -494,10 +494,10 @@ onMounted(() => {
                   <div class="pv-record-meta">{{ hoursToHm(record.duration, locale) }}</div>
                 </div>
                 <div class="pv-record-actions">
-                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditForm(index)" :title="t('legacyPlan.edit')" :aria-label="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRecord(index)" :title="t('legacyPlan.delete')" :aria-label="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -608,10 +608,10 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="pv-plan-actions">
-                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditPlan(name as string)" :title="t('legacyPlan.edit')" :aria-label="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deletePlan(name as string)" :title="t('legacyPlan.delete')" :aria-label="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -665,7 +665,7 @@ onMounted(() => {
                     :class="{ active: editingPlanBgTag === item.name }"
                     @click="editingPlanBgTag = item.name"
                   >{{ t('legacyPlan.background') }}</button>
-                  <button type="button" class="pv-icon-btn sm" @click="removePlanItem(index)">
+                  <button type="button" class="pv-icon-btn sm" @click="removePlanItem(index)" :aria-label="t('legacyPlan.delete')" :title="t('legacyPlan.delete')">
                     <X :size="12" />
                   </button>
                 </div>
@@ -723,11 +723,11 @@ onMounted(() => {
                   </template>
                 </div>
                 <div class="pv-rule-actions" v-if="rule.rule_type !== 'default'">
-                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); openEditRule(index)" :title="t('legacyPlan.edit')" :aria-label="t('legacyPlan.edit')">
                     <Pencil :size="14" />
                   </button>
-                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" :title="t('legacyPlan.moveUp')">↑</button>
-                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')">
+                  <button type="button" class="pv-icon-btn" @click="AudioManager.playSound('click'); moveRuleUp(index)" :title="t('legacyPlan.moveUp')" :aria-label="t('legacyPlan.moveUp')">↑</button>
+                  <button type="button" class="pv-icon-btn danger" @click="AudioManager.playSound('click'); deleteRule(index)" :title="t('legacyPlan.delete')" :aria-label="t('legacyPlan.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -843,7 +843,7 @@ onMounted(() => {
         <div class="pv-modal">
           <div class="pv-modal-header">
             <h3>{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
-            <button type="button" class="pv-modal-close" @click="showRecordForm = false">
+            <button type="button" class="pv-modal-close" @click="showRecordForm = false" :aria-label="t('common.cancel')" :title="t('common.cancel')">
               <X :size="18" />
             </button>
           </div>
