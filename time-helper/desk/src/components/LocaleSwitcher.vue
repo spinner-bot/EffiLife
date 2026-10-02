@@ -7,7 +7,7 @@ const { locale, setLocale, t, localeDefinitions } = useI18n()
 <template>
   <label class="locale-switcher">
     <span>{{ t('locale.label') }}</span>
-    <select v-model="locale" @change="setLocale(locale)">
+    <select :value="locale" @change="setLocale(($event.target as HTMLSelectElement).value)">
       <option v-for="option in localeDefinitions" :key="option.code" :value="option.code">{{ t(option.labelKey) }}</option>
     </select>
   </label>
