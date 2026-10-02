@@ -40,3 +40,9 @@ def test_desktop_release_runs_the_real_unified_cross_module_integration_suite():
     workflow = _workflow("tauri-desktop-release.yml")
     assert "python scripts/run_integration.py test" in workflow
     assert workflow.index("python scripts/run_integration.py test") > workflow.index("run: python -m pytest -q")
+
+
+def test_desktop_release_runs_unified_workspace_startup_smoke_before_packaging():
+    workflow = _workflow("tauri-desktop-release.yml")
+    assert "python scripts/smoke_startup.py" in workflow
+    assert workflow.index("python scripts/smoke_startup.py") < workflow.index("npm run tauri build")

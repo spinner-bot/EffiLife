@@ -122,6 +122,9 @@ jobs:
       - name: Run unified cross-module integration suite
         run: python scripts/run_integration.py test
 
+      - name: Run unified workspace startup smoke check
+        run: python scripts/smoke_startup.py
+
       - name: Build and package installer
         working-directory: time-helper/desk
         run: npm run tauri build -- --bundles ${{ matrix.bundle }}
