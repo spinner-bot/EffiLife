@@ -7,12 +7,13 @@ export interface LocaleDefinition {
   code: Locale
   labelKey: string
   fallback: Locale
+  direction: 'ltr' | 'rtl'
 }
 
 const STORAGE_KEY = 'efflife_locale'
 export const LOCALE_DEFINITIONS: readonly LocaleDefinition[] = [
-  { code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN' },
-  { code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN' },
+  { code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN', direction: 'ltr' },
+  { code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN', direction: 'ltr' },
 ]
 export const SUPPORTED_LOCALES: readonly Locale[] = LOCALE_DEFINITIONS.map(({ code }) => code)
 
@@ -2567,7 +2568,10 @@ function readLocale(): Locale {
 export const currentLocale = ref<Locale>(readLocale())
 
 function syncDocumentLocale(locale: Locale): void {
-  if (typeof document !== 'undefined') document.documentElement.lang = locale
+  if (typeof document === 'undefined') return
+  const definition = LOCALE_DEFINITIONS.find(({ code }) => code === locale)
+  document.documentElement.lang = locale
+  document.documentElement.dir = definition?.direction || 'ltr'
 }
 
 syncDocumentLocale(currentLocale.value)

@@ -16,8 +16,8 @@ def test_locale_registry_is_the_single_selection_source():
 
 
 def test_locale_registry_keeps_current_languages_and_fallbacks():
-    assert "{ code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN' }" in I18N
-    assert "{ code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN' }" in I18N
+    assert "{ code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN', direction: 'ltr' }" in I18N
+    assert "{ code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN', direction: 'ltr' }" in I18N
     assert "LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'" in I18N
 
 
