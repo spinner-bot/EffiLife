@@ -13,6 +13,7 @@ def test_startup_smoke_is_bounded_and_checks_both_unified_services():
     assert "EffiLife" in source
     assert '"service":"plan-helper"' in source
     assert '"status":"ok"' in source
+    assert 'body.replace(" ", "")' in source
     assert "stop_process_tree(process)" in source
     assert "wait_for_ports_to_close(ports)" in source
 
