@@ -653,6 +653,31 @@ def test_launcher_returns_nonzero_when_module_command_is_missing(monkeypatch):
     assert result == 1
 
 
+def test_launcher_stops_main_process_when_interrupted(monkeypatch):
+    terminated = []
+
+    class InterruptedProcess:
+        returncode = None
+        stdout = None
+
+        def wait(self):
+            raise KeyboardInterrupt
+
+    process = InterruptedProcess()
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: process)
+    monkeypatch.setattr(launcher, "terminate_process", lambda item: terminated.append(item))
+    monkeypatch.setattr(launcher, "record_launcher_event", lambda *args, **kwargs: None)
+
+    result = launcher.run_module(
+        "test",
+        {"test": {"name": "test", "available": True, "cmd": ["test"], "cwd": launcher.BASE_DIR, "url": None, "setup": None}},
+        open_browser=False,
+    )
+
+    assert result is None
+    assert terminated == [process]
+
+
 def test_launcher_reuses_existing_main_service_without_starting_duplicate(monkeypatch):
     terminated = []
     opened = []

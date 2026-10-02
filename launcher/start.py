@@ -940,6 +940,7 @@ def run_module(choice, modules, open_browser=True):
         return 1
 
     module_command_missing = False
+    process = None
     try:
         process = subprocess.Popen(
             module["cmd"],
@@ -980,6 +981,8 @@ def run_module(choice, modules, open_browser=True):
         return process.returncode or 0
 
     except KeyboardInterrupt:
+        if process is not None:
+            terminate_process(process)
         print("\n已停止")
     except FileNotFoundError as e:
         record_launcher_event("module_command_missing", module=module.get("name"), error=str(e))
