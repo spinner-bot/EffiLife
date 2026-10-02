@@ -1295,7 +1295,7 @@ watch(() => route.query.todo, () => {
 .category-swatch { width: 10px; height: 10px; border-radius: 50%; }
 .category-difficulty { width: 55px; border: 1px solid var(--color-border); border-radius: 7px; padding: 6px; color: var(--color-text-primary); background: var(--color-bg-secondary); }
 @media (min-width: 1100px) {
-  .task-header, .task-content { max-width: 1180px; }
+  .task-header, .task-content { max-width: min(1280px, calc(100vw - 56px)); }
   .task-content { display: grid; grid-template-columns: minmax(270px, .36fr) minmax(0, 1fr); align-items: start; gap: 0 24px; }
   .task-create, .task-toolbar, .task-category-nav, .category-manager { grid-column: 1; }
   .task-list, .task-result-state { grid-column: 2; grid-row: 1 / span 4; min-width: 0; }

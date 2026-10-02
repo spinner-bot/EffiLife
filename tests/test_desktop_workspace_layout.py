@@ -86,7 +86,7 @@ def test_settings_archive_actions_use_horizontal_desktop_layout_and_mobile_stack
 def test_task_center_uses_the_shared_wide_desktop_content_budget():
     tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in tasks
-    assert ".task-header, .task-content { max-width: 1180px; }" in tasks
+    assert ".task-header, .task-content { max-width: min(1280px, calc(100vw - 56px)); }" in tasks
 
 
 def test_task_center_only_stacks_editing_controls_on_mobile():
@@ -153,8 +153,9 @@ def test_core_workspaces_expand_beyond_mobile_card_width_on_desktop():
         "records": ((VIEWS / "RecordsView.vue").read_text(encoding="utf-8"), "max-width: 1180px"),
     }
     for source, expected_width in sources.values():
-        assert expected_width in source
         assert "@media (min-width: 1100px)" in source
+    assert ".plans-header, .plans-content { max-width: min(1440px, calc(100vw - 64px)); }" in sources["plans"][0]
+    assert ".task-header, .task-content { max-width: min(1280px, calc(100vw - 56px)); }" in sources["tasks"][0]
 
 
 def test_records_view_activates_grid_before_declaring_desktop_columns():

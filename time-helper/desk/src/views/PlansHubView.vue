@@ -1159,6 +1159,7 @@ onUnmounted(() => {
 .create-add-section { justify-self: start; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (min-width: 1100px) {
+  .plans-header, .plans-content { max-width: min(1440px, calc(100vw - 64px)); }
   .plan-index-layout { grid-template-columns: minmax(0, 1.55fr) minmax(280px, .65fr); align-items: start; }
   .plan-index-layout .archives-panel { margin-top: 0; }
   .plan-index-main .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
