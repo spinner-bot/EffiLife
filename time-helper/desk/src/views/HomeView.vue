@@ -458,17 +458,17 @@ onUnmounted(() => {
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
         <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.timeModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : timeSummaryUnavailable ? t('home.timeUnavailable') : t('home.timeModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable', 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.planModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : eventPlanState === 'unavailable' ? (isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable')) : t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/tasks')">
           <span class="workflow-summary-icon"><ListTodo :size="17" /></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : t('home.todoModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : todoSummaryUnavailable ? t('home.todosUnavailable') : t('home.todoModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
       </section>
