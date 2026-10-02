@@ -19,6 +19,22 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / 'to-dos'))
 
 
+def configure_console_encoding() -> None:
+    """Keep integration gate output readable on Windows CJK consoles."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, 'reconfigure', None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding='utf-8', errors='replace')
+        except (OSError, ValueError):
+            # pytest capture and embedded hosts may intentionally reject this.
+            continue
+
+
+configure_console_encoding()
+
+
 def main():
     from common.bootstrap import EffiLifeIntegration
     from common.event_bus import EventType
