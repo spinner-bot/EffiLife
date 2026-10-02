@@ -1157,8 +1157,9 @@ onUnmounted(() => {
 .today-todos-unavailable button:hover, .today-todos-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 .today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
-.today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; }
-.today-todo-complete:disabled { cursor: wait; opacity: .65; }
+.today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-primary); background: transparent; cursor: pointer; transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast); }
+.today-todo-complete:hover, .today-todo-complete:focus-visible { color: var(--color-button-text); background: var(--color-primary); outline: 0; transform: scale(1.06); }
+.today-todo-complete:disabled { color: var(--color-primary); background: var(--color-primary-muted); cursor: wait; opacity: .75; }
 .today-todo-main { display: flex; min-width: 0; border: 0; padding: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; }
 .today-todo-copy { display: grid; min-width: 0; gap: 3px; }
 .today-todo-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }

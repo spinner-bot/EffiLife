@@ -38,6 +38,14 @@ def test_home_todos_support_quick_completion_without_leaving_home():
     assert "await refreshTodoSummary()" in source
 
 
+def test_home_todo_completion_control_distinguishes_pending_state_visually():
+    source = HOME.read_text(encoding="utf-8")
+    completion_style = source.split(".today-todo-complete {", 1)[1].split("}", 1)[0]
+    assert "background: transparent" in completion_style
+    assert ".today-todo-complete:hover" in source
+    assert ".today-todo-complete:disabled" in source
+
+
 def test_home_todo_completion_action_identifies_the_target_task():
     source = HOME.read_text(encoding="utf-8")
     assert "t('tasks.completeLabelFor', { title: todo.title })" in source
