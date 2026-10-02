@@ -810,7 +810,7 @@ onUnmounted(() => {
       </section>
 
       <template v-if="view === 'events'">
-        <p v-if="errorMessage" class="plans-error">{{ errorMessage }}</p>
+        <p v-if="errorMessage" class="plans-error" role="alert">{{ errorMessage }}</p>
         <div v-if="archivedPlanTarget" class="plans-readonly-note archive-target-note">
           <strong>{{ t('plans.archivedTargetTitle') }}</strong>
           <span>{{ t('plans.archivedTargetDescription') }}</span>
@@ -867,8 +867,8 @@ onUnmounted(() => {
       </template>
 
       <template v-else-if="selectedPlan">
-        <div v-if="errorMessage" class="plans-error">{{ errorMessage }}</div>
-        <div v-if="successMessage" class="plans-success">{{ successMessage }}</div>
+        <div v-if="errorMessage" class="plans-error" role="alert">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="plans-success" role="status" aria-live="polite">{{ successMessage }}</div>
         <div v-if="isMobilePlanRuntime" class="plans-readonly-note">
           <strong>{{ t('plans.mobileLocalTitle') }}</strong>
           <span>{{ t('plans.mobileLocalDescription') }}</span>

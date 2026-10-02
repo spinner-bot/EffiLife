@@ -922,7 +922,7 @@ watch(() => route.query.todo, () => {
           <button type="button" class="danger" :disabled="bulkWorking" @click="bulkDeleteTodos"><Trash2 :size="14" /> {{ t('tasks.bulkDelete') }}</button>
           <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
-        <span v-if="errorMessage" class="task-error">{{ errorMessage }}</span>
+        <span v-if="errorMessage" class="task-error" role="alert">{{ errorMessage }}</span>
       </section>
 
       <section v-if="categories.length" class="task-category-nav theme-card">
