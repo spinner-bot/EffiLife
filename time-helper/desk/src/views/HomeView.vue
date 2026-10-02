@@ -1182,14 +1182,31 @@ onUnmounted(() => {
 @media (min-width: 761px) and (max-width: 899px) {
   .home-view { padding: 18px 24px; }
   .main-content {
+    display: grid;
+    grid-template-columns: minmax(190px, .46fr) minmax(0, 1.54fr);
     align-items: stretch;
     justify-content: flex-start;
     max-width: 900px;
     gap: 20px;
   }
-  .clock-section { text-align: left; }
+  .clock-section {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    align-self: start;
+    position: sticky;
+    top: 18px;
+    padding: 22px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(155deg, var(--color-bg-secondary), var(--color-bg));
+    text-align: left;
+  }
   .checkin-badges { justify-content: flex-start; }
-  .workflow-summary { width: 100%; margin-bottom: 0; }
+  .workflow-summary,
+  .stats-section,
+  .today-todos-card,
+  .home-quick-actions { grid-column: 2; width: 100%; }
+  .workflow-summary { margin-bottom: 0; }
 }
 
 .stats-header-row {

@@ -78,8 +78,12 @@ def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakp
     assert tablet in HOME
     tablet_block = HOME.split(tablet, 1)[1].split(".stats-header-row", 1)[0]
     assert "max-width: 900px" in tablet_block
+    assert "display: grid;" in tablet_block
+    assert "grid-template-columns: minmax(190px, .46fr) minmax(0, 1.54fr);" in tablet_block
+    assert "grid-row: 1 / span 4;" in tablet_block
+    assert ".stats-section," in tablet_block
     assert "align-items: stretch" in tablet_block
-    assert ".clock-section { text-align: left; }" in tablet_block
+    assert "text-align: left;" in tablet_block
 
 
 def test_home_serializes_summary_refreshes_and_queues_external_changes():
