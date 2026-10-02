@@ -57,6 +57,15 @@ def test_archive_preview_discloses_plan_snapshot_status():
     assert i18n.count("'settings.archive.planSnapshotStale'") == 2
 
 
+def test_archive_export_discloses_local_plan_snapshot_source_on_all_delivery_paths():
+    service = SERVICE.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "function planExportWarning(planHelper: PlanHelperData): string | undefined" in service
+    assert "planHelper.source === 'snapshot'" in service
+    assert service.count("warning: planExportWarning(planHelper)") == 3
+    assert i18n.count("'settings.archive.planSnapshotLocalExportWarning'") == 2
+
+
 def test_archive_preview_discloses_active_and_archived_plan_counts():
     service = SERVICE.read_text(encoding="utf-8")
     settings = SETTINGS.read_text(encoding="utf-8")

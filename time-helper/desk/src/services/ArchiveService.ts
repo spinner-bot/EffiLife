@@ -340,6 +340,15 @@ async function collectAllData(): Promise<ArchiveData> {
   }
 }
 
+function planExportWarning(planHelper: PlanHelperData): string | undefined {
+  if (planHelper.source === 'snapshot') return translate('settings.archive.planSnapshotLocalExportWarning')
+  if (planHelper.stale || planHelper.source === 'cache') {
+    return planHelper.unavailableReason || translate('settings.archive.usingCachedPlanSnapshot')
+  }
+  if (!planHelper.available) return translate('settings.archive.planSnapshotUnavailable')
+  return undefined
+}
+
 // 导出数据为 .efl 文件
 export async function exportArchive(): Promise<{ success: boolean; path?: string; warning?: string }> {
   const data = await collectAllData()
@@ -425,9 +434,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
       return {
         success: true,
         path: filePath,
-        warning: planHelper.stale
-          ? planHelper.unavailableReason
-          : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+        warning: planExportWarning(planHelper),
       }
     } catch (e) {
       // Tauri API 失败，回退到浏览器下载
@@ -452,9 +459,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
         await navigator.share({ title: translate('settings.archive.shareTitle'), files: [archiveFile] })
         return {
           success: true,
-          warning: planHelper.stale
-            ? planHelper.unavailableReason
-            : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+          warning: planExportWarning(planHelper),
         }
       } catch (error) {
         // A deliberate user cancellation must not trigger a second download.
@@ -468,9 +473,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   saveAs(blob, fileName)
   return {
     success: true,
-    warning: planHelper.stale
-      ? planHelper.unavailableReason
-      : planHelper.available ? undefined : translate('settings.archive.planSnapshotUnavailable'),
+    warning: planExportWarning(planHelper),
   }
 }
 
