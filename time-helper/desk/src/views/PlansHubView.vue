@@ -951,9 +951,11 @@ onUnmounted(() => {
             <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.completeTaskLabel', { id: task.display_id, content: task.content })" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
-            <button v-if="canEditPlan" type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
-            <button v-if="canEditPlan" type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-            <button v-if="canEditPlan" type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+            <div v-if="canEditPlan" class="event-task-actions">
+              <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
+              <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
+              <button type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+            </div>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
             <div v-for="group in groupEntries(section)" :key="group.key" class="group-item" :style="{ '--group-depth': group.depth }">
@@ -1108,11 +1110,12 @@ onUnmounted(() => {
 .group-editor input, .group-editor select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 7px; padding: 7px 8px; color: var(--color-text-primary); background: var(--color-bg); outline: none; }
 .section-empty { color: var(--color-text-tertiary); font-size: 13px; }
 .archive-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 64px auto 64px 28px 28px; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.event-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .event-task-row > div { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .event-task-row > div strong { color: var(--color-primary); font-size: 12px; }
 .event-task-row > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .event-task-row > small { color: var(--color-text-tertiary); white-space: nowrap; }
+.event-task-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
 .task-log { border: 0; border-radius: 7px; padding: 5px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
 .event-task-row.finished { opacity: .62; }
 .event-task-row.search-target { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
@@ -1177,7 +1180,8 @@ onUnmounted(() => {
   .group-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
   .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: 1 / -1; }
   .group-editor button { min-height: 38px; }
-  .event-task-row { grid-template-columns: 24px minmax(120px, 1fr) auto 58px auto 58px 28px 28px; gap: 5px; }
+  .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 7px; }
+  .event-task-actions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }
 }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto auto; } .event-task-row > div { grid-column: 2; grid-row: 1; } .event-task-row > small { grid-column: 2; grid-row: 2; } .event-task-row .task-log { grid-column: 2; grid-row: 3; justify-self: start; } .event-task-row .task-edit { grid-column: 3; grid-row: 1; } .event-task-row .task-delete { grid-column: 4; grid-row: 1; } .create-task-row { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; } .event-task-row > div:not(.event-task-actions) { grid-column: 2 / -1; grid-row: 1; } .event-task-row > small { grid-column: 2 / -1; grid-row: 2; } .event-task-actions { grid-column: 2 / -1; grid-row: 3; justify-content: flex-start; flex-wrap: wrap; } .create-task-row { grid-template-columns: 1fr; } }
 </style>

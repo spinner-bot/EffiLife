@@ -11,4 +11,5 @@ def test_plan_hub_keeps_tablet_task_rows_horizontal_before_mobile_breakpoint():
     assert "The two-column detail workspace starts at 1100px" in source
     assert "Tablet keeps the task" in source
     assert "@media (min-width: 761px) and (max-width: 1099px)" in source
-    assert ".event-task-row { grid-template-columns: 24px minmax(120px, 1fr) auto 58px auto 58px 28px 28px;" in source
+    assert ".event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 7px; }" in source
+    assert ".event-task-actions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }" in source
