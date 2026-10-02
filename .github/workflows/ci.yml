@@ -53,6 +53,9 @@ jobs:
       - name: Run unified cross-module integration suite
         run: python scripts/run_integration.py test
 
+      - name: Run unified workspace startup smoke check
+        run: python scripts/smoke_startup.py
+
       - name: Validate desktop and mobile release contracts
         run: |
           python scripts/check_release_config.py

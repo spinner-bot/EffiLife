@@ -23,6 +23,12 @@ def test_general_ci_covers_full_python_suite_and_desktop_build():
     assert "working-directory: to-dos/ui" in source
 
 
+def test_general_ci_runs_the_unified_workspace_startup_smoke_check():
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "python scripts/smoke_startup.py" in source
+    assert source.index("python scripts/smoke_startup.py") > source.index("python scripts/run_integration.py test")
+
+
 def test_general_ci_uses_pinned_current_action_majors_and_cancellation():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "actions/checkout@v5" in source
