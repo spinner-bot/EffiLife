@@ -10,3 +10,5 @@ def test_home_summary_labels_keep_th_ph_td_distinct():
     for key in ("home.timeModuleSummary", "home.planModuleSummary", "home.todoModuleSummary"):
         assert HOME.count(f"t('{key}')") == 1
         assert I18N.count(f"'{key}':") == 2
+    for code in ("TH", "PH", "TD"):
+        assert f"<small>{code}</small>" in HOME
