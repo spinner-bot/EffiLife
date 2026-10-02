@@ -149,12 +149,12 @@ def test_generic_config_watcher_does_not_overwrite_theme_draft():
     assert "syncThemeDraft(newConfig.theme)" not in config_watch
 
 
-def test_same_window_settings_event_does_not_refresh_over_saved_theme():
+def test_same_window_settings_event_does_not_refresh_but_remote_settings_does():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     settings_block = app.split("if (source === 'settings')", 1)[1].split("if (source === 'archive')", 1)[0]
     assert "refreshLocaleFromStorage()" in settings_block
-    assert "return" in settings_block
-    assert "void appStore.refreshWorkspaceData()" not in settings_block
+    assert "if (!remote) return" in settings_block
+    assert "void appStore.refreshWorkspaceData()" in app
 
 
 def test_config_writes_normalize_rich_theme_at_memory_and_durable_boundaries():

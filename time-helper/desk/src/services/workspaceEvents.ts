@@ -2,6 +2,14 @@ export type WorkspaceChangeSource = 'todos' | 'plans' | 'records' | 'archive' | 
 
 export const WORKSPACE_CHANGED_EVENT = 'effilife:workspace-changed'
 const WORKSPACE_CHANNEL = 'effilife-workspace'
+const WORKSPACE_ORIGIN = typeof globalThis.crypto?.randomUUID === 'function'
+  ? globalThis.crypto.randomUUID()
+  : Math.random().toString(36).slice(2)
+
+type WorkspaceEnvelope = {
+  source?: WorkspaceChangeSource
+  origin?: string
+}
 
 let channel: BroadcastChannel | null = null
 let subscriberCount = 0
@@ -20,23 +28,26 @@ function getChannel(): BroadcastChannel | null {
 
 export function notifyWorkspaceChanged(source: WorkspaceChangeSource): void {
   if (typeof window === 'undefined') return
-  window.dispatchEvent(new CustomEvent(WORKSPACE_CHANGED_EVENT, { detail: { source } }))
+  const message: WorkspaceEnvelope = { source, origin: WORKSPACE_ORIGIN }
+  window.dispatchEvent(new CustomEvent(WORKSPACE_CHANGED_EVENT, { detail: message }))
   try {
-    channel?.postMessage({ source })
+    channel?.postMessage(message)
   } catch {
     // A restricted WebView may expose BroadcastChannel but reject messaging.
     // The same-window CustomEvent above remains the reliable fallback.
   }
 }
 
-export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource) => void): () => void {
+export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource, remote?: boolean) => void): () => void {
   if (typeof window === 'undefined') return () => undefined
   const handler = (event: Event) => {
-    const source = (event as CustomEvent<{ source?: WorkspaceChangeSource }>).detail?.source
-    listener(source)
+    const message = (event as CustomEvent<WorkspaceEnvelope>).detail
+    listener(message?.source, false)
   }
   const broadcast = getChannel()
-  const broadcastHandler = (event: MessageEvent<{ source?: WorkspaceChangeSource }>) => listener(event.data?.source)
+  const broadcastHandler = (event: MessageEvent<WorkspaceEnvelope>) => {
+    listener(event.data?.source, event.data?.origin !== WORKSPACE_ORIGIN)
+  }
   window.addEventListener(WORKSPACE_CHANGED_EVENT, handler)
   broadcast?.addEventListener('message', broadcastHandler)
   subscriberCount += 1

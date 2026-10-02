@@ -19,6 +19,14 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     assert "if (source === 'archive') refreshLocaleFromStorage()" in source
 
 
+def test_workspace_events_distinguish_same_window_and_remote_changes():
+    events = (ROOT / "time-helper" / "desk" / "src" / "services" / "workspaceEvents.ts").read_text(encoding="utf-8")
+    assert "WORKSPACE_ORIGIN" in events
+    assert "origin: WORKSPACE_ORIGIN" in events
+    assert "listener(message?.source, false)" in events
+    assert "event.data?.origin !== WORKSPACE_ORIGIN" in events
+
+
 def test_workspace_refresh_discards_reads_started_before_local_config_write():
     source = (ROOT / "time-helper" / "desk" / "src" / "stores" / "app.ts").read_text(encoding="utf-8")
     assert "let workspaceWriteVersion = 0" in source

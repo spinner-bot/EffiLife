@@ -207,7 +207,7 @@ onMounted(async () => {
       systemThemeMediaQuery.addListener(refreshSystemTheme)
     }
   }
-  stopWorkspaceListener = onWorkspaceChanged((source) => {
+  stopWorkspaceListener = onWorkspaceChanged((source, remote) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive', 'network'].includes(source)) return
     if (source === 'settings') {
       // Settings writes the config and updates the Pinia store before it
@@ -216,7 +216,7 @@ onMounted(async () => {
       // over a newly selected theme. Other windows receive the Broadcast-
       // Channel message and still refresh normally.
       refreshLocaleFromStorage()
-      return
+      if (!remote) return
     }
     if (source === 'archive') refreshLocaleFromStorage()
     void appStore.refreshWorkspaceData().catch((error) => {
