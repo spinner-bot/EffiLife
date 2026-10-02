@@ -122,8 +122,8 @@ def run_smoke_check(timeout: float = 45) -> dict[str, object]:
         )
         plan_ready = wait_for_endpoint(
             health_url,
-            lambda body: '"service":"plan-helper"' in body.replace(" ", "")
-            and '"status":"ok"' in body.replace(" ", ""),
+            lambda body: '"service":"plan-helper"' in "".join(body.split())
+            and '"status":"ok"' in "".join(body.split()),
             process,
             timeout,
         )
