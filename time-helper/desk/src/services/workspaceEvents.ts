@@ -34,7 +34,10 @@ export function notifyWorkspaceChanged(source: WorkspaceChangeSource): void {
   if (typeof window === 'undefined') return
   const message: WorkspaceEnvelope = { source, origin: WORKSPACE_ORIGIN }
   window.dispatchEvent(new CustomEvent(WORKSPACE_CHANGED_EVENT, { detail: message }))
-  const workspaceChannel = getChannel()
+  // A sender without local subscribers should not create a long-lived
+  // channel merely to announce a change; the storage transport also reaches
+  // other windows and has no retained object to clean up.
+  const workspaceChannel = subscriberCount > 0 ? getChannel() : null
   let deliveredRemotely = false
   try {
     if (workspaceChannel) {
