@@ -478,7 +478,7 @@ onUnmounted(() => {
         <div class="overview-grid">
         <section class="stats-card">
           <button type="button" class="stats-header-row stats-header-action" :aria-label="t('home.todayProgress')" @click="openDailyPlan">
-            <h2 class="stats-title">{{ t('home.todayProgress') }}</h2>
+            <span class="home-module-heading"><span class="home-module-code">TH</span><span><span class="home-module-label">{{ t('home.timeModuleSummary') }}</span><strong class="stats-title">{{ t('home.todayProgress') }}</strong></span></span>
             <span class="stats-date-label" v-if="stat?.plan_exists">{{ stat.plan_name }}</span>
             <ChevronRight :size="18" />
           </button>
@@ -554,7 +554,7 @@ onUnmounted(() => {
         </section>
         <section class="event-overview-card">
           <button type="button" class="event-overview-header event-overview-header-action" @click="router.push('/plans')">
-            <h2 class="stats-title">{{ t('home.eventPlans') }}</h2><ChevronRight :size="18" />
+            <span class="home-module-heading"><span class="home-module-code">PH</span><span><span class="home-module-label">{{ t('home.planModuleSummary') }}</span><strong class="stats-title">{{ t('home.eventPlans') }}</strong></span></span><ChevronRight :size="18" />
           </button>
           <template v-if="eventPlanState === 'ready'">
             <strong class="event-overview-count">{{ eventPlans.length }}</strong>
@@ -587,7 +587,7 @@ onUnmounted(() => {
       <section class="today-todos-card theme-card">
         <div class="today-todos-header">
           <div>
-            <p class="today-todos-eyebrow">{{ t('home.todayTodosEyebrow') }}</p>
+            <p class="today-todos-eyebrow"><span class="home-module-code">TD</span>{{ t('home.todayTodosEyebrow') }}</p>
             <h2 class="stats-title">{{ t('home.todayTodos') }}</h2>
           </div>
           <button type="button" class="today-todos-link" @click="router.push('/tasks')">
@@ -678,6 +678,11 @@ onUnmounted(() => {
 .workflow-summary-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .workflow-summary-copy strong { color: var(--color-text-primary); font-size: 15px; font-variant-numeric: tabular-nums; }
 .workflow-summary-copy small { overflow: hidden; color: var(--color-text-tertiary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.home-module-heading { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.home-module-heading > span:last-child { display: grid; min-width: 0; gap: 2px; }
+.home-module-label { overflow: hidden; color: var(--color-text-tertiary); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.home-module-code { display: inline-grid; place-items: center; min-width: 26px; height: 20px; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 6px; padding: 0 5px; color: var(--color-primary); background: var(--color-primary-muted); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; font-weight: 800; letter-spacing: .04em; line-height: 1; }
+.today-todos-eyebrow .home-module-code { margin-right: 6px; vertical-align: 1px; }
 @media (prefers-reduced-motion: reduce) { .workflow-summary-item { transition: none; } }
 @media (max-width: 680px) { .workflow-summary { grid-template-columns: 1fr; } }
 
