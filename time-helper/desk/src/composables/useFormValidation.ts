@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import { useI18n } from '@/i18n'
 
 // 单字段规则
 interface FieldRule {
@@ -35,6 +36,7 @@ interface ValidationErrors {
  */
 export function useFormValidation(rules: ValidationRules) {
   const errors = reactive<ValidationErrors>({})
+  const { t } = useI18n()
 
   // 规范化规则：单个规则包装为数组
   function normalizeRules(fieldRules: FieldRule | FieldRule[]): FieldRule[] {
@@ -59,7 +61,7 @@ export function useFormValidation(rules: ValidationRules) {
 
         if (isEmpty) {
           if (typeof rule.required === 'string') return rule.required
-          return `「${fieldName}」为必填项`
+          return t('validation.required', { field: fieldName })
         }
       }
 
@@ -71,9 +73,9 @@ export function useFormValidation(rules: ValidationRules) {
         const len = typeof value === 'string' ? value.length : Number(value)
         if (len < rule.min) {
           if (typeof value === 'string') {
-            return `「${fieldName}」长度不能少于 ${rule.min} 个字符`
+            return t('validation.minString', { field: fieldName, min: rule.min })
           }
-          return `「${fieldName}」不能小于 ${rule.min}`
+          return t('validation.minNumber', { field: fieldName, min: rule.min })
         }
       }
 
@@ -82,9 +84,9 @@ export function useFormValidation(rules: ValidationRules) {
         const len = typeof value === 'string' ? value.length : Number(value)
         if (len > rule.max) {
           if (typeof value === 'string') {
-            return `「${fieldName}」长度不能超过 ${rule.max} 个字符`
+            return t('validation.maxString', { field: fieldName, max: rule.max })
           }
-          return `「${fieldName}」不能大于 ${rule.max}`
+          return t('validation.maxNumber', { field: fieldName, max: rule.max })
         }
       }
 
@@ -92,7 +94,7 @@ export function useFormValidation(rules: ValidationRules) {
       if (rule.pattern) {
         const str = String(value)
         if (!rule.pattern.test(str)) {
-          return `「${fieldName}」格式不正确`
+          return t('validation.pattern', { field: fieldName })
         }
       }
 
@@ -100,7 +102,7 @@ export function useFormValidation(rules: ValidationRules) {
       if (rule.validator) {
         const result = rule.validator(value)
         if (result !== true) {
-          return typeof result === 'string' ? result : `「${fieldName}」验证失败`
+          return typeof result === 'string' ? result : t('validation.invalid', { field: fieldName })
         }
       }
     }

@@ -25,3 +25,17 @@ def test_frontend_locale_catalogs_have_matching_keys():
         f"missing in zh-CN={sorted(en_keys - zh_keys)}, "
         f"missing in en-US={sorted(zh_keys - en_keys)}"
     )
+
+
+def test_generic_form_validation_messages_are_registered_in_both_locales():
+    source = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+    for key in (
+        "validation.required",
+        "validation.minString",
+        "validation.minNumber",
+        "validation.maxString",
+        "validation.maxNumber",
+        "validation.pattern",
+        "validation.invalid",
+    ):
+        assert source.count(f"'{key}':") == 2

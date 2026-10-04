@@ -19,6 +19,13 @@ export const SUPPORTED_LOCALES: readonly Locale[] = LOCALE_DEFINITIONS.map(({ co
 
 const catalogs: Record<Locale, Record<string, string>> = {
   'zh-CN': {
+    'validation.required': '「{field}」为必填项',
+    'validation.minString': '「{field}」长度不能少于 {min} 个字符',
+    'validation.minNumber': '「{field}」不能小于 {min}',
+    'validation.maxString': '「{field}」长度不能超过 {max} 个字符',
+    'validation.maxNumber': '「{field}」不能大于 {max}',
+    'validation.pattern': '「{field}」格式不正确',
+    'validation.invalid': '「{field}」验证失败',
     'locale.label': '语言',
     'locale.zh-CN': '简体中文',
     'locale.en-US': 'English',
@@ -1291,6 +1298,13 @@ const catalogs: Record<Locale, Record<string, string>> = {
     'plans.todoCreateFailed': '加入待办失败',
   },
   'en-US': {
+    'validation.required': '“{field}” is required',
+    'validation.minString': '“{field}” must contain at least {min} characters',
+    'validation.minNumber': '“{field}” must be at least {min}',
+    'validation.maxString': '“{field}” must contain no more than {max} characters',
+    'validation.maxNumber': '“{field}” must be no more than {max}',
+    'validation.pattern': '“{field}” has an invalid format',
+    'validation.invalid': '“{field}” is invalid',
     'locale.label': 'Language',
     'locale.zh-CN': '简体中文',
     'locale.en-US': 'English',
