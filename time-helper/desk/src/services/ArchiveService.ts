@@ -1014,19 +1014,22 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     if (data.importRepairs?.todoPlanTaskLinks) {
       warnings.push(translate('settings.archive.repairedTodoPlanTaskLinks', { count: data.importRepairs.todoPlanTaskLinks }))
     }
-    if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
-      try {
-        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
-        await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', Array.isArray(data.planHelper.archives) ? data.planHelper.archives : [])
-      } catch (error) {
-        warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
-      }
+    const savePlanHelperSnapshot = async (): Promise<void> => {
+      if (!data.planHelper?.available || !Array.isArray(data.planHelper.plans)) return
+      await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)
+      await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', Array.isArray(data.planHelper.archives) ? data.planHelper.archives : [])
     }
     if (data.planHelper === undefined) {
       // Legacy archives may not contain plan-helper data. Preserve the
       // current snapshot instead of treating an absent field as an empty one.
     } else if (getPlanRuntime() === 'mobile-unavailable') {
-      if (!(data.planHelper?.available && Array.isArray(data.planHelper.plans))) {
+      if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
+        try {
+          await savePlanHelperSnapshot()
+        } catch (error) {
+          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
+        }
+      } else {
         // Mobile has no live PH service to reconstruct an unavailable
         // dataset. Preserve the existing snapshot rather than treating a
         // degraded archive as an explicit empty plan collection.
@@ -1041,6 +1044,11 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         })
         const payload = await response.json() as { success?: boolean; error?: string }
         if (!response.ok || !payload.success) throw new Error(payload.error || translate('settings.archive.planRestoreResponse', { status: response.status }))
+        try {
+          await savePlanHelperSnapshot()
+        } catch (error) {
+          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
+        }
       } catch (error) {
         warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
       }
