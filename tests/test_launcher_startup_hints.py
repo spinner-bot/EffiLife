@@ -48,3 +48,25 @@ def test_doctor_separates_development_readiness_from_distribution_readiness(caps
 
     assert launcher.print_doctor_report(report) is True
     assert "Distribution status: not ready" in capsys.readouterr().out
+
+
+def test_doctor_exposes_native_toolchain_readiness(capsys):
+    report = {
+        "version": "1.7.0",
+        "launch_mode": "development",
+        "python": "python",
+        "node": "node",
+        "npm": "npm",
+        "rust_toolchain": {"cargo": None, "rustc": None, "available": False},
+        "installer_artifacts": [],
+        "modules": {},
+        "companions": {},
+        "issues": [],
+        "hints": [],
+    }
+
+    assert launcher.print_doctor_report(report) is True
+    output = capsys.readouterr().out
+    assert "cargo: missing" in output
+    assert "rustc: missing" in output
+    assert "Native build: not ready" in output

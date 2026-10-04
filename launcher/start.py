@@ -746,6 +746,10 @@ def print_doctor_report(report):
     print(f"Python: {report.get('python')}")
     print(f"Node: {report.get('node') or 'missing'}")
     print(f"npm: {report.get('npm') or 'missing'}")
+    rust_toolchain = report.get("rust_toolchain") or {}
+    print(f"cargo: {rust_toolchain.get('cargo') or 'missing'}")
+    print(f"rustc: {rust_toolchain.get('rustc') or 'missing'}")
+    print("Native build: ready" if rust_toolchain.get("available") else "Native build: not ready (install Rust or use CI)")
     installer_status = report.get("installer_artifacts", [])
     installers_ready = any(
         item.get("exists") and item.get("non_empty") and item.get("version_matches", True)
