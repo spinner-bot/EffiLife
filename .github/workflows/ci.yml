@@ -72,3 +72,15 @@ jobs:
       - name: Build compatibility UI
         working-directory: to-dos/ui
         run: npm run build
+
+      - name: Collect launcher diagnostics on failure
+        if: ${{ failure() }}
+        run: python launcher/start.py --diagnose > ci-launcher-diagnostics.json || true
+
+      - name: Upload launcher diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: effilife-ci-diagnostics-${{ github.run_id }}
+          path: ci-launcher-diagnostics.json
+          if-no-files-found: warn
