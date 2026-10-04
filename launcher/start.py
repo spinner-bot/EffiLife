@@ -807,6 +807,13 @@ def print_doctor_report(report):
     return not issues
 
 
+def print_startup_failure_hint():
+    """Give an actionable next step after a bounded startup failure."""
+    print("诊断建议: python launcher/start.py --doctor")
+    print("机器可读诊断: python launcher/start.py --diagnose")
+    print(f"启动日志: {launcher_log_path()}")
+
+
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -957,6 +964,7 @@ def run_module(choice, modules, open_browser=True):
         record_launcher_event("port_conflict", module=module.get("name"), url=module["url"])
         print(f"\nPort conflict: {module['url']} is already occupied by another service.")
         print("Stop the conflicting process or choose another development port, then retry.")
+        print_startup_failure_hint()
         for companion_process in companion_processes:
             terminate_process(companion_process)
         return 1
@@ -989,6 +997,7 @@ def run_module(choice, modules, open_browser=True):
                     url=module["url"],
                     returncode=process.returncode,
                 )
+                print_startup_failure_hint()
                 # Do not block forever when a child stays alive but never
                 # becomes reachable. The finally block cleans up companions.
                 terminate_process(process)
@@ -1109,6 +1118,7 @@ def start_companions(module, env):
             )
             print(f"\nPort conflict: {companion_url} is occupied by another service.")
             print("Stop the conflicting process or verify that the existing service is plan-helper, then retry.")
+            print_startup_failure_hint()
             for started in managed:
                 terminate_process(started)
             return None
@@ -1142,6 +1152,7 @@ def start_companions(module, env):
                 url=health_url,
                 returncode=process.returncode,
             )
+            print_startup_failure_hint()
             terminate_process(process)
             for started in managed:
                 terminate_process(started)
