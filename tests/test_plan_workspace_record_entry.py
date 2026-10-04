@@ -25,3 +25,10 @@ def test_plan_view_resolves_record_edits_by_stable_id():
     assert "records.value.findIndex((item) => item.id === editingRecordId.value)" in PLAN
     assert "appStore.updateRecord(resolvedEditingIndex, record)" in PLAN
     assert "legacyPlan.recordMissing" in PLAN
+
+
+def test_plan_view_delete_resolves_current_record_by_stable_id():
+    assert "const requestedRecord = records.value[index]" in PLAN
+    assert "const resolvedIndex = requestedRecord?.id" in PLAN
+    assert "await appStore.deleteRecord(resolvedIndex)" in PLAN
+    assert "legacyPlan.recordMissing" in PLAN

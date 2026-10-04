@@ -16,3 +16,10 @@ def test_historical_day_detail_localizes_display_date_without_changing_route_sto
     assert "month: '2-digit'" in DAY_DETAIL
     assert "day: '2-digit'" in DAY_DETAIL
     assert "<h1>{{ displayDate }} {{ t('dayDetail.titleSuffix') }}</h1>" in DAY_DETAIL
+
+
+def test_historical_day_detail_delete_resolves_current_record_by_stable_id():
+    assert "const requestedRecord = records.value[index]" in DAY_DETAIL
+    assert "const resolvedIndex = requestedRecord?.id" in DAY_DETAIL
+    assert "await DataService.deleteRecord(resolvedIndex, dateStr.value)" in DAY_DETAIL
+    assert "dayDetail.recordMissing" in DAY_DETAIL

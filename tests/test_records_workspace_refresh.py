@@ -42,3 +42,11 @@ def test_records_todo_reference_refresh_discards_stale_responses():
     assert "let todoOptionsRequestId = 0" in source
     assert "const requestId = ++todoOptionsRequestId" in source
     assert "if (requestId !== todoOptionsRequestId) return" in source
+
+
+def test_records_delete_resolves_current_record_by_stable_id():
+    source = RECORDS.read_text(encoding="utf-8")
+    assert "const requestedRecord = records.value[index]" in source
+    assert "const resolvedIndex = requestedRecord?.id" in source
+    assert "await appStore.deleteRecord(resolvedIndex)" in source
+    assert "records.validation.recordMissing" in source

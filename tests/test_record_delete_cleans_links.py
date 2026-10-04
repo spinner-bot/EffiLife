@@ -16,7 +16,8 @@ def test_workspace_sync_removes_deleted_record_id_only():
 def test_record_delete_paths_clean_linked_todo_references():
     for source_path in (RECORDS, PLAN):
         source = source_path.read_text(encoding="utf-8")
-        assert "const record = records.value[index]" in source
+        assert "const requestedRecord = records.value[index]" in source
+        assert "const resolvedIndex = requestedRecord?.id" in source
         assert "await unlinkTodoFromTimeRecord(record)" in source
 
 
@@ -33,7 +34,8 @@ def test_day_detail_delete_cleans_linked_todo_reference():
     source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
 
     assert "import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'" in source
-    assert "const record = records.value[index]" in source
+    assert "const requestedRecord = records.value[index]" in source
+    assert "const resolvedIndex = requestedRecord?.id" in source
     assert "await unlinkTodoFromTimeRecord(record)" in source
     assert "import { notifyWorkspaceChanged } from '@/services/workspaceEvents'" in source
     assert "notifyWorkspaceChanged('records')" in source

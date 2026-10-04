@@ -156,11 +156,17 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
 // 删除记录
 async function deleteRecord(index: number) {
   if (!(await requestConfirm(t('dayDetail.deleteConfirm'), { tone: 'danger' }))) return
-  const record = records.value[index]
-  await DataService.deleteRecord(index, dateStr.value)
-  if (record) {
-    try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  const requestedRecord = records.value[index]
+  const resolvedIndex = requestedRecord?.id
+    ? records.value.findIndex((item) => item.id === requestedRecord.id)
+    : index
+  const record = resolvedIndex >= 0 ? records.value[resolvedIndex] : undefined
+  if (!record || resolvedIndex < 0) {
+    notifyToast(t('dayDetail.recordMissing'), 'error')
+    return
   }
+  await DataService.deleteRecord(resolvedIndex, dateStr.value)
+  try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
   await loadData()
   notifyWorkspaceChanged('records')
 }
