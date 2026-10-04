@@ -61,12 +61,6 @@ function selectBgm(bgmId: string) {
   updateAudioSetting('currentBgm', bgmId)
 }
 
-function selectBgmFromKeyboard(event: KeyboardEvent, bgmId: string) {
-  if (event.key !== 'Enter' && event.key !== ' ') return
-  event.preventDefault()
-  selectBgm(bgmId)
-}
-
 function addCustomBgm() {
   const input = document.createElement('input')
   input.type = 'file'
@@ -182,11 +176,13 @@ const currentTab = ref<SettingTab>('audio')
               {{ t('settings.audio.custom') }}
               <button class="add-bgm-btn" type="button" :aria-label="t('settings.audio.addCustom')" @click="addCustomBgm"><Plus :size="14" /></button>
             </div>
-            <div v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" role="button" tabindex="0" @click="selectBgm(bgm.id)" @keydown="selectBgmFromKeyboard($event, bgm.id)">
+            <div v-for="bgm in allBgm.filter(b => b.custom)" :key="bgm.id" class="bgm-item custom-bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }">
+              <button type="button" class="bgm-select" :class="{ active: audioSettings.currentBgm === bgm.id }" :aria-pressed="audioSettings.currentBgm === bgm.id" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>
-              <button class="remove-btn" type="button" :aria-label="t('settings.audio.removeCustom')" @click.stop="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
+              </button>
+              <button class="remove-btn" type="button" :aria-label="t('settings.audio.removeCustom')" @click="removeCustomBgm(bgm.id)"><Trash2 :size="14" /></button>
             </div>
             <div v-if="allBgm.filter(b => b.custom).length === 0" class="empty-hint">{{ t('settings.audio.addHint') }}</div>
           </div>
@@ -452,6 +448,26 @@ const currentTab = ref<SettingTab>('audio')
 }
 
 .bgm-item:hover { background: var(--color-bg-tertiary); }
+
+.custom-bgm-item { padding: 0 var(--spacing-sm) 0 0; }
+
+.bgm-select {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-md);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bgm-select.active { color: var(--color-primary); }
+.bgm-select:focus-visible, .remove-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .bgm-item.active {
   border-color: var(--color-primary);
