@@ -103,3 +103,12 @@ def test_home_serializes_summary_refreshes_and_queues_external_changes():
     assert "summaryRefreshQueued = true" in HOME
     assert "} while (summaryRefreshQueued)" in HOME
     assert "refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)" in HOME
+
+
+def test_home_discards_stale_todo_and_plan_summary_responses():
+    assert "let todoSummaryRequestId = 0" in HOME
+    assert "let eventPlanSummaryRequestId = 0" in HOME
+    assert "const requestId = ++todoSummaryRequestId" in HOME
+    assert "if (requestId !== todoSummaryRequestId) return" in HOME
+    assert "const requestId = ++eventPlanSummaryRequestId" in HOME
+    assert "if (requestId !== eventPlanSummaryRequestId) return" in HOME

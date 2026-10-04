@@ -28,6 +28,8 @@ let refreshTimer: number | null = null
 let workspaceRefreshTimer: number | null = null
 let summaryRefreshRunning = false
 let summaryRefreshQueued = false
+let todoSummaryRequestId = 0
+let eventPlanSummaryRequestId = 0
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
@@ -49,6 +51,7 @@ function openEventPlan(plan: PlanSummary) {
 }
 
 async function refreshTodoSummary() {
+  const requestId = ++todoSummaryRequestId
   try {
     const [todos, categories] = await Promise.all([
       TodoService.list(),
@@ -56,6 +59,7 @@ async function refreshTodoSummary() {
     ])
     const categoryById = new Map(categories.map((category) => [category.id, category]))
     const active = todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status))
+    if (requestId !== todoSummaryRequestId) return
     const today = new Date()
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
     const urgency = (todo: UnifiedTodo): { rank: number; timestamp: number } => {
@@ -83,6 +87,7 @@ async function refreshTodoSummary() {
       .slice(0, 3)
     todoSummaryUnavailable.value = false
   } catch {
+    if (requestId !== todoSummaryRequestId) return
     // 待办存储不可用时不阻断首页的计划和时间功能，但要明确告知用户，
     // 避免把读取故障伪装成“今天没有待办”。
     activeTodoCount.value = 0
@@ -167,12 +172,15 @@ function openTodoRecord(todo: UnifiedTodo) {
 }
 
 async function refreshEventPlanSummary() {
+  const requestId = ++eventPlanSummaryRequestId
   eventPlanState.value = 'loading'
   try {
     const activePlans = await listPlanSummaries()
+    if (requestId !== eventPlanSummaryRequestId) return
     eventPlans.value = activePlans
     eventPlanState.value = 'ready'
   } catch {
+    if (requestId !== eventPlanSummaryRequestId) return
     eventPlans.value = []
     eventPlanState.value = 'unavailable'
   }
