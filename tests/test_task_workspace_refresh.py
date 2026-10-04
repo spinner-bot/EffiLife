@@ -25,3 +25,12 @@ def test_task_center_does_not_render_storage_failure_as_an_empty_list():
     assert "dataUnavailable.value = true" in source
     assert 'class="task-empty task-result-state task-unavailable theme-card" role="status" aria-live="polite"' in source
     assert "@click=\"loadTodos\"" in source
+
+
+def test_task_center_defers_workspace_refresh_while_edit_draft_is_open():
+    source = TASKS.read_text(encoding="utf-8")
+    assert "let pendingRefreshAfterEdit = false" in source
+    assert "if (editingId.value)" in source
+    assert "pendingRefreshAfterEdit = true" in source
+    assert "async function flushDeferredTodoRefresh(): Promise<void>" in source
+    assert "void flushDeferredTodoRefresh()" in source

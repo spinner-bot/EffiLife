@@ -91,6 +91,7 @@ const settingsSaving = ref(false)
 const taskTabButtons = ref<HTMLButtonElement[]>([])
 let priorityTimer: number | null = null
 let focusTimer: number | null = null
+let pendingRefreshAfterEdit = false
 
 const activeTodos = computed(() => todos.value.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)))
 const completedTodos = computed(() => todos.value.filter((todo) => todo.status === 'completed'))
@@ -387,8 +388,21 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
     await loadTodoSettings()
     if (source === 'settings') return
   }
+  // Do not replace the list while an inline edit is open: the incoming
+  // snapshot would discard the user's unsaved draft. Flush it after the edit
+  // is cancelled or saved.
+  if (editingId.value) {
+    pendingRefreshAfterEdit = true
+    return
+  }
   await loadTodos()
   await loadCategories()
+}
+
+async function flushDeferredTodoRefresh(): Promise<void> {
+  if (!pendingRefreshAfterEdit || editingId.value) return
+  pendingRefreshAfterEdit = false
+  await refreshFromWorkspace('todos')
 }
 
 // Coalesce bursts from imports and cross-window edits so an older refresh
@@ -464,6 +478,7 @@ function cancelEdit() {
   editingDeadline.value = ''
   editingRecurrence.value = 'none'
   editingCategory.value = 'default'
+  void flushDeferredTodoRefresh()
 }
 
 async function saveEdit(todo: UnifiedTodo) {
