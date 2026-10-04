@@ -3,6 +3,9 @@ export type WorkspaceChangeSource = 'todos' | 'plans' | 'records' | 'archive' | 
 export const WORKSPACE_CHANGED_EVENT = 'effilife:workspace-changed'
 const WORKSPACE_CHANNEL = 'effilife-workspace'
 const LOCALE_STORAGE_KEY = 'efflife_locale'
+// BroadcastChannel is unavailable in some embedded WebViews. Keep a tiny
+// storage-event envelope as a transport fallback; it is not workspace data.
+const WORKSPACE_STORAGE_KEY = 'effilife_workspace_event'
 const WORKSPACE_ORIGIN = typeof globalThis.crypto?.randomUUID === 'function'
   ? globalThis.crypto.randomUUID()
   : Math.random().toString(36).slice(2)
@@ -31,11 +34,23 @@ export function notifyWorkspaceChanged(source: WorkspaceChangeSource): void {
   if (typeof window === 'undefined') return
   const message: WorkspaceEnvelope = { source, origin: WORKSPACE_ORIGIN }
   window.dispatchEvent(new CustomEvent(WORKSPACE_CHANGED_EVENT, { detail: message }))
+  const workspaceChannel = getChannel()
+  let deliveredRemotely = false
   try {
-    channel?.postMessage(message)
+    if (workspaceChannel) {
+      workspaceChannel.postMessage(message)
+      deliveredRemotely = true
+    }
   } catch {
     // A restricted WebView may expose BroadcastChannel but reject messaging.
-    // The same-window CustomEvent above remains the reliable fallback.
+  }
+  if (!deliveredRemotely) {
+    try {
+      window.localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(message))
+    } catch {
+      // Some private/restricted contexts reject localStorage. Same-window
+      // listeners have already received the CustomEvent above.
+    }
   }
 }
 
@@ -52,6 +67,15 @@ export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource, re
   window.addEventListener(WORKSPACE_CHANGED_EVENT, handler)
   const storageHandler = (event: StorageEvent) => {
     if (event.key === LOCALE_STORAGE_KEY) listener('settings', true)
+    if (event.key !== WORKSPACE_STORAGE_KEY || !event.newValue) return
+    try {
+      const message = JSON.parse(event.newValue) as WorkspaceEnvelope
+      if (message.origin !== WORKSPACE_ORIGIN && message.source) {
+        listener(message.source, true)
+      }
+    } catch {
+      // Ignore malformed compatibility events rather than interrupting sync.
+    }
   }
   window.addEventListener('storage', storageHandler)
   broadcast?.addEventListener('message', broadcastHandler)
