@@ -1200,6 +1200,9 @@ onUnmounted(() => {
   .today-todo-capture { flex-direction: column; }
   .today-todo-capture button { width: 100%; }
   .today-todo-deadline { display: none; }
+  .today-todos-link { min-height: 40px; }
+  .today-todo-complete { width: 32px; height: 32px; }
+  .today-todo-record { width: 40px; height: 40px; }
 }
 
 /* 平板横向工作台：保留桌面层级，避免 761–899px 被窄单列容器浪费。 */
