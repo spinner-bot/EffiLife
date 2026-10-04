@@ -16,3 +16,12 @@ def test_plan_workspace_keeps_history_as_a_secondary_entry():
     assert "legacyPlan.historyRecords" in PLAN
     assert "legacyPlan.historyRecordsDescription" in PLAN
     assert "router.push('/records')" in PLAN
+
+
+def test_plan_view_resolves_record_edits_by_stable_id():
+    assert "const editingRecordId = ref<string | null>(null)" in PLAN
+    assert "editingRecordId.value = record.id || null" in PLAN
+    assert "const resolvedEditingIndex = isEditing.value && editingRecordId.value" in PLAN
+    assert "records.value.findIndex((item) => item.id === editingRecordId.value)" in PLAN
+    assert "appStore.updateRecord(resolvedEditingIndex, record)" in PLAN
+    assert "legacyPlan.recordMissing" in PLAN

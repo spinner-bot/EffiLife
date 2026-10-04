@@ -54,6 +54,7 @@ const availableTags = computed(() => {
 // 记录编辑状态
 const isEditing = ref(false)
 const editingIndex = ref(-1)
+const editingRecordId = ref<string | null>(null)
 const showRecordForm = ref(false)
 
 const formMode = ref<'time' | 'duration'>('time')
@@ -76,6 +77,7 @@ function resetRecordForm() {
   formTag.value = availableTags.value[0] || ''
   isEditing.value = false
   editingIndex.value = -1
+  editingRecordId.value = null
 }
 
 function openAddForm() {
@@ -95,6 +97,7 @@ function openEditForm(index: number) {
   formTag.value = record.tag
   isEditing.value = true
   editingIndex.value = index
+  editingRecordId.value = record.id || null
   showRecordForm.value = true
 }
 
@@ -176,11 +179,21 @@ async function saveRecord() {
     }
   }
 
-  const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
+  const resolvedEditingIndex = isEditing.value && editingRecordId.value
+    ? records.value.findIndex((item) => item.id === editingRecordId.value)
+    : editingIndex.value
+  if (isEditing.value && resolvedEditingIndex < 0) {
+    notifyToast(t('legacyPlan.recordMissing'), 'error')
+    showRecordForm.value = false
+    resetRecordForm()
+    return
+  }
+
+  const conflict = checkConflict(start, end, formTag.value, resolvedEditingIndex)
   if (conflict) { notifyToast(conflict, 'error'); return }
 
   const duration = (endMinutes - startMinutes) / 60
-  const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined
+  const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined
   const record: TimeRecord = {
     id: originalRecord?.id,
     todo_id: originalRecord?.todo_id,
@@ -189,7 +202,7 @@ async function saveRecord() {
   }
 
   if (isEditing.value) {
-    await appStore.updateRecord(editingIndex.value, record)
+    await appStore.updateRecord(resolvedEditingIndex, record)
   } else {
     await appStore.addRecord(record)
   }

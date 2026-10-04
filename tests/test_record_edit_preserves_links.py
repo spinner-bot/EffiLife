@@ -17,6 +17,7 @@ def test_records_view_preserves_identity_and_todo_link_on_edit():
 
 def test_unified_plan_workspace_preserves_identity_and_todo_link_on_edit():
     source = PLAN.read_text(encoding="utf-8")
-    assert "const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined" in source
+    assert "const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined" in source
+    assert "const resolvedEditingIndex = isEditing.value && editingRecordId.value" in source
     assert "id: originalRecord?.id" in source
     assert "todo_id: originalRecord?.todo_id" in source
