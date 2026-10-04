@@ -25,3 +25,9 @@ def test_archive_import_refreshes_motion_runtime_without_forcing_reload():
     settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
     assert "refreshFromStorage(): void" in motion
     assert "MotionManager.refreshFromStorage()" in settings
+
+
+def test_archive_data_stats_expose_motion_settings():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "hasMotionSettings: boolean" in source
+    assert "hasMotionSettings: !!readJSON(MOTION_SETTINGS_STORAGE_KEY)" in source

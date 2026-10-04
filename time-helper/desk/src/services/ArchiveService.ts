@@ -1178,6 +1178,7 @@ export async function getDataStats(): Promise<{
   eventPlanSource: 'live' | 'cache' | 'snapshot' | 'unavailable'
   hasAudioSettings: boolean
   hasEventSettings: boolean
+  hasMotionSettings: boolean
   hasCheckin: boolean
 }> {
   const records = await getAllRecords()
@@ -1209,6 +1210,7 @@ export async function getDataStats(): Promise<{
     // compatibility mirrors.
     hasAudioSettings: !!(await readCoreJSON(STORAGE_KEYS.AUDIO_SETTINGS, STORE_NAMES.AUDIO_SETTINGS, 'settings')),
     hasEventSettings: !!(await readCoreJSON(STORAGE_KEYS.EVENT_SETTINGS, STORE_NAMES.EVENT_SETTINGS, 'settings')),
+    hasMotionSettings: !!readJSON(MOTION_SETTINGS_STORAGE_KEY),
     hasCheckin: !!(await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data')),
   }
 }

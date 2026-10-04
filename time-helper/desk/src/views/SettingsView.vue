@@ -466,6 +466,7 @@ const dataStats = ref({
   eventPlanSource: 'unavailable' as 'live' | 'cache' | 'snapshot' | 'unavailable',
   hasAudioSettings: false,
   hasEventSettings: false,
+  hasMotionSettings: false,
   hasCheckin: false,
 })
 const dataStatsUnavailable = ref(false)
@@ -1085,6 +1086,10 @@ onUnmounted(() => {
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.hasCheckin ? '✓' : '—' }}</span>
               <span class="stat-label">{{ t('settings.archive.checkinData') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.hasMotionSettings ? '✓' : '—' }}</span>
+              <span class="stat-label">{{ t('settings.archive.motionData') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.hasPlans ? '✓' : '—' }}</span>
