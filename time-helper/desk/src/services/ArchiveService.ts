@@ -240,7 +240,13 @@ function readJSON<T>(key: string): T | null {
 
 // 写入 JSON 到 localStorage
 function writeJSON(key: string, data: unknown): void {
-  localStorage.setItem(key, JSON.stringify(data))
+  try {
+    localStorage.setItem(key, JSON.stringify(data))
+  } catch (error) {
+    // The archive's canonical target is IndexedDB. A restricted legacy
+    // mirror must not turn an otherwise valid import into a rollback.
+    console.warn(`Failed to update archive compatibility mirror for ${key}:`, error)
+  }
 }
 
 // Core data is written to IndexedDB first by DataService. Keep localStorage
@@ -923,12 +929,16 @@ async function restoreOptionalJsonDataset(
   // dataset in the canonical archive and must remove stale target data.
   if (value === undefined) return
   if (value === null) {
-    localStorage.removeItem(localKey)
     await idbClear(storeName)
+    try {
+      localStorage.removeItem(localKey)
+    } catch (error) {
+      console.warn(`Failed to clear archive compatibility mirror for ${localKey}:`, error)
+    }
     return
   }
-  writeJSON(localKey, value)
   await idbSet(storeName, storeKey, value)
+  writeJSON(localKey, value)
 }
 
 async function processArchiveData(zip: JSZip): Promise<{ success: boolean; message: string }> {
