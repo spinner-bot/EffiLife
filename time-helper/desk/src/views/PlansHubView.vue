@@ -39,7 +39,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
-import { completeLinkedTodos } from '@/services/workspaceSync'
+import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 
 const router = useRouter()
 const route = useRoute()
@@ -465,7 +465,15 @@ async function savePlanMeta() {
   isLoading.value = true
   try {
     const planId = selectedPlan.value.id
-    await updateEventPlan(planId, planName.value.trim(), toDateTuple(planDate.value))
+    const previousName = selectedPlan.value.name
+    const nextName = planName.value.trim()
+    await updateEventPlan(planId, nextName, toDateTuple(planDate.value))
+    try {
+      await syncTodoDescriptionsFromPlan(planId, previousName, nextName)
+    } catch (error) {
+      console.warn('Plan metadata saved but linked todo descriptions could not be refreshed:', error)
+      notifyToast(t('plans.todoSyncFailed'), 'info')
+    }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
     showPlanSaved()
@@ -522,10 +530,17 @@ function cancelSectionEdit() {
 async function deleteSection(section: PlanFull['sections'][number]) {
   if (isLoading.value || !selectedPlan.value || !(await requestConfirm(t('plans.deleteSectionConfirm'), { tone: 'danger' }))) return
   const planId = selectedPlan.value.id
+  const deletedTaskIds = section.tasks.map((task) => task.internal_id)
   isLoading.value = true
   errorMessage.value = ''
   try {
     await deletePlanSection(planId, section.index)
+    try {
+      for (const taskId of deletedTaskIds) await unlinkTodosFromPlanTask(planId, taskId)
+    } catch (error) {
+      console.warn('Section deleted but linked todo references could not be cleared:', error)
+      notifyToast(t('plans.todoSyncFailed'), 'info')
+    }
     cancelSectionEdit()
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
@@ -546,7 +561,15 @@ async function saveTask() {
   errorMessage.value = ''
   try {
     if (editingTaskId.value) {
-      await updatePlanTask(planId, editingTaskId.value, taskContent.value.trim(), minutes)
+      const editedTaskId = editingTaskId.value
+      const nextContent = taskContent.value.trim()
+      await updatePlanTask(planId, editedTaskId, nextContent, minutes)
+      try {
+        await syncTodosFromPlanTask(planId, editedTaskId, nextContent, minutes)
+      } catch (error) {
+        console.warn('Plan task saved but linked todo fields could not be refreshed:', error)
+        notifyToast(t('plans.todoSyncFailed'), 'info')
+      }
     } else if (taskSectionIndex.value !== null) {
       await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
     }
@@ -749,7 +772,7 @@ async function createLinkedTodos(): Promise<void> {
         if (task.finish || existingTaskIds.has(task.internal_id)) continue
         await TodoService.create({
           title: task.content,
-          description: `${plan.name} · ${task.display_id}`,
+          description: plan.name,
           related_plan_id: planId,
           related_plan_task_id: task.internal_id,
           estimated_time: task.time_minutes,
@@ -777,6 +800,12 @@ async function deleteTask(taskId: string) {
   errorMessage.value = ''
   try {
     await deletePlanTask(planId, taskId)
+    try {
+      await unlinkTodosFromPlanTask(planId, taskId)
+    } catch (error) {
+      console.warn('Plan task deleted but linked todo reference could not be cleared:', error)
+      notifyToast(t('plans.todoSyncFailed'), 'info')
+    }
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
