@@ -13,6 +13,7 @@ const WORKSPACE_ORIGIN = typeof globalThis.crypto?.randomUUID === 'function'
 type WorkspaceEnvelope = {
   source?: WorkspaceChangeSource
   origin?: string
+  id?: string
 }
 
 let channel: BroadcastChannel | null = null
@@ -32,7 +33,13 @@ function getChannel(): BroadcastChannel | null {
 
 export function notifyWorkspaceChanged(source: WorkspaceChangeSource): void {
   if (typeof window === 'undefined') return
-  const message: WorkspaceEnvelope = { source, origin: WORKSPACE_ORIGIN }
+  const message: WorkspaceEnvelope = {
+    source,
+    origin: WORKSPACE_ORIGIN,
+    // Storage events are edge-triggered: a repeated identical JSON value may
+    // not emit a second event. Make every notification distinguishable.
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  }
   window.dispatchEvent(new CustomEvent(WORKSPACE_CHANGED_EVENT, { detail: message }))
   // A sender without local subscribers should not create a long-lived
   // channel merely to announce a change; the storage transport also reaches
