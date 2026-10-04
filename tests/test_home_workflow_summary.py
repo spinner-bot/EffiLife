@@ -83,7 +83,7 @@ def test_home_inbox_traps_tab_focus_inside_open_panel():
 
 
 def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakpoints():
-    tablet = "@media (min-width: 761px) and (max-width: 899px)"
+    tablet = "@media (min-width: 681px) and (max-width: 899px)"
     assert tablet in HOME
     tablet_block = HOME.split(tablet, 1)[1].split(".stats-header-row", 1)[0]
     assert "max-width: 900px" in tablet_block

@@ -1214,7 +1214,7 @@ onUnmounted(() => {
 }
 
 /* 平板横向工作台：保留桌面层级，避免 761–899px 被窄单列容器浪费。 */
-@media (min-width: 761px) and (max-width: 899px) {
+@media (min-width: 681px) and (max-width: 899px) {
   .home-view { padding: 18px 24px; }
   .main-content {
     display: grid;

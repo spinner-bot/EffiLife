@@ -21,7 +21,7 @@ def test_home_uses_wide_desktop_control_panel_layout():
 def test_home_keeps_mobile_and_tablet_breakpoints_distinct_from_desktop():
     source = HOME.read_text(encoding="utf-8")
     assert "@media (max-width: 760px)" in source
-    assert "@media (min-width: 761px) and (max-width: 899px)" in source
+    assert "@media (min-width: 681px) and (max-width: 899px)" in source
     assert "@media (min-width: 900px)" in source
 
 
