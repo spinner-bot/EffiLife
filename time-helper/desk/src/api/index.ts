@@ -28,6 +28,10 @@ function fail<T>(error: string): ApiResponse<T> {
   return { success: false, error, timestamp: new Date().toISOString() }
 }
 
+function apiFail<T>(key: string): ApiResponse<T> {
+  return fail(translate(`api.error.${key}`))
+}
+
 // ============================================================
 // 1. 配置 API
 // ============================================================
@@ -39,7 +43,7 @@ export const ConfigApi = {
       const config = await DataService.loadConfig()
       return ok(config)
     } catch (e) {
-      return fail('加载配置失败')
+      return apiFail('loadConfig')
     }
   },
 
@@ -49,7 +53,7 @@ export const ConfigApi = {
       await DataService.saveConfig(config)
       return ok(undefined)
     } catch (e) {
-      return fail('保存配置失败')
+      return apiFail('saveConfig')
     }
   },
 
@@ -61,7 +65,7 @@ export const ConfigApi = {
       await DataService.saveConfig(updated)
       return ok(updated)
     } catch (e) {
-      return fail('更新配置失败')
+      return apiFail('updateConfig')
     }
   },
 
@@ -72,7 +76,7 @@ export const ConfigApi = {
       await DataService.saveConfig(DEFAULT_CONFIG)
       return ok(DEFAULT_CONFIG)
     } catch (e) {
-      return fail('重置配置失败')
+      return apiFail('resetConfig')
     }
   }
 }
@@ -88,7 +92,7 @@ export const PlanApi = {
       const plans = await DataService.loadPlans()
       return ok(plans)
     } catch (e) {
-      return fail('加载计划失败')
+      return apiFail('loadPlans')
     }
   },
 
@@ -98,7 +102,7 @@ export const PlanApi = {
       await DataService.savePlans(plans)
       return ok(undefined)
     } catch (e) {
-      return fail('保存计划失败')
+      return apiFail('savePlans')
     }
   },
 
@@ -108,7 +112,7 @@ export const PlanApi = {
       const plans = await DataService.loadPlans()
       return ok(plans[name] || null)
     } catch (e) {
-      return fail('获取计划详情失败')
+      return apiFail('getPlan')
     }
   },
 
@@ -120,7 +124,7 @@ export const PlanApi = {
       await DataService.savePlans(plans)
       return ok(undefined)
     } catch (e) {
-      return fail('保存计划失败')
+      return apiFail('savePlan')
     }
   },
 
@@ -132,7 +136,7 @@ export const PlanApi = {
       await DataService.savePlans(plans)
       return ok(undefined)
     } catch (e) {
-      return fail('删除计划失败')
+      return apiFail('deletePlan')
     }
   },
 
@@ -142,7 +146,7 @@ export const PlanApi = {
       const plan = await DataService.getDayPlan()
       return ok(plan)
     } catch (e) {
-      return fail('获取今日计划失败')
+      return apiFail('getTodayPlan')
     }
   },
 
@@ -152,7 +156,7 @@ export const PlanApi = {
       const plan = await DataService.getDayPlan(date)
       return ok(plan)
     } catch (e) {
-      return fail('获取日计划失败')
+      return apiFail('getDayPlan')
     }
   },
 
@@ -162,7 +166,7 @@ export const PlanApi = {
       await DataService.saveDayPlan(planName, date)
       return ok(undefined)
     } catch (e) {
-      return fail('设置日计划失败')
+      return apiFail('setDayPlan')
     }
   },
 
@@ -172,7 +176,7 @@ export const PlanApi = {
       const rules = await DataService.loadScheduleRules()
       return ok(rules)
     } catch (e) {
-      return fail('获取日程规则失败')
+      return apiFail('getScheduleRules')
     }
   },
 
@@ -182,7 +186,7 @@ export const PlanApi = {
       await DataService.saveScheduleRules(rules)
       return ok(undefined)
     } catch (e) {
-      return fail('保存日程规则失败')
+      return apiFail('saveScheduleRules')
     }
   }
 }
@@ -198,7 +202,7 @@ export const RecordApi = {
       const records = await DataService.loadRecords(date)
       return ok(records)
     } catch (e) {
-      return fail('加载记录失败')
+      return apiFail('loadRecords')
     }
   },
 
@@ -208,7 +212,7 @@ export const RecordApi = {
       await DataService.saveRecord(record)
       return ok(undefined)
     } catch (e) {
-      return fail('添加记录失败')
+      return apiFail('addRecord')
     }
   },
 
@@ -218,7 +222,7 @@ export const RecordApi = {
       await DataService.deleteRecord(index, date)
       return ok(undefined)
     } catch (e) {
-      return fail('删除记录失败')
+      return apiFail('deleteRecord')
     }
   },
 
@@ -228,7 +232,7 @@ export const RecordApi = {
       await DataService.updateRecord(index, record, date)
       return ok(undefined)
     } catch (e) {
-      return fail('更新记录失败')
+      return apiFail('updateRecord')
     }
   },
 
@@ -250,7 +254,7 @@ export const RecordApi = {
       }
       return ok(result)
     } catch (e) {
-      return fail('获取范围记录失败')
+      return apiFail('getRecordRange')
     }
   },
 
@@ -260,7 +264,7 @@ export const RecordApi = {
       const stat = await DataService.calcRealTimeStat(date)
       return ok(stat)
     } catch (e) {
-      return fail('获取统计失败')
+      return apiFail('getStats')
     }
   },
 
@@ -291,7 +295,7 @@ export const RecordApi = {
       }
       return ok({ dates, progress, totalHours, planNames })
     } catch (e) {
-      return fail('获取统计摘要失败')
+      return apiFail('getStatsSummary')
     }
   }
 }
@@ -307,7 +311,7 @@ export const CheckinApi = {
       const data = CheckinSystem.getData()
       return ok(data)
     } catch (e) {
-      return fail('获取打卡数据失败')
+      return apiFail('getCheckinData')
     }
   },
 
@@ -348,7 +352,7 @@ export const CheckinApi = {
       }
       return ok(result)
     } catch (e) {
-      return fail('打卡失败')
+      return apiFail('checkin')
     }
   },
 
@@ -358,7 +362,7 @@ export const CheckinApi = {
       const result = await CheckinSystem.checkinForDate(date, planName, progress)
       return ok(result)
     } catch (e) {
-      return fail('补打卡失败')
+      return apiFail('makeUpCheckin')
     }
   },
 
@@ -368,7 +372,7 @@ export const CheckinApi = {
       const data = CheckinSystem.getData()
       return ok(data.records)
     } catch (e) {
-      return fail('获取打卡记录失败')
+      return apiFail('getCheckinRecords')
     }
   },
 
@@ -382,7 +386,7 @@ export const CheckinApi = {
       }
       return ok({ checkedIn: false })
     } catch (e) {
-      return fail('获取打卡状态失败')
+      return apiFail('getCheckinStatus')
     }
   },
 
@@ -393,7 +397,7 @@ export const CheckinApi = {
       const filtered = data.records.filter(r => r.date >= startDate && r.date <= endDate)
       return ok(filtered)
     } catch (e) {
-      return fail('获取范围打卡记录失败')
+      return apiFail('getCheckinRange')
     }
   },
 
@@ -403,7 +407,7 @@ export const CheckinApi = {
       CheckinSystem.reset()
       return ok(undefined)
     } catch (e) {
-      return fail('重置打卡数据失败')
+      return apiFail('resetCheckin')
     }
   }
 }
@@ -424,7 +428,7 @@ export const EventApi = {
       EventSystem.updateSettings(patch)
       return ok(undefined)
     } catch (e) {
-      return fail('更新事件设置失败')
+      return apiFail('updateEventSettings')
     }
   },
 
@@ -444,7 +448,7 @@ export const EventApi = {
       EventSystem.markAsRead(entryId)
       return ok(undefined)
     } catch (e) {
-      return fail('标记已读失败')
+      return apiFail('markRead')
     }
   },
 
@@ -454,7 +458,7 @@ export const EventApi = {
       EventSystem.markAllAsRead()
       return ok(undefined)
     } catch (e) {
-      return fail('标记全部已读失败')
+      return apiFail('markAllRead')
     }
   },
 
@@ -464,7 +468,7 @@ export const EventApi = {
       EventSystem.deleteInboxEntry(entryId)
       return ok(undefined)
     } catch (e) {
-      return fail('删除条目失败')
+      return apiFail('deleteInboxEntry')
     }
   },
 
@@ -474,7 +478,7 @@ export const EventApi = {
       EventSystem.clearInbox()
       return ok(undefined)
     } catch (e) {
-      return fail('清空收件箱失败')
+      return apiFail('clearInbox')
     }
   },
 
@@ -489,7 +493,7 @@ export const EventApi = {
       const id = EventSystem.addWarningRule(rule)
       return ok(id)
     } catch (e) {
-      return fail('添加预警规则失败')
+      return apiFail('addWarningRule')
     }
   },
 
@@ -499,7 +503,7 @@ export const EventApi = {
       EventSystem.updateWarningRule(id, updates)
       return ok(undefined)
     } catch (e) {
-      return fail('更新预警规则失败')
+      return apiFail('updateWarningRule')
     }
   },
 
@@ -509,7 +513,7 @@ export const EventApi = {
       EventSystem.removeWarningRule(id)
       return ok(undefined)
     } catch (e) {
-      return fail('删除预警规则失败')
+      return apiFail('deleteWarningRule')
     }
   },
 
@@ -519,7 +523,7 @@ export const EventApi = {
       EventSystem.triggerEvent(type as any, title, message, data)
       return ok(undefined)
     } catch (e) {
-      return fail('触发事件失败')
+      return apiFail('triggerEvent')
     }
   }
 }
@@ -598,7 +602,7 @@ export const AnalyticsApi = {
         dailyProgress
       })
     } catch (e) {
-      return fail('获取周报失败')
+      return apiFail('getWeeklyReport')
     }
   },
 
@@ -642,7 +646,7 @@ export const AnalyticsApi = {
         checkinCount
       })
     } catch (e) {
-      return fail('获取月度趋势失败')
+      return apiFail('getMonthlyTrend')
     }
   },
 
@@ -667,7 +671,7 @@ export const AnalyticsApi = {
         todayRecords: records.length
       })
     } catch (e) {
-      return fail('获取摘要失败')
+      return apiFail('getSummary')
     }
   }
 }
