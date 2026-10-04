@@ -13,7 +13,7 @@ def test_plan_detail_links_todos_without_merging_module_entities():
     assert "related_plan_task_id" in source
     assert "function createLinkedTodos" in source
     assert "function completeTask" in source
-    assert "TodoService.complete" in source
+    assert "completeLinkedTodos" in source
     # PH remains the owner of plan-task mutations; TD receives only a relation.
     assert "updatePlanTask" not in (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 

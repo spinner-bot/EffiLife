@@ -39,6 +39,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
+import { completeLinkedTodos } from '@/services/workspaceSync'
 
 const router = useRouter()
 const route = useRoute()
@@ -695,8 +696,7 @@ async function completeTask(taskId: string) {
   try {
     await completePlanTask(planId, taskId)
     try {
-      const linkedTodo = (await TodoService.list()).find((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id === taskId)
-      if (linkedTodo && linkedTodo.status !== 'completed') await TodoService.complete(linkedTodo.id)
+      await completeLinkedTodos(planId, taskId)
     } catch (error) {
       console.warn('Plan task completed but linked todo sync failed:', error)
       notifyToast(t('plans.todoSyncFailed'), 'info')
