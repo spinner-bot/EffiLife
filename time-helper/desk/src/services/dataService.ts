@@ -299,6 +299,20 @@ function triggerBackup(moduleName: string, data: unknown): void {
   scheduleBackup(moduleName, data)
 }
 
+/**
+ * IndexedDB is the canonical workspace store. The localStorage copy only
+ * keeps older clients and emergency recovery paths compatible, so a blocked
+ * or full localStorage must not make an already successful primary write look
+ * like a failed save.
+ */
+function writeLegacyMirror(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (error) {
+    console.warn(`Failed to update legacy storage mirror for ${key}:`, error)
+  }
+}
+
 export const DataService = {
   // 初始化（执行迁移）
   async init(): Promise<void> {
@@ -331,8 +345,9 @@ export const DataService = {
   async saveConfig(config: Config): Promise<void> {
     const normalized = normalizeConfig(config)
     await idbSet(STORE_NAMES.CONFIG, 'config', normalized)
-    // 同时写入 localStorage 保持兼容
-    localStorage.setItem(STORAGE_PREFIX + 'config', JSON.stringify(normalized))
+    // The legacy path used JSON.stringify(normalized); writeLegacyMirror keeps
+    // that representation while isolating compatibility-storage failures.
+    writeLegacyMirror(STORAGE_PREFIX + 'config', normalized)
     triggerBackup('config', normalized)
   },
 
@@ -360,7 +375,7 @@ export const DataService = {
 
   async savePlans(plans: Plans): Promise<void> {
     await idbSet(STORE_NAMES.PLANS, 'plans', plans)
-    localStorage.setItem(STORAGE_PREFIX + 'plans', JSON.stringify(plans))
+    writeLegacyMirror(STORAGE_PREFIX + 'plans', plans)
     triggerBackup('plans', plans)
   },
 
@@ -388,7 +403,7 @@ export const DataService = {
 
   async saveScheduleRules(rules: ScheduleRule[]): Promise<void> {
     await idbSet(STORE_NAMES.SCHEDULE_RULES, 'rules', rules)
-    localStorage.setItem(STORAGE_PREFIX + 'schedule_rules', JSON.stringify(rules))
+    writeLegacyMirror(STORAGE_PREFIX + 'schedule_rules', rules)
     triggerBackup('schedule_rules', rules)
   },
 
@@ -416,7 +431,7 @@ export const DataService = {
 
   async saveManualPlans(plans: ManualPlans): Promise<void> {
     await idbSet(STORE_NAMES.MANUAL_PLANS, 'all', plans)
-    localStorage.setItem(STORAGE_PREFIX + 'manual_plans', JSON.stringify(plans))
+    writeLegacyMirror(STORAGE_PREFIX + 'manual_plans', plans)
     triggerBackup('manual_plans', plans)
   },
 
@@ -478,7 +493,7 @@ export const DataService = {
       })
       if (entryChanged) {
         await idbSet(STORE_NAMES.RECORDS, entry.key, nextRecords)
-        localStorage.setItem(STORAGE_PREFIX + 'records_' + entry.key, JSON.stringify(nextRecords))
+        writeLegacyMirror(STORAGE_PREFIX + 'records_' + entry.key, nextRecords)
       }
     }
     return changed
@@ -489,7 +504,7 @@ export const DataService = {
     const records = await this.loadRecords(targetDay)
     records.push(record)
     await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-    localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+    writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
     triggerBackup('records', { date: targetDay, records })
   },
 
@@ -499,7 +514,7 @@ export const DataService = {
     if (index >= 0 && index < records.length) {
       records.splice(index, 1)
       await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-      localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
       triggerBackup('records', { date: targetDay, records })
     }
   },
@@ -510,7 +525,7 @@ export const DataService = {
     const nextRecords = records.filter((record) => record.id !== id)
     if (nextRecords.length === records.length) return
     await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
-    localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(nextRecords))
+    writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
     triggerBackup('records', { date: targetDay, records: nextRecords })
   },
 
@@ -520,7 +535,7 @@ export const DataService = {
     if (index >= 0 && index < records.length) {
       records[index] = record
       await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-      localStorage.setItem(STORAGE_PREFIX + 'records_' + targetDay, JSON.stringify(records))
+      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
       triggerBackup('records', { date: targetDay, records })
     }
   },
@@ -760,7 +775,7 @@ export const DataService = {
 
       if (records.length > 0) {
         await idbSet(STORE_NAMES.RECORDS, dateStr, records)
-        localStorage.setItem(`efflife_records_${dateStr}`, JSON.stringify(records))
+        writeLegacyMirror(`efflife_records_${dateStr}`, records)
       }
     }
 
@@ -784,6 +799,6 @@ export const DataService = {
       }
     ]
     await idbSet(STORE_NAMES.RECORDS, todayStr, todayRecords)
-    localStorage.setItem(`efflife_records_${todayStr}`, JSON.stringify(todayRecords))
+    writeLegacyMirror(`efflife_records_${todayStr}`, todayRecords)
   },
 }
