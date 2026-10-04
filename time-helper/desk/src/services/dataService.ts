@@ -16,6 +16,7 @@ import type {
 import {
   get as idbGet,
   set as idbSet,
+  putRaw,
   getRawAll,
   STORE_NAMES,
   runMigration,
@@ -322,6 +323,30 @@ function readLegacyMirror<T>(key: string): T | undefined {
   }
 }
 
+type TodoRecordLinkSnapshot = {
+  id: string
+  related_time_record_ids?: string[]
+}
+
+/** Keep TD reverse references valid when TH records are removed directly. */
+async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void> {
+  if (!recordId) return
+  try {
+    const todos = await getRawAll<TodoRecordLinkSnapshot>(STORE_NAMES.TODOS)
+    for (const todo of todos) {
+      if (!todo?.id || !todo.related_time_record_ids?.includes(recordId)) continue
+      await putRaw(STORE_NAMES.TODOS, {
+        ...todo,
+        related_time_record_ids: todo.related_time_record_ids.filter((id) => id !== recordId),
+      })
+    }
+  } catch (error) {
+    // Record deletion remains authoritative; a reverse-link cleanup failure is
+    // recoverable by the normal workspace repair pass.
+    console.warn('Failed to clean deleted time record todo links:', error)
+  }
+}
+
 export const DataService = {
   // 初始化（执行迁移）
   async init(): Promise<void> {
@@ -478,21 +503,25 @@ export const DataService = {
     const targetDay = day || getTodayDate()
     const records = await this.loadRecords(targetDay)
     if (index >= 0 && index < records.length) {
+      const removedRecord = records[index]
       records.splice(index, 1)
       await idbSet(STORE_NAMES.RECORDS, targetDay, records)
       writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
       triggerBackup('records', { date: targetDay, records })
+      await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')
     }
   },
 
   async deleteRecordById(id: string, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
     const records = await this.loadRecords(targetDay)
+    const removed = records.find((record) => record.id === id)
     const nextRecords = records.filter((record) => record.id !== id)
     if (nextRecords.length === records.length) return
     await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
     writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
     triggerBackup('records', { date: targetDay, records: nextRecords })
+    await unlinkRecordFromTodoReverseLinks(removed?.id || id)
   },
 
   async updateRecord(index: number, record: TimeRecord, day?: string): Promise<void> {

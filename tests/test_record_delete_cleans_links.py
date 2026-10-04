@@ -30,6 +30,14 @@ def test_deleted_todo_unlinks_time_records_without_deleting_history():
     assert "await DataService.unlinkTodoFromRecords(todo.id)" in tasks
 
 
+def test_data_service_delete_paths_clean_todo_reverse_links_at_storage_boundary():
+    data = (ROOT / "time-helper" / "desk" / "src" / "services" / "dataService.ts").read_text(encoding="utf-8")
+    assert "async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void>" in data
+    assert "await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')" in data
+    assert "await unlinkRecordFromTodoReverseLinks(removed?.id || id)" in data
+    assert "related_time_record_ids.filter((id) => id !== recordId)" in data
+
+
 def test_day_detail_delete_cleans_linked_todo_reference():
     source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
 
