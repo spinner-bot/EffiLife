@@ -67,6 +67,13 @@ def test_global_search_surfaces_partial_index_failures_and_can_retry():
     assert "search.partial" in I18N.read_text(encoding="utf-8")
 
 
+def test_global_search_discloses_partial_plan_task_index_failures():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "taskResults.some((result) => result.status === 'rejected')" in source
+    assert "indexPartial.value = true" in source
+    assert "planTasks.value = taskResults.flatMap" in source
+
+
 def test_global_search_detail_separators_are_localized():
     source = SEARCH.read_text(encoding="utf-8")
     catalog = I18N.read_text(encoding="utf-8")

@@ -172,6 +172,11 @@ async function loadPlanTaskIndex(planList: PlanSummary[], requestId: number) {
     return tasks.map((task) => ({ plan, task }))
   }))
   if (requestId !== searchRequestId) return
+  // A plan can remain searchable even when its task endpoint is temporarily
+  // unavailable, but the index must disclose that task results are partial.
+  if (taskResults.some((result) => result.status === 'rejected')) {
+    indexPartial.value = true
+  }
   planTasks.value = taskResults.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
 }
 
