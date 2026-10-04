@@ -28,3 +28,17 @@ def test_canonical_saves_write_indexed_db_before_the_compatibility_mirror():
         assert "await idbSet" in block
         assert "writeLegacyMirror" in block
         assert block.index("await idbSet") < block.index("writeLegacyMirror")
+
+
+def test_missing_primary_values_can_recover_from_the_compatibility_mirror():
+    source = DATA_SERVICE.read_text(encoding="utf-8")
+    assert "function readLegacyMirror<T>(key: string): T | undefined" in source
+    for marker in (
+        "async loadConfig()",
+        "async loadPlans()",
+        "async loadScheduleRules()",
+        "async loadManualPlans()",
+        "async loadRecords(day?: string)",
+    ):
+        block = source.split(marker, 1)[1].split("\n  },", 1)[0]
+        assert "readLegacyMirror" in block

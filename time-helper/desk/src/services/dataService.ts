@@ -313,6 +313,15 @@ function writeLegacyMirror(key: string, value: unknown): void {
   }
 }
 
+function readLegacyMirror<T>(key: string): T | undefined {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) as T : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const DataService = {
   // 初始化（执行迁移）
   async init(): Promise<void> {
@@ -327,18 +336,9 @@ export const DataService = {
       if (stored) {
         return normalizeConfig(stored)
       }
-    } catch {
-      // fallback to localStorage
-      try {
-        const stored = localStorage.getItem(STORAGE_PREFIX + 'config')
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          return normalizeConfig(parsed)
-        }
-      } catch {
-        // ignore
-      }
-    }
+    } catch { /* use the compatibility mirror below */ }
+    const legacy = readLegacyMirror<Partial<Config>>(STORAGE_PREFIX + 'config')
+    if (legacy) return normalizeConfig(legacy)
     return DEFAULT_CONFIG
   },
 
@@ -359,17 +359,9 @@ export const DataService = {
       if (stored) {
         return stored
       }
-    } catch {
-      // fallback
-      try {
-        const stored = localStorage.getItem(STORAGE_PREFIX + 'plans')
-        if (stored) {
-          return JSON.parse(stored)
-        }
-      } catch {
-        // ignore
-      }
-    }
+    } catch { /* use the compatibility mirror below */ }
+    const legacy = readLegacyMirror<Plans>(STORAGE_PREFIX + 'plans')
+    if (legacy) return legacy
     return DEFAULT_PLANS
   },
 
@@ -387,17 +379,9 @@ export const DataService = {
       if (stored) {
         return stored
       }
-    } catch {
-      // fallback
-      try {
-        const stored = localStorage.getItem(STORAGE_PREFIX + 'schedule_rules')
-        if (stored) {
-          return JSON.parse(stored)
-        }
-      } catch {
-        // ignore
-      }
-    }
+    } catch { /* use the compatibility mirror below */ }
+    const legacy = readLegacyMirror<ScheduleRule[]>(STORAGE_PREFIX + 'schedule_rules')
+    if (legacy) return legacy
     return DEFAULT_SCHEDULE_RULES
   },
 
@@ -415,17 +399,9 @@ export const DataService = {
       if (stored) {
         return stored
       }
-    } catch {
-      // fallback
-      try {
-        const stored = localStorage.getItem(STORAGE_PREFIX + 'manual_plans')
-        if (stored) {
-          return JSON.parse(stored)
-        }
-      } catch {
-        // ignore
-      }
-    }
+    } catch { /* use the compatibility mirror below */ }
+    const legacy = readLegacyMirror<ManualPlans>(STORAGE_PREFIX + 'manual_plans')
+    if (legacy) return legacy
     return {}
   },
 
@@ -444,18 +420,8 @@ export const DataService = {
       if (stored) {
         return stored
       }
-    } catch {
-      // fallback
-      try {
-        const stored = localStorage.getItem(STORAGE_PREFIX + 'records_' + targetDay)
-        if (stored) {
-          return JSON.parse(stored)
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return []
+    } catch { /* use the compatibility mirror below */ }
+    return readLegacyMirror<TimeRecord[]>(STORAGE_PREFIX + 'records_' + targetDay) || []
   },
 
   // 查找某个待办关联的记录日期，用于跨模块回看时间投入。
