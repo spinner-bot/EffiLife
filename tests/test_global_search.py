@@ -172,6 +172,8 @@ def test_global_search_indexes_time_records_by_linked_todo_id():
     source = SEARCH.read_text(encoding="utf-8")
     assert "record.todo_id ?" in source
     assert "${record.content} ${record.tag} ${record.todo_id || ''}" in source
+    assert "function linkedTodoTitle(record: TimeRecord): string" in source
+    assert "${linkedTodoTitle(record)}" in source
 
 
 def test_global_search_prioritizes_title_matches():

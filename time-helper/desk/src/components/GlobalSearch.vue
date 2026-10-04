@@ -56,6 +56,11 @@ function searchModuleLabel(kind: SearchResult['kind']): string {
   }[kind])
 }
 
+function linkedTodoTitle(record: TimeRecord): string {
+  if (!record.todo_id) return ''
+  return todos.value.find((todo) => todo.id === record.todo_id)?.title || ''
+}
+
 const allResults = computed<SearchResult[]>(() => [
   ...todos.value.map((todo) => ({
     id: `todo:${todo.id}`,
@@ -101,8 +106,8 @@ const allResults = computed<SearchResult[]>(() => [
     id: `record:${record.id || `${record.date}-${index}`}`,
     kind: 'record' as const,
     title: record.content || record.tag,
-    detail: `${record.date} ${t('search.detailSeparator')} ${record.tag}${record.todo_id ? ` ${t('search.detailSeparator')} ${record.todo_id}` : ''}`,
-    searchText: `${record.content} ${record.tag} ${record.todo_id || ''}`,
+    detail: `${record.date} ${t('search.detailSeparator')} ${record.tag}${record.todo_id ? ` ${t('search.detailSeparator')} ${record.todo_id}${linkedTodoTitle(record) ? ` ${t('search.detailSeparator')} ${linkedTodoTitle(record)}` : ''}` : ''}`,
+    searchText: `${record.content} ${record.tag} ${record.todo_id || ''} ${linkedTodoTitle(record)}`,
     route: `/day/${record.date}?record=${encodeURIComponent(record.id || `${record.date}-${index}`)}`,
   })),
 ])
