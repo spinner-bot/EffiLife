@@ -1059,6 +1059,10 @@ onUnmounted(() => {
           <strong>{{ t('settings.archive.mobilePlanTitle') }}</strong>
           <p>{{ t('settings.archive.mobilePlanDescription') }}</p>
         </div>
+        <div v-if="isMobilePlatform()" class="archive-capability-note archive-mobile-note">
+          <strong>{{ t('settings.archive.mobileTransferTitle') }}</strong>
+          <p>{{ t('settings.archive.mobileTransferDescription') }}</p>
+        </div>
 
         <!-- 数据统计 -->
         <div class="data-stats">
