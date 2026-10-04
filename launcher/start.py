@@ -770,6 +770,10 @@ def print_doctor_report(report):
             "Stale installer detail: "
             f"{artifact_path} (artifact {artifact_version}, current {report.get('version') or 'unknown'})"
         )
+    if installers_ready:
+        print("Distribution status: ready")
+    else:
+        print("Distribution status: not ready; build a version-matched installer before shipping")
     print()
 
     workspace = report.get("modules", {}).get("1", {})

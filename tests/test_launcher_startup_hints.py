@@ -31,3 +31,20 @@ def test_port_conflict_prints_actionable_hint(monkeypatch, capsys):
     assert terminated == [companion]
     assert "--doctor" in capsys.readouterr().out
 
+
+def test_doctor_separates_development_readiness_from_distribution_readiness(capsys):
+    report = {
+        "version": "1.7.0",
+        "launch_mode": "development",
+        "python": "python",
+        "node": "node",
+        "npm": "npm",
+        "installer_artifacts": [{"exists": True, "non_empty": True, "version_matches": False, "artifact_version": "1.0.11", "path": "old.exe"}],
+        "modules": {"1": {"runtime_state": "stopped", "available": True, "url": "http://127.0.0.1:1420"}},
+        "companions": {},
+        "issues": [],
+        "hints": [],
+    }
+
+    assert launcher.print_doctor_report(report) is True
+    assert "Distribution status: not ready" in capsys.readouterr().out
