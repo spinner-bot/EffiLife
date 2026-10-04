@@ -1054,7 +1054,7 @@ onUnmounted(() => {
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
             <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.completeTaskLabel', { id: task.display_id, content: task.content })" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
-            <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span></div>
+            <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span><small v-if="linkedTodoTaskIds.has(task.internal_id)" class="task-todo-link" :title="t('plans.linkedTodo')">{{ t('plans.linkedTodo') }}</small></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <div v-if="canEditPlan" class="event-task-actions">
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
@@ -1179,6 +1179,7 @@ onUnmounted(() => {
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
 .plan-todo-action { grid-column: 1 / -1; justify-self: start; }
 .plan-todo-hint { grid-column: 1 / -1; color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
+.task-todo-link { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; padding: 2px 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 10px; line-height: 1.2; }
 .plan-detail-progress { min-width: 130px; }
 .plan-detail-layout { display: grid; gap: 14px; }
 .plan-detail-aside, .plan-detail-main { min-width: 0; }

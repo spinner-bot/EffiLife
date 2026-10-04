@@ -14,6 +14,8 @@ def test_plan_detail_links_todos_without_merging_module_entities():
     assert "function createLinkedTodos" in source
     assert "const linkedTodoCount = computed" in source
     assert "t('plans.linkedTodos')" in source
+    assert 'class="task-todo-link"' in source
+    assert 'linkedTodoTaskIds.has(task.internal_id)' in source
     assert "function completeTask" in source
     assert "completeLinkedTodos" in source
     # PH remains the owner of plan-task mutations; TD receives only a relation.
