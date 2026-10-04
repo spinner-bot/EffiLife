@@ -73,7 +73,7 @@ $env:EFFILIFE_TODOS_PORT = 2421
 python launcher/start.py --unified
 ```
 
-端口必须位于 `1024-65535`；非法值会回退到上述默认值。使用 `python launcher/start.py --doctor` 可查看当前实际生效端口和服务状态。
+端口必须位于 `1024-65535`；非法值会回退到上述默认值。使用 `python launcher/start.py --doctor` 可查看当前实际生效端口和服务状态；在脚本或 CI 中使用 `--diagnose-strict`，发现阻塞问题时会以非零状态退出。
 
 ## 当前模块架构
 

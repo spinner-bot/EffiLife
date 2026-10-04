@@ -928,7 +928,40 @@ def test_launcher_diagnostics_expose_platform_native_toolchain_hints(monkeypatch
 
 def test_diagnose_output_uses_ascii_safe_json():
     source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
-    assert "json.dumps(collect_diagnostics(modules), ensure_ascii=True" in source
+    assert "report = collect_diagnostics(modules)" in source
+    assert "json.dumps(report, ensure_ascii=True" in source
+
+
+def test_diagnose_strict_returns_failure_only_for_blocking_issues(monkeypatch, capsys):
+    modules = {"1": {"available": False, "cmd": None, "cwd": None, "url": None}}
+    monkeypatch.setattr(launcher, "build_modules", lambda: modules)
+    monkeypatch.setattr(launcher, "collect_diagnostics", lambda _modules: {
+        "issues": [{"code": "workspace-unavailable"}],
+        "hints": [],
+    })
+    monkeypatch.setattr(sys, "argv", ["start.py", "--diagnose-strict"])
+
+    try:
+        launcher.main()
+    except SystemExit as error:
+        assert error.code == 1
+    else:
+        raise AssertionError("strict diagnostics must fail when blocking issues exist")
+    assert '"workspace-unavailable"' in capsys.readouterr().out
+
+
+def test_diagnose_strict_succeeds_without_blocking_issues(monkeypatch, capsys):
+    modules = {"1": {"available": True, "cmd": [], "cwd": None, "url": None}}
+    monkeypatch.setattr(launcher, "build_modules", lambda: modules)
+    monkeypatch.setattr(launcher, "collect_diagnostics", lambda _modules: {
+        "issues": [],
+        "hints": [{"code": "rust-toolchain-missing"}],
+    })
+    monkeypatch.setattr(sys, "argv", ["start.py", "--diagnose-strict"])
+
+    launcher.main()
+
+    assert '"rust-toolchain-missing"' in capsys.readouterr().out
 
 
 def test_launcher_doctor_renders_actionable_human_output(capsys):

@@ -1221,6 +1221,7 @@ def print_help():
         "  --help, -h       Show this help and exit\n"
         "  --no-browser     Start without opening the browser\n"
         "  --diagnose       Print machine-readable launcher diagnostics\n"
+        "  --diagnose-strict Print diagnostics and fail on blocking issues\n"
         "  --doctor         Print a human-readable readiness report\n"
         "  --release-check  Validate desktop and mobile release configuration\n"
         "  --verify-bundle  Verify a release bundle path\n"
@@ -1258,10 +1259,13 @@ def main():
             raise SystemExit(1)
         return
     modules = build_modules()
-    if "--diagnose" in sys.argv:
+    if "--diagnose" in sys.argv or "--diagnose-strict" in sys.argv:
         # Keep diagnostics copyable across Windows code pages. JSON consumers
         # decode the escaped Unicode path back to its original value.
-        print(json.dumps(collect_diagnostics(modules), ensure_ascii=True, indent=2))
+        report = collect_diagnostics(modules)
+        print(json.dumps(report, ensure_ascii=True, indent=2))
+        if "--diagnose-strict" in sys.argv and report["issues"]:
+            raise SystemExit(1)
         return
     if "--doctor" in sys.argv:
         if not print_doctor_report(collect_diagnostics(modules)):
