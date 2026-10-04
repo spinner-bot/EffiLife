@@ -143,7 +143,7 @@ const last7Days = computed(() => {
       <h1>{{ t('checkin.title') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <!-- 打卡状态区 -->
       <section class="status-section">
         <!-- 未打卡状态 -->
@@ -309,7 +309,7 @@ const last7Days = computed(() => {
           <p class="hint">{{ t('checkin.emptyHint') }}</p>
         </div>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 

@@ -792,7 +792,7 @@ onUnmounted(() => {
       <div v-if="view === 'events' && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
-    <main class="plans-content">
+    <div class="plans-content">
 
       <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card">
         <header class="template-workspace-header">
@@ -969,7 +969,7 @@ onUnmounted(() => {
           </div>
         </div>
       </template>
-    </main>
+    </div>
 
     <div v-if="showCreate" class="modal-backdrop" @click.self="closeCreatePlan">
       <form ref="createModal" class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown="onCreateModalKeydown">

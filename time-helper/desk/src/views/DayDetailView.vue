@@ -180,7 +180,7 @@ onUnmounted(() => {
       <h1>{{ dateStr }} {{ t('dayDetail.titleSuffix') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <section v-if="loadError" class="load-error" role="status" aria-live="polite">
         <strong>{{ t('dayDetail.loadFailed') }}</strong>
         <button type="button" @click="retryLoadData">{{ t('dayDetail.retry') }}</button>
@@ -247,7 +247,7 @@ onUnmounted(() => {
           <p>{{ t('dayDetail.empty') }}</p>
         </div>
       </section>
-    </main>
+    </div>
 
     <!-- 计划选择弹窗 -->
     <Teleport to="body">

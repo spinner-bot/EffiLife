@@ -868,7 +868,7 @@ watch(() => route.query.todo, () => {
       </div>
     </header>
 
-    <main class="task-content">
+    <div class="task-content">
       <form class="task-create theme-card" @submit.prevent="AudioManager.playSound('click'); addTodo()">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
         <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" />
@@ -1136,7 +1136,7 @@ watch(() => route.query.todo, () => {
           </div>
         </article>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 

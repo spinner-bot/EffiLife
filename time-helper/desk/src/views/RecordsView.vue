@@ -430,7 +430,7 @@ onUnmounted(() => {
       </div>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <!-- 记录列表 -->
       <div class="records-list" v-if="records.length > 0">
         <div
@@ -475,7 +475,7 @@ onUnmounted(() => {
           <span>{{ t('records.add') }}</span>
         </button>
       </div>
-    </main>
+    </div>
 
     <!-- 表单弹窗 -->
     <div class="modal-overlay" v-if="showForm" @click.self="closeForm">

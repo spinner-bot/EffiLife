@@ -460,7 +460,7 @@ onMounted(() => {
     </header>
 
     <!-- 内容区域 -->
-    <main class="pv-content">
+    <div class="pv-content">
       <!-- Transition 的两个分支必须保持相邻，避免注释节点破坏 v-if/v-else 配对。 -->
       <Transition name="tab-fade" mode="out-in">
         <div v-if="manageView === 'overview'" key="overview" class="pv-panel">
@@ -835,7 +835,7 @@ onMounted(() => {
           </template>
         </div>
       </Transition>
-    </main>
+    </div>
 
     <!-- 记录表单弹窗 -->
     <Transition name="modal">

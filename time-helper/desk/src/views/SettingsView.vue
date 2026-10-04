@@ -787,7 +787,7 @@ onUnmounted(() => {
       <h1>{{ t('settings.title') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <!-- 加载骨架屏 -->
       <SkeletonLoader v-if="isLoading" type="list" :count="6" />
 
@@ -1283,7 +1283,7 @@ onUnmounted(() => {
         </div>
         <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>
       </template>
-    </main>
+    </div>
   </div>
 </template>
 

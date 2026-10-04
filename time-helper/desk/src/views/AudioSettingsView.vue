@@ -105,7 +105,7 @@ const currentTab = ref<SettingTab>('audio')
       <h1>{{ t('settings.audio.title') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <!-- 标签切换 -->
       <div class="tab-bar">
         <button class="tab-btn active">
@@ -192,7 +192,7 @@ const currentTab = ref<SettingTab>('audio')
           </div>
         </section>
       </template>
-    </main>
+    </div>
   </div>
 </template>
 

@@ -332,7 +332,7 @@ function testWarning(rule: WarningRule) {
       <h1>{{ t('settings.events.title') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <div class="tab-bar">
         <button type="button" class="tab-btn" :class="{ active: currentView === 'inbox' }" @click="currentView = 'inbox'">
           <Inbox :size="18" />
@@ -600,7 +600,7 @@ function testWarning(rule: WarningRule) {
           </div>
         </div>
       </template>
-    </main>
+    </div>
   </div>
 </template>
 

@@ -455,7 +455,7 @@ onUnmounted(() => {
       </div><!-- inbox-wrapper -->
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <section class="clock-section">
         <div class="time-display">{{ currentTime }}</div>
         <div class="date-display">{{ currentDate }}</div>
@@ -659,7 +659,7 @@ onUnmounted(() => {
           <span v-if="canCheckinToday && !hasCheckedInToday" class="home-checkin-dot" aria-hidden="true"></span>
         </button>
       </nav>
-    </main>
+    </div>
 
     <footer class="footer">
       <p>{{ t('home.footer') }}</p>

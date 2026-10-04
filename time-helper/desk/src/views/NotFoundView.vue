@@ -6,7 +6,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <main class="not-found-page" role="main">
+  <div class="not-found-page">
     <section class="not-found-card theme-card" aria-labelledby="not-found-title">
       <div class="not-found-icon" aria-hidden="true"><Compass :size="30" /></div>
       <p class="not-found-code">404</p>
@@ -17,7 +17,7 @@ const { t } = useI18n()
         {{ t('notFound.backHome') }}
       </RouterLink>
     </section>
-  </main>
+  </div>
 </template>
 
 <style scoped>

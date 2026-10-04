@@ -119,7 +119,7 @@ const performanceRating = computed(() => getPerformanceRating())
       <h1>{{ t('settings.motion.title') }}</h1>
     </header>
 
-    <main class="main-content">
+    <div class="main-content">
       <!-- 主开关 -->
       <section class="settings-section">
         <div class="section-header">
@@ -308,7 +308,7 @@ const performanceRating = computed(() => getPerformanceRating())
           {{ t('settings.motion.reset') }}
         </button>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 
