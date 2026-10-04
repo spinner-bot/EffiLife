@@ -1,6 +1,7 @@
 import { deleteRaw, get, getRawAll, putRaw, set, STORE_NAMES } from '@/storage'
 import { translate } from '@/i18n'
 import { notifyWorkspaceChanged } from './workspaceEvents'
+import { DataService } from './dataService'
 
 export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 export type TodoPriority = 'urgent-important' | 'important' | 'urgent' | 'normal'
@@ -419,6 +420,14 @@ export const TodoService = {
   },
 
   async remove(id: string): Promise<void> {
+    try {
+      // Keep TH history intact while removing the reverse TD reference. The
+      // view layer also performs this cleanup for older callers, but the
+      // service boundary must remain safe when used directly.
+      await DataService.unlinkTodoFromRecords(id)
+    } catch (error) {
+      console.warn('Failed to clean deleted todo record links:', error)
+    }
     await deleteRaw(STORE_NAMES.TODOS, id)
     notifyWorkspaceChanged('todos')
   },
