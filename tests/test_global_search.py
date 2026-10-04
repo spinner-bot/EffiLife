@@ -136,8 +136,17 @@ def test_global_search_traps_tab_focus_and_restores_trigger_focus():
 def test_global_search_indexes_todo_descriptions_and_tags():
     source = SEARCH.read_text(encoding="utf-8")
     assert "todo.description || todo.tags?.join(', ')" in source
-    assert "searchText: `${todo.description || ''} ${(todo.tags || []).join(' ')}`" in source
+    assert "${todo.description || ''} ${(todo.tags || []).join(' ')}" in source
+    assert "todo.related_plan_id || ''" in source
     assert "result.searchText" in source
+
+
+def test_global_search_exposes_read_only_ph_context_for_linked_todos():
+    source = SEARCH.read_text(encoding="utf-8")
+    assert "function todoSearchDetail(todo: UnifiedTodo): string" in source
+    assert "todo.related_plan_id && todo.related_plan_task_id" in source
+    assert "search.todoPlanContext" in source
+    assert "${todo.related_plan_id || ''} ${todo.related_plan_task_id || ''}" in source
 
 
 def test_global_search_indexes_plan_tasks_and_deep_links():

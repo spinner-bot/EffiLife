@@ -37,6 +37,15 @@ type SearchResult = {
   route: string
 }
 
+function todoSearchDetail(todo: UnifiedTodo): string {
+  const planContext = todo.related_plan_id && todo.related_plan_task_id
+    ? `${t('search.todoPlanContext')} ${todo.related_plan_id} · ${todo.related_plan_task_id}`
+    : ''
+  return [todo.description || todo.tags?.join(', ') || todo.deadline || t('search.todoDetail'), planContext]
+    .filter(Boolean)
+    .join(` ${t('search.detailSeparator')} `)
+}
+
 function searchModuleLabel(kind: SearchResult['kind']): string {
   return t({
     todo: 'search.module.todo',
@@ -52,8 +61,8 @@ const allResults = computed<SearchResult[]>(() => [
     id: `todo:${todo.id}`,
     kind: 'todo' as const,
     title: todo.title,
-    detail: todo.description || todo.tags?.join(', ') || todo.deadline || t('search.todoDetail'),
-    searchText: `${todo.description || ''} ${(todo.tags || []).join(' ')}`,
+    detail: todoSearchDetail(todo),
+    searchText: `${todo.description || ''} ${(todo.tags || []).join(' ')} ${todo.related_plan_id || ''} ${todo.related_plan_task_id || ''}`,
     route: `/tasks?todo=${encodeURIComponent(todo.id)}`,
   })),
   ...plans.value.map((plan) => ({
