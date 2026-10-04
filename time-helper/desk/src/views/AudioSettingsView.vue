@@ -108,7 +108,7 @@ const currentTab = ref<SettingTab>('audio')
     <div class="main-content">
       <!-- 标签切换 -->
       <div class="tab-bar">
-        <button class="tab-btn active">
+        <button type="button" class="tab-btn active">
           <Volume2 :size="18" />
           <span>{{ t('settings.audio.sfx') }}</span>
         </button>

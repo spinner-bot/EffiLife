@@ -269,13 +269,13 @@ const tooltipStyle = computed(() => ({
             <span v-if="currentStep.actionRequired && !guideState.canProceed && !currentStep.skippable" class="waiting-dots">
               <span></span><span></span><span></span>
             </span>
-            <button v-if="currentStep.skippable && currentStep.actionRequired && !guideState.canProceed" class="skip-step-btn" @click="GuideManager.skipStep()">
+            <button type="button" v-if="currentStep.skippable && currentStep.actionRequired && !guideState.canProceed" class="skip-step-btn" @click="GuideManager.skipStep()">
               {{ t('guide.skipStep') }} →
             </button>
-            <button v-else-if="guideState.canProceed && !currentStep.autoAdvance && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
+            <button type="button" v-else-if="guideState.canProceed && !currentStep.autoAdvance && progress.current < progress.total" class="next-btn" @click="GuideManager.nextStep()">
               {{ t('guide.next') }} →
             </button>
-            <button v-else-if="guideState.canProceed && !currentStep.autoAdvance" class="next-btn finish" @click="finishGuide">
+            <button type="button" v-else-if="guideState.canProceed && !currentStep.autoAdvance" class="next-btn finish" @click="finishGuide">
               {{ t('guide.startUsing') }} ✨
             </button>
           </div>

@@ -102,7 +102,7 @@ onUnmounted(() => {
     <Transition name="fade">
       <div v-if="show" class="checkin-overlay" @click.self="phase === 'done' && close()">
         <div class="checkin-popup">
-          <button v-if="phase === 'done'" class="close-btn" @click="close">
+          <button type="button" v-if="phase === 'done'" class="close-btn" @click="close">
             <X :size="20" />
           </button>
 
@@ -117,7 +117,7 @@ onUnmounted(() => {
                   <Flame :size="20" class="flame-icon" />
                   <span>{{ t('checkin.popup.currentStreak') }} <strong>{{ currentStreak }}</strong> {{ t('checkin.days') }}</span>
                 </div>
-                <button class="checkin-btn" @click="doCheckin">
+                <button type="button" class="checkin-btn" @click="doCheckin">
                   <span class="btn-icon"><MousePointerClick :size="18" /></span>
                   <span class="btn-text">{{ t('checkin.popup.action') }}</span>
                 </button>
