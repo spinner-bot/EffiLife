@@ -38,6 +38,8 @@ def test_frontend_archive_import_applies_size_and_dataset_count_guards():
     assert "const MAX_ARCHIVE_TOTAL_DATASET_BYTES = 64 * 1024 * 1024" in source
     assert "const MAX_ARCHIVE_DATASET_COUNT = 16" in source
     assert "assertArchiveBlobSize(file)" in source
+    assert "export async function previewArchive(file: Blob)" in source
+    assert "export async function previewArchive(file: Blob)" in source and "assertArchiveBlobSize(file)" in source.split("export async function previewArchive(file: Blob)", 1)[1].split("}", 1)[0]
     assert "manifest.datasets.length > MAX_ARCHIVE_DATASET_COUNT" in source
     assert "raw.byteLength > MAX_ARCHIVE_DATASET_BYTES" in source
 

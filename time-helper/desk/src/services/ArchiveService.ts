@@ -722,6 +722,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 }
 
 export async function previewArchive(file: Blob): Promise<ArchivePreview> {
+  assertArchiveBlobSize(file)
   const zip = await JSZip.loadAsync(file)
   return summarizeArchive(await parseArchiveData(zip))
 }
