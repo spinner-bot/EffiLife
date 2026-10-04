@@ -87,6 +87,21 @@ def test_release_check_is_read_only_and_short_circuits_startup(monkeypatch, caps
     assert capsys.readouterr().out == ""
 
 
+def test_release_check_strict_fails_when_toolchains_are_missing(monkeypatch, capsys):
+    monkeypatch.setattr(launcher, "build_modules", lambda: (_ for _ in ()).throw(AssertionError("must not start modules")))
+    monkeypatch.setattr(launcher, "release_check_command", lambda strict_build=False: False if strict_build else True)
+    monkeypatch.setattr(sys, "argv", ["start.py", "--release-check-strict"])
+
+    try:
+        launcher.main()
+    except SystemExit as error:
+        assert error.code == 1
+    else:
+        raise AssertionError("strict release checks must fail when build readiness is false")
+
+    assert capsys.readouterr().out == ""
+
+
 def test_release_check_reports_desktop_and_mobile_boundaries(capsys):
     assert launcher.release_check_command() is True
 

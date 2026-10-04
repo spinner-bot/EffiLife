@@ -318,7 +318,7 @@ def verify_bundle_command(bundle_path):
     return True
 
 
-def release_check_command():
+def release_check_command(strict_build=False):
     """Print the read-only desktop/mobile release preflight as JSON."""
     if str(BASE_DIR) not in sys.path:
         sys.path.insert(0, str(BASE_DIR))
@@ -333,9 +333,11 @@ def release_check_command():
         target: build_report(target, BASE_DIR)
         for target in ("desktop", "android", "ios")
     }
+    build_ready = all(report["ready"] for report in environment.values())
     print(json.dumps({
         "ok": not errors,
-        "build_ready": all(report["ready"] for report in environment.values()),
+        "build_ready": build_ready,
+        "strict_build": strict_build,
         "errors": errors,
         "checks": {
             "desktop": {"ok": not desktop_errors, "errors": desktop_errors},
@@ -343,7 +345,7 @@ def release_check_command():
         },
         "environment": environment,
     }, ensure_ascii=True, indent=2))
-    return not errors
+    return not errors and (not strict_build or build_ready)
 
 
 def get_time_helper_cmd():
@@ -1224,6 +1226,7 @@ def print_help():
         "  --diagnose-strict Print diagnostics and fail on blocking issues\n"
         "  --doctor         Print a human-readable readiness report\n"
         "  --release-check  Validate desktop and mobile release configuration\n"
+        "  --release-check-strict Require the local desktop/mobile toolchains\n"
         "  --verify-bundle  Verify a release bundle path\n"
         "  --packaged       Require a packaged Tauri binary or built dist\n"
         "\nEnvironment:\n"
@@ -1254,8 +1257,9 @@ def main():
         if not verify_bundle_command(bundle_path):
             raise SystemExit(1)
         return
-    if "--release-check" in sys.argv:
-        if not release_check_command():
+    if "--release-check" in sys.argv or "--release-check-strict" in sys.argv:
+        release_ok = release_check_command(strict_build=True) if "--release-check-strict" in sys.argv else release_check_command()
+        if not release_ok:
             raise SystemExit(1)
         return
     modules = build_modules()
