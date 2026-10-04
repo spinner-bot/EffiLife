@@ -1919,6 +1919,7 @@ onMounted(() => {
   justify-content: flex-end;
   gap: var(--spacing-sm);
   padding: var(--spacing-lg);
+  padding-bottom: max(var(--spacing-lg), env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
 }
 

@@ -1256,7 +1256,7 @@ onUnmounted(() => {
 .archive-task-preview-row small { color: var(--color-text-tertiary); white-space: nowrap; }
 .archive-task-preview-row.search-target { border-color: var(--color-primary); background: var(--color-primary-muted); box-shadow: 0 0 0 2px var(--color-primary-muted); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.3); }
-.create-modal { display: grid; gap: 14px; width: min(440px, calc(100vw - 40px)); max-height: calc(100vh - 40px); box-sizing: border-box; overflow-y: auto; padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-bg); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.2)); }
+.create-modal { display: grid; gap: 14px; width: min(440px, calc(100vw - 40px)); max-height: calc(100vh - 40px); box-sizing: border-box; overflow-y: auto; padding: 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-bg); box-shadow: var(--shadow-lg, 0 18px 50px rgba(0,0,0,.2)); }
 .create-modal h2, .create-modal p { margin: 0; }
 .create-modal p { color: var(--color-text-secondary); font-size: 13px; }
 .create-editor-note { border: 1px solid var(--color-primary-muted); border-radius: 10px; padding: 10px 12px; color: var(--color-text-secondary); background: var(--color-primary-muted); line-height: 1.5; }
