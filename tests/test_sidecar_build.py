@@ -26,6 +26,14 @@ def test_sidecar_output_uses_tauri_target_suffix():
     )
 
 
+def test_sidecar_prefers_tauri_selected_target_environment(monkeypatch):
+    builder = load_builder()
+    monkeypatch.setenv("TAURI_TARGET_TRIPLE", "x86_64-pc-windows-msvc")
+    monkeypatch.setenv("TAURI_ENV_TARGET_TRIPLE", "aarch64-apple-darwin")
+
+    assert builder.target_triple(None) == "aarch64-apple-darwin"
+
+
 def test_sidecar_builder_rejects_empty_runtime_artifacts(tmp_path):
     builder = load_builder()
     empty = tmp_path / "efflife-plan-helper"

@@ -22,9 +22,13 @@ BINARIES_DIR = DESK_TAURI / "binaries"
 def target_triple(explicit: str | None) -> str:
     if explicit:
         return explicit
-    configured = os.environ.get("TAURI_TARGET_TRIPLE")
-    if configured:
-        return configured
+    # Tauri exposes the selected build target through TAURI_ENV_TARGET_TRIPLE
+    # during beforeBuildCommand. Keep the legacy project-specific variable as
+    # a fallback for manual builds and older toolchains.
+    for variable in ("TAURI_ENV_TARGET_TRIPLE", "TAURI_TARGET_TRIPLE"):
+        configured = os.environ.get(variable)
+        if configured:
+            return configured
     try:
         result = subprocess.run(
             ["rustc", "-vV"],
