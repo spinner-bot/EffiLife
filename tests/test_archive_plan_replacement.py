@@ -19,6 +19,7 @@ def test_archive_import_clears_only_explicitly_empty_plan_snapshot():
 def test_legacy_archive_without_plan_helper_preserves_existing_snapshot():
     source = ARCHIVE.read_text(encoding="utf-8")
     assert "planHelper?: PlanHelperData" in source
-    assert "planHelper: legacy.planHelper" in source
+    assert "planHelper: normalizedLegacyPlanHelper" in source
+    assert "const normalizedLegacyPlanHelper = legacy.planHelper === undefined" in source
     assert "if (data.planHelper === undefined)" in source
     assert "Legacy archives may not contain plan-helper data" in source

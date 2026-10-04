@@ -149,6 +149,25 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
+function normalizeImportedPlanHelper(raw: unknown): PlanHelperData {
+  if (!isObjectRecord(raw)) return { available: false, plans: [] }
+  const plans = Array.isArray(raw.plans) ? raw.plans : []
+  const archives = Array.isArray(raw.archives) ? raw.archives : []
+  const source = raw.source === 'live' || raw.source === 'cache' || raw.source === 'snapshot'
+    ? raw.source
+    : undefined
+  return {
+    // Older archive.json files carried plans without the newer availability
+    // flag. Treat that shape as available unless it explicitly says false.
+    available: raw.available !== false && Array.isArray(raw.plans),
+    source,
+    plans,
+    archives,
+    unavailableReason: typeof raw.unavailableReason === 'string' ? raw.unavailableReason : undefined,
+    stale: raw.stale === true,
+  }
+}
+
 function summarizeArchive(data: ArchiveData): ArchivePreview {
   const planStatus = !data.planHelper?.available
     ? 'unavailable'
@@ -591,10 +610,11 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     }
 
     const app = (datasets.app && typeof datasets.app === 'object') ? datasets.app as Partial<ArchiveData> : {}
-    const planHelper = datasets.plan_helper || datasets.planHelper || {
+    const rawPlanHelper = datasets.plan_helper || datasets.planHelper || {
       available: Array.isArray(datasets.plans),
       plans: Array.isArray(datasets.plans) ? datasets.plans : [],
     }
+    const planHelper = normalizeImportedPlanHelper(rawPlanHelper)
     const importedTodos = Array.isArray(datasets.todos)
       ? datasets.todos.map(normalizeImportedTodo)
       : []
@@ -653,7 +673,10 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     for (const date of Object.keys(legacyRecords)) delete legacyRecords[date]
     Object.assign(legacyRecords, repairedRecordLinks.records)
   }
-  const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, legacy.planHelper)
+  const normalizedLegacyPlanHelper = legacy.planHelper === undefined
+    ? undefined
+    : normalizeImportedPlanHelper(legacy.planHelper)
+  const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, normalizedLegacyPlanHelper)
   const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
   return {
     ...legacy,
@@ -665,7 +688,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     categories,
     todoSettings: legacy.todoSettings || await TodoSettingsService.get(),
     importRepairs: { todoRecordLinks: repairedRecordLinks.repaired, todoPlanTaskLinks: repairedPlanLinks.repaired },
-    planHelper: legacy.planHelper,
+    planHelper: normalizedLegacyPlanHelper,
   }
 }
 

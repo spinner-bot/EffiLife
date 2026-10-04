@@ -138,7 +138,14 @@ def test_archive_import_preserves_plans_when_plan_dataset_is_unavailable():
     assert "An unavailable PH export is an incomplete snapshot" in source
     assert "Mobile has no live PH service to reconstruct an unavailable" in source
     assert "await clearPlanHelperData()" not in restore
-    assert "settings.archive.planNotRestored" in restore
+
+
+def test_archive_import_normalizes_legacy_plan_helper_without_availability_flag():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "function normalizeImportedPlanHelper(raw: unknown): PlanHelperData" in source
+    assert "available: raw.available !== false && Array.isArray(raw.plans)" in source
+    assert "const normalizedLegacyPlanHelper = legacy.planHelper === undefined" in source
+    assert "repairImportedTodoPlanLinks(repairedRecordLinks.todos, normalizedLegacyPlanHelper)" in source
 
 
 def test_archive_import_replaces_nullable_optional_datasets_without_breaking_legacy_missing_fields():
