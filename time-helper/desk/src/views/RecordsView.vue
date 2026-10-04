@@ -39,13 +39,18 @@ const linkedTodoFromQuery = computed(() => {
   const value = route.query.todo
   return typeof value === 'string' ? value : ''
 })
+let todoOptionsRequestId = 0
 
 async function loadTodoOptions(): Promise<void> {
+  const requestId = ++todoOptionsRequestId
   try {
-    todos.value = await TodoService.list()
+    const nextTodos = await TodoService.list()
+    if (requestId !== todoOptionsRequestId) return
+    todos.value = nextTodos
     todoOptionsUnavailable.value = false
     todoOptionsLoaded.value = true
   } catch {
+    if (requestId !== todoOptionsRequestId) return
     todos.value = []
     todoOptionsUnavailable.value = true
     todoOptionsLoaded.value = false

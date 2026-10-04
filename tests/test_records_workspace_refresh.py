@@ -35,3 +35,10 @@ def test_records_edit_resolves_the_current_record_by_stable_id_after_refresh():
     assert "records.value.findIndex((item) => item.id === editingRecordId.value)" in source
     assert "appStore.updateRecord(resolvedEditingIndex, record)" in source
     assert "records.validation.recordMissing" in source
+
+
+def test_records_todo_reference_refresh_discards_stale_responses():
+    source = RECORDS.read_text(encoding="utf-8")
+    assert "let todoOptionsRequestId = 0" in source
+    assert "const requestId = ++todoOptionsRequestId" in source
+    assert "if (requestId !== todoOptionsRequestId) return" in source

@@ -30,6 +30,13 @@ def test_day_detail_reloads_when_route_date_or_workspace_todos_change():
     assert "stopWorkspaceListener()" in source
 
 
+def test_day_detail_todo_reference_refresh_discards_stale_responses():
+    source = VIEW.read_text(encoding="utf-8")
+    assert "let todoReferenceRequestId = 0" in source
+    assert "const requestId = ++todoReferenceRequestId" in source
+    assert "if (requestId !== todoReferenceRequestId) return" in source
+
+
 def test_day_detail_ignores_stale_async_route_responses():
     source = VIEW.read_text(encoding="utf-8")
     assert "let loadRequestId = 0" in source

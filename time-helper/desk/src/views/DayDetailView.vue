@@ -41,6 +41,7 @@ const dayPlanType = ref('')
 const todoTitles = ref(new Map<string, string>())
 const todoReferencesLoaded = ref(false)
 let loadRequestId = 0
+let todoReferenceRequestId = 0
 
 /** Stored plan types remain legacy domain values; localize only at display time. */
 function planTypeLabel(value?: string): string {
@@ -126,11 +127,14 @@ async function revealSearchRecord(): Promise<void> {
 }
 
 async function loadTodoReferences(): Promise<void> {
+  const requestId = ++todoReferenceRequestId
   try {
     const todos = await TodoService.list()
+    if (requestId !== todoReferenceRequestId) return
     todoTitles.value = new Map(todos.map((todo) => [todo.id, todo.title]))
     todoReferencesLoaded.value = true
   } catch {
+    if (requestId !== todoReferenceRequestId) return
     todoTitles.value = new Map()
     todoReferencesLoaded.value = false
   }
