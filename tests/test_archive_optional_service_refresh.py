@@ -40,3 +40,11 @@ def test_remote_archive_events_refresh_optional_services_in_the_app_shell():
     assert "AudioManager.refreshFromStorage()" in app
     assert "EventSystem.refreshFromStorage()" in app
     assert "CheckinSystem.refreshFromStorage()" in app
+
+
+def test_backup_restore_refreshes_current_settings_state_before_reload_prompt():
+    settings = (DESK / "views" / "SettingsView.vue").read_text(encoding="utf-8")
+    restore_block = settings.split("async function handleRestoreBackup", 1)[1].split("async function handleEmergencyExport", 1)[0]
+
+    assert "const result = await restoreFromSpecificBackup(backup)" in restore_block
+    assert "await refreshAfterArchiveImport()" in restore_block

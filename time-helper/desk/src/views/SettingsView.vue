@@ -679,6 +679,7 @@ async function handleRestoreBackup(backup: BackupData) {
   try {
     const result = await restoreFromSpecificBackup(backup)
     if (result.success) {
+      await refreshAfterArchiveImport()
       notifyToast(result.message + '\n\n' + t('settings.archive.reloadConfirm'), 'success')
       if (await requestConfirm(t('settings.archive.reloadNow'))) {
         window.location.reload()
