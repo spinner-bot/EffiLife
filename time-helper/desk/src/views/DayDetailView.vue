@@ -26,6 +26,7 @@ const plans = computed(() => appStore.plans)
 const stat = ref<RealTimeStat | null>(null)
 const records = ref<TimeRecord[]>([])
 const loadError = ref(false)
+const planUnavailable = ref(false)
 const dayPlanName = ref('')
 const dayPlanType = ref('')
 const todoTitles = ref(new Map<string, string>())
@@ -46,16 +47,28 @@ const showPlanSelector = ref(false)
 async function loadData() {
   const requestId = ++loadRequestId
   const day = dateStr.value
-  const [nextStat, nextRecords, planInfo] = await Promise.all([
+  const [statResult, recordsResult, planResult] = await Promise.allSettled([
     DataService.calcRealTimeStat(day),
     DataService.loadRecords(day),
     DataService.getDayPlan(day),
   ])
   if (requestId !== loadRequestId) return
-  stat.value = nextStat
-  records.value = nextRecords
-  dayPlanName.value = planInfo.name
-  dayPlanType.value = planInfo.type
+  if (statResult.status === 'rejected') {
+    throw statResult.reason instanceof Error ? statResult.reason : new Error(String(statResult.reason))
+  }
+  if (recordsResult.status === 'rejected') {
+    throw recordsResult.reason instanceof Error ? recordsResult.reason : new Error(String(recordsResult.reason))
+  }
+  stat.value = statResult.value
+  records.value = recordsResult.value
+  planUnavailable.value = planResult.status === 'rejected'
+  if (planResult.status === 'fulfilled') {
+    dayPlanName.value = planResult.value.name
+    dayPlanType.value = planResult.value.type
+  } else {
+    dayPlanName.value = ''
+    dayPlanType.value = ''
+  }
   loadError.value = false
   void revealSearchRecord()
 }
@@ -191,7 +204,8 @@ onUnmounted(() => {
           <h2>{{ t('dayDetail.plan') }}</h2>
           <button type="button" class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
         </div>
-        <p class="plan-name">{{ dayPlanName }}（{{ planTypeLabel(dayPlanType) }}）</p>
+        <p v-if="planUnavailable" class="plan-unavailable" role="status" aria-live="polite">{{ t('dayDetail.planUnavailable') }}</p>
+        <p v-else class="plan-name">{{ dayPlanName }}（{{ planTypeLabel(dayPlanType) }}）</p>
 
         <!-- 统计信息 -->
         <div class="stats" v-if="stat">

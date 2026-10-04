@@ -55,6 +55,16 @@ def test_workspace_refresh_preserves_successful_datasets_when_one_read_fails():
     assert "failedReads.length === workspaceResults.length" in refresh_block
 
 
+def test_day_detail_keeps_history_when_only_day_plan_read_fails():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+    assert "const planUnavailable = ref(false)" in source
+    assert "const [statResult, recordsResult, planResult] = await Promise.allSettled([" in source
+    assert "if (statResult.status === 'rejected')" in source
+    assert "if (recordsResult.status === 'rejected')" in source
+    assert "planUnavailable.value = planResult.status === 'rejected'" in source
+    assert "dayDetail.planUnavailable" in source
+
+
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
     source = STORE.read_text(encoding="utf-8")
     assert "async function refreshWorkspaceData()" in source
