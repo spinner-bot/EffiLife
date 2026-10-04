@@ -1080,6 +1080,9 @@ watch(() => route.query.todo, () => {
               <h2>{{ todo.title }}</h2>
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
+            <span v-if="todo.related_plan_id && todo.related_plan_task_id" class="task-plan-reference" :title="t('tasks.planReference')">
+              <b>PH</b>{{ t('tasks.plan') }} #{{ todo.related_plan_id }} · {{ todo.related_plan_task_id }}
+            </span>
             <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">
               <CategoryIconPreview :name="categories.find((item) => item.id === todo.category)?.icon" :ascii="categories.find((item) => item.id === todo.category)?.ascii_icon" />
               <span>{{ todoCategoryLabel(todo.category) }}</span>
@@ -1227,6 +1230,8 @@ watch(() => route.query.todo, () => {
 .task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; align-self: flex-start; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
+.task-plan-reference { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--color-primary); border-radius: 4px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
+.task-plan-reference b { font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; letter-spacing: .04em; }
 .task-tag { display: inline-block; margin: 7px 0 0 6px; border-radius: 999px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
 .task-record-link { display: inline-block; margin: 7px 0 0 10px; border: 0; padding: 0; color: var(--color-primary); background: transparent; cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }

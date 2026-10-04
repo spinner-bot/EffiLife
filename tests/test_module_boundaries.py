@@ -23,7 +23,9 @@ def test_ph_workspace_owns_plan_data_and_progress_only():
 
 def test_td_workspace_owns_todo_data_without_plan_editing_controls():
     assert "planGateway" not in TASKS
-    assert "related_plan_id" not in TASKS
+    assert "todo.related_plan_id" in TASKS
+    assert "todo.related_plan_task_id" in TASKS
+    assert 'class="task-plan-reference"' in TASKS
     assert "completePlanTask" not in TASKS
     assert "TodoService.create" in TASKS
     assert "TodoService.update" in TASKS

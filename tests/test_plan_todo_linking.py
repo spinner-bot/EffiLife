@@ -36,7 +36,8 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
 def test_task_center_does_not_open_plan_tasks_from_todos():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "function openTodoPlan" not in tasks
-    assert "todo.related_plan_task_id" not in tasks
+    assert 'class="task-plan-reference"' in tasks
+    assert "todo.related_plan_task_id" in tasks
 
 
 def test_editing_a_todo_does_not_update_a_plan_task():
