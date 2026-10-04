@@ -101,8 +101,8 @@ const allResults = computed<SearchResult[]>(() => [
     id: `record:${record.id || `${record.date}-${index}`}`,
     kind: 'record' as const,
     title: record.content || record.tag,
-    detail: `${record.date} ${t('search.detailSeparator')} ${record.tag}`,
-    searchText: `${record.content} ${record.tag}`,
+    detail: `${record.date} ${t('search.detailSeparator')} ${record.tag}${record.todo_id ? ` ${t('search.detailSeparator')} ${record.todo_id}` : ''}`,
+    searchText: `${record.content} ${record.tag} ${record.todo_id || ''}`,
     route: `/day/${record.date}?record=${encodeURIComponent(record.id || `${record.date}-${index}`)}`,
   })),
 ])
