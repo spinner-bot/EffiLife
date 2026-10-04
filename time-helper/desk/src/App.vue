@@ -387,13 +387,13 @@ watch(() => appStore.todayStat, () => {
           <Home :size="19" /> <span>{{ t('nav.home') }}</span>
         </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="plans" to="/plans" :title="t('plans.moduleDescription')" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined">
-            <ClipboardList :size="19" /> <span>{{ t('nav.plans') }}</span>
+            <ClipboardList :size="19" /> <small class="mobile-nav-module-code" aria-hidden="true">PH</small><span>{{ t('nav.plans') }}</span>
           </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="time" to="/time" :title="t('home.timeModuleSummary')" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined">
-            <Clock3 :size="19" /> <span>{{ t('nav.time') }}</span>
+            <Clock3 :size="19" /> <small class="mobile-nav-module-code" aria-hidden="true">TH</small><span>{{ t('nav.time') }}</span>
           </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="tasks" to="/tasks" :title="t('tasks.moduleDescription')" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined">
-            <ListTodo :size="19" /> <span>{{ t('nav.tasks') }}</span>
+            <ListTodo :size="19" /> <small class="mobile-nav-module-code" aria-hidden="true">TD</small><span>{{ t('nav.tasks') }}</span>
           </RouterLink>
           <RouterLink class="mobile-bottom-nav-link" data-guide="records" to="/records" :class="{ active: route.path.startsWith('/records') || route.path.startsWith('/day') }" :aria-current="route.path.startsWith('/records') || route.path.startsWith('/day') ? 'page' : undefined">
             <History :size="19" /> <span>{{ t('nav.records') }}</span>
@@ -602,6 +602,7 @@ watch(() => appStore.todayStat, () => {
     font-size: 10px;
     text-decoration: none;
   }
+  .mobile-nav-module-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 8px; font-weight: 800; letter-spacing: .04em; line-height: 1; }
   .mobile-bottom-nav::-webkit-scrollbar { display: none; }
   .mobile-bottom-nav-link.active { color: var(--color-primary); background: var(--color-primary-muted); font-weight: 650; }
 }
