@@ -18,6 +18,7 @@ import { currentLocale, setLocale, translate } from '@/i18n'
 import { getTodayDate, normalizeConfig } from '@/services/dataService'
 import type { Config } from '@/types'
 import { notifyWorkspaceChanged } from './workspaceEvents'
+import { MOTION_SETTINGS_STORAGE_KEY } from '@/motion/MotionManager'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.1'
@@ -109,6 +110,7 @@ export interface ArchiveData {
   warningInbox: unknown[] | null
   dailyTrigger: Record<string, unknown> | null
   checkin: Record<string, unknown> | null
+  motionSettings?: Record<string, unknown> | null
   locale?: string
   records?: Record<string, unknown[]>
   todos: UnifiedTodo[]
@@ -331,6 +333,7 @@ async function collectAllData(): Promise<ArchiveData> {
     warningInbox: await readCoreJSON(STORAGE_KEYS.WARNING_INBOX, STORE_NAMES.WARNING_INBOX, 'inbox'),
     dailyTrigger: await readCoreJSON(STORAGE_KEYS.DAILY_TRIGGER, STORE_NAMES.DAILY_TRIGGER, 'trigger'),
     checkin: await readCoreJSON(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data'),
+    motionSettings: readJSON<Record<string, unknown>>(MOTION_SETTINGS_STORAGE_KEY),
     locale: localStorage.getItem('effilife_locale') || 'zh-CN',
     records: await getAllRecords(),
     todos,
@@ -616,6 +619,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       warningInbox: app.warningInbox || null,
       dailyTrigger: app.dailyTrigger || null,
       checkin: app.checkin || null,
+      motionSettings: app.motionSettings,
       locale: typeof app.locale === 'string' ? app.locale : 'zh-CN',
       records: repairedRecordLinks.records,
       todos: repairedPlanLinks.todos,
@@ -933,6 +937,14 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
     await restoreOptionalJsonDataset(STORAGE_KEYS.DAILY_TRIGGER, STORE_NAMES.DAILY_TRIGGER, 'trigger', data.dailyTrigger, idbSet, idbClear)
     await restoreOptionalJsonDataset(STORAGE_KEYS.CHECKIN, STORE_NAMES.CHECKIN, 'data', data.checkin, idbSet, idbClear)
     await TodoSettingsService.save(data.todoSettings)
+    if (data.motionSettings === undefined) {
+      // Older archives did not carry motion settings; preserve the current
+      // device preference instead of silently resetting it.
+    } else if (data.motionSettings === null) {
+      localStorage.removeItem(MOTION_SETTINGS_STORAGE_KEY)
+    } else {
+      writeJSON(MOTION_SETTINGS_STORAGE_KEY, data.motionSettings)
+    }
     if (data.locale === 'zh-CN' || data.locale === 'en-US') {
       setLocale(data.locale)
     }

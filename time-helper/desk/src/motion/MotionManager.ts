@@ -36,7 +36,7 @@ export const DEFAULT_MOTION_SETTINGS: MotionSettings = {
   lastAutoOptimizeTime: 0
 }
 
-const STORAGE_KEY = 'efflife_motion_settings'
+export const MOTION_SETTINGS_STORAGE_KEY = 'efflife_motion_settings'
 
 // 全局响应式状态
 export const motionState = reactive({
@@ -73,7 +73,7 @@ class MotionManagerClass {
 
   private loadSettings() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const saved = localStorage.getItem(MOTION_SETTINGS_STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
         motionState.settings = { ...DEFAULT_MOTION_SETTINGS, ...parsed }
@@ -86,7 +86,7 @@ class MotionManagerClass {
 
   private saveSettings() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(motionState.settings))
+      localStorage.setItem(MOTION_SETTINGS_STORAGE_KEY, JSON.stringify(motionState.settings))
       motionState.version++
     } catch (e) {
       console.warn('Failed to save motion settings:', e)
@@ -97,6 +97,11 @@ class MotionManagerClass {
 
   getSettings(): MotionSettings {
     return motionState.settings
+  }
+
+  /** Re-read durable preferences after a unified archive import. */
+  refreshFromStorage(): void {
+    this.loadSettings()
   }
 
   updateSettings(updates: Partial<MotionSettings>) {

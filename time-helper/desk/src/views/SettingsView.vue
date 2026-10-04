@@ -23,6 +23,7 @@ import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { AudioManager } from '@/audio/AudioManager'
 import { EventSystem } from '@/audio/EventSystem'
 import { CheckinSystem } from '@/data/CheckinSystem'
+import { MotionManager } from '@/motion'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -515,6 +516,7 @@ async function refreshAfterArchiveImport(): Promise<void> {
     AudioManager.refreshFromStorage(),
     EventSystem.refreshFromStorage(),
     CheckinSystem.refreshFromStorage(),
+    Promise.resolve(MotionManager.refreshFromStorage()),
   ])
 }
 
