@@ -714,6 +714,17 @@ async function openTodoRecords(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
 }
 
+function openLinkedPlan(todo: UnifiedTodo) {
+  if (!todo.related_plan_id || !todo.related_plan_task_id) return
+  router.push({
+    path: '/plans',
+    query: {
+      plan: String(todo.related_plan_id),
+      task: String(todo.related_plan_task_id),
+    },
+  })
+}
+
 const focusElapsedLabel = computed(() => {
   const minutes = Math.floor(focusElapsedSeconds.value / 60)
   const seconds = focusElapsedSeconds.value % 60
@@ -1095,9 +1106,9 @@ watch(() => route.query.todo, () => {
               <h2>{{ todo.title }}</h2>
             </div>
             <p v-if="todo.description">{{ todo.description }}</p>
-            <span v-if="todo.related_plan_id && todo.related_plan_task_id" class="task-plan-reference" :title="t('tasks.planReference')">
+            <button v-if="todo.related_plan_id && todo.related_plan_task_id" type="button" class="task-plan-reference" :title="t('tasks.openPlan')" @click="openLinkedPlan(todo)">
               <b>PH</b>{{ t('tasks.plan') }} #{{ todo.related_plan_id }} · {{ todo.related_plan_task_id }}
-            </span>
+            </button>
             <span v-if="todo.category" class="task-category" :style="{ '--category-color': categories.find((item) => item.id === todo.category)?.color || '#64748b' }">
               <CategoryIconPreview :name="categories.find((item) => item.id === todo.category)?.icon" :ascii="categories.find((item) => item.id === todo.category)?.ascii_icon" />
               <span>{{ todoCategoryLabel(todo.category) }}</span>
@@ -1245,7 +1256,8 @@ watch(() => route.query.todo, () => {
 .task-item-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; flex: 0 0 auto; align-self: flex-start; }
 .task-main p { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 13px; }
 .task-category { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--category-color); padding: 2px 7px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 11px; }
-.task-plan-reference { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border-left: 3px solid var(--color-primary); border-radius: 4px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
+.task-plan-reference { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; border: 0; border-left: 3px solid var(--color-primary); border-radius: 4px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font: inherit; font-size: 11px; text-align: left; }
+.task-plan-reference:hover, .task-plan-reference:focus-visible { background: var(--color-primary-soft, var(--color-primary-muted)); outline: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent); outline-offset: 1px; }
 .task-plan-reference b { font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; letter-spacing: .04em; }
 .task-tag { display: inline-block; margin: 7px 0 0 6px; border-radius: 999px; padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 11px; }
 .task-time-spent { display: inline-block; margin: 7px 0 0 10px; color: var(--color-primary); font-size: 12px; }
