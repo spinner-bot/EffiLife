@@ -11,7 +11,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
 import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
-import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
@@ -38,7 +38,7 @@ const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
-const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
+const mobilePlanRuntime = isMobilePlanRuntime()
 
 function openDailyPlan() {
   router.push('/time')
@@ -463,7 +463,7 @@ onUnmounted(() => {
         </button>
         <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable', 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /><small>PH</small></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : eventPlanState === 'unavailable' ? (isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable')) : t('home.planModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : eventPlanState === 'unavailable' ? (mobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable')) : t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
         <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="router.push('/tasks')">
@@ -575,8 +575,8 @@ onUnmounted(() => {
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <div v-else class="event-overview-unavailable">
-            <span class="event-overview-muted">{{ isMobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
-            <button v-if="!isMobilePlanRuntime" type="button" class="event-overview-retry" @click="refreshEventPlanSummary">
+            <span class="event-overview-muted">{{ mobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable') }}</span>
+            <button v-if="!mobilePlanRuntime" type="button" class="event-overview-retry" @click="refreshEventPlanSummary">
               {{ t('home.retryEventPlans') }}
             </button>
           </div>

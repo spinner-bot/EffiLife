@@ -41,7 +41,7 @@ def test_home_does_not_duplicate_the_shell_branding():
 def test_home_plan_service_failure_has_an_explicit_desktop_retry():
     assert "refreshEventPlanSummary" in HOME
     assert "home.retryEventPlans" in HOME
-    assert 'v-if="!isMobilePlanRuntime"' in HOME
+    assert 'v-if="!mobilePlanRuntime"' in HOME
     assert "event-overview-retry" in HOME
     assert I18N.count("'home.retryEventPlans':") == 2
 

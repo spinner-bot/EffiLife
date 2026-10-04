@@ -18,9 +18,17 @@ export function isTauriRuntime(): boolean {
 }
 
 export function getPlanRuntime(): PlanRuntime {
+  // The mobile runtime has no desktop sidecar, but it can still use the
+  // local snapshot gateway. The legacy value is retained for protocol
+  // compatibility; callers should use isMobilePlanRuntime() for clarity.
   if (isMobilePlatform()) return 'mobile-unavailable'
   if (isTauriRuntime()) return 'desktop-sidecar'
   return 'browser-service'
+}
+
+/** Whether PH is running in the mobile-local snapshot mode. */
+export function isMobilePlanRuntime(): boolean {
+  return getPlanRuntime() === 'mobile-unavailable'
 }
 
 export function getPlanRuntimeUnavailableReason(): string {

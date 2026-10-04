@@ -34,7 +34,7 @@ import {
   planDataSource,
   planArchivesState,
 } from '@/services/planGateway'
-import { getPlanRuntime } from '@/services/runtimeCapabilities'
+import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
@@ -42,10 +42,10 @@ import { onWorkspaceChanged } from '@/services/workspaceEvents'
 const router = useRouter()
 const route = useRoute()
 const { t, locale } = useI18n()
-const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
-const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')
+const mobilePlanRuntime = isMobilePlanRuntime()
+const canEditPlan = computed(() => mobilePlanRuntime || planDataSource.value !== 'cache')
 const canArchivePlan = computed(() => canEditPlan.value)
-const archivesUnavailable = computed(() => !isMobilePlanRuntime && planArchivesState.value === 'unavailable')
+const archivesUnavailable = computed(() => !mobilePlanRuntime && planArchivesState.value === 'unavailable')
 const view = ref<'events' | 'detail'>('events')
 const plans = ref<PlanSummary[]>([])
 const archives = ref<PlanArchiveSummary[]>([])
@@ -821,7 +821,7 @@ onUnmounted(() => {
           </div>
           <button v-if="canArchivePlan" type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="restoreArchive(archivedPlanTarget)">{{ t('plans.restore') }}</button>
         </div>
-        <div v-if="!isMobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
+        <div v-if="!mobilePlanRuntime && planDataSource === 'cache'" class="plans-readonly-note plans-list-source-note">
           <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
           <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
@@ -851,7 +851,7 @@ onUnmounted(() => {
           </div>
           <section class="archives-panel theme-card">
           <header><div><h2>{{ t('plans.archived') }}</h2><p>{{ t('plans.archivedAt') }}</p></div></header>
-          <p v-if="isMobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
+          <p v-if="mobilePlanRuntime" class="plans-readonly-note archive-capability-note">{{ t('plans.mobileLocalDescription') }}</p>
           <div v-else-if="archivesUnavailable" class="section-empty archive-unavailable" role="status" aria-live="polite">
             <span>{{ t('plans.archivesUnavailable') }}</span>
             <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ t('plans.retryArchives') }}</button>
@@ -869,7 +869,7 @@ onUnmounted(() => {
       <template v-else-if="selectedPlan">
         <div v-if="errorMessage" class="plans-error" role="alert">{{ errorMessage }}</div>
         <div v-if="successMessage" class="plans-success" role="status" aria-live="polite">{{ successMessage }}</div>
-        <div v-if="isMobilePlanRuntime" class="plans-readonly-note">
+        <div v-if="mobilePlanRuntime" class="plans-readonly-note">
           <strong>{{ t('plans.mobileLocalTitle') }}</strong>
           <span>{{ t('plans.mobileLocalDescription') }}</span>
         </div>

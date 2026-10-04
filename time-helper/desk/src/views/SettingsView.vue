@@ -13,7 +13,7 @@ import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
 import RecoveryPanel from '@/components/RecoveryPanel.vue'
 import { useI18n } from '@/i18n'
-import { getPlanRuntime, isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
+import { isMobilePlanRuntime, isMobilePlatform, isTauriRuntime } from '@/services/runtimeCapabilities'
 import { importLegacyTodoPayload } from '@/services/todoService'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
@@ -87,7 +87,7 @@ async function copyEmail() {
 const router = useRouter()
 const appStore = useAppStore()
 const { t, locale } = useI18n()
-const isMobilePlanRuntime = getPlanRuntime() === 'mobile-unavailable'
+const mobilePlanRuntime = isMobilePlanRuntime()
 
 const config = computed(() => appStore.config)
 
@@ -1055,7 +1055,7 @@ onUnmounted(() => {
           </div>
         </section>
 
-        <div v-if="isMobilePlanRuntime" class="archive-capability-note">
+        <div v-if="mobilePlanRuntime" class="archive-capability-note">
           <strong>{{ t('settings.archive.mobilePlanTitle') }}</strong>
           <p>{{ t('settings.archive.mobilePlanDescription') }}</p>
         </div>

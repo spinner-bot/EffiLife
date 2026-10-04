@@ -19,7 +19,7 @@ def test_plan_gateway_falls_back_to_snapshot_for_reading():
 def test_cached_plan_snapshot_is_read_only_in_desktop_ui():
     plans = PLANS.read_text(encoding="utf-8")
     tasks = TASKS.read_text(encoding="utf-8")
-    assert "const canEditPlan = computed(() => isMobilePlanRuntime || planDataSource.value !== 'cache')" in plans
+    assert "const canEditPlan = computed(() => mobilePlanRuntime || planDataSource.value !== 'cache')" in plans
     assert "planDataSource === 'cache'" in plans
     assert "plans-list-source-note" in plans
     assert "@click=\"retryPlanService\"" in plans
