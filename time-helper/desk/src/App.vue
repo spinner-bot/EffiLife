@@ -218,7 +218,16 @@ onMounted(async () => {
       refreshLocaleFromStorage()
       if (!remote) return
     }
-    if (source === 'archive') refreshLocaleFromStorage()
+    if (source === 'archive') {
+      refreshLocaleFromStorage()
+      if (remote) {
+        void Promise.allSettled([
+          AudioManager.refreshFromStorage(),
+          EventSystem.refreshFromStorage(),
+          CheckinSystem.refreshFromStorage(),
+        ])
+      }
+    }
     void appStore.refreshWorkspaceData().catch((error) => {
       console.warn('Failed to refresh workspace after external change:', error)
     })

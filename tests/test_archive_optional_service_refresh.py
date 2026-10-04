@@ -30,3 +30,13 @@ def test_task_center_reloads_todo_settings_after_archive_import():
     assert "if (source === 'settings' || source === 'archive')" in task_center
     assert "await loadTodoSettings()" in task_center
     assert "await loadCategories()" in task_center
+
+
+def test_remote_archive_events_refresh_optional_services_in_the_app_shell():
+    app = (DESK / "App.vue").read_text(encoding="utf-8")
+
+    assert "if (source === 'archive')" in app
+    assert "if (remote)" in app
+    assert "AudioManager.refreshFromStorage()" in app
+    assert "EventSystem.refreshFromStorage()" in app
+    assert "CheckinSystem.refreshFromStorage()" in app

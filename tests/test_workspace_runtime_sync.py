@@ -16,7 +16,8 @@ def test_app_shell_refreshes_shared_state_after_cross_window_changes():
     assert "document.removeEventListener('visibilitychange', refreshWhenVisible)" in source
     assert "refreshLocaleFromStorage()" in source
     assert "if (source === 'settings')" in source
-    assert "if (source === 'archive') refreshLocaleFromStorage()" in source
+    assert "if (source === 'archive')" in source
+    assert "refreshLocaleFromStorage()" in source
 
 
 def test_workspace_events_distinguish_same_window_and_remote_changes():
