@@ -45,6 +45,16 @@ def test_workspace_refresh_discards_reads_started_before_local_config_write():
     assert "workspaceWriteVersion += 1" in source
 
 
+def test_workspace_refresh_preserves_successful_datasets_when_one_read_fails():
+    source = (ROOT / "time-helper" / "desk" / "src" / "stores" / "app.ts").read_text(encoding="utf-8")
+    refresh_block = source.split("async function refreshWorkspaceData()", 1)[1].split("// 保存配置", 1)[0]
+    assert "const workspaceResults = await Promise.allSettled([" in refresh_block
+    assert "if (configResult.status === 'fulfilled') config.value = configResult.value" in refresh_block
+    assert "if (recordsResult.status === 'fulfilled') todayRecords.value = recordsResult.value" in refresh_block
+    assert "preserved their previous values" in refresh_block
+    assert "failedReads.length === workspaceResults.length" in refresh_block
+
+
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
     source = STORE.read_text(encoding="utf-8")
     assert "async function refreshWorkspaceData()" in source

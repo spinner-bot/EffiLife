@@ -115,26 +115,35 @@ export const useAppStore = defineStore('app', () => {
       do {
         refreshRequested = false
         const readVersion = workspaceWriteVersion
-        const [nextConfig, nextPlans, nextScheduleRules] = await Promise.all([
+        const workspaceResults = await Promise.allSettled([
           DataService.loadConfig(),
           DataService.loadPlans(),
           DataService.loadScheduleRules(),
+          DataService.loadRecords(getTodayDate()),
+          DataService.getDayPlan(getTodayDate()),
+          DataService.calcRealTimeStat(getTodayDate()),
         ])
-        const nextRecords = await DataService.loadRecords(getTodayDate())
-        const nextPlan = await DataService.getDayPlan(getTodayDate())
-        const nextStat = await DataService.calcRealTimeStat(getTodayDate())
         if (readVersion !== workspaceWriteVersion) {
           // A local save completed while these reads were in flight. Discard
           // the stale batch and perform one fresh pass before exposing data.
           refreshRequested = true
           continue
         }
-        config.value = nextConfig
-        plans.value = nextPlans
-        scheduleRules.value = nextScheduleRules
-        todayRecords.value = nextRecords
-        todayPlan.value = nextPlan
-        todayStat.value = nextStat
+        const failedReads = workspaceResults.filter((result) => result.status === 'rejected')
+        const [configResult, plansResult, scheduleResult, recordsResult, planResult, statResult] = workspaceResults
+        if (configResult.status === 'fulfilled') config.value = configResult.value
+        if (plansResult.status === 'fulfilled') plans.value = plansResult.value
+        if (scheduleResult.status === 'fulfilled') scheduleRules.value = scheduleResult.value
+        if (recordsResult.status === 'fulfilled') todayRecords.value = recordsResult.value
+        if (planResult.status === 'fulfilled') todayPlan.value = planResult.value
+        if (statResult.status === 'fulfilled') todayStat.value = statResult.value
+        if (failedReads.length > 0) {
+          console.warn(`Failed to refresh ${failedReads.length} workspace dataset(s); preserved their previous values.`)
+        }
+        if (failedReads.length === workspaceResults.length) {
+          const firstFailure = failedReads[0]
+          throw firstFailure.status === 'rejected' ? firstFailure.reason : new Error('Workspace refresh failed')
+        }
       } while (refreshRequested)
     })()
     const currentRefresh = refreshPromise
