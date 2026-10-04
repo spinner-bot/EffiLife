@@ -28,6 +28,14 @@ def test_workspace_events_distinguish_same_window_and_remote_changes():
     assert "event.data?.origin !== WORKSPACE_ORIGIN" in events
 
 
+def test_workspace_events_fall_back_to_storage_for_cross_window_locale_sync():
+    events = (ROOT / "time-helper" / "desk" / "src" / "services" / "workspaceEvents.ts").read_text(encoding="utf-8")
+    assert "const LOCALE_STORAGE_KEY = 'efflife_locale'" in events
+    assert "window.addEventListener('storage', storageHandler)" in events
+    assert "if (event.key === LOCALE_STORAGE_KEY) listener('settings', true)" in events
+    assert "window.removeEventListener('storage', storageHandler)" in events
+
+
 def test_workspace_refresh_discards_reads_started_before_local_config_write():
     source = (ROOT / "time-helper" / "desk" / "src" / "stores" / "app.ts").read_text(encoding="utf-8")
     assert "let workspaceWriteVersion = 0" in source

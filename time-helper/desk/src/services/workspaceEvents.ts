@@ -2,6 +2,7 @@ export type WorkspaceChangeSource = 'todos' | 'plans' | 'records' | 'archive' | 
 
 export const WORKSPACE_CHANGED_EVENT = 'effilife:workspace-changed'
 const WORKSPACE_CHANNEL = 'effilife-workspace'
+const LOCALE_STORAGE_KEY = 'efflife_locale'
 const WORKSPACE_ORIGIN = typeof globalThis.crypto?.randomUUID === 'function'
   ? globalThis.crypto.randomUUID()
   : Math.random().toString(36).slice(2)
@@ -49,6 +50,10 @@ export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource, re
     listener(event.data?.source, event.data?.origin !== WORKSPACE_ORIGIN)
   }
   window.addEventListener(WORKSPACE_CHANGED_EVENT, handler)
+  const storageHandler = (event: StorageEvent) => {
+    if (event.key === LOCALE_STORAGE_KEY) listener('settings', true)
+  }
+  window.addEventListener('storage', storageHandler)
   broadcast?.addEventListener('message', broadcastHandler)
   subscriberCount += 1
   let active = true
@@ -56,6 +61,7 @@ export function onWorkspaceChanged(listener: (source?: WorkspaceChangeSource, re
     if (!active) return
     active = false
     window.removeEventListener(WORKSPACE_CHANGED_EVENT, handler)
+    window.removeEventListener('storage', storageHandler)
     broadcast?.removeEventListener('message', broadcastHandler)
     subscriberCount = Math.max(0, subscriberCount - 1)
     if (subscriberCount === 0) {
