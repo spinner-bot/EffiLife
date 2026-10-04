@@ -1039,7 +1039,9 @@ onUnmounted(() => {
 .domain-card:hover, .event-plan-card:hover { border-color: var(--color-border-hover); transform: translateY(-2px); }
 .domain-card svg { color: var(--color-primary); }
 .domain-card strong, .event-plan-card strong { font-size: 18px; }
+.event-plan-card > strong { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
 .domain-card span, .event-plan-card span, .event-plan-card small { color: var(--color-text-secondary); }
+.event-plan-card > span { min-width: 0; overflow-wrap: anywhere; }
 .domain-card > svg:last-child { position: absolute; right: 20px; bottom: 20px; color: var(--color-text-tertiary); }
 .event-plan-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .event-plan-card-top { display: flex; justify-content: space-between; color: var(--color-text-tertiary); font-size: 12px; }
@@ -1137,6 +1139,7 @@ onUnmounted(() => {
 .archives-panel header p { margin-top: 4px; color: var(--color-text-tertiary); font-size: 12px; }
 .archive-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--color-border); }
 .archive-row > div { display: grid; gap: 4px; min-width: 0; }
+.archive-row > div strong { min-width: 0; overflow-wrap: anywhere; }
 .archive-row span { color: var(--color-text-tertiary); font-size: 12px; }
 .archive-task-preview { display: grid; gap: 5px; margin-top: 10px; width: 100%; }
 .archive-task-preview-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 6px 8px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }

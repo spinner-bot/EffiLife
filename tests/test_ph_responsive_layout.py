@@ -39,3 +39,10 @@ def test_plan_index_uses_activity_and_archive_columns_on_wide_desktop():
     assert 'class="plan-index-main"' in source
     assert ".plan-index-layout { grid-template-columns: minmax(0, 1.55fr) minmax(280px, .65fr); align-items: start; }" in source
     assert ".plan-index-main .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in source
+
+
+def test_plan_cards_wrap_long_theme_names_inside_their_grid_cells():
+    source = SOURCE.read_text(encoding="utf-8")
+    assert ".event-plan-card > strong { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }" in source
+    assert ".event-plan-card > span { min-width: 0; overflow-wrap: anywhere; }" in source
+    assert ".archive-row > div strong { min-width: 0; overflow-wrap: anywhere; }" in source
