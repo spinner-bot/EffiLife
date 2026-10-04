@@ -39,6 +39,13 @@ def test_archive_stats_use_unified_plan_gateway_fallback_and_expose_source():
     assert "'live' | 'cache' | 'snapshot' | 'unavailable'" in stats
 
 
+def test_archive_stats_expose_plan_todo_relationship_count():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    stats = source.split("export async function getDataStats", 1)[1]
+
+    assert "linkedPlanTodoCount: todos.filter((todo) => Boolean(todo.related_plan_id && todo.related_plan_task_id)).length" in stats
+
+
 def test_archive_records_do_not_merge_stale_legacy_dates_into_indexeddb():
     source = ARCHIVE.read_text(encoding="utf-8")
     records = source.split("async function getAllRecords", 1)[1]

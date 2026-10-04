@@ -458,6 +458,7 @@ const dataStats = ref({
   totalRecords: 0,
   todoCount: 0,
   activeTodoCount: 0,
+  linkedPlanTodoCount: 0,
   todoCategoryCount: 0,
   hasConfig: false,
   hasPlans: false,
@@ -1106,6 +1107,10 @@ onUnmounted(() => {
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.activeTodoCount }}</span>
               <span class="stat-label">{{ t('settings.archive.activeTodos') }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ dataStats.linkedPlanTodoCount }}</span>
+              <span class="stat-label">{{ t('settings.archive.linkedPlanTodos') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ dataStats.todoCategoryCount }}</span>

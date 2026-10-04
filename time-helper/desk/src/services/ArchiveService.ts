@@ -1170,6 +1170,7 @@ export async function getDataStats(): Promise<{
   totalRecords: number
   todoCount: number
   activeTodoCount: number
+  linkedPlanTodoCount: number
   todoCategoryCount: number
   hasConfig: boolean
   hasPlans: boolean
@@ -1196,6 +1197,7 @@ export async function getDataStats(): Promise<{
     totalRecords,
     todoCount: todos.length,
     activeTodoCount: todos.filter((todo) => !['completed', 'archived', 'cancelled'].includes(todo.status)).length,
+    linkedPlanTodoCount: todos.filter((todo) => Boolean(todo.related_plan_id && todo.related_plan_task_id)).length,
     todoCategoryCount: categories.length,
     hasConfig: !!(await readCoreJSON(STORAGE_KEYS.CONFIG, STORE_NAMES.CONFIG, 'config')),
     hasPlans: !!(await readCoreJSON(STORAGE_KEYS.PLANS, STORE_NAMES.PLANS, 'plans')),
