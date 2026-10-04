@@ -12,14 +12,14 @@ def test_plan_task_actions_remain_horizontal_on_tablet_and_stack_on_mobile():
     mobile_block = source.split("@media (max-width: 760px)", 1)[1]
     assert ".event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 7px; }" in tablet_block
     assert ".event-task-actions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }" in tablet_block
-    assert ".event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; }" in mobile_block
+    assert ".event-task-row { grid-template-columns: 36px minmax(0, 1fr) auto; }" in mobile_block
     assert ".event-task-actions { grid-column: 2 / -1; grid-row: 3;" in mobile_block
 
 
 def test_plan_task_mobile_grid_assigns_every_action_without_implicit_columns():
     source = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
     mobile_block = source.split("@media (max-width: 760px)", 1)[1]
-    assert ".event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; }" in mobile_block
+    assert ".event-task-row { grid-template-columns: 36px minmax(0, 1fr) auto; }" in mobile_block
     assert ".event-task-actions { grid-column: 2 / -1; grid-row: 3;" in mobile_block
 
 

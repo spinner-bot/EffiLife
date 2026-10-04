@@ -1008,6 +1008,7 @@ onUnmounted(() => {
   .header { flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .header h1 { order: 3; flex-basis: 100%; font-size: 1.25rem; }
   .back-btn, .add-btn { min-height: 40px; }
+  .icon-btn { width: 40px; height: 40px; }
   .records-header-actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
   .add-btn { margin-left: 0; }
   .record-item { padding: 13px; }
