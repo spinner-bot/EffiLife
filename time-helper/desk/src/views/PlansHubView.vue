@@ -54,6 +54,7 @@ const archives = ref<PlanArchiveSummary[]>([])
 const selectedPlan = ref<PlanFull | null>(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const detailRefreshUnavailable = ref(false)
 const successMessage = ref('')
 const planSearch = ref('')
 const searchTargetTaskId = ref<string | null>(null)
@@ -208,14 +209,16 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
   if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network')) {
     try {
       selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+      detailRefreshUnavailable.value = false
+      errorMessage.value = ''
       await refreshLinkedTodoTaskIds()
     } catch {
-      // The plan may have been archived or removed in another window. Do not
-      // leave the user on a detail screen whose source no longer exists.
-      selectedPlan.value = null
-      view.value = 'events'
-      await router.replace({ path: '/plans', query: {} })
-      await loadPlans()
+      // Keep the last known plan visible during a transient service or
+      // network failure. The user can retry without losing their current
+      // context; a genuinely removed plan will be resolved by the retry or
+      // by navigating back to the plan index.
+      detailRefreshUnavailable.value = true
+      errorMessage.value = t('plans.unavailable')
     }
     return
   }
@@ -405,6 +408,7 @@ async function openPlan(plan: PlanSummary) {
   errorMessage.value = ''
   try {
     selectedPlan.value = await getPlanFull(plan.id)
+    detailRefreshUnavailable.value = false
     await refreshLinkedTodoTaskIds()
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { ...route.query, plan: String(plan.id) } })
@@ -422,6 +426,7 @@ async function retryPlanService() {
   try {
     if (selectedPlan.value) {
       selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+      detailRefreshUnavailable.value = false
     } else {
       await loadPlans()
     }
@@ -977,7 +982,10 @@ onUnmounted(() => {
       </template>
 
       <template v-else-if="selectedPlan">
-        <div v-if="errorMessage" class="plans-error" role="alert">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="plans-error" role="alert">
+          <span>{{ errorMessage }}</span>
+          <button v-if="detailRefreshUnavailable" type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ t('plans.retryService') }}</button>
+        </div>
         <div v-if="successMessage" class="plans-success" role="status" aria-live="polite">{{ successMessage }}</div>
         <div v-if="mobilePlanRuntime" class="plans-readonly-note">
           <strong>{{ t('plans.mobileLocalTitle') }}</strong>

@@ -17,3 +17,13 @@ def test_plan_hub_only_reports_unavailability_when_active_plan_listing_fails():
     assert "activeResult.status === 'fulfilled'" in load_block
     assert "errorMessage.value = activeResult.reason instanceof Error" in load_block
     assert "errorMessage.value = archiveResult.reason" not in load_block
+
+
+def test_plan_hub_preserves_detail_context_when_external_refresh_fails():
+    assert "const detailRefreshUnavailable = ref(false)" in VIEW
+    refresh_block = VIEW.split("async function refreshFromWorkspace", 1)[1].split("// Keep external changes", 1)[0]
+    assert "detailRefreshUnavailable.value = false" in refresh_block
+    assert "detailRefreshUnavailable.value = true" in refresh_block
+    assert "selectedPlan.value = null" not in refresh_block
+    assert "t('plans.retryService')" in VIEW
+    assert "v-if=\"detailRefreshUnavailable\"" in VIEW

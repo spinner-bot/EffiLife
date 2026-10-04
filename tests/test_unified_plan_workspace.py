@@ -25,9 +25,10 @@ def test_daily_plan_supports_embedded_mode_without_duplicate_header():
 
 def test_plan_hub_recovers_when_another_window_archives_the_open_plan():
     assert "if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network'))" in HUB
-    assert "The plan may have been archived or removed in another window" in HUB
-    assert "selectedPlan.value = null" in HUB
-    assert "await router.replace({ path: '/plans', query: {} })" in HUB
+    assert "Keep the last known plan visible during a transient service or" in HUB
+    assert "detailRefreshUnavailable.value = true" in HUB
+    assert "v-if=\"detailRefreshUnavailable\"" in HUB
+    assert "@click=\"retryPlanService\"" in HUB
 
 
 def test_plan_hub_explains_and_restores_archived_plan_deep_links():
