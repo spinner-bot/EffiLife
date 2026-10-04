@@ -25,3 +25,13 @@ def test_records_view_does_not_turn_todo_picker_failure_into_an_empty_choice_lis
     assert ':disabled="todoOptionsUnavailable"' in source
     assert 'class="todo-options-unavailable" role="status" aria-live="polite"' in source
     assert "@click=\"loadTodoOptions\"" in source
+
+
+def test_records_edit_resolves_the_current_record_by_stable_id_after_refresh():
+    source = RECORDS.read_text(encoding="utf-8")
+    assert "const editingRecordId = ref<string | null>(null)" in source
+    assert "editingRecordId.value = record.id || null" in source
+    assert "const resolvedEditingIndex = isEditing.value && editingRecordId.value" in source
+    assert "records.value.findIndex((item) => item.id === editingRecordId.value)" in source
+    assert "appStore.updateRecord(resolvedEditingIndex, record)" in source
+    assert "records.validation.recordMissing" in source

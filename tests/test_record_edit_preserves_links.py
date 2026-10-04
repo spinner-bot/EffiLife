@@ -8,7 +8,8 @@ PLAN = ROOT / "time-helper" / "desk" / "src" / "views" / "PlanView.vue"
 
 def test_records_view_preserves_identity_and_todo_link_on_edit():
     source = RECORDS.read_text(encoding="utf-8")
-    assert "const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined" in source
+    assert "const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined" in source
+    assert "const resolvedEditingIndex = isEditing.value && editingRecordId.value" in source
     assert "id: originalRecord?.id || `TR-" in source
     assert "todo_id: selectedTodoId.value || undefined" in source
     assert "selectedTodoId.value = record.todo_id || ''" in source

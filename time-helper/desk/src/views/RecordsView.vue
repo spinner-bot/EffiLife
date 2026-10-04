@@ -79,6 +79,7 @@ const availableTags = computed(() => {
 // 编辑状态
 const isEditing = ref(false)
 const editingIndex = ref(-1)
+const editingRecordId = ref<string | null>(null)
 const showForm = ref(false)
 const isSaving = ref(false)
 const recordModal = ref<HTMLElement | null>(null)
@@ -116,6 +117,7 @@ function resetForm() {
   selectedTodoId.value = ''
   isEditing.value = false
   editingIndex.value = -1
+  editingRecordId.value = null
 }
 
 // 打开新增表单
@@ -143,6 +145,7 @@ function openEditForm(index: number) {
   selectedTodoId.value = record.todo_id || ''
   isEditing.value = true
   editingIndex.value = index
+  editingRecordId.value = record.id || null
   showForm.value = true
   void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
@@ -323,15 +326,25 @@ async function saveRecordInternal() {
     }
   }
 
+  const resolvedEditingIndex = isEditing.value && editingRecordId.value
+    ? records.value.findIndex((item) => item.id === editingRecordId.value)
+    : editingIndex.value
+  if (isEditing.value && resolvedEditingIndex < 0) {
+    notifyToast(t('records.validation.recordMissing'), 'error')
+    closeForm()
+    resetForm()
+    return
+  }
+
   // 检查冲突
-  const conflict = checkConflict(start, end, formTag.value, editingIndex.value)
+  const conflict = checkConflict(start, end, formTag.value, resolvedEditingIndex)
   if (conflict) {
     notifyToast(t('records.validation.conflict') + conflict, 'error')
     return
   }
 
   const duration = (endMinutes - startMinutes) / 60
-  const originalRecord = isEditing.value ? records.value[editingIndex.value] : undefined
+  const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined
 
   const record: TimeRecord = {
     id: originalRecord?.id || `TR-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -345,7 +358,7 @@ async function saveRecordInternal() {
   }
 
   if (isEditing.value) {
-    await appStore.updateRecord(editingIndex.value, record)
+    await appStore.updateRecord(resolvedEditingIndex, record)
   } else {
     await appStore.addRecord(record)
   }
