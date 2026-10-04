@@ -136,6 +136,7 @@ def test_archive_import_preserves_plans_when_plan_dataset_is_unavailable():
     source = ARCHIVE.read_text(encoding="utf-8")
     restore = source.split("if (data.planHelper === undefined)", 1)[1].split("notifyWorkspaceChanged('archive')", 1)[0]
     assert "An unavailable PH export is an incomplete snapshot" in source
+    assert "Mobile has no live PH service to reconstruct an unavailable" in source
     assert "await clearPlanHelperData()" not in restore
     assert "settings.archive.planNotRestored" in restore
 

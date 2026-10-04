@@ -1004,7 +1004,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
       // current snapshot instead of treating an absent field as an empty one.
     } else if (getPlanRuntime() === 'mobile-unavailable') {
       if (!(data.planHelper?.available && Array.isArray(data.planHelper.plans))) {
-        await idbClear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)
+        // Mobile has no live PH service to reconstruct an unavailable
+        // dataset. Preserve the existing snapshot rather than treating a
+        // degraded archive as an explicit empty plan collection.
         warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planSnapshotMissing') }))
       }
     } else if (data.planHelper?.available && Array.isArray(data.planHelper.plans)) {
