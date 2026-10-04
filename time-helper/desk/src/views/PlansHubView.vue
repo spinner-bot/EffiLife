@@ -184,12 +184,20 @@ async function loadPlans() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const [activePlans, archivedPlans] = await Promise.all([listPlanSummaries(), listPlanArchives()])
-    plans.value = activePlans
-    archives.value = archivedPlans
-  } catch (error) {
-    plans.value = []
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    const [activeResult, archiveResult] = await Promise.allSettled([
+      listPlanSummaries(),
+      listPlanArchives(),
+    ])
+    if (activeResult.status === 'fulfilled') {
+      plans.value = activeResult.value
+    } else {
+      plans.value = []
+      errorMessage.value = activeResult.reason instanceof Error ? activeResult.reason.message : t('plans.unavailable')
+    }
+    // Archive storage is an optional surface. Keep active plans visible when
+    // archive discovery is temporarily unavailable; the archive panel already
+    // exposes its own degraded state and retry affordance.
+    archives.value = archiveResult.status === 'fulfilled' ? archiveResult.value : []
   } finally {
     isLoading.value = false
   }
