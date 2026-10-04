@@ -796,6 +796,7 @@ function backFromDetail() {
 
 const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.length, 0) || 0)
 const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => task.finish).length, 0) || 0)
+const linkedTodoCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
 const unlinkedActiveTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => !task.finish && !linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
 const selectedPlanProgress = computed(() => activeTaskCount.value > 0
   ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
@@ -968,6 +969,7 @@ onUnmounted(() => {
           <div><span>{{ t('plans.date') }}</span><strong>{{ formatPlanDate(selectedPlan.date) }}</strong></div>
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
           <div><span>{{ t('plans.completed') }}</span><strong>{{ completedTaskCount }}</strong></div>
+          <div><span>{{ t('plans.linkedTodos') }}</span><strong>{{ linkedTodoCount }}</strong></div>
           <div class="plan-detail-progress"><span>{{ t('plans.progress') }}</span><strong>{{ selectedPlanProgress }}%</strong><div class="plan-progress-track"><span :style="{ width: `${selectedPlanProgress}%` }" /></div></div>
           <button v-if="canEditPlan && activeTaskCount" type="button" class="plans-secondary plan-todo-action" :disabled="isLoading || !unlinkedActiveTaskCount" @click="createLinkedTodos">{{ unlinkedActiveTaskCount ? t('plans.linkAllTodos') : t('plans.todosAllLinked') }}</button>
           <small v-if="canEditPlan && activeTaskCount" class="plan-todo-hint">{{ t('plans.createTodosHint') }}</small>
