@@ -41,7 +41,7 @@ export function notifyWorkspaceChanged(source: WorkspaceChangeSource): void {
   let deliveredRemotely = false
   try {
     if (workspaceChannel) {
-      workspaceChannel.postMessage(message)
+      channel?.postMessage(message)
       deliveredRemotely = true
     }
   } catch {
