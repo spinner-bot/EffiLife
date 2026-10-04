@@ -20,6 +20,9 @@ import { requestConfirm } from '@/services/confirmService'
 import { DataService, getTodayDate, normalizeConfig } from '@/services/dataService'
 import { getAvailableThemes, getAvailableThemeCategories, type ThemeDefinition } from '@/theme/ThemeEngine'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
+import { AudioManager } from '@/audio/AudioManager'
+import { EventSystem } from '@/audio/EventSystem'
+import { CheckinSystem } from '@/data/CheckinSystem'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -509,6 +512,9 @@ async function refreshAfterArchiveImport(): Promise<void> {
   await Promise.allSettled([
     appStore.refreshWorkspaceData(),
     refreshDataStats(),
+    AudioManager.refreshFromStorage(),
+    EventSystem.refreshFromStorage(),
+    CheckinSystem.refreshFromStorage(),
   ])
 }
 

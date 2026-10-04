@@ -89,6 +89,14 @@ class CheckinSystemClass {
     await this.ready
   }
 
+  /** Re-read durable check-in data after an archive import without restarting the app. */
+  async refreshFromStorage(): Promise<void> {
+    await this.ready
+    await this.hydrate()
+    this.refreshStreak()
+    this.syncState()
+  }
+
   private save() {
     this.dataRevision += 1
     try {

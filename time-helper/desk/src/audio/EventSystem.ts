@@ -213,6 +213,12 @@ class EventSystemClass {
     await this.ready
   }
 
+  /** Re-read durable event data after an archive import without restarting the app. */
+  async refreshFromStorage(): Promise<void> {
+    await this.ready
+    await this.hydrate()
+  }
+
   saveSettings() {
     this.settingsRevision += 1
     try {

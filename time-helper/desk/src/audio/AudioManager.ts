@@ -125,6 +125,12 @@ class AudioManagerClass {
     await this.ready
   }
 
+  /** Re-read durable settings after an archive import without restarting the app. */
+  async refreshFromStorage(): Promise<void> {
+    await this.ready
+    await this.hydrateSettings()
+  }
+
   // 保存设置
   saveSettings() {
     this.settingsRevision += 1
