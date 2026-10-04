@@ -31,6 +31,17 @@ def test_archive_manifest_contains_dataset_checksums_and_import_verifies_them():
     assert "'settings.archive.datasetChecksumMismatch'" in I18N.read_text(encoding="utf-8")
 
 
+def test_frontend_archive_import_applies_size_and_dataset_count_guards():
+    source = SERVICE.read_text(encoding="utf-8")
+    assert "const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024" in source
+    assert "const MAX_ARCHIVE_DATASET_BYTES = 32 * 1024 * 1024" in source
+    assert "const MAX_ARCHIVE_TOTAL_DATASET_BYTES = 64 * 1024 * 1024" in source
+    assert "const MAX_ARCHIVE_DATASET_COUNT = 16" in source
+    assert "assertArchiveBlobSize(file)" in source
+    assert "manifest.datasets.length > MAX_ARCHIVE_DATASET_COUNT" in source
+    assert "raw.byteLength > MAX_ARCHIVE_DATASET_BYTES" in source
+
+
 def test_archive_preview_exposes_integrity_status_to_confirmation():
     source = SERVICE.read_text(encoding="utf-8")
     settings = SETTINGS.read_text(encoding="utf-8")

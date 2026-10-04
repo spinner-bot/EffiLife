@@ -186,6 +186,39 @@ def test_bundle_rejects_missing_manifest(tmp_path):
         inspect_bundle(bundle)
 
 
+def test_bundle_rejects_oversized_dataset_before_json_import(tmp_path):
+    from common.data_exchange import MAX_DATASET_BYTES
+
+    bundle = tmp_path / "oversized.efl"
+    payload = b"x" * (MAX_DATASET_BYTES + 1)
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": ["app"],
+        }))
+        archive.writestr("data/app.json", payload)
+    with pytest.raises(ValueError, match="maximum supported size"):
+        inspect_bundle(bundle)
+
+
+def test_bundle_rejects_too_many_declared_datasets(tmp_path):
+    from common.data_exchange import MAX_DATASET_COUNT
+
+    bundle = tmp_path / "many-datasets.efl"
+    names = [f"dataset-{index}" for index in range(MAX_DATASET_COUNT + 1)]
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": names,
+        }))
+        for name in names:
+            archive.writestr(f"data/{name}.json", "{}")
+    with pytest.raises(ValueError, match="too many datasets"):
+        inspect_bundle(bundle)
+
+
 def test_bundle_rejects_unsupported_version(tmp_path):
     bundle = tmp_path / "future.efl"
     with zipfile.ZipFile(bundle, "w") as archive:
@@ -263,3 +296,50 @@ def test_bundle_import_rolls_back_when_install_fails(tmp_path):
     assert (destination / "first.json").read_text(encoding="utf-8") == "old-1"
     assert (destination / "second.json").read_text(encoding="utf-8") == "old-2"
     assert not any(path.name.startswith(".effilife-import-") for path in destination.iterdir())
+
+
+def test_bundle_limits_are_exposed_for_cross_runtime_import_guards():
+    from common.data_exchange import (
+        MAX_BUNDLE_BYTES,
+        MAX_DATASET_BYTES,
+        MAX_DATASET_COUNT,
+        MAX_TOTAL_DATASET_BYTES,
+    )
+
+    assert MAX_BUNDLE_BYTES == 64 * 1024 * 1024
+    assert MAX_DATASET_BYTES == 32 * 1024 * 1024
+    assert MAX_TOTAL_DATASET_BYTES == 64 * 1024 * 1024
+    assert MAX_DATASET_COUNT == 16
+
+
+def test_bundle_rejects_oversized_dataset_before_json_import(tmp_path):
+    from common.data_exchange import MAX_DATASET_BYTES
+
+    bundle = tmp_path / "oversized.efl"
+    payload = b"x" * (MAX_DATASET_BYTES + 1)
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": ["app"],
+        }))
+        archive.writestr("data/app.json", payload)
+    with pytest.raises(ValueError, match="maximum supported size"):
+        inspect_bundle(bundle)
+
+
+def test_bundle_rejects_too_many_declared_datasets(tmp_path):
+    from common.data_exchange import MAX_DATASET_COUNT
+
+    bundle = tmp_path / "many-datasets.efl"
+    names = [f"dataset-{index}" for index in range(MAX_DATASET_COUNT + 1)]
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": names,
+        }))
+        for name in names:
+            archive.writestr(f"data/{name}.json", "{}")
+    with pytest.raises(ValueError, match="too many datasets"):
+        inspect_bundle(bundle)

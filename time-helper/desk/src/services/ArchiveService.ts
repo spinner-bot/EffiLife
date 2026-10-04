@@ -25,7 +25,17 @@ const ARCHIVE_VERSION = '2.2'
 const ARCHIVE_FORMAT = 'effilife.bundle'
 const ARCHIVE_FORMAT_VERSION = '1.0.0'
 const CANONICAL_ARCHIVE_DATASETS = ['app', 'records', 'todos', 'todo_categories', 'plan_helper'] as const
+const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
+const MAX_ARCHIVE_DATASET_BYTES = 32 * 1024 * 1024
+const MAX_ARCHIVE_TOTAL_DATASET_BYTES = 64 * 1024 * 1024
+const MAX_ARCHIVE_DATASET_COUNT = 16
 const PLAN_HELPER_REQUEST_TIMEOUT_MS = 4000
+
+function assertArchiveBlobSize(blob: Blob): void {
+  if (blob.size > MAX_ARCHIVE_BYTES) {
+    throw new Error(translate('settings.archive.fileTooLarge'))
+  }
+}
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const input = new Uint8Array(bytes)
@@ -513,6 +523,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
       return { success: false, message: translate('settings.archive.invalidFile') }
     }
 
+    assertArchiveBlobSize(file)
     // 读取 zip 文件
     const zip = await JSZip.loadAsync(file)
 
@@ -547,6 +558,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
     // 读取文件
     const data = await readFile(filePath as string)
     const blob = new Blob([data])
+    assertArchiveBlobSize(blob)
     const zip = await JSZip.loadAsync(blob)
     const preview = summarizeArchive(await parseArchiveData(zip))
 
@@ -573,12 +585,16 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     if (manifest.format !== ARCHIVE_FORMAT || manifest.format_version !== ARCHIVE_FORMAT_VERSION || !Array.isArray(manifest.datasets) || (manifest.dataset_sha256 && !hasChecksums)) {
       throw new Error(translate('settings.archive.unsupportedFormat'))
     }
+    if (manifest.datasets.length > MAX_ARCHIVE_DATASET_COUNT) {
+      throw new Error(translate('settings.archive.tooManyDatasets'))
+    }
     const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => !manifest.datasets?.includes(name))
     if (missingDatasets.length > 0) {
       throw new Error(translate('settings.archive.missingDatasets', { names: missingDatasets.join(', ') }))
     }
 
     const datasets: Record<string, unknown> = {}
+    let totalDatasetBytes = 0
     const datasetNames = new Set<string>()
     for (const name of manifest.datasets) {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new Error(translate('settings.archive.invalidDatasetName', { name }))
@@ -587,8 +603,12 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
       const checksumError = translate('settings.archive.datasetChecksumMismatch', { name })
       const file = zip.file(`data/${name}.json`)
       if (!file) throw new Error(translate('settings.archive.datasetMissing', { name }))
+      const sizeError = translate('settings.archive.datasetTooLarge', { name })
       try {
         const raw = await file.async('uint8array')
+        if (raw.byteLength > MAX_ARCHIVE_DATASET_BYTES) throw new Error(sizeError)
+        totalDatasetBytes += raw.byteLength
+        if (totalDatasetBytes > MAX_ARCHIVE_TOTAL_DATASET_BYTES) throw new Error(translate('settings.archive.totalDatasetTooLarge'))
         const expected = manifest.dataset_sha256?.[name]
         if (expected && await sha256Hex(raw) !== expected) {
           throw new Error(checksumError)
@@ -596,6 +616,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
         datasets[name] = JSON.parse(new TextDecoder().decode(raw))
       } catch (error) {
         if (error instanceof Error && error.message === checksumError) throw error
+        if (error instanceof Error && (error.message === sizeError || error.message === translate('settings.archive.totalDatasetTooLarge'))) throw error
           throw new Error(translate('settings.archive.datasetInvalid', { name }))
       }
     }
@@ -662,7 +683,9 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   if (!archiveFile) throw new Error(translate('settings.archive.archiveInvalid'))
   let legacy: ArchiveData
   try {
-    legacy = JSON.parse(await archiveFile.async('text')) as ArchiveData
+    const raw = await archiveFile.async('uint8array')
+    if (raw.byteLength > MAX_ARCHIVE_DATASET_BYTES) throw new Error(translate('settings.archive.datasetTooLarge', { name: 'archive' }))
+    legacy = JSON.parse(new TextDecoder().decode(raw)) as ArchiveData
   } catch {
     throw new Error(translate('settings.archive.legacyArchiveInvalid'))
   }

@@ -30,6 +30,14 @@ CANONICAL_WORKSPACE_DATASETS = (
     "plan_helper",
 )
 
+# Keep archive inspection bounded before any imported data reaches a module
+# store.  These limits are deliberately generous for personal workspaces but
+# prevent accidental or hostile ZIPs from exhausting memory during import.
+MAX_BUNDLE_BYTES = 64 * 1024 * 1024
+MAX_DATASET_BYTES = 32 * 1024 * 1024
+MAX_TOTAL_DATASET_BYTES = 64 * 1024 * 1024
+MAX_DATASET_COUNT = 16
+
 
 def _validate_workspace_dataset_shapes(datasets: Mapping[str, Any]) -> None:
     """Validate the cross-runtime container shapes before migration writes."""
@@ -123,6 +131,8 @@ def export_bundle(
 def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
     """Validate and return the manifest without importing data."""
     path = Path(bundle_path)
+    if path.stat().st_size > MAX_BUNDLE_BYTES:
+        raise ValueError("Bundle exceeds the maximum supported file size")
     with zipfile.ZipFile(path, "r") as bundle:
         if MANIFEST_NAME not in bundle.namelist():
             raise ValueError("Bundle manifest is missing")
@@ -136,6 +146,8 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
             raise ValueError(f"Unsupported bundle version: {manifest.get('format_version')}")
         if not isinstance(manifest.get("datasets"), list):
             raise ValueError("Bundle datasets declaration is invalid")
+        if len(manifest["datasets"]) > MAX_DATASET_COUNT:
+            raise ValueError("Bundle contains too many datasets")
         normalized_names: list[str] = []
         checksums = manifest.get("dataset_sha256")
         if checksums is not None and not isinstance(checksums, dict):
@@ -147,6 +159,9 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
             normalized_names.append(safe_name)
             if f"{DATA_PREFIX}{safe_name}.json" not in bundle.namelist():
                 raise ValueError(f"Dataset file is missing: {safe_name}")
+            info = bundle.getinfo(f"{DATA_PREFIX}{safe_name}.json")
+            if info.file_size > MAX_DATASET_BYTES:
+                raise ValueError(f"Dataset exceeds the maximum supported size: {safe_name}")
             if checksums is not None:
                 checksum = checksums.get(safe_name)
                 if not isinstance(checksum, str) or len(checksum) != 64 or any(char not in "0123456789abcdef" for char in checksum):
@@ -158,9 +173,16 @@ def read_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, An
     """Read and validate all datasets from a bundle."""
     manifest = inspect_bundle(bundle_path)
     datasets: dict[str, Any] = {}
+    total_bytes = 0
     with zipfile.ZipFile(bundle_path, "r") as bundle:
         for name in manifest["datasets"]:
-            raw = bundle.read(f"{DATA_PREFIX}{name}.json")
+            with bundle.open(f"{DATA_PREFIX}{name}.json", "r") as source:
+                raw = source.read(MAX_DATASET_BYTES + 1)
+            if len(raw) > MAX_DATASET_BYTES:
+                raise ValueError(f"Dataset exceeds the maximum supported size: {name}")
+            total_bytes += len(raw)
+            if total_bytes > MAX_TOTAL_DATASET_BYTES:
+                raise ValueError("Bundle datasets exceed the maximum supported total size")
             expected = manifest.get("dataset_sha256", {}).get(name)
             if expected and _sha256(raw) != expected:
                 raise ValueError(f"Dataset checksum mismatch: {name}")
