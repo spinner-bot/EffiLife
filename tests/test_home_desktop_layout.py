@@ -23,3 +23,9 @@ def test_home_keeps_mobile_and_tablet_breakpoints_distinct_from_desktop():
     assert "@media (max-width: 760px)" in source
     assert "@media (min-width: 761px) and (max-width: 899px)" in source
     assert "@media (min-width: 900px)" in source
+
+
+def test_home_todo_rows_have_one_grid_column_per_control():
+    source = HOME.read_text(encoding="utf-8")
+    assert ".today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto;" in source
+    assert "grid-template-columns: auto minmax(0, 1fr) auto auto;" not in source
