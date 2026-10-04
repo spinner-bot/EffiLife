@@ -383,9 +383,9 @@ async function toggleCategoryPinned(item: TodoCategory) {
 
 async function refreshFromWorkspace(source?: string): Promise<void> {
   if (!source || !['todos', 'records', 'settings', 'archive', 'network'].includes(source)) return
-  if (source === 'settings') {
+  if (source === 'settings' || source === 'archive') {
     await loadTodoSettings()
-    return
+    if (source === 'settings') return
   }
   await loadTodos()
   await loadCategories()
