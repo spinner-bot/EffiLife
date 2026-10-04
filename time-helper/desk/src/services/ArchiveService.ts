@@ -882,11 +882,16 @@ interface ArchiveRuntimeSnapshot {
 async function captureArchiveRuntimeSnapshot(): Promise<ArchiveRuntimeSnapshot> {
   const { getRawAll, STORE_NAMES } = await import('@/storage')
   const localStorageSnapshot: Record<string, string> = {}
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i)
-    if (key) {
-      localStorageSnapshot[key] = localStorage.getItem(key) || ''
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (key) {
+        localStorageSnapshot[key] = localStorage.getItem(key) || ''
+      }
     }
+  } catch (error) {
+    // IndexedDB remains sufficient for the canonical rollback snapshot.
+    console.warn('Failed to capture legacy localStorage snapshot:', error)
   }
 
   const stores: Record<string, unknown[]> = {}
@@ -898,14 +903,20 @@ async function captureArchiveRuntimeSnapshot(): Promise<ArchiveRuntimeSnapshot> 
 
 async function restoreArchiveRuntimeSnapshot(snapshot: ArchiveRuntimeSnapshot): Promise<void> {
   const { clear: idbClear, putRaw, STORE_NAMES } = await import('@/storage')
-  for (let i = localStorage.length - 1; i >= 0; i -= 1) {
-    const key = localStorage.key(i)
-    if (key && !key.startsWith('efflife_backup_') && !key.startsWith('efflife_emergency_backup_')) {
-      localStorage.removeItem(key)
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i)
+      if (key && !key.startsWith('efflife_backup_') && !key.startsWith('efflife_emergency_backup_')) {
+        localStorage.removeItem(key)
+      }
     }
-  }
-  for (const [key, value] of Object.entries(snapshot.localStorage)) {
-    localStorage.setItem(key, value)
+    for (const [key, value] of Object.entries(snapshot.localStorage)) {
+      localStorage.setItem(key, value)
+    }
+  } catch (error) {
+    // Do not hide or undo the canonical IndexedDB rollback when the legacy
+    // storage area is unavailable or has become read-only.
+    console.warn('Failed to restore legacy localStorage snapshot:', error)
   }
 
   for (const storeName of Object.values(STORE_NAMES)) {
