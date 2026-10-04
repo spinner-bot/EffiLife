@@ -73,6 +73,15 @@ def test_home_inbox_has_dialog_semantics_and_escape_focus_return():
     assert 'inboxButton.value?.focus()' in HOME
 
 
+def test_home_inbox_traps_tab_focus_inside_open_panel():
+    assert "const inboxPanel = ref<HTMLElement | null>(null)" in HOME
+    assert 'ref="inboxPanel"' in HOME
+    assert "event.key !== 'Tab' || !inboxPanel.value" in HOME
+    assert "inboxPanel.value.querySelectorAll<HTMLElement>" in HOME
+    assert "event.shiftKey && document.activeElement === first" in HOME
+    assert "!event.shiftKey && document.activeElement === last" in HOME
+
+
 def test_home_tablet_uses_horizontal_workbench_between_mobile_and_desktop_breakpoints():
     tablet = "@media (min-width: 761px) and (max-width: 899px)"
     assert tablet in HOME

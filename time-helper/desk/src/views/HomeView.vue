@@ -278,6 +278,7 @@ const unreadCount = computed(() => EventSystem.getUnreadCount())
 // 收件箱面板
 const showInboxPanel = ref(false)
 const inboxEntries = computed(() => EventSystem.getEventInbox().slice(0, 10))
+const inboxPanel = ref<HTMLElement | null>(null)
 const inboxButton = ref<HTMLButtonElement | null>(null)
 const inboxCloseButton = ref<HTMLButtonElement | null>(null)
 
@@ -297,9 +298,25 @@ function closeInboxPanel(restoreFocus = false) {
 }
 
 function handleInboxKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Escape') return
-  event.preventDefault()
-  closeInboxPanel(true)
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeInboxPanel(true)
+    return
+  }
+  if (event.key !== 'Tab' || !inboxPanel.value) return
+  const focusable = Array.from(inboxPanel.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 function markInboxRead(entryId: string) {
@@ -385,7 +402,7 @@ onUnmounted(() => {
 
       <!-- 收件箱下拉面板 -->
       <Transition name="inbox-dropdown">
-        <div v-if="showInboxPanel" id="home-inbox-panel" class="inbox-panel" role="dialog" aria-modal="false" aria-labelledby="home-inbox-title" tabindex="-1" @keydown="handleInboxKeydown">
+        <div v-if="showInboxPanel" ref="inboxPanel" id="home-inbox-panel" class="inbox-panel" role="dialog" aria-modal="false" aria-labelledby="home-inbox-title" tabindex="-1" @keydown="handleInboxKeydown">
         <div class="inbox-panel-header">
           <h3 id="home-inbox-title" class="inbox-panel-title">{{ t('home.inbox') }}</h3>
           <div class="inbox-panel-actions">
