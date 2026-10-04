@@ -30,6 +30,11 @@ const todoOptions = computed(() => {
   return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
 })
 const todoTitleById = computed(() => new Map(todos.value.map((todo) => [todo.id, todo.title])))
+const todoPlanReferenceById = computed(() => new Map(
+  todos.value
+    .filter((todo) => todo.related_plan_id && todo.related_plan_task_id)
+    .map((todo) => [todo.id, `${todo.related_plan_id} · ${todo.related_plan_task_id}`]),
+))
 const linkedTodoFromQuery = computed(() => {
   const value = route.query.todo
   return typeof value === 'string' ? value : ''
@@ -453,7 +458,10 @@ onUnmounted(() => {
             :title="isLinkedTodoUnavailable(record.todo_id) ? t('records.todoUnavailable') : t('records.openTodo')"
             @click="openLinkedTodo(record.todo_id)"
           >
-            {{ isLinkedTodoUnavailable(record.todo_id) ? t('records.todoUnavailable') : `${t('records.linkedTodo')}: ${todoTitleById.get(record.todo_id) || record.todo_id}` }}
+            <span>{{ isLinkedTodoUnavailable(record.todo_id) ? t('records.todoUnavailable') : `${t('records.linkedTodo')}: ${todoTitleById.get(record.todo_id) || record.todo_id}` }}</span>
+            <span v-if="todoPlanReferenceById.get(record.todo_id)" class="record-plan-reference">
+              {{ t('records.linkedPlan') }} · PH {{ todoPlanReferenceById.get(record.todo_id) }}
+            </span>
           </button>
           <div class="record-actions">
             <button type="button" class="icon-btn" :aria-label="t('records.edit')" @click="openEditForm(index)" :title="t('records.edit')">
@@ -719,6 +727,7 @@ onUnmounted(() => {
   font-size: 0.75rem;
 }
 .record-todo-link:hover { text-decoration: underline; }
+.record-plan-reference { margin-left: 8px; color: var(--color-text-tertiary); font-size: 0.7rem; text-decoration: none; }
 
 .record-actions {
   display: flex;
