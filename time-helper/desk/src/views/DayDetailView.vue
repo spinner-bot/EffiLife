@@ -2,7 +2,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
-import { DataService, hoursToHm } from '@/services/dataService'
+import { DataService, hoursToHm, parseLocalDate } from '@/services/dataService'
 import { ArrowLeft, Trash2, Check, X, Circle, CheckCircle2 } from 'lucide-vue-next'
 import type { TimeRecord, RealTimeStat } from '@/types'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
@@ -19,6 +19,15 @@ const appStore = useAppStore()
 const { t, locale } = useI18n()
 
 const dateStr = computed(() => route.params.date as string)
+const displayDate = computed(() => {
+  const value = parseLocalDate(dateStr.value)
+  if (Number.isNaN(value.getTime())) return dateStr.value
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(value)
+})
 const highlightedTodoId = computed(() => String(route.query.todo || ''))
 const highlightedRecordKey = computed(() => String(route.query.record || ''))
 const plans = computed(() => appStore.plans)
@@ -190,7 +199,7 @@ onUnmounted(() => {
         <ArrowLeft :size="16" />
         <span>{{ t('dayDetail.backToRecords') }}</span>
       </button>
-      <h1>{{ dateStr }} {{ t('dayDetail.titleSuffix') }}</h1>
+      <h1>{{ displayDate }} {{ t('dayDetail.titleSuffix') }}</h1>
     </header>
 
     <div class="main-content">

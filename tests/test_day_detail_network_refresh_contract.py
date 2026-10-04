@@ -8,3 +8,11 @@ DAY_DETAIL = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.v
 def test_historical_day_detail_refreshes_after_network_recovery():
     assert "if (source === 'records' || source === 'plans' || source === 'archive' || source === 'network') void retryLoadData()" in DAY_DETAIL
     assert "async function retryLoadData(): Promise<void>" in DAY_DETAIL
+
+
+def test_historical_day_detail_localizes_display_date_without_changing_route_storage():
+    assert "const displayDate = computed(() =>" in DAY_DETAIL
+    assert "parseLocalDate(dateStr.value)" in DAY_DETAIL
+    assert "month: '2-digit'" in DAY_DETAIL
+    assert "day: '2-digit'" in DAY_DETAIL
+    assert "<h1>{{ displayDate }} {{ t('dayDetail.titleSuffix') }}</h1>" in DAY_DETAIL
