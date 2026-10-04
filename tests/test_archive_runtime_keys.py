@@ -31,3 +31,8 @@ def test_archive_data_stats_expose_motion_settings():
     source = ARCHIVE.read_text(encoding="utf-8")
     assert "hasMotionSettings: boolean" in source
     assert "hasMotionSettings: !!readJSON(MOTION_SETTINGS_STORAGE_KEY)" in source
+
+
+def test_archive_version_advances_for_motion_settings_schema():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    assert "const ARCHIVE_VERSION = '2.2'" in source

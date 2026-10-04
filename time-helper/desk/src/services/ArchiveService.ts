@@ -21,7 +21,7 @@ import { notifyWorkspaceChanged } from './workspaceEvents'
 import { MOTION_SETTINGS_STORAGE_KEY } from '@/motion/MotionManager'
 
 // 存档版本
-const ARCHIVE_VERSION = '2.1'
+const ARCHIVE_VERSION = '2.2'
 const ARCHIVE_FORMAT = 'effilife.bundle'
 const ARCHIVE_FORMAT_VERSION = '1.0.0'
 const CANONICAL_ARCHIVE_DATASETS = ['app', 'records', 'todos', 'todo_categories', 'plan_helper'] as const
