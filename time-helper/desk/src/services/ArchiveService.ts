@@ -1020,7 +1020,9 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
       }
     } else {
-      await clearPlanHelperData()
+      // An unavailable PH export is an incomplete snapshot, not an explicit
+      // empty plan dataset. Preserve the target so importing a degraded
+      // archive cannot erase plans merely because the service was offline.
       warnings.push(translate('settings.archive.planNotRestored', { reason: data.planHelper?.unavailableReason || translate('settings.archive.planServiceUnavailable') }))
     }
 

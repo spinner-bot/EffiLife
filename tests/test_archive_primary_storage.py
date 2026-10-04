@@ -132,6 +132,14 @@ def test_archive_import_does_not_write_mobile_plan_snapshot_twice():
     assert restore.count("await idbSet(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', data.planHelper.plans)") == 1
 
 
+def test_archive_import_preserves_plans_when_plan_dataset_is_unavailable():
+    source = ARCHIVE.read_text(encoding="utf-8")
+    restore = source.split("if (data.planHelper === undefined)", 1)[1].split("notifyWorkspaceChanged('archive')", 1)[0]
+    assert "An unavailable PH export is an incomplete snapshot" in source
+    assert "await clearPlanHelperData()" not in restore
+    assert "settings.archive.planNotRestored" in restore
+
+
 def test_archive_import_replaces_nullable_optional_datasets_without_breaking_legacy_missing_fields():
     source = ARCHIVE.read_text(encoding="utf-8")
 
