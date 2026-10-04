@@ -38,6 +38,7 @@ import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
+import { TodoService } from '@/services/todoService'
 
 const router = useRouter()
 const route = useRoute()
@@ -86,6 +87,7 @@ const groupEnd = ref(1)
 const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
+const linkedTodoTaskIds = ref<Set<string>>(new Set())
 
 const archivedPlanTarget = computed(() => {
   const targetFile = String(route.query.archive || '')
@@ -197,6 +199,7 @@ async function refreshFromWorkspace(source?: string): Promise<void> {
   if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network')) {
     try {
       selectedPlan.value = await getPlanFull(selectedPlan.value.id)
+      await refreshLinkedTodoTaskIds()
     } catch {
       // The plan may have been archived or removed in another window. Do not
       // leave the user on a detail screen whose source no longer exists.
@@ -393,6 +396,7 @@ async function openPlan(plan: PlanSummary) {
   errorMessage.value = ''
   try {
     selectedPlan.value = await getPlanFull(plan.id)
+    await refreshLinkedTodoTaskIds()
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { ...route.query, plan: String(plan.id) } })
   } catch (error) {
@@ -442,6 +446,7 @@ async function createPlan() {
     const created = await createEventPlan(name, toDateTuple(planDate.value), sections)
     const createdId = created.id
     selectedPlan.value = await getPlanFull(createdId)
+    await refreshLinkedTodoTaskIds()
     closeCreatePlan()
     planName.value = ''
     view.value = 'detail'
@@ -689,10 +694,76 @@ async function completeTask(taskId: string) {
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
+    try {
+      const linkedTodo = (await TodoService.list()).find((todo) => todo.related_plan_id === String(planId) && todo.related_plan_task_id === taskId)
+      if (linkedTodo && linkedTodo.status !== 'completed') await TodoService.complete(linkedTodo.id)
+    } catch (error) {
+      console.warn('Plan task completed but linked todo sync failed:', error)
+      notifyToast(t('plans.todoSyncFailed'), 'info')
+    }
     selectedPlan.value = await getPlanFull(planId)
+    await refreshLinkedTodoTaskIds()
     showPlanSaved()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function refreshLinkedTodoTaskIds(): Promise<void> {
+  if (!selectedPlan.value) {
+    linkedTodoTaskIds.value = new Set()
+    return
+  }
+  try {
+    const planId = String(selectedPlan.value.id)
+    const todos = await TodoService.list()
+    linkedTodoTaskIds.value = new Set(
+      todos
+        .filter((todo) => todo.related_plan_id === planId && typeof todo.related_plan_task_id === 'string')
+        .map((todo) => String(todo.related_plan_task_id)),
+    )
+  } catch (error) {
+    console.warn('Failed to inspect linked todos:', error)
+    linkedTodoTaskIds.value = new Set()
+  }
+}
+
+async function createLinkedTodos(): Promise<void> {
+  if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const plan = selectedPlan.value
+    const planId = String(plan.id)
+    const existing = await TodoService.list()
+    const existingTaskIds = new Set(
+      existing
+        .filter((todo) => todo.related_plan_id === planId && typeof todo.related_plan_task_id === 'string')
+        .map((todo) => String(todo.related_plan_task_id)),
+    )
+    let created = 0
+    for (const section of plan.sections) {
+      for (const task of section.tasks) {
+        if (task.finish || existingTaskIds.has(task.internal_id)) continue
+        await TodoService.create({
+          title: task.content,
+          description: `${plan.name} · ${task.display_id}`,
+          related_plan_id: planId,
+          related_plan_task_id: task.internal_id,
+          estimated_time: task.time_minutes,
+          time_estimate: task.time_minutes,
+        })
+        existingTaskIds.add(task.internal_id)
+        created += 1
+      }
+    }
+    await refreshLinkedTodoTaskIds()
+    notifyToast(created ? t('plans.todosBulkCreated', { count: created }) : t('plans.todosAllLinked'), 'success')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    notifyToast(t('plans.todoCreateFailed'), 'error')
   } finally {
     isLoading.value = false
   }
@@ -725,6 +796,7 @@ function backFromDetail() {
 
 const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.length, 0) || 0)
 const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => task.finish).length, 0) || 0)
+const unlinkedActiveTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => !task.finish && !linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
 const selectedPlanProgress = computed(() => activeTaskCount.value > 0
   ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
   : 0)
@@ -897,6 +969,8 @@ onUnmounted(() => {
           <div><span>{{ t('plans.events') }}</span><strong>{{ activeTaskCount }}</strong></div>
           <div><span>{{ t('plans.completed') }}</span><strong>{{ completedTaskCount }}</strong></div>
           <div class="plan-detail-progress"><span>{{ t('plans.progress') }}</span><strong>{{ selectedPlanProgress }}%</strong><div class="plan-progress-track"><span :style="{ width: `${selectedPlanProgress}%` }" /></div></div>
+          <button v-if="canEditPlan && activeTaskCount" type="button" class="plans-secondary plan-todo-action" :disabled="isLoading || !unlinkedActiveTaskCount" @click="createLinkedTodos">{{ unlinkedActiveTaskCount ? t('plans.linkAllTodos') : t('plans.todosAllLinked') }}</button>
+          <small v-if="canEditPlan && activeTaskCount" class="plan-todo-hint">{{ t('plans.createTodosHint') }}</small>
         </section>
         <form v-if="canEditPlan" class="log-editor theme-card" @submit.prevent="saveLog">
           <div class="log-editor-heading"><div><strong>{{ t('plans.recordProgress') }}</strong><small>{{ t('plans.recordProgressHint') }}</small></div></div>
@@ -1072,6 +1146,8 @@ onUnmounted(() => {
 .plan-detail-summary { display: flex; flex-wrap: wrap; gap: 18px 38px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid var(--color-border); border-radius: 14px; }
 .plan-detail-summary div { display: grid; gap: 4px; }
 .plan-detail-summary span { color: var(--color-text-tertiary); font-size: 12px; }
+.plan-todo-action { grid-column: 1 / -1; justify-self: start; }
+.plan-todo-hint { grid-column: 1 / -1; color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
 .plan-detail-progress { min-width: 130px; }
 .plan-detail-layout { display: grid; gap: 14px; }
 .plan-detail-aside, .plan-detail-main { min-width: 0; }

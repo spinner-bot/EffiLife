@@ -12,9 +12,11 @@ TODO_SERVICE = (SRC / "services" / "todoService.ts").read_text(encoding="utf-8")
 
 
 def test_ph_workspace_owns_plan_data_and_progress_only():
-    assert "TodoService" not in PLANS
-    assert "related_plan_id" not in PLANS
-    assert "addTaskToTodos" not in PLANS
+    # PH may create an explicit TD relation, but it remains the owner of
+    # plan structure and progress mutations.
+    assert "TodoService.create" in PLANS
+    assert "related_plan_id" in PLANS
+    assert "updatePlanTask" in PLANS
     assert "saveLog" in PLANS
     assert "addPlanGroup" in PLANS
 

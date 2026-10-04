@@ -6,13 +6,16 @@ PLANS = ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue"
 I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 
-def test_plan_detail_does_not_create_or_duplicate_todos():
+def test_plan_detail_links_todos_without_merging_module_entities():
     source = PLANS.read_text(encoding="utf-8")
-    assert "TodoService" not in source
-    assert "TodoService.create" not in source
-    assert "related_plan_id" not in source
-    assert "related_plan_task_id" not in source
-    assert "addTaskToTodos" not in source
+    assert "TodoService.create" in source
+    assert "related_plan_id" in source
+    assert "related_plan_task_id" in source
+    assert "function createLinkedTodos" in source
+    assert "function completeTask" in source
+    assert "TodoService.complete" in source
+    # PH remains the owner of plan-task mutations; TD receives only a relation.
+    assert "updatePlanTask" not in (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 
 
 def test_plan_todo_linking_copy_exists_in_both_locales():
@@ -21,7 +24,7 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
     zh_match = re.search(r"'zh-CN':\s*\{(?P<body>.*?)\n  \},\n  'en-US':", source, re.S)
     en_match = re.search(r"'en-US':\s*\{(?P<body>.*?)\n  \},\n}\n\nfunction readLocale", source, re.S)
     assert zh_match and en_match
-    for key in ("plans.linkTodo", "plans.viewTodo", "plans.todoCreated", "plans.todoAlreadyLinked", "plans.todoCreateFailed"):
+    for key in ("plans.linkAllTodos", "plans.todosAllLinked", "plans.todosBulkCreated", "plans.todoCreateFailed"):
         assert zh_match.group('body').count(f"'{key}'") == 1
         assert en_match.group('body').count(f"'{key}'") == 1
 

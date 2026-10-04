@@ -115,9 +115,10 @@ def test_template_entry_stays_outside_the_basic_create_modal():
 def test_plan_entries_are_not_converted_into_todos():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "TodoService" not in view
-    assert "related_plan_id" not in view
-    assert "related_plan_task_id" not in view
+    assert "TodoService.create" in view
+    assert "related_plan_id" in view
+    assert "related_plan_task_id" in view
+    assert "function createLinkedTodos" in view
 
 
 def test_plan_detail_has_its_own_progress_workflow():
@@ -132,9 +133,9 @@ def test_plan_detail_has_its_own_progress_workflow():
     assert "stopWorkspaceListener()" in view
 
 
-def test_plan_detail_does_not_bulk_create_todos():
+def test_plan_detail_can_bulk_link_todos_without_merging_plan_entities():
     view = (DESK / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
 
-    assert "async function addAllTasksToTodos()" not in view
-    assert "linkPendingPlanTasksToTodos" not in view
-    assert "t('plans.linkAllTodos'" not in view
+    assert "async function createLinkedTodos(): Promise<void>" in view
+    assert "t('plans.linkAllTodos'" in view
+    assert "related_plan_task_id: task.internal_id" in view
