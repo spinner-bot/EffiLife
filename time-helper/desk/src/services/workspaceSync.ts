@@ -1,6 +1,6 @@
 import { TodoService } from './todoService'
 import type { TimeRecord } from '@/types'
-import { getRawAll, STORE_NAMES } from '@/storage'
+import { getRawAll, set as idbSet, STORE_NAMES } from '@/storage'
 import { getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
 
 /**
@@ -98,17 +98,33 @@ export async function unlinkTodoFromTimeRecord(record: TimeRecord): Promise<bool
 export async function repairTodoTimeRecordLinks(): Promise<number> {
   try {
     const entries = await getRawAll<{ value?: unknown }>(STORE_NAMES.RECORDS)
+    const todos = await TodoService.list()
+    const todoIds = new Set(todos.map((todo) => todo.id))
     const recordIds = new Set<string>()
+    let repaired = 0
     for (const entry of entries) {
       if (!Array.isArray(entry.value)) continue
-      for (const record of entry.value) {
-        if (record && typeof record === 'object' && typeof (record as TimeRecord).id === 'string') {
-          recordIds.add((record as TimeRecord).id as string)
+      let entryChanged = false
+      const nextRecords = (entry.value as TimeRecord[]).map((record) => {
+        if (record && typeof record.id === 'string') recordIds.add(record.id)
+        if (!record?.todo_id || todoIds.has(record.todo_id)) return record
+        const nextRecord = { ...record }
+        delete nextRecord.todo_id
+        entryChanged = true
+        repaired += 1
+        return nextRecord
+      })
+      if (entryChanged) {
+        const recordEntry = entry as { key?: string }
+        if (typeof recordEntry.key !== 'string') return 0
+        await idbSet(STORE_NAMES.RECORDS, recordEntry.key, nextRecords)
+      }
+      for (const record of nextRecords) {
+        if (record && typeof record.id === 'string') {
+          recordIds.add(record.id)
         }
       }
     }
-    const todos = await TodoService.list()
-    let repaired = 0
     for (const todo of todos) {
       const links = todo.related_time_record_ids || []
       const validLinks = [...new Set(links.filter((id) => recordIds.has(id)))]

@@ -58,3 +58,11 @@ def test_plan_task_link_repair_has_a_recoverable_startup_error_boundary():
     repair_call = source.split("void repairTodoPlanTaskLinks()", 1)[1].split("// 启动背景音乐", 1)[0]
     assert ".catch((error) =>" in repair_call
     assert "Failed to repair todo/plan links after startup:" in repair_call
+
+
+def test_startup_repair_cleans_time_records_pointing_to_deleted_todos():
+    sync = SYNC.read_text(encoding="utf-8")
+    assert "const todoIds = new Set(todos.map((todo) => todo.id))" in sync
+    assert "if (!record?.todo_id || todoIds.has(record.todo_id)) return record" in sync
+    assert "delete nextRecord.todo_id" in sync
+    assert "await idbSet(STORE_NAMES.RECORDS, recordEntry.key, nextRecords)" in sync
