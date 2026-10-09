@@ -366,7 +366,7 @@ def release_check_command(strict_build=False):
     return not errors and (not strict_build or build_ready)
 
 
-def get_time_helper_cmd():
+def get_time_helper_cmd(occupied_ports=()):
     """Get command for time-helper, prefer dev mode for latest features"""
     exe_paths = time_helper_binary_paths()
 
@@ -378,7 +378,7 @@ def get_time_helper_cmd():
                 return [str(exe_path)], None, None
         dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
         if is_non_empty_file(dist_path / "index.html"):
-            port = frontend_port(workspace_port())
+            port = frontend_port(workspace_port(), occupied_ports)
             return [
                 sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
                 "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -388,7 +388,7 @@ def get_time_helper_cmd():
     npm = find_npm()
     if npm:
         # Dev mode - shows latest code changes
-        port = frontend_port(workspace_port())
+        port = frontend_port(workspace_port(), occupied_ports)
         return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     # Fall back to compiled exe
@@ -401,7 +401,7 @@ def get_time_helper_cmd():
     # binaries still take precedence above it.
     dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
     if is_non_empty_file(dist_path / "index.html"):
-        port = frontend_port(workspace_port())
+        port = frontend_port(workspace_port(), occupied_ports)
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -474,7 +474,7 @@ def installer_artifacts():
     return artifacts
 
 
-def get_todos_web_cmd():
+def get_todos_web_cmd(occupied_ports=()):
     """Get the compatibility Web command without leaking dev mode into packages."""
     dist_path = BASE_DIR / "to-dos" / "ui" / "dist"
     if packaged_mode():
@@ -483,11 +483,11 @@ def get_todos_web_cmd():
     else:
         npm = find_npm()
         if npm:
-            port = frontend_port(todos_port())
+            port = frontend_port(todos_port(), occupied_ports)
             return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     if is_non_empty_file(dist_path / "index.html"):
-        port = frontend_port(todos_port())
+        port = frontend_port(todos_port(), occupied_ports)
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -498,7 +498,8 @@ def get_todos_web_cmd():
 def build_modules():
     """Build module list dynamically"""
     th_cmd, th_url, th_setup = get_time_helper_cmd()
-    td_cmd, td_url, td_setup = get_todos_web_cmd()
+    th_port = urlparse(th_url).port if th_url else None
+    td_cmd, td_url, td_setup = get_todos_web_cmd((th_port,) if th_port else ())
 
     plan_helper_companion = [{
         "name": "plan-helper API",

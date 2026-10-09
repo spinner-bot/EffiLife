@@ -34,6 +34,25 @@ def test_frontend_port_keeps_preferred_port_when_it_is_free(monkeypatch):
     assert launcher.frontend_port(1420) == 1420
 
 
+def test_unified_launcher_reserves_time_helper_frontend_port_for_todos(monkeypatch):
+    requested = []
+    monkeypatch.setattr(
+        launcher,
+        "get_time_helper_cmd",
+        lambda occupied_ports=(): (["th"], launcher.local_url(1422), None),
+    )
+
+    def fake_todos(occupied_ports=()):
+        requested.append(tuple(occupied_ports))
+        return ["td"], launcher.local_url(1423), None
+
+    monkeypatch.setattr(launcher, "get_todos_web_cmd", fake_todos)
+
+    launcher.build_modules()
+
+    assert requested == [(1422,)]
+
+
 def test_dependencies_ready_requires_actual_frontend_entry_points(tmp_path):
     desk = tmp_path / "time-helper" / "desk"
     bin_dir = desk / "node_modules" / ".bin"
