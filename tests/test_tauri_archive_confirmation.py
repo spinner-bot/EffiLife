@@ -9,11 +9,11 @@ SETTINGS = ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue"
 def test_tauri_import_confirms_after_reading_archive_before_processing():
     source = ARCHIVE.read_text(encoding="utf-8")
     assert "importArchiveWithDialog(confirmImport?: (preview: ArchivePreview) => boolean | Promise<boolean>)" in source
-    assert "const preview = summarizeArchive(await parseArchiveData(zip))" in source
+    assert "const preview = await addLocalArchiveScope(summarizeArchive(await parseArchiveData(zip)))" in source
     assert "if (confirmImport && !(await confirmImport(preview)))" in source
     assert "return { success: false, message: '', cancelled: true }" in source
     confirmation = "if (confirmImport && !(await confirmImport(preview)))"
-    assert source.index("const preview = summarizeArchive(await parseArchiveData(zip))") < source.index(confirmation)
+    assert source.index("const preview = await addLocalArchiveScope(summarizeArchive(await parseArchiveData(zip)))") < source.index(confirmation)
     assert source.index(confirmation) < source.index("return await processArchiveData(zip)", source.index(confirmation))
 
 
