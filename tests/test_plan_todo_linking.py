@@ -35,6 +35,14 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
         assert en_match.group('body').count(f"'{key}'") == 1
 
 
+def test_plan_todo_copy_explains_independent_lifecycle():
+    source = I18N.read_text(encoding="utf-8")
+    assert '不会自动同步完成状态' in source
+    assert 'each module is managed separately' in source
+    assert '之后可在两个入口同步完成状态' not in source
+    assert 'so completion can stay synchronized' not in source
+
+
 def test_task_center_does_not_open_plan_tasks_from_todos():
     tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
     assert "function openTodoPlan" not in tasks
