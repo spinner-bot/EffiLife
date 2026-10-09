@@ -4,62 +4,6 @@ import { getRawAll, set as idbSet, STORE_NAMES } from '@/storage'
 import { getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
 
 /**
- * Complete every unified todo linked to a plan task.
- *
- * Plan-helper keeps its original task identity model, so this coordinator only
- * updates the unified todo side after the plan API has accepted completion.
- */
-export async function completeLinkedTodos(planId: string, planTaskIds: string | string[]): Promise<number> {
-  const identifiers = new Set(Array.isArray(planTaskIds) ? planTaskIds.map(String) : [String(planTaskIds)])
-  const todos = await TodoService.list()
-  const linked = todos.filter((todo) =>
-    todo.related_plan_id === String(planId)
-    && Boolean(todo.related_plan_task_id && identifiers.has(String(todo.related_plan_task_id)))
-    && !['completed', 'archived', 'cancelled'].includes(todo.status)
-  )
-
-  for (const todo of linked) {
-    await TodoService.complete(todo.id)
-  }
-  return linked.length
-}
-
-/** Keep active todos derived from a plan task aligned after task edits. */
-export async function syncTodosFromPlanTask(planId: string, planTaskIds: string | string[], title: string, minutes: number): Promise<number> {
-  const identifiers = new Set(Array.isArray(planTaskIds) ? planTaskIds.map(String) : [String(planTaskIds)])
-  const todos = await TodoService.list()
-  const linked = todos.filter((todo) =>
-    todo.related_plan_id === String(planId)
-    && Boolean(todo.related_plan_task_id && identifiers.has(String(todo.related_plan_task_id)))
-    && !['archived', 'cancelled'].includes(todo.status)
-  )
-
-  for (const todo of linked) {
-    await TodoService.update(todo.id, {
-      title,
-      time_estimate: Math.max(0, Number(minutes) || 0),
-      estimated_time: Math.max(0, Number(minutes) || 0),
-    })
-  }
-  return linked.length
-}
-
-/** Refresh system-derived plan descriptions without overwriting user text. */
-export async function syncTodoDescriptionsFromPlan(planId: string, previousName: string, nextName: string): Promise<number> {
-  if (previousName === nextName) return 0
-  const todos = await TodoService.list()
-  const linked = todos.filter((todo) =>
-    todo.related_plan_id === String(planId)
-    && todo.description === previousName
-    && !['archived', 'cancelled'].includes(todo.status)
-  )
-  for (const todo of linked) {
-    await TodoService.update(todo.id, { description: nextName })
-  }
-  return linked.length
-}
-
-/**
  * Remove a stale plan-task reference while keeping the user's todo intact.
  * Plan-helper may soft-delete the task, so retaining the old identifier would
  * make a later todo completion call target a task that can no longer finish.

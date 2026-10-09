@@ -39,7 +39,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
-import { completeLinkedTodos, syncTodoDescriptionsFromPlan, syncTodosFromPlanTask, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 
 const router = useRouter()
 const route = useRoute()
@@ -485,15 +485,8 @@ async function savePlanMeta() {
   isLoading.value = true
   try {
     const planId = selectedPlan.value.id
-    const previousName = selectedPlan.value.name
     const nextName = planName.value.trim()
     await updateEventPlan(planId, nextName, toDateTuple(planDate.value))
-    try {
-      await syncTodoDescriptionsFromPlan(planId, previousName, nextName)
-    } catch (error) {
-      console.warn('Plan metadata saved but linked todo descriptions could not be refreshed:', error)
-      notifyToast(t('plans.todoSyncFailed'), 'info')
-    }
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
     showPlanSaved()
@@ -584,12 +577,6 @@ async function saveTask() {
       const editedTaskId = editingTaskId.value
       const nextContent = taskContent.value.trim()
       await updatePlanTask(planId, editedTaskId, nextContent, minutes)
-      try {
-        await syncTodosFromPlanTask(planId, editedTaskId, nextContent, minutes)
-      } catch (error) {
-        console.warn('Plan task saved but linked todo fields could not be refreshed:', error)
-        notifyToast(t('plans.todoSyncFailed'), 'info')
-      }
     } else if (taskSectionIndex.value !== null) {
       await addPlanTask(planId, taskSectionIndex.value, taskContent.value.trim(), minutes)
     }
@@ -738,12 +725,6 @@ async function completeTask(taskId: string) {
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
-    try {
-      await completeLinkedTodos(planId, taskId)
-    } catch (error) {
-      console.warn('Plan task completed but linked todo sync failed:', error)
-      notifyToast(t('plans.todoSyncFailed'), 'info')
-    }
     selectedPlan.value = await getPlanFull(planId)
     await refreshLinkedTodoTaskIds()
     showPlanSaved()

@@ -16,24 +16,26 @@ def test_deleting_a_plan_task_clears_only_its_todo_relation():
     assert "unlinkTodosFromPlanTask(planId, taskId)" in plans
 
 
-def test_plan_task_edit_syncs_linked_todo_fields_without_editing_plan_from_td():
+def test_plan_task_edit_does_not_sync_linked_todo_fields():
     sync = SYNC.read_text(encoding="utf-8")
     plans = PLANS.read_text(encoding="utf-8")
-    assert "export async function syncTodosFromPlanTask" in sync
-    assert "time_estimate: Math.max(0, Number(minutes) || 0)" in sync
-    assert "estimated_time: Math.max(0, Number(minutes) || 0)" in sync
+    assert "export async function syncTodosFromPlanTask" not in sync
+    assert "time_estimate: Math.max(0, Number(minutes) || 0)" not in sync
+    assert "estimated_time: Math.max(0, Number(minutes) || 0)" not in sync
     assert "editingTaskDisplayId" not in plans
-    assert "syncTodosFromPlanTask(planId, editedTaskId, nextContent, minutes)" in plans
+    assert "syncTodosFromPlanTask(planId, editedTaskId, nextContent, minutes)" not in plans
 
 
-def test_plan_rename_refreshes_system_generated_todo_descriptions():
+def test_plan_rename_does_not_refresh_todo_descriptions():
     sync = SYNC.read_text(encoding="utf-8")
     plans = PLANS.read_text(encoding="utf-8")
-    assert "export async function syncTodoDescriptionsFromPlan" in sync
-    assert "todo.description === previousName" in sync
-    assert "syncTodoDescriptionsFromPlan(planId, previousName, nextName)" in plans
+    assert "export async function syncTodoDescriptionsFromPlan" not in sync
+    assert "todo.description === previousName" not in sync
+    assert "syncTodoDescriptionsFromPlan(planId, previousName, nextName)" not in plans
 
 
-def test_plan_completion_does_not_resurrect_archived_or_cancelled_todos():
+def test_plan_completion_has_no_todo_completion_side_effect():
     sync = SYNC.read_text(encoding="utf-8")
-    assert "!['completed', 'archived', 'cancelled'].includes(todo.status)" in sync
+    plans = PLANS.read_text(encoding="utf-8")
+    assert "completeLinkedTodos" not in sync
+    assert "completeLinkedTodos" not in plans
