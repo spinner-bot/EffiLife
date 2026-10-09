@@ -232,6 +232,24 @@ def plan_helper_port():
     return configured_port("EFFILIFE_PLAN_HELPER_PORT", 8765)
 
 
+def frontend_port(default, occupied_ports=()):
+    """Return a usable local port, moving forward when the preferred one is busy.
+
+    Vite is intentionally run with ``--strictPort`` so a typo or accidental
+    service collision cannot silently expose the app on an unexpected port.
+    The launcher can still recover from a normal local collision by selecting
+    the first free port in a small bounded range and publishing that URL.
+    """
+    preferred = default
+    blocked = set(occupied_ports)
+    for candidate in range(preferred, min(preferred + 20, 65535)):
+        if candidate in blocked:
+            continue
+        if not local_port_is_occupied(local_url(candidate)):
+            return candidate
+    return preferred
+
+
 def local_url(port):
     return f"http://127.0.0.1:{port}"
 
@@ -360,7 +378,7 @@ def get_time_helper_cmd():
                 return [str(exe_path)], None, None
         dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
         if is_non_empty_file(dist_path / "index.html"):
-            port = workspace_port()
+            port = frontend_port(workspace_port())
             return [
                 sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
                 "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -370,7 +388,7 @@ def get_time_helper_cmd():
     npm = find_npm()
     if npm:
         # Dev mode - shows latest code changes
-        port = workspace_port()
+        port = frontend_port(workspace_port())
         return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     # Fall back to compiled exe
@@ -383,7 +401,7 @@ def get_time_helper_cmd():
     # binaries still take precedence above it.
     dist_path = BASE_DIR / "time-helper" / "desk" / "dist"
     if is_non_empty_file(dist_path / "index.html"):
-        port = workspace_port()
+        port = frontend_port(workspace_port())
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),
@@ -465,11 +483,11 @@ def get_todos_web_cmd():
     else:
         npm = find_npm()
         if npm:
-            port = todos_port()
+            port = frontend_port(todos_port())
             return [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(port), "--strictPort"], local_url(port), [npm, "install"]
 
     if is_non_empty_file(dist_path / "index.html"):
-        port = todos_port()
+        port = frontend_port(todos_port())
         return [
             sys.executable, str(BASE_DIR / "launcher" / "static_server.py"),
             "--port", str(port), "--bind", "127.0.0.1", "--directory", str(dist_path),

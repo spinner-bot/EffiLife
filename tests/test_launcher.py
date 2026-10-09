@@ -21,6 +21,19 @@ def test_launcher_reads_custom_node_directory_at_lookup_time(monkeypatch, tmp_pa
     assert str(node_dir) in launcher.node_environment()["PATH"]
 
 
+def test_frontend_port_moves_forward_when_preferred_port_is_busy(monkeypatch):
+    busy = {1420, 1421}
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda url: int(url.rsplit(":", 1)[1]) in busy)
+
+    assert launcher.frontend_port(1420) == 1422
+
+
+def test_frontend_port_keeps_preferred_port_when_it_is_free(monkeypatch):
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: False)
+
+    assert launcher.frontend_port(1420) == 1420
+
+
 def test_dependencies_ready_requires_actual_frontend_entry_points(tmp_path):
     desk = tmp_path / "time-helper" / "desk"
     bin_dir = desk / "node_modules" / ".bin"
