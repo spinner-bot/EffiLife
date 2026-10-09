@@ -42,3 +42,13 @@ def test_mobile_navigation_keeps_records_as_a_first_class_sixth_entry():
     assert 'data-guide="records" to="/records"' in APP
     assert 'grid-template-columns: repeat(6, minmax(44px, 1fr));' in APP
     assert 'overflow-x: auto;' in APP
+
+
+def test_wide_desktop_shell_has_a_sidebar_workbench_without_removing_mobile_navigation():
+    assert "@media (min-width: 1200px)" in APP
+    wide = APP.split("@media (min-width: 1200px)", 1)[1].split("@media (prefers-reduced-motion", 1)[0]
+    assert ".app-content { padding-top: 0; padding-left: 260px; }" in wide
+    assert ".global-nav {" in wide
+    assert "min-height: calc(100vh - 48px);" in wide
+    assert ".global-nav-links { flex-direction: column;" in wide
+    assert 'class="mobile-bottom-nav theme-card"' in APP

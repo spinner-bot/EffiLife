@@ -533,6 +533,30 @@ watch(() => appStore.todayStat, () => {
 .global-search-trigger:hover { color: var(--color-text-primary); border-color: var(--color-border-hover); }
 .global-search-trigger kbd { border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 4px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 10px; }
 
+/* Give wide desktop screens a real workbench rail while keeping tablet and
+   mobile navigation compact and touch-oriented. */
+@media (min-width: 1200px) {
+  .app-content { padding-top: 0; padding-left: 260px; }
+  .global-nav {
+    top: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 22px;
+    width: 212px;
+    min-height: calc(100vh - 48px);
+    box-sizing: border-box;
+    padding: 18px 12px;
+    transform: none;
+  }
+  .global-brand { padding: 0 5px 4px; }
+  .global-nav-links { flex-direction: column; align-items: stretch; gap: 5px; }
+  .global-nav-link { min-height: 38px; padding: 9px 11px; }
+  .global-search-trigger { width: 100%; margin-top: auto; margin-left: 0; justify-content: center; }
+}
+
 @media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
 
 /* Keep tablet navigation horizontal while reserving room for every module. */
