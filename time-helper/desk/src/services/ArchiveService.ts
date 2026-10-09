@@ -613,7 +613,13 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     if (manifest.datasets.length > MAX_ARCHIVE_DATASET_COUNT) {
       throw new Error(translate('settings.archive.tooManyDatasets'))
     }
-    const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => !manifest.datasets?.includes(name))
+    const declaredDatasets = new Set(manifest.datasets)
+    const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => {
+      if (name === 'todo_categories') return false
+      if (name === 'records') return !declaredDatasets.has('records') && !declaredDatasets.has('time_records')
+      if (name === 'plan_helper') return !declaredDatasets.has('plan_helper') && !declaredDatasets.has('plans')
+      return !declaredDatasets.has(name)
+    })
     if (missingDatasets.length > 0) {
       throw new Error(translate('settings.archive.missingDatasets', { names: missingDatasets.join(', ') }))
     }
@@ -648,6 +654,12 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 
     if (!isObjectRecord(datasets.app)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'app' }))
     if (!Array.isArray(datasets.todos)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'todos' }))
+    if (!('todo_categories' in datasets)) datasets.todo_categories = []
+    datasets.records = datasets.records ?? datasets.time_records
+    datasets.plan_helper = datasets.plan_helper || datasets.planHelper || {
+      available: Array.isArray(datasets.plans),
+      plans: Array.isArray(datasets.plans) ? datasets.plans : [],
+    }
     if (!Array.isArray(datasets.todo_categories)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'todo_categories' }))
     if (!isObjectRecord(datasets.records)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'records' }))
     for (const records of Object.values(datasets.records)) {
