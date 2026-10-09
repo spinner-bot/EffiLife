@@ -30,8 +30,8 @@ CANONICAL_WORKSPACE_DATASETS = (
     "plan_helper",
 )
 LEGACY_WORKSPACE_DATASET_ALIASES = {
-    "records": "time_records",
-    "plan_helper": "plans",
+    "records": ("time_records",),
+    "plan_helper": ("plans", "planHelper"),
 }
 
 # Keep archive inspection bounded before any imported data reaches a module
@@ -309,15 +309,22 @@ def _migrate_workspace_dataset_names(datasets: Mapping[str, Any]) -> dict[str, A
     """
     migrated = dict(datasets)
     legacy_records = LEGACY_WORKSPACE_DATASET_ALIASES["records"]
-    if "records" not in migrated and legacy_records in migrated:
-        migrated["records"] = migrated[legacy_records]
+    if "records" not in migrated:
+        for alias in legacy_records:
+            if alias in migrated:
+                migrated["records"] = migrated[alias]
+                break
 
     legacy_plans = LEGACY_WORKSPACE_DATASET_ALIASES["plan_helper"]
-    if "plan_helper" not in migrated and legacy_plans in migrated:
-        plans = migrated[legacy_plans]
-        if not isinstance(plans, list):
-            raise ValueError("Legacy plans dataset must be an array")
-        migrated["plan_helper"] = {"available": bool(plans), "plans": plans, "archives": []}
+    if "plan_helper" not in migrated:
+        for alias in legacy_plans:
+            if alias not in migrated:
+                continue
+            plans = migrated[alias]
+            if not isinstance(plans, list):
+                raise ValueError("Legacy plans dataset must be an array")
+            migrated["plan_helper"] = {"available": bool(plans), "plans": plans, "archives": []}
+            break
 
     if "todo_categories" not in migrated and "todos" in migrated:
         migrated["todo_categories"] = []

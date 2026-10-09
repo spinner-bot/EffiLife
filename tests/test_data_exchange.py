@@ -110,6 +110,43 @@ def test_workspace_bundle_migrates_first_protocol_dataset_names(tmp_path):
     assert "time_records" in datasets and "plans" in datasets
 
 
+def test_workspace_bundle_migrates_camel_case_plan_dataset_alias(tmp_path):
+    bundle = tmp_path / "legacy-camel-case.efl"
+    legacy_plans = [{"id": 2, "name": "Camel case plan"}]
+    export_bundle(bundle, {
+        "app": {"version": "legacy"},
+        "time_records": {},
+        "planHelper": legacy_plans,
+        "todos": [],
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["plan_helper"] == {
+        "available": True,
+        "plans": legacy_plans,
+        "archives": [],
+    }
+
+
+def test_workspace_bundle_prefers_canonical_plan_dataset_over_all_aliases(tmp_path):
+    bundle = tmp_path / "canonical-plan-wins.efl"
+    canonical = {"available": False, "plans": [], "archives": []}
+    export_bundle(bundle, {
+        "app": {},
+        "records": {},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": canonical,
+        "plans": [{"wrong": 1}],
+        "planHelper": [{"wrong": 2}],
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["plan_helper"] == canonical
+
+
 def test_workspace_bundle_prefers_canonical_names_over_legacy_aliases(tmp_path):
     bundle = tmp_path / "canonical-wins.efl"
     canonical_records = {"2026-10-10": []}
