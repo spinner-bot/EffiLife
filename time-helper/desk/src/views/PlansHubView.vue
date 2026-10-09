@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronRight, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
@@ -91,6 +91,7 @@ const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
 const linkedTodoTaskIds = ref<Set<string>>(new Set())
+const recordingTodoTaskId = ref<string | null>(null)
 
 const archivedPlanTarget = computed(() => {
   const targetFile = String(route.query.archive || '')
@@ -767,6 +768,28 @@ async function refreshLinkedTodoTaskIds(): Promise<void> {
   }
 }
 
+async function recordLinkedTodoTime(taskId: string): Promise<void> {
+  if (!selectedPlan.value || recordingTodoTaskId.value) return
+  recordingTodoTaskId.value = taskId
+  try {
+    const planId = String(selectedPlan.value.id)
+    const linkedTodo = (await TodoService.list()).find((todo) => (
+      todo.related_plan_id === planId && todo.related_plan_task_id === taskId
+    ))
+    if (!linkedTodo) {
+      await refreshLinkedTodoTaskIds()
+      notifyToast(t('plans.todoUnavailable'), 'info')
+      return
+    }
+    await router.push({ path: '/records', query: { todo: linkedTodo.id } })
+  } catch (error) {
+    console.warn('Failed to open linked todo time entry:', error)
+    notifyToast(t('plans.todoUnavailable'), 'error')
+  } finally {
+    recordingTodoTaskId.value = null
+  }
+}
+
 async function createLinkedTodos(): Promise<void> {
   if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
   isLoading.value = true
@@ -1096,6 +1119,7 @@ onUnmounted(() => {
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <div v-if="canEditPlan" class="event-task-actions">
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
+              <button v-if="linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log task-record-time" :disabled="isLoading || recordingTodoTaskId === task.internal_id" :aria-label="t('plans.recordTodoTime')" @click="recordLinkedTodoTime(task.internal_id)"><Clock3 :size="13" /> {{ t('plans.recordTodoTime') }}</button>
               <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
               <button type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
             </div>

@@ -1347,6 +1347,7 @@ const catalogs: Record<Locale, Record<string, string>> = {
     'plans.todoLinked': '已关联待办',
     'plans.viewTodo': '查看待办',
     'plans.recordTodoTime': '记录用时',
+    'plans.todoUnavailable': '关联待办暂时无法读取',
     'plans.todoCreateFailed': '加入待办失败',
   },
   'en-US': {
@@ -2678,6 +2679,7 @@ const catalogs: Record<Locale, Record<string, string>> = {
     'plans.todoLinked': 'Todo linked',
     'plans.viewTodo': 'View todo',
     'plans.recordTodoTime': 'Record time',
+    'plans.todoUnavailable': 'The linked task is temporarily unavailable',
     'plans.todoCreateFailed': 'Unable to add the task',
   },
 }
