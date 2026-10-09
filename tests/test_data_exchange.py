@@ -129,6 +129,39 @@ def test_workspace_bundle_migrates_camel_case_plan_dataset_alias(tmp_path):
     }
 
 
+def test_workspace_bundle_migrates_legacy_categories_dataset(tmp_path):
+    bundle = tmp_path / "legacy-categories.efl"
+    legacy_categories = [{"id": "work", "name": "Work"}]
+    export_bundle(bundle, {
+        "app": {},
+        "records": {},
+        "todos": [],
+        "categories": legacy_categories,
+        "plan_helper": {"plans": []},
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["todo_categories"] == legacy_categories
+
+
+def test_workspace_bundle_prefers_canonical_categories_dataset(tmp_path):
+    bundle = tmp_path / "canonical-categories-win.efl"
+    canonical = [{"id": "canonical", "name": "Canonical"}]
+    export_bundle(bundle, {
+        "app": {},
+        "records": {},
+        "todos": [],
+        "todo_categories": canonical,
+        "categories": [{"id": "legacy", "name": "Legacy"}],
+        "plan_helper": {"plans": []},
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["todo_categories"] == canonical
+
+
 def test_workspace_bundle_prefers_canonical_plan_dataset_over_all_aliases(tmp_path):
     bundle = tmp_path / "canonical-plan-wins.efl"
     canonical = {"available": False, "plans": [], "archives": []}

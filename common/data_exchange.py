@@ -31,6 +31,7 @@ CANONICAL_WORKSPACE_DATASETS = (
 )
 LEGACY_WORKSPACE_DATASET_ALIASES = {
     "records": ("time_records",),
+    "todo_categories": ("categories",),
     "plan_helper": ("plans", "planHelper"),
 }
 
@@ -326,6 +327,11 @@ def _migrate_workspace_dataset_names(datasets: Mapping[str, Any]) -> dict[str, A
             migrated["plan_helper"] = {"available": bool(plans), "plans": plans, "archives": []}
             break
 
+    if "todo_categories" not in migrated:
+        for alias in LEGACY_WORKSPACE_DATASET_ALIASES["todo_categories"]:
+            if alias in migrated:
+                migrated["todo_categories"] = migrated[alias]
+                break
     if "todo_categories" not in migrated and "todos" in migrated:
         migrated["todo_categories"] = []
     return migrated

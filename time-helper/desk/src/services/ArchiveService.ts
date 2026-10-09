@@ -636,7 +636,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     }
     const declaredDatasets = new Set(manifest.datasets)
     const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => {
-      if (name === 'todo_categories') return false
+      if (name === 'todo_categories') return !declaredDatasets.has('todo_categories') && !declaredDatasets.has('categories')
       if (name === 'records') return !declaredDatasets.has('records') && !declaredDatasets.has('time_records')
       if (name === 'plan_helper') return !declaredDatasets.has('plan_helper') && !declaredDatasets.has('plans') && !declaredDatasets.has('planHelper')
       return !declaredDatasets.has(name)
@@ -675,7 +675,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 
     if (!isObjectRecord(datasets.app)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'app' }))
     if (!Array.isArray(datasets.todos)) throw new Error(translate('settings.archive.datasetInvalid', { name: 'todos' }))
-    if (!('todo_categories' in datasets)) datasets.todo_categories = []
+    if (!('todo_categories' in datasets)) datasets.todo_categories = datasets.categories ?? []
     datasets.records = datasets.records ?? datasets.time_records
     datasets.plan_helper = datasets.plan_helper || datasets.planHelper || {
       available: Array.isArray(datasets.plans),
@@ -764,7 +764,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     ? undefined
     : normalizeImportedPlanHelper(legacy.planHelper)
   const repairedPlanLinks = repairImportedTodoPlanLinks(repairedRecordLinks.todos, normalizedLegacyPlanHelper)
-  const categories = normalizeImportedCategories(undefined, repairedPlanLinks.todos)
+    const categories = normalizeImportedCategories(legacy.categories, repairedPlanLinks.todos)
   return {
     ...legacy,
     config: legacy.config ? normalizeConfig(legacy.config as Partial<Config>) as unknown as Record<string, unknown> : null,
