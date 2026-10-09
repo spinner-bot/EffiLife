@@ -915,18 +915,18 @@ onUnmounted(() => {
             <label>{{ t('settings.theme.colorConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>{{ t('settings.theme.windowBackground') }}</span>
-                <input type="text" v-model="solidConfig.bg_window" class="color-input" />
+                <label for="theme-solid-bg-window"><span>{{ t('settings.theme.windowBackground') }}</span></label>
+                <input id="theme-solid-bg-window" type="text" v-model="solidConfig.bg_window" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('solid_bg_window')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.buttonBackground') }}</span>
-                <input type="text" v-model="solidConfig.bg_button" class="color-input" />
+                <label for="theme-solid-bg-button"><span>{{ t('settings.theme.buttonBackground') }}</span></label>
+                <input id="theme-solid-bg-button" type="text" v-model="solidConfig.bg_button" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('solid_bg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.buttonText') }}</span>
-                <input type="text" v-model="solidConfig.fg_button" class="color-input" />
+                <label for="theme-solid-fg-button"><span>{{ t('settings.theme.buttonText') }}</span></label>
+                <input id="theme-solid-fg-button" type="text" v-model="solidConfig.fg_button" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('solid_fg_button')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
             </div>
@@ -945,18 +945,18 @@ onUnmounted(() => {
             <label>{{ t('settings.theme.gradientConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>{{ t('settings.theme.startColor') }}</span>
-                <input type="text" v-model="gradientConfig.color_start" class="color-input" />
+                <label for="theme-gradient-start"><span>{{ t('settings.theme.startColor') }}</span></label>
+                <input id="theme-gradient-start" type="text" v-model="gradientConfig.color_start" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('gradient_color_start')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.endColor') }}</span>
-                <input type="text" v-model="gradientConfig.color_end" class="color-input" />
+                <label for="theme-gradient-end"><span>{{ t('settings.theme.endColor') }}</span></label>
+                <input id="theme-gradient-end" type="text" v-model="gradientConfig.color_end" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('gradient_color_end')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.gradientDirection') }}</span>
-                <select v-model="gradientConfig.direction" class="select-input">
+                <label for="theme-gradient-direction"><span>{{ t('settings.theme.gradientDirection') }}</span></label>
+                <select id="theme-gradient-direction" v-model="gradientConfig.direction" class="select-input">
                   <option value="to-right">{{ t('settings.theme.right') }}</option>
                   <option value="to-left">{{ t('settings.theme.left') }}</option>
                   <option value="to-bottom">{{ t('settings.theme.down') }}</option>
@@ -982,18 +982,18 @@ onUnmounted(() => {
             <label>{{ t('settings.theme.glassConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>{{ t('settings.theme.backgroundColor') }}</span>
-                <input type="text" v-model="glassConfig.bg_color" class="color-input" />
+                <label for="theme-glass-background"><span>{{ t('settings.theme.backgroundColor') }}</span></label>
+                <input id="theme-glass-background" type="text" v-model="glassConfig.bg_color" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('glass_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.glassOpacity') }}</span>
-                <input type="range" v-model.number="glassConfig.glass_opacity" min="0.05" max="0.5" step="0.05" class="slider" />
+                <label for="theme-glass-opacity"><span>{{ t('settings.theme.glassOpacity') }}</span></label>
+                <input id="theme-glass-opacity" type="range" v-model.number="glassConfig.glass_opacity" min="0.05" max="0.5" step="0.05" class="slider" />
                 <span class="slider-value">{{ glassConfig.glass_opacity.toFixed(2) }}</span>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.blurAmount') }}</span>
-                <input type="range" v-model.number="glassConfig.blur_amount" min="0" max="30" step="2" class="slider" />
+                <label for="theme-glass-blur"><span>{{ t('settings.theme.blurAmount') }}</span></label>
+                <input id="theme-glass-blur" type="range" v-model.number="glassConfig.blur_amount" min="0" max="30" step="2" class="slider" />
                 <span class="slider-value">{{ glassConfig.blur_amount }}px</span>
               </div>
             </div>
@@ -1012,23 +1012,23 @@ onUnmounted(() => {
             <label>{{ t('settings.theme.neonConfig') }}</label>
             <div class="color-settings">
               <div class="color-row">
-                <span>{{ t('settings.theme.backgroundColor') }}</span>
-                <input type="text" v-model="neonConfig.bg_color" class="color-input" />
+                <label for="theme-neon-background"><span>{{ t('settings.theme.backgroundColor') }}</span></label>
+                <input id="theme-neon-background" type="text" v-model="neonConfig.bg_color" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('neon_bg_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.neonColor') }}</span>
-                <input type="text" v-model="neonConfig.neon_color" class="color-input" />
+                <label for="theme-neon-color"><span>{{ t('settings.theme.neonColor') }}</span></label>
+                <input id="theme-neon-color" type="text" v-model="neonConfig.neon_color" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('neon_neon_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.accentColor') }}</span>
-                <input type="text" v-model="neonConfig.accent_color" class="color-input" />
+                <label for="theme-neon-accent"><span>{{ t('settings.theme.accentColor') }}</span></label>
+                <input id="theme-neon-accent" type="text" v-model="neonConfig.accent_color" class="color-input" />
                 <button type="button" class="btn small" @click="pickColor('neon_accent_color')">{{ t('settings.theme.chooseColor') }}</button>
               </div>
               <div class="color-row">
-                <span>{{ t('settings.theme.glowIntensity') }}</span>
-                <input type="range" v-model.number="neonConfig.glow_intensity" min="0" max="30" step="2" class="slider" />
+                <label for="theme-neon-glow"><span>{{ t('settings.theme.glowIntensity') }}</span></label>
+                <input id="theme-neon-glow" type="range" v-model.number="neonConfig.glow_intensity" min="0" max="30" step="2" class="slider" />
                 <span class="slider-value">{{ neonConfig.glow_intensity }}px</span>
               </div>
             </div>
