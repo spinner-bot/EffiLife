@@ -29,11 +29,18 @@ const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
 const MAX_ARCHIVE_DATASET_BYTES = 32 * 1024 * 1024
 const MAX_ARCHIVE_TOTAL_DATASET_BYTES = 64 * 1024 * 1024
 const MAX_ARCHIVE_DATASET_COUNT = 16
+const MAX_ARCHIVE_ENTRIES = 64
 const PLAN_HELPER_REQUEST_TIMEOUT_MS = 4000
 
 function assertArchiveBlobSize(blob: Blob): void {
   if (blob.size > MAX_ARCHIVE_BYTES) {
     throw new Error(translate('settings.archive.fileTooLarge'))
+  }
+}
+
+function assertArchiveEntryCount(zip: JSZip): void {
+  if (Object.keys(zip.files).length > MAX_ARCHIVE_ENTRIES) {
+    throw new Error(translate('settings.archive.tooManyEntries'))
   }
 }
 
@@ -526,6 +533,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
     assertArchiveBlobSize(file)
     // 读取 zip 文件
     const zip = await JSZip.loadAsync(file)
+    assertArchiveEntryCount(zip)
 
     return await processArchiveData(zip)
   } catch (e) {
@@ -560,6 +568,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
     const blob = new Blob([data])
     assertArchiveBlobSize(blob)
     const zip = await JSZip.loadAsync(blob)
+    assertArchiveEntryCount(zip)
     const preview = summarizeArchive(await parseArchiveData(zip))
 
     if (confirmImport && !(await confirmImport(preview))) {
@@ -573,6 +582,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
 }
 
 async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
+  assertArchiveEntryCount(zip)
   const manifestFile = zip.file('manifest.json')
   if (manifestFile) {
     let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[]; dataset_sha256?: Record<string, string> }
@@ -724,6 +734,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
 export async function previewArchive(file: Blob): Promise<ArchivePreview> {
   assertArchiveBlobSize(file)
   const zip = await JSZip.loadAsync(file)
+  assertArchiveEntryCount(zip)
   return summarizeArchive(await parseArchiveData(zip))
 }
 

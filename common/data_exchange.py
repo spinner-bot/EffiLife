@@ -37,6 +37,7 @@ MAX_BUNDLE_BYTES = 64 * 1024 * 1024
 MAX_DATASET_BYTES = 32 * 1024 * 1024
 MAX_TOTAL_DATASET_BYTES = 64 * 1024 * 1024
 MAX_DATASET_COUNT = 16
+MAX_ARCHIVE_ENTRIES = 64
 
 
 def _validate_workspace_dataset_shapes(datasets: Mapping[str, Any]) -> None:
@@ -134,6 +135,8 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
     if path.stat().st_size > MAX_BUNDLE_BYTES:
         raise ValueError("Bundle exceeds the maximum supported file size")
     with zipfile.ZipFile(path, "r") as bundle:
+        if len(bundle.infolist()) > MAX_ARCHIVE_ENTRIES:
+            raise ValueError("Bundle contains too many archive entries")
         if MANIFEST_NAME not in bundle.namelist():
             raise ValueError("Bundle manifest is missing")
         try:

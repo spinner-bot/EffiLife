@@ -16,6 +16,7 @@ from .data_exchange import (
     MAX_BUNDLE_BYTES,
     MAX_DATASET_BYTES,
     MAX_DATASET_COUNT,
+    MAX_ARCHIVE_ENTRIES,
     MAX_TOTAL_DATASET_BYTES,
     export_bundle,
     export_workspace_bundle,

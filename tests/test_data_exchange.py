@@ -300,6 +300,7 @@ def test_bundle_import_rolls_back_when_install_fails(tmp_path):
 
 def test_bundle_limits_are_exposed_for_cross_runtime_import_guards():
     from common.data_exchange import (
+        MAX_ARCHIVE_ENTRIES,
         MAX_BUNDLE_BYTES,
         MAX_DATASET_BYTES,
         MAX_DATASET_COUNT,
@@ -310,6 +311,7 @@ def test_bundle_limits_are_exposed_for_cross_runtime_import_guards():
     assert MAX_DATASET_BYTES == 32 * 1024 * 1024
     assert MAX_TOTAL_DATASET_BYTES == 64 * 1024 * 1024
     assert MAX_DATASET_COUNT == 16
+    assert MAX_ARCHIVE_ENTRIES == 64
 
 
 def test_bundle_rejects_oversized_dataset_before_json_import(tmp_path):
@@ -342,4 +344,20 @@ def test_bundle_rejects_too_many_declared_datasets(tmp_path):
         for name in names:
             archive.writestr(f"data/{name}.json", "{}")
     with pytest.raises(ValueError, match="too many datasets"):
+        inspect_bundle(bundle)
+
+
+def test_bundle_rejects_too_many_zip_entries(tmp_path):
+    from common.data_exchange import MAX_ARCHIVE_ENTRIES
+
+    bundle = tmp_path / "many-entries.efl"
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": ["app"],
+        }))
+        for index in range(MAX_ARCHIVE_ENTRIES):
+            archive.writestr(f"extra/{index}.txt", "x")
+    with pytest.raises(ValueError, match="too many archive entries"):
         inspect_bundle(bundle)
