@@ -29,6 +29,10 @@ CANONICAL_WORKSPACE_DATASETS = (
     "todo_categories",
     "plan_helper",
 )
+LEGACY_WORKSPACE_DATASET_ALIASES = {
+    "records": "time_records",
+    "plan_helper": "plans",
+}
 
 # Keep archive inspection bounded before any imported data reaches a module
 # store.  These limits are deliberately generous for personal workspaces but
@@ -286,13 +290,38 @@ def export_workspace_bundle(
 
 
 def read_workspace_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, Any]]:
-    """Read a unified workspace bundle and require all canonical datasets."""
+    """Read a unified workspace bundle and migrate known legacy dataset names."""
     manifest, datasets = read_bundle(bundle_path)
+    datasets = _migrate_workspace_dataset_names(datasets)
     missing = [name for name in CANONICAL_WORKSPACE_DATASETS if name not in datasets]
     if missing:
         raise ValueError(f"Workspace bundle is missing datasets: {', '.join(missing)}")
     _validate_workspace_dataset_shapes(datasets)
     return manifest, datasets
+
+
+def _migrate_workspace_dataset_names(datasets: Mapping[str, Any]) -> dict[str, Any]:
+    """Map the first exchange protocol's dataset names to the canonical shape.
+
+    This intentionally performs container-level migration only. Entity fields
+    remain untouched so PH numbering, nested groups, TH records and TD links
+    cannot be silently rewritten by the exchange layer.
+    """
+    migrated = dict(datasets)
+    legacy_records = LEGACY_WORKSPACE_DATASET_ALIASES["records"]
+    if "records" not in migrated and legacy_records in migrated:
+        migrated["records"] = migrated[legacy_records]
+
+    legacy_plans = LEGACY_WORKSPACE_DATASET_ALIASES["plan_helper"]
+    if "plan_helper" not in migrated and legacy_plans in migrated:
+        plans = migrated[legacy_plans]
+        if not isinstance(plans, list):
+            raise ValueError("Legacy plans dataset must be an array")
+        migrated["plan_helper"] = {"available": bool(plans), "plans": plans, "archives": []}
+
+    if "todo_categories" not in migrated and "todos" in migrated:
+        migrated["todo_categories"] = []
+    return migrated
 
 
 def verify_workspace_bundle(bundle_path: str | os.PathLike[str]) -> dict[str, Any]:

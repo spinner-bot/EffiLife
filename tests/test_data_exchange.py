@@ -87,6 +87,62 @@ def test_workspace_bundle_rejects_noncanonical_partial_data(tmp_path):
         read_workspace_bundle(bundle)
 
 
+def test_workspace_bundle_migrates_first_protocol_dataset_names(tmp_path):
+    bundle = tmp_path / "legacy-names.efl"
+    legacy_plans = [{"id": 1, "name": "Legacy plan"}]
+    legacy_records = {"2026-10-10": [{"id": "record-1"}]}
+    export_bundle(bundle, {
+        "app": {"version": "legacy"},
+        "time_records": legacy_records,
+        "plans": legacy_plans,
+        "todos": [],
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["records"] == legacy_records
+    assert datasets["plan_helper"] == {
+        "available": True,
+        "plans": legacy_plans,
+        "archives": [],
+    }
+    assert datasets["todo_categories"] == []
+    assert "time_records" in datasets and "plans" in datasets
+
+
+def test_workspace_bundle_prefers_canonical_names_over_legacy_aliases(tmp_path):
+    bundle = tmp_path / "canonical-wins.efl"
+    canonical_records = {"2026-10-10": []}
+    canonical_plan_helper = {"available": False, "plans": [], "archives": []}
+    export_bundle(bundle, {
+        "app": {},
+        "records": canonical_records,
+        "time_records": {"wrong": [{}]},
+        "todos": [],
+        "todo_categories": [],
+        "plan_helper": canonical_plan_helper,
+        "plans": [{"wrong": True}],
+    })
+
+    _manifest, datasets = read_workspace_bundle(bundle)
+
+    assert datasets["records"] == canonical_records
+    assert datasets["plan_helper"] == canonical_plan_helper
+
+
+def test_workspace_bundle_rejects_ambiguous_legacy_plan_shape(tmp_path):
+    bundle = tmp_path / "invalid-legacy-plans.efl"
+    export_bundle(bundle, {
+        "app": {},
+        "time_records": {},
+        "plans": {"head": {}},
+        "todos": [],
+    })
+
+    with pytest.raises(ValueError, match="Legacy plans dataset must be an array"):
+        read_workspace_bundle(bundle)
+
+
 def test_workspace_export_rejects_invalid_shapes_before_writing(tmp_path):
     bundle = tmp_path / "invalid-export.efl"
 
