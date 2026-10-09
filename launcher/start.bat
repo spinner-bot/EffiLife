@@ -10,11 +10,14 @@ if defined EFFILIFE_PYTHON (
 )
 
 where py >nul 2>nul
-if %errorlevel%==0 (
-    py -3 launcher\start.py --unified %*
-) else (
-    python launcher\start.py --unified %*
-)
+if errorlevel 1 goto :use_python
+py -3 -c "import sys" >nul 2>nul
+if errorlevel 1 goto :use_python
+py -3 launcher\start.py --unified %*
+goto :finish
+
+:use_python
+python launcher\start.py --unified %*
 
 :finish
 set "EFFILIFE_LAUNCH_EXIT=%errorlevel%"

@@ -303,6 +303,15 @@ def test_launcher_user_facing_brand_name_is_effilife():
     assert "EffLife" not in source
 
 
+def test_windows_launcher_falls_back_when_py_has_no_python3_runtime():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.bat").read_text(encoding="utf-8")
+
+    assert 'py -3 -c "import sys" >nul 2>nul' in source
+    assert "if errorlevel 1 goto :use_python" in source
+    assert ":use_python" in source
+    assert "python launcher\\start.py --unified %*" in source
+
+
 def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     modules = launcher.build_modules()
     assert modules["4"]["url"] == "http://127.0.0.1:1421"
