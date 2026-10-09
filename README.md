@@ -75,6 +75,17 @@ python launcher/start.py --unified
 
 端口必须位于 `1024-65535`；非法值会回退到上述默认值。使用 `python launcher/start.py --doctor` 可查看当前实际生效端口和服务状态；在脚本或 CI 中使用 `--diagnose-strict`，发现阻塞问题时会以非零状态退出。
 
+### 统一数据目录（开发启动）
+
+开发或测试时可通过 `EFFILIFE_DATA_DIR` 指定统一数据根目录：
+
+```powershell
+$env:EFFILIFE_DATA_DIR = 'C:\Users\<user>\AppData\Local\EffiLife\data'
+python launcher/start.py --unified
+```
+
+该根目录用于统一工作台、计划服务和存档的数据共享与恢复；启动器会把它传给 Plan Helper，直接执行 `python plan-helper/web/server.py` 时也会读取同一环境变量。未设置时保留开发环境中的兼容数据位置。正式安装包应使用专用的应用数据目录，不要依赖项目目录中的测试文件。
+
 ## 当前模块架构
 
 ```
