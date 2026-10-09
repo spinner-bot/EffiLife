@@ -37,6 +37,17 @@ type SearchResult = {
   route: string
 }
 
+type SearchFilter = 'all' | 'th' | 'ph' | 'td'
+
+const searchFilter = ref<SearchFilter>('all')
+
+function resultMatchesFilter(result: SearchResult): boolean {
+  if (searchFilter.value === 'all') return true
+  if (searchFilter.value === 'th') return result.kind === 'record'
+  if (searchFilter.value === 'td') return result.kind === 'todo'
+  return result.kind === 'plan' || result.kind === 'planTask' || result.kind === 'archivedPlan'
+}
+
 function todoSearchDetail(todo: UnifiedTodo): string {
   const planContext = todo.related_plan_id && todo.related_plan_task_id
     ? `${t('search.todoPlanContext')} ${todo.related_plan_id} · ${todo.related_plan_task_id}`
@@ -116,6 +127,7 @@ const filteredResults = computed(() => {
   const normalized = query.value.trim().toLocaleLowerCase()
   if (!normalized) return []
   return allResults.value
+    .filter((result) => resultMatchesFilter(result))
     .filter((result) => `${result.title} ${result.detail} ${result.searchText}`.toLocaleLowerCase().includes(normalized))
     .map((result, index) => {
       const title = result.title.toLocaleLowerCase()
@@ -277,6 +289,7 @@ watch(() => props.open, async (open) => {
   }
   returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   query.value = ''
+  searchFilter.value = 'all'
   selectedIndex.value = 0
   await loadIndex()
   await nextTick()
@@ -292,6 +305,11 @@ watch(() => props.open, async (open) => {
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
       <input ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
+      <div class="search-filters" role="group" :aria-label="t('search.filterLabel')">
+        <button v-for="filter in (['all', 'th', 'ph', 'td'] as SearchFilter[])" :key="filter" type="button" class="search-filter" :class="{ selected: searchFilter === filter }" :aria-pressed="searchFilter === filter" @click="searchFilter = filter; selectedIndex = 0">
+          {{ t(`search.filter.${filter}`) }}
+        </button>
+      </div>
       <div v-if="indexUnavailable" class="search-state search-error" role="status" aria-live="polite">
         <span>{{ t('search.unavailable') }}</span>
         <button type="button" @click="retryIndex">{{ t('search.retry') }}</button>
@@ -326,6 +344,12 @@ watch(() => props.open, async (open) => {
 .search-close:hover { color: var(--color-text-primary); background: var(--color-primary-muted); }
 .search-input { width: calc(100% - 32px); box-sizing: border-box; margin: 0 16px 12px; border: 1px solid var(--color-border); border-radius: 11px; padding: 11px 13px; outline: 0; color: var(--color-text-primary); background: var(--color-bg-secondary); font-size: 14px; }
 .search-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.search-filters { display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 10px; scrollbar-width: none; }
+.search-filters::-webkit-scrollbar { display: none; }
+.search-filter { min-height: 34px; flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 999px; padding: 5px 12px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast); }
+.search-filter:hover, .search-filter:focus-visible { border-color: var(--color-border-hover); color: var(--color-text-primary); outline: 0; }
+.search-filter.selected { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-muted); }
+.search-filter:disabled { cursor: not-allowed; opacity: .55; }
 .search-state { padding: 28px 18px 32px; color: var(--color-text-tertiary); text-align: center; font-size: 13px; }
 .search-error { display: grid; gap: 10px; color: var(--color-text-secondary); }
 .search-error button, .search-partial button { justify-self: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 10px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
@@ -346,6 +370,7 @@ watch(() => props.open, async (open) => {
   .search-backdrop { place-items: end center; padding: 0; }
   .search-dialog { width: 100%; max-height: calc(100vh - 56px); border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); }
   .search-close { min-width: 40px; min-height: 40px; }
+  .search-filters { padding-right: 16px; }
   .search-results { max-height: 46vh; padding-bottom: 12px; }
   .search-result { min-height: 48px; padding: 10px 9px; }
 }
