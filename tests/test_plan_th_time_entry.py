@@ -18,3 +18,11 @@ def test_ph_time_entry_handles_stale_or_unavailable_link_in_both_locales():
     assert I18N.count("'plans.todoUnavailable':") == 2
     assert "await refreshLinkedTodoTaskIds()" in VIEW
     assert "notifyToast(t('plans.todoUnavailable'), 'error')" in VIEW
+
+
+def test_ph_task_shows_read_only_accumulated_time_from_linked_todos():
+    assert "const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())" in VIEW
+    assert "minutesByTask.set(taskId, (minutesByTask.get(taskId) || 0) + minutes)" in VIEW
+    assert "linkedTodoMinutesByTask.has(task.internal_id)" in VIEW
+    assert "t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 })" in VIEW
+    assert I18N.count("'plans.recordedTimeValue':") == 2

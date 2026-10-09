@@ -91,6 +91,7 @@ const logTaskId = ref('base')
 const logDay = ref(new Date().getDate())
 const logContent = ref('')
 const linkedTodoTaskIds = ref<Set<string>>(new Set())
+const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())
 const recordingTodoTaskId = ref<string | null>(null)
 
 const archivedPlanTarget = computed(() => {
@@ -752,19 +753,29 @@ async function completeTask(taskId: string) {
 async function refreshLinkedTodoTaskIds(): Promise<void> {
   if (!selectedPlan.value) {
     linkedTodoTaskIds.value = new Set()
+    linkedTodoMinutesByTask.value = new Map()
     return
   }
   try {
     const planId = String(selectedPlan.value.id)
     const todos = await TodoService.list()
-    linkedTodoTaskIds.value = new Set(
-      todos
-        .filter((todo) => todo.related_plan_id === planId && typeof todo.related_plan_task_id === 'string')
-        .map((todo) => String(todo.related_plan_task_id)),
-    )
+    const linkedTaskIds = new Set<string>()
+    const minutesByTask = new Map<string, number>()
+    for (const todo of todos) {
+      if (todo.related_plan_id !== planId || typeof todo.related_plan_task_id !== 'string') continue
+      const taskId = String(todo.related_plan_task_id)
+      linkedTaskIds.add(taskId)
+      const minutes = Number(todo.time_spent ?? 0)
+      if (Number.isFinite(minutes) && minutes >= 0) {
+        minutesByTask.set(taskId, (minutesByTask.get(taskId) || 0) + minutes)
+      }
+    }
+    linkedTodoTaskIds.value = linkedTaskIds
+    linkedTodoMinutesByTask.value = minutesByTask
   } catch (error) {
     console.warn('Failed to inspect linked todos:', error)
     linkedTodoTaskIds.value = new Set()
+    linkedTodoMinutesByTask.value = new Map()
   }
 }
 
@@ -1115,7 +1126,7 @@ onUnmounted(() => {
           <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
           <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
             <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.completeTaskLabel', { id: task.display_id, content: task.content })" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
-            <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span><small v-if="linkedTodoTaskIds.has(task.internal_id)" class="task-todo-link" :title="t('plans.linkedTodo')">{{ t('plans.linkedTodo') }}</small></div>
+            <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span><small v-if="linkedTodoTaskIds.has(task.internal_id)" class="task-todo-link" :title="t('plans.linkedTodo')">{{ t('plans.linkedTodo') }}</small><small v-if="linkedTodoMinutesByTask.has(task.internal_id)" class="task-time-spent" :title="t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 })">{{ t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 }) }}</small></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <div v-if="canEditPlan" class="event-task-actions">
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
@@ -1242,6 +1253,7 @@ onUnmounted(() => {
 .plan-todo-action { grid-column: 1 / -1; justify-self: start; }
 .plan-todo-hint { grid-column: 1 / -1; color: var(--color-text-tertiary); font-size: 11px; line-height: 1.45; }
 .task-todo-link { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; padding: 2px 6px; color: var(--color-primary); background: var(--color-primary-muted); font-size: 10px; line-height: 1.2; }
+.task-time-spent { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; padding: 2px 6px; color: var(--color-text-secondary); background: var(--color-bg-secondary); font-size: 10px; line-height: 1.2; }
 .plan-detail-progress { min-width: 130px; }
 .plan-detail-layout { display: grid; gap: 14px; }
 .plan-detail-aside, .plan-detail-main { min-width: 0; }
