@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { EventSystem } from './EventSystem'
 import { X } from 'lucide-vue-next'
 import type { AppEvent } from './EventSystem'
@@ -8,10 +8,39 @@ import { useI18n } from '@/i18n'
 
 const events = computed(() => EventSystem.getActiveEvents())
 const { t } = useI18n()
+const AUTO_DISMISS_MS = 5000
+const dismissTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 function dismissEvent(eventId: string) {
+  const timer = dismissTimers.get(eventId)
+  if (timer) {
+    clearTimeout(timer)
+    dismissTimers.delete(eventId)
+  }
   EventSystem.dismissEvent(eventId)
 }
+
+watch(events, (nextEvents) => {
+  const activeIds = new Set(nextEvents.map((event) => event.id))
+  for (const [eventId, timer] of dismissTimers) {
+    if (!activeIds.has(eventId)) {
+      clearTimeout(timer)
+      dismissTimers.delete(eventId)
+    }
+  }
+  for (const event of nextEvents) {
+    if (dismissTimers.has(event.id)) continue
+    dismissTimers.set(event.id, setTimeout(() => {
+      dismissTimers.delete(event.id)
+      EventSystem.dismissEvent(event.id)
+    }, AUTO_DISMISS_MS))
+  }
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  for (const timer of dismissTimers.values()) clearTimeout(timer)
+  dismissTimers.clear()
+})
 
 function getEventStyle(event: AppEvent) {
   switch (event.type) {
