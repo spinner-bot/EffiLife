@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, parseStoredDate } from '@/services/dataService'
-import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo, Plus } from 'lucide-vue-next'
+import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo, Plus, RefreshCw } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -35,6 +35,7 @@ const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
 const timeSummaryUnavailable = ref(false)
 const workspaceSummaryReady = ref(false)
+const workspaceRefreshing = ref(false)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -193,6 +194,7 @@ async function refreshWorkspaceSummaries(): Promise<void> {
     return
   }
   summaryRefreshRunning = true
+  workspaceRefreshing.value = true
   try {
     do {
       summaryRefreshQueued = false
@@ -208,6 +210,7 @@ async function refreshWorkspaceSummaries(): Promise<void> {
     console.warn('Failed to refresh home workspace summary:', error)
   } finally {
     summaryRefreshRunning = false
+    workspaceRefreshing.value = false
     workspaceSummaryReady.value = true
   }
 }
@@ -421,6 +424,17 @@ onUnmounted(() => {
 <template>
   <div class="home-view" :aria-busy="!workspaceSummaryReady">
     <header class="header">
+      <button
+        type="button"
+        class="workspace-refresh-btn"
+        :disabled="workspaceRefreshing"
+        :aria-label="t('home.refreshWorkspace')"
+        :title="t('home.refreshWorkspace')"
+        :aria-busy="workspaceRefreshing"
+        @click="AudioManager.playSound('click'); void refreshWorkspaceSummaries()"
+      >
+        <RefreshCw :size="16" :class="{ spinning: workspaceRefreshing }" />
+      </button>
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
         <button ref="inboxButton" class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" aria-haspopup="dialog" :aria-expanded="showInboxPanel" aria-controls="home-inbox-panel" @click="AudioManager.playSound('click'); toggleInboxPanel()">
@@ -708,6 +722,13 @@ onUnmounted(() => {
   padding: var(--spacing-md) 0;
   position: relative;
 }
+
+.workspace-refresh-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; margin-right: 8px; border: 1px solid var(--color-border); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
+.workspace-refresh-btn:hover:not(:disabled), .workspace-refresh-btn:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
+.workspace-refresh-btn:disabled { cursor: wait; opacity: .65; }
+.workspace-refresh-btn .spinning { animation: workspace-refresh-spin .8s linear infinite; }
+@keyframes workspace-refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .workspace-refresh-btn .spinning { animation: none; } }
 
 .workflow-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 auto 20px; width: min(860px, 100%); }
 .workflow-summary-item { display: flex; align-items: center; gap: 10px; min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 14px); padding: 12px 13px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; text-align: left; transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast); }

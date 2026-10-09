@@ -116,6 +116,15 @@ def test_home_serializes_summary_refreshes_and_queues_external_changes():
     assert "refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)" in HOME
 
 
+def test_home_exposes_one_accessible_refresh_for_all_workspace_summaries():
+    assert "const workspaceRefreshing = ref(false)" in HOME
+    assert "void refreshWorkspaceSummaries()" in HOME
+    assert ':aria-label="t(\'home.refreshWorkspace\')"' in HOME
+    assert ':aria-busy="workspaceRefreshing"' in HOME
+    assert 'class="workspace-refresh-btn"' in HOME
+    assert I18N.count("'home.refreshWorkspace':") == 2
+
+
 def test_home_discards_stale_todo_and_plan_summary_responses():
     assert "let todoSummaryRequestId = 0" in HOME
     assert "let eventPlanSummaryRequestId = 0" in HOME
