@@ -117,6 +117,15 @@ def test_settings_uses_theme_engine_registry():
     assert "const availableThemes = [" not in source
 
 
+def test_theme_selector_uses_native_keyboard_accessible_buttons():
+    source = SETTINGS.read_text(encoding="utf-8")
+    theme_list = source.split('<div class="theme-list">', 1)[1].split('</div>', 1)[0]
+    assert '<button' in theme_list
+    assert 'type="button"' in theme_list
+    assert ':aria-pressed="themeType === theme.type"' in theme_list
+    assert '@click="selectTheme(theme.type)"' in theme_list
+
+
 def test_theme_registry_owns_localized_display_metadata():
     settings = SETTINGS.read_text(encoding="utf-8")
     engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
