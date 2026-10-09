@@ -312,6 +312,16 @@ def test_windows_launcher_falls_back_when_py_has_no_python3_runtime():
     assert "python launcher\\start.py --unified %*" in source
 
 
+def test_posix_launcher_falls_back_when_python3_is_unavailable():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
+
+    assert "command -v python3" in source
+    assert "python3 -c 'import sys'" in source
+    assert "command -v python" in source
+    assert "python -c 'import sys'" in source
+    assert 'exec "$PYTHON_BIN" launcher/start.py --unified "$@"' in source
+
+
 def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
     modules = launcher.build_modules()
     assert modules["4"]["url"] == "http://127.0.0.1:1421"
