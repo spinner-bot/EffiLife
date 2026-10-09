@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 import { notifyWorkspaceChanged } from '@/services/workspaceEvents'
 
-export type Locale = 'zh-CN' | 'en-US'
+/** BCP-47-like language code; built-in locales are registered below. */
+export type Locale = string
 
 export interface LocaleDefinition {
   code: Locale
@@ -11,13 +12,13 @@ export interface LocaleDefinition {
 }
 
 const STORAGE_KEY = 'efflife_locale'
-export const LOCALE_DEFINITIONS: readonly LocaleDefinition[] = [
+export const LOCALE_DEFINITIONS: LocaleDefinition[] = [
   { code: 'zh-CN', labelKey: 'locale.zh-CN', fallback: 'zh-CN', direction: 'ltr' },
   { code: 'en-US', labelKey: 'locale.en-US', fallback: 'zh-CN', direction: 'ltr' },
 ]
-export const SUPPORTED_LOCALES: readonly Locale[] = LOCALE_DEFINITIONS.map(({ code }) => code)
+export const SUPPORTED_LOCALES: Locale[] = LOCALE_DEFINITIONS.map(({ code }) => code)
 
-const catalogs: Record<Locale, Record<string, string>> = {
+const catalogs: Record<string, Record<string, string>> = {
   'zh-CN': {
     'api.error.loadConfig': '加载配置失败',
     'api.error.saveConfig': '保存配置失败',
@@ -2718,11 +2719,19 @@ function readLocale(): Locale {
     candidates.push(...(navigator.languages || []), navigator.language || '')
   }
   for (const candidate of candidates) {
-    const normalized = candidate.toLowerCase()
-    if (normalized === 'en-us' || normalized.startsWith('en-') || normalized === 'en') return 'en-US'
-    if (normalized === 'zh-cn' || normalized.startsWith('zh-') || normalized === 'zh') return 'zh-CN'
+    const resolved = resolveRegisteredLocale(candidate)
+    if (resolved) return resolved
   }
   return 'zh-CN'
+}
+
+function resolveRegisteredLocale(candidate: string): Locale | undefined {
+  const normalized = candidate.trim().toLowerCase()
+  if (!normalized) return undefined
+  const exact = LOCALE_DEFINITIONS.find(({ code }) => code.toLowerCase() === normalized)
+  if (exact) return exact.code
+  const language = normalized.split('-')[0]
+  return LOCALE_DEFINITIONS.find(({ code }) => code.toLowerCase().split('-')[0] === language)?.code
 }
 
 export const currentLocale = ref<Locale>(readLocale())
@@ -2736,7 +2745,7 @@ function syncDocumentLocale(locale: Locale): void {
 
 syncDocumentLocale(currentLocale.value)
 
-const navigationFallbacks: Record<Locale, Record<string, string>> = {
+const navigationFallbacks: Record<string, Record<string, string>> = {
   'zh-CN': {
     'nav.primary': '\u4e3b\u5bfc\u822a\u680f',
     'tasks.advancedOptions': '\u66f4\u591a\u8bbe\u7f6e',
@@ -2789,6 +2798,22 @@ const navigationFallbacks: Record<Locale, Record<string, string>> = {
   },
 }
 
+/** Register an optional locale before the application mounts. */
+export function registerLocale(
+  definition: LocaleDefinition,
+  catalog: Record<string, string>,
+  navigationCatalog: Record<string, string> = {},
+): boolean {
+  const code = definition.code.trim()
+  if (!code || LOCALE_DEFINITIONS.some(({ code: existing }) => existing === code)) return false
+  const fallback = resolveRegisteredLocale(definition.fallback) || 'zh-CN'
+  LOCALE_DEFINITIONS.push({ ...definition, code, fallback })
+  SUPPORTED_LOCALES.push(code)
+  catalogs[code] = { ...catalog }
+  navigationFallbacks[code] = { ...navigationCatalog }
+  return true
+}
+
 export function setLocale(next: string): void {
   const resolved = LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'
   const changed = currentLocale.value !== resolved
@@ -2812,10 +2837,16 @@ export function refreshLocaleFromStorage(): void {
 
 export function translate(key: string, params: Record<string, string | number> = {}): string {
   const fallbackLocale = LOCALE_DEFINITIONS.find(({ code }) => code === currentLocale.value)?.fallback || 'zh-CN'
-  const value = catalogs[currentLocale.value][key]
-    || navigationFallbacks[currentLocale.value][key]
-    || catalogs[fallbackLocale][key]
-    || navigationFallbacks[fallbackLocale][key]
+  const fallbackCatalog = catalogs[fallbackLocale] || {}
+  const fallbackNavigationCatalog = navigationFallbacks[fallbackLocale] || {}
+  // Registered definitions normalize their fallback to an existing catalog;
+  // retain the direct lookup shape for the stable fallback contract.
+  const fallbackValue = fallbackCatalog[key] || catalogs[fallbackLocale][key]
+  const fallbackNavigationValue = fallbackNavigationCatalog[key] || navigationFallbacks[fallbackLocale][key]
+  const value = catalogs[currentLocale.value]?.[key]
+    || navigationFallbacks[currentLocale.value]?.[key]
+    || fallbackValue
+    || fallbackNavigationValue
     || key
   return value.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? `{${name}}`))
 }
