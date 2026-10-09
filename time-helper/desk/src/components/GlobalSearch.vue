@@ -304,7 +304,8 @@ watch(() => props.open, async (open) => {
         <div class="search-heading"><Search :size="18" /><strong id="global-search-title">{{ t('search.title') }}</strong></div>
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
-      <input ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" :aria-label="t('search.placeholder')" @keydown="handleSearchKeydown" />
+      <label class="search-input-label" for="global-search-input">{{ t('search.inputLabel') }}</label>
+      <input id="global-search-input" ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" @keydown="handleSearchKeydown" />
       <div class="search-filters" role="group" :aria-label="t('search.filterLabel')">
         <button v-for="filter in (['all', 'th', 'ph', 'td'] as SearchFilter[])" :key="filter" type="button" class="search-filter" :class="{ selected: searchFilter === filter }" :aria-pressed="searchFilter === filter" @click="searchFilter = filter; selectedIndex = 0">
           {{ t(`search.filter.${filter}`) }}
@@ -339,6 +340,7 @@ watch(() => props.open, async (open) => {
 .search-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: start center; padding: 12vh 18px 24px; background: rgba(8, 12, 24, .42); backdrop-filter: blur(8px); }
 .search-dialog { width: min(620px, 100%); overflow: hidden; border: 1px solid var(--color-border); border-radius: 18px; box-shadow: 0 24px 70px rgba(0, 0, 0, .24); }
 .search-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; }
+.search-input-label { display: block; margin: 0 16px 5px; color: var(--color-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .search-heading { display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-primary); }
 .search-close { display: grid; place-items: center; border: 0; border-radius: 8px; padding: 5px; color: var(--color-text-tertiary); background: transparent; cursor: pointer; }
 .search-close:hover { color: var(--color-text-primary); background: var(--color-primary-muted); }
