@@ -21,12 +21,14 @@
 ```text
 python -m pytest -q tests/test_frontend_i18n_coverage.py tests/test_settings_theme_i18n.py tests/test_theme_catalog_layout_contract.py
 # Theme registry entries: 25
-# 25 passed in 0.58s
+# 26 passed in 0.63s
+
+另增 README 数量与运行时注册表的一致性契约，防止后续主题扩展再次造成入口文档漂移。
 ```
 
 ## 提交与推送
 
-待验证通过后回填提交哈希与远端状态。
+提交与推送：本次文档校正及一致性测试随提交 `test(theme): keep README theme count in sync` 推送至 `origin/main`。
 
 ## 未验证项与边界
 

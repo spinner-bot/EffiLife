@@ -142,6 +142,20 @@ def test_theme_registry_owns_localized_display_metadata():
     assert "return t(theme.descriptionKey)" in settings
 
 
+def test_readme_theme_count_matches_runtime_registry():
+    import re
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
+    count_match = re.search(r"主题系统：([0-9]+) 种内置主题", readme)
+    registry = engine.split("export function getAvailableThemes(): ThemeDefinition[]", 1)[1]
+    theme_types = re.findall(r"\{ type: '([^']+)'", registry)
+
+    assert count_match
+    assert len(theme_types) == len(set(theme_types))
+    assert int(count_match.group(1)) == len(theme_types)
+
+
 def test_theme_categories_are_derived_from_the_registry():
     settings = SETTINGS.read_text(encoding="utf-8")
     engine = (ROOT / "time-helper" / "desk" / "src" / "theme" / "ThemeEngine.ts").read_text(encoding="utf-8")
