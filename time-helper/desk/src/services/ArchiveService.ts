@@ -638,7 +638,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
     const missingDatasets = CANONICAL_ARCHIVE_DATASETS.filter((name) => {
       if (name === 'todo_categories') return false
       if (name === 'records') return !declaredDatasets.has('records') && !declaredDatasets.has('time_records')
-      if (name === 'plan_helper') return !declaredDatasets.has('plan_helper') && !declaredDatasets.has('plans')
+      if (name === 'plan_helper') return !declaredDatasets.has('plan_helper') && !declaredDatasets.has('plans') && !declaredDatasets.has('planHelper')
       return !declaredDatasets.has(name)
     })
     if (missingDatasets.length > 0) {
