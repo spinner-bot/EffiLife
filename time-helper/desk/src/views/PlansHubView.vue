@@ -58,6 +58,7 @@ const detailRefreshUnavailable = ref(false)
 const successMessage = ref('')
 const planSearch = ref('')
 const searchTargetTaskId = ref<string | null>(null)
+const missingTaskTargetId = ref<string | null>(null)
 const showCreate = ref(false)
 const showTemplatePicker = ref(false)
 const createNameInput = ref<HTMLInputElement | null>(null)
@@ -860,18 +861,36 @@ async function revealSearchTarget(): Promise<void> {
       view.value = 'events'
       searchTargetTaskId.value = null
     }
+    missingTaskTargetId.value = null
     return
   }
   const targetId = String(route.query.plan || '')
-  if (!targetId) return
+  if (!targetId) {
+    searchTargetTaskId.value = null
+    missingTaskTargetId.value = null
+    return
+  }
   const target = plans.value.find((plan) => String(plan.id) === targetId)
-  if (!target) return
+  if (!target) {
+    missingTaskTargetId.value = null
+    return
+  }
   if (String(selectedPlan.value?.id) !== targetId) await openPlan(target)
   const taskId = String(route.query.task || '')
+  if (!taskId) {
+    searchTargetTaskId.value = null
+    missingTaskTargetId.value = null
+    return
+  }
   const task = selectedPlan.value?.sections
     .flatMap((section) => section.tasks)
     .find((item) => item.internal_id === taskId || item.display_id === taskId)
-  if (!task) return
+  if (!task) {
+    searchTargetTaskId.value = null
+    missingTaskTargetId.value = taskId
+    return
+  }
+  missingTaskTargetId.value = null
   const internalTaskId = task.internal_id
   searchTargetTaskId.value = internalTaskId
   await nextTick()
@@ -995,6 +1014,9 @@ onUnmounted(() => {
           <strong>{{ t('plans.cachedTitle') }}</strong>
           <span>{{ t('plans.cachedDescription') }}</span>
           <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
+        </div>
+        <div v-if="missingTaskTargetId" class="plans-readonly-note task-target-missing" role="status" aria-live="polite">
+          {{ t('plans.taskTargetMissing', { id: missingTaskTargetId }) }}
         </div>
         <div class="detail-toolbar">
           <button type="button" class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
