@@ -331,12 +331,6 @@ function markInboxRead(entryId: string) {
   EventSystem.markAsRead(entryId)
 }
 
-function activateInboxEntry(event: KeyboardEvent, entryId: string) {
-  if (event.key !== 'Enter' && event.key !== ' ') return
-  event.preventDefault()
-  markInboxRead(entryId)
-}
-
 function formatInboxTime(isoStr: string): string {
   const d = new Date(isoStr)
   const now = new Date()
@@ -425,16 +419,14 @@ onUnmounted(() => {
             <EmptyState :icon="InboxIcon" :title="t('home.noMessages')" :description="t('home.notificationsHere')" />
           </div>
           <div v-else class="inbox-panel-list">
-            <div
+            <button
               v-for="entry in inboxEntries"
               :key="entry.id"
               class="inbox-panel-item"
               :class="{ unread: !entry.read }"
-              role="button"
-              tabindex="0"
+              type="button"
               :aria-label="entry.title"
               @click="markInboxRead(entry.id)"
-              @keydown="activateInboxEntry($event, entry.id)"
             >
               <span class="inbox-panel-icon"><component :is="getNotificationIcon(entry.type)" :size="16" :stroke-width="2" /></span>
               <div class="inbox-panel-content">
@@ -445,7 +437,7 @@ onUnmounted(() => {
                 <p class="inbox-panel-msg">{{ entry.message }}</p>
                 <span class="inbox-panel-time">{{ formatInboxTime(entry.triggeredAt) }}</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
         <div class="inbox-panel-footer">
@@ -860,10 +852,16 @@ onUnmounted(() => {
 .inbox-panel-item {
   display: flex;
   gap: var(--spacing-sm);
+  width: 100%;
   padding: var(--spacing-sm) var(--spacing-lg);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  color: inherit;
+  background: transparent;
   cursor: pointer;
   transition: background var(--transition-fast);
-  border-bottom: 1px solid var(--color-border);
+  font: inherit;
+  text-align: left;
 }
 
 .inbox-panel-item:last-child {

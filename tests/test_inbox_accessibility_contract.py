@@ -14,10 +14,13 @@ def test_notification_and_inbox_icon_buttons_have_localized_names():
     assert ":aria-label=\"t('home.openInbox')\"" in home
     assert ":aria-label=\"t('home.closeInbox')\"" in home
     assert ":aria-label=\"t('search.close')\"" in records
-    for source in (home, events):
-        assert 'role="button"' in source
-        assert 'tabindex="0"' in source
-        assert "@keydown=\"activateInboxEntry" in source
+    assert '<button\n              v-for="entry in inboxEntries"' in home
+    assert 'class="inbox-panel-item"' in home
+    assert 'type="button"' in home
+    assert 'role="button"' not in home.split('class="inbox-panel-item"', 1)[1].split('</button>', 1)[0]
+    assert 'role="button"' in events
+    assert 'tabindex="0"' in events
+    assert '@keydown="activateInboxEntry' in events
 
 
 def test_inbox_labels_exist_in_both_locales():
