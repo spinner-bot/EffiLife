@@ -733,6 +733,8 @@ def collect_diagnostics(modules):
             for path in time_helper_binary_paths()
         ],
         "installer_artifacts": installer_status,
+        "launch_ready": not issues,
+        "distribution_ready": bool(usable_installers),
         "modules": module_status,
         "companions": companion_status,
         "issues": issues,
@@ -813,7 +815,8 @@ def print_doctor_report(report):
         print("\nInformation:")
         for hint in hints:
             print(f"  [INFO] {hint.get('message')}")
-    print("\nResult: " + ("BLOCKED" if issues else "READY"))
+    print("\nLaunch status: " + ("BLOCKED" if issues else "READY"))
+    print("Result: " + ("BLOCKED" if issues else "READY (development launch; distribution status shown above)"))
     return not issues
 
 

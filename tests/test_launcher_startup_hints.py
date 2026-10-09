@@ -47,7 +47,17 @@ def test_doctor_separates_development_readiness_from_distribution_readiness(caps
     }
 
     assert launcher.print_doctor_report(report) is True
-    assert "Distribution status: not ready" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Distribution status: not ready" in output
+    assert "Launch status: READY" in output
+    assert "Result: READY (development launch; distribution status shown above)" in output
+
+
+def test_doctor_machine_report_separates_launch_and_distribution_ready():
+    source = (Path(__file__).parents[1] / "launcher" / "start.py").read_text(encoding="utf-8")
+
+    assert '"launch_ready": not issues' in source
+    assert '"distribution_ready": bool(usable_installers)' in source
 
 
 def test_doctor_exposes_native_toolchain_readiness(capsys):
