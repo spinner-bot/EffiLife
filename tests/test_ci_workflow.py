@@ -19,7 +19,7 @@ def test_general_ci_covers_full_python_suite_and_desktop_build():
     assert "python scripts/check_mobile_release_config.py" in source
     assert "working-directory: time-helper/desk" in source
     assert "run: npm ci" in source
-    assert "run: npm run build" in source
+    assert "python scripts/build_todos_ui.py" in source
     assert "working-directory: to-dos/ui" in source
 
 

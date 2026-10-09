@@ -85,7 +85,7 @@ def test_release_workflow_builds_todos_compatibility_ui():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "to-dos/ui/package-lock.json" in workflow
     assert "working-directory: to-dos/ui" in workflow
-    assert "run: npm run build" in workflow
+    assert "python scripts/build_todos_ui.py" in workflow
 
 
 def test_release_version_sync_script_updates_all_desktop_manifests(tmp_path):

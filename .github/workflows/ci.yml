@@ -70,8 +70,7 @@ jobs:
         run: npm ci
 
       - name: Build compatibility UI
-        working-directory: to-dos/ui
-        run: npm run build
+        run: python scripts/build_todos_ui.py
 
       - name: Collect launcher diagnostics on failure
         if: ${{ failure() }}
