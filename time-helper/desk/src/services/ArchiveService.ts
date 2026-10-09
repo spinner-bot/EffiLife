@@ -230,6 +230,18 @@ function summarizeArchive(data: ArchiveData): ArchiveContentPreview {
   }
 }
 
+async function addLocalArchiveScope(preview: ArchiveContentPreview): Promise<ArchivePreview> {
+  const localStats = await getDataStats()
+  return {
+    ...preview,
+    localPlanCount: localStats.eventPlanCount,
+    localArchivedPlanCount: localStats.archivedEventPlanCount,
+    localTodoCount: localStats.todoCount,
+    localRecordCount: localStats.totalRecords,
+    localCategoryCount: localStats.todoCategoryCount,
+  }
+}
+
 // 获取所有日期记录
 function getLocalStorageRecords(): Record<string, unknown[]> {
   const records: Record<string, unknown[]> = {}
@@ -593,7 +605,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
     assertArchiveBlobSize(blob)
     const zip = await JSZip.loadAsync(blob)
     assertArchiveEntryCount(zip)
-    const preview = summarizeArchive(await parseArchiveData(zip))
+    const preview = await addLocalArchiveScope(summarizeArchive(await parseArchiveData(zip)))
 
     if (confirmImport && !(await confirmImport(preview))) {
       return { success: false, message: '', cancelled: true }
@@ -771,16 +783,7 @@ export async function previewArchive(file: Blob): Promise<ArchivePreview> {
   assertArchiveBlobSize(file)
   const zip = await JSZip.loadAsync(file)
   assertArchiveEntryCount(zip)
-  const preview = summarizeArchive(await parseArchiveData(zip))
-  const localStats = await getDataStats()
-  return {
-    ...preview,
-    localPlanCount: localStats.eventPlanCount,
-    localArchivedPlanCount: localStats.archivedEventPlanCount,
-    localTodoCount: localStats.todoCount,
-    localRecordCount: localStats.totalRecords,
-    localCategoryCount: localStats.todoCategoryCount,
-  }
+  return await addLocalArchiveScope(summarizeArchive(await parseArchiveData(zip)))
 }
 
 // 处理存档数据（内部函数）
