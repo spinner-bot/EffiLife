@@ -57,6 +57,7 @@ const errorMessage = ref('')
 const detailRefreshUnavailable = ref(false)
 const successMessage = ref('')
 const planSearch = ref('')
+const planFilter = ref<'all' | 'active' | 'completed'>('all')
 const searchTargetTaskId = ref<string | null>(null)
 const missingTaskTargetId = ref<string | null>(null)
 const showCreate = ref(false)
@@ -107,8 +108,15 @@ const archivedTaskTargetId = computed(() => String(route.query.task || ''))
 
 const filteredPlans = computed(() => {
   const query = planSearch.value.trim().toLocaleLowerCase()
-  if (!query) return plans.value
-  return plans.value.filter((plan) => `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`.toLocaleLowerCase().includes(query))
+  return plans.value.filter((plan) => {
+    const hasTasks = (plan.total_tasks || 0) > 0
+    const isCompleted = hasTasks && (plan.completed_tasks || 0) >= (plan.total_tasks || 0)
+    const matchesFilter = planFilter.value === 'all'
+      || (planFilter.value === 'completed' && isCompleted)
+      || (planFilter.value === 'active' && !isCompleted)
+    const matchesQuery = !query || `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`.toLocaleLowerCase().includes(query)
+    return matchesFilter && matchesQuery
+  })
 })
 
 const filteredArchives = computed(() => {
@@ -980,10 +988,18 @@ onUnmounted(() => {
           <div><strong>{{ t('plans.cachedTitle') }}</strong><span>{{ t('plans.cachedDescription') }}</span></div>
           <button type="button" class="plans-secondary plans-retry" :disabled="isLoading" @click="retryPlanService">{{ isLoading ? t('plans.loading') : t('plans.retryService') }}</button>
         </div>
-        <label v-if="plans.length > 1 || archives.length > 1" class="plans-search">
-          <span>{{ t('plans.searchLabel') }}</span>
-          <input v-model="planSearch" type="search" :placeholder="t('plans.searchPlaceholder')" />
-        </label>
+        <div class="plans-list-tools">
+          <label v-if="plans.length > 1 || archives.length > 1" class="plans-search">
+            <span>{{ t('plans.searchLabel') }}</span>
+            <input v-model="planSearch" type="search" :placeholder="t('plans.searchPlaceholder')" />
+          </label>
+          <div v-if="plans.length > 0" class="plans-filter" role="group" :aria-label="t('plans.statusFilterLabel')">
+            <span>{{ t('plans.statusFilterLabel') }}</span>
+            <button v-for="filter in (['all', 'active', 'completed'] as const)" :key="filter" type="button" class="plans-filter-button" :class="{ selected: planFilter === filter }" :aria-pressed="planFilter === filter" :disabled="isLoading" @click="planFilter = filter">
+              {{ t(`plans.statusFilter.${filter}`) }}
+            </button>
+          </div>
+        </div>
         <div class="plan-index-layout">
           <div class="plan-index-main">
             <section v-if="isLoading" class="plans-empty theme-card">{{ t('plans.loading') }}</section>
@@ -1219,6 +1235,13 @@ onUnmounted(() => {
 .plans-search { display: grid; gap: 6px; margin-bottom: 14px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 650; }
 .plans-search input { width: 100%; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; color: var(--color-text-primary); background: var(--color-bg-secondary); font: inherit; font-weight: 400; outline: 0; }
 .plans-search input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
+.plans-list-tools { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+.plans-list-tools .plans-search { flex: 1 1 260px; margin-bottom: 0; }
+.plans-filter { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--color-text-tertiary); font-size: 11px; font-weight: 650; }
+.plans-filter-button { border: 1px solid var(--color-border); border-radius: 999px; padding: 7px 10px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; }
+.plans-filter-button:hover, .plans-filter-button:focus-visible { border-color: var(--color-border-hover); color: var(--color-text-primary); outline: 0; }
+.plans-filter-button.selected { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-muted); }
+.plans-filter-button:disabled { cursor: wait; opacity: .6; }
 .plans-error, .plans-success { margin-bottom: 14px; font-size: 13px; }
 .plans-error { color: var(--color-error); }
 .plans-success { color: var(--color-success, #16a34a); }
@@ -1355,5 +1378,5 @@ onUnmounted(() => {
   .event-task-row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 7px; }
   .event-task-actions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }
 }
-@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 36px minmax(0, 1fr) auto; } .event-task-row > div:not(.event-task-actions) { grid-column: 2 / -1; grid-row: 1; } .event-task-row > small { grid-column: 2 / -1; grid-row: 2; } .event-task-actions { grid-column: 2 / -1; grid-row: 3; justify-content: flex-start; flex-wrap: wrap; } .event-task-actions button, .group-action { min-width: 40px; min-height: 40px; padding: 8px 10px; } .task-complete { width: 32px; height: 32px; } .create-task-row { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .plans-list-tools { align-items: stretch; flex-direction: column; gap: 10px; } .plans-filter { align-items: flex-start; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 36px minmax(0, 1fr) auto; } .event-task-row > div:not(.event-task-actions) { grid-column: 2 / -1; grid-row: 1; } .event-task-row > small { grid-column: 2 / -1; grid-row: 2; } .event-task-actions { grid-column: 2 / -1; grid-row: 3; justify-content: flex-start; flex-wrap: wrap; } .event-task-actions button, .group-action { min-width: 40px; min-height: 40px; padding: 8px 10px; } .task-complete { width: 32px; height: 32px; } .create-task-row { grid-template-columns: 1fr; } }
 </style>
