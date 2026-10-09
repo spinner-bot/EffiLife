@@ -15,6 +15,8 @@ def test_home_can_capture_an_independent_todo_without_merging_plan_data():
 
 
 def test_home_quick_todo_capture_has_bilingual_copy_and_narrow_layout():
-    for key in ("home.quickTodoPlaceholder", "home.quickAddTodo", "home.quickTodoAdded"):
+    for key in ("home.quickTodoLabel", "home.quickTodoPlaceholder", "home.quickAddTodo", "home.quickTodoAdded"):
         assert I18N.count(f"'{key}':") == 2
-    assert ".today-todo-capture { flex-direction: column; }" in HOME
+    assert '<label for="home-quick-todo-input">{{ t(\'home.quickTodoLabel\') }}</label>' in HOME
+    assert 'id="home-quick-todo-input"' in HOME
+    assert ".today-todo-capture { flex-direction: column; align-items: stretch; }" in HOME

@@ -666,7 +666,8 @@ onUnmounted(() => {
           </button>
         </div>
         <form class="today-todo-capture" @submit.prevent="addQuickTodo">
-          <input v-model="quickTodoTitle" type="text" :placeholder="t('home.quickTodoPlaceholder')" :disabled="quickTodoSaving" :aria-label="t('home.quickTodoPlaceholder')" />
+          <label for="home-quick-todo-input">{{ t('home.quickTodoLabel') }}</label>
+          <input id="home-quick-todo-input" v-model="quickTodoTitle" type="text" :placeholder="t('home.quickTodoPlaceholder')" :disabled="quickTodoSaving" />
           <button type="submit" :disabled="quickTodoSaving || !quickTodoTitle.trim()"><Plus :size="14" /> {{ t('home.quickAddTodo') }}</button>
         </form>
         <div v-if="todoSummaryUnavailable" class="today-todos-unavailable" role="status" aria-live="polite">
@@ -1237,7 +1238,8 @@ onUnmounted(() => {
 .today-todos-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
 .today-todos-eyebrow { margin: 0 0 4px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .today-todos-link { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; color: var(--color-primary); font-size: 12px; }
-.today-todo-capture { display: flex; gap: 8px; margin-top: var(--spacing-md); }
+.today-todo-capture { display: flex; align-items: end; gap: 8px; margin-top: var(--spacing-md); }
+.today-todo-capture label { flex: 0 0 auto; color: var(--color-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
 .today-todo-capture input { min-width: 0; flex: 1; border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg); font: inherit; font-size: 12px; }
 .today-todo-capture input:focus-visible { border-color: var(--color-primary); outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent); outline-offset: 1px; }
 .today-todo-capture button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; border: 1px solid var(--color-primary); border-radius: 9px; padding: 8px 11px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; }
@@ -1266,7 +1268,8 @@ onUnmounted(() => {
   .overview-grid { grid-template-columns: 1fr; }
   .event-overview-card { min-height: 180px; }
   .today-todos-header { align-items: center; }
-  .today-todo-capture { flex-direction: column; }
+  .today-todo-capture { flex-direction: column; align-items: stretch; }
+  .today-todo-capture label { white-space: normal; }
   .today-todo-capture button { width: 100%; }
   .today-todo-deadline { display: none; }
   .today-todos-link { min-height: 40px; }
