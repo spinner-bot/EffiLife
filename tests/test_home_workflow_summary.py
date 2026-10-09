@@ -125,6 +125,16 @@ def test_home_exposes_one_accessible_refresh_for_all_workspace_summaries():
     assert I18N.count("'home.refreshWorkspace':") == 2
 
 
+def test_home_discloses_the_last_completed_summary_sync_time_without_persisting_it():
+    assert "const lastWorkspaceRefreshAt = ref<number | null>(null)" in HOME
+    assert "lastWorkspaceRefreshAt.value = Date.now()" in HOME
+    assert "function formatWorkspaceRefreshTime(timestamp: number | null): string" in HOME
+    assert "toLocaleTimeString(locale.value" in HOME
+    assert "t('home.lastRefreshed', { time: formatWorkspaceRefreshTime(lastWorkspaceRefreshAt) })" in HOME
+    assert 'class="workspace-refresh-status" role="status"' in HOME
+    assert I18N.count("'home.lastRefreshed':") == 2
+
+
 def test_home_discards_stale_todo_and_plan_summary_responses():
     assert "let todoSummaryRequestId = 0" in HOME
     assert "let eventPlanSummaryRequestId = 0" in HOME

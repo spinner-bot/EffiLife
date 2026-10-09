@@ -36,6 +36,7 @@ const todoSummaryUnavailable = ref(false)
 const timeSummaryUnavailable = ref(false)
 const workspaceSummaryReady = ref(false)
 const workspaceRefreshing = ref(false)
+const lastWorkspaceRefreshAt = ref<number | null>(null)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -212,7 +213,17 @@ async function refreshWorkspaceSummaries(): Promise<void> {
     summaryRefreshRunning = false
     workspaceRefreshing.value = false
     workspaceSummaryReady.value = true
+    lastWorkspaceRefreshAt.value = Date.now()
   }
+}
+
+function formatWorkspaceRefreshTime(timestamp: number | null): string {
+  if (!timestamp) return ''
+  return new Date(timestamp).toLocaleTimeString(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 }
 
 function scheduleWorkspaceSummaryRefresh() {
@@ -435,6 +446,9 @@ onUnmounted(() => {
       >
         <RefreshCw :size="16" :class="{ spinning: workspaceRefreshing }" />
       </button>
+      <span v-if="lastWorkspaceRefreshAt" class="workspace-refresh-status" role="status" aria-live="polite">
+        {{ t('home.lastRefreshed', { time: formatWorkspaceRefreshTime(lastWorkspaceRefreshAt) }) }}
+      </span>
       <!-- 收件箱入口 -->
       <div class="inbox-wrapper">
         <button ref="inboxButton" class="inbox-btn" type="button" :class="{ 'has-unread': unreadCount > 0 }" :aria-label="t('home.openInbox')" aria-haspopup="dialog" :aria-expanded="showInboxPanel" aria-controls="home-inbox-panel" @click="AudioManager.playSound('click'); toggleInboxPanel()">
@@ -727,8 +741,10 @@ onUnmounted(() => {
 .workspace-refresh-btn:hover:not(:disabled), .workspace-refresh-btn:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
 .workspace-refresh-btn:disabled { cursor: wait; opacity: .65; }
 .workspace-refresh-btn .spinning { animation: workspace-refresh-spin .8s linear infinite; }
+.workspace-refresh-status { margin-right: 8px; color: var(--color-text-tertiary); font-size: 11px; white-space: nowrap; }
 @keyframes workspace-refresh-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .workspace-refresh-btn .spinning { animation: none; } }
+@media (max-width: 680px) { .workspace-refresh-status { display: none; } }
 
 .workflow-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 auto 20px; width: min(860px, 100%); }
 .workflow-summary-item { display: flex; align-items: center; gap: 10px; min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg, 14px); padding: 12px 13px; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; text-align: left; transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast); }
