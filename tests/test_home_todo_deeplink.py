@@ -17,6 +17,14 @@ def test_task_center_consumes_home_todo_deeplink():
     assert "document.getElementById(`todo-${targetId}`)?.scrollIntoView" in source
 
 
+def test_task_center_explains_stale_todo_deeplink_without_blocking_the_center():
+    source = TASKS.read_text(encoding="utf-8")
+    assert "const missingTodoTargetId = ref<string | null>(null)" in source
+    assert "missingTodoTargetId.value = targetId" in source
+    assert 'class="task-deeplink-note"' in source
+    assert "tasks.todoTargetMissing" in source
+
+
 def test_home_event_plan_summary_has_aggregate_progress_visual():
     source = HOME.read_text(encoding="utf-8")
     assert "const eventPlanProgress = computed" in source

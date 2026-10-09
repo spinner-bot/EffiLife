@@ -65,6 +65,7 @@ const selectedTodoIds = ref<Set<string>>(new Set())
 const bulkWorking = ref(false)
 const expandedTodoId = ref<string | null>(null)
 const searchTargetTodoId = ref<string | null>(null)
+const missingTodoTargetId = ref<string | null>(null)
 const subtaskTitle = ref('')
 const subtaskSaving = ref(false)
 const trackedMinutes = ref(25)
@@ -834,8 +835,18 @@ function deadlineStateLabel(deadline?: string): string {
 
 async function revealSearchTarget(): Promise<void> {
   const targetId = String(route.query.todo || '')
+  if (!targetId) {
+    searchTargetTodoId.value = null
+    missingTodoTargetId.value = null
+    return
+  }
   const target = todos.value.find((todo) => todo.id === targetId)
-  if (!target) return
+  if (!target) {
+    searchTargetTodoId.value = null
+    missingTodoTargetId.value = targetId
+    return
+  }
+  missingTodoTargetId.value = null
   // Global search also indexes completed and archived tasks. Switch the local
   // view before scrolling so a valid deep link never appears to do nothing.
   if (target.status === 'completed') filter.value = 'completed'
@@ -949,6 +960,9 @@ watch(() => route.query.todo, () => {
           <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
         <span v-if="errorMessage" class="task-error" role="alert">{{ errorMessage }}</span>
+        <span v-if="missingTodoTargetId" class="task-deeplink-note" role="status" aria-live="polite">
+          {{ t('tasks.todoTargetMissing', { id: missingTodoTargetId }) }}
+        </span>
       </section>
 
       <section v-if="categories.length" class="task-category-nav theme-card">
@@ -1218,6 +1232,7 @@ watch(() => route.query.todo, () => {
 .task-bulk-actions button.task-bulk-clear { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
 .task-error { flex-basis: 100%; color: var(--color-error); font-size: 13px; }
+.task-deeplink-note { flex-basis: 100%; border-left: 3px solid var(--color-primary); padding: 6px 9px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
 .task-category-nav-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
