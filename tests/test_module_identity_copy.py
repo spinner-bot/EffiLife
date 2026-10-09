@@ -23,3 +23,10 @@ def test_module_identity_copy_is_bilingual():
     ):
         assert f"'{key}':" in I18N
         assert I18N.count(f"'{key}':") == 2
+
+
+def test_plan_copy_uses_complete_plan_semantics_instead_of_event_plan_label():
+    assert "'plans.moduleLabel': '整份计划 · PH'" in I18N
+    assert "'plans.moduleLabel': 'Plan documents · PH'" in I18N
+    assert "'plans.moduleLabel': '事件计划 · PH'" not in I18N
+    assert "'plans.moduleLabel': 'Event plans · PH'" not in I18N

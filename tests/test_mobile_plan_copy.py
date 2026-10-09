@@ -10,8 +10,8 @@ def test_mobile_home_empty_state_describes_snapshot_availability_not_missing_ser
     assert source.count("home.eventPlansUnavailableMobile") == 2
     assert "移动端事件计划服务尚未接入" not in source
     assert "Mobile event-plan service is not available yet" not in source
-    assert "移动端暂无可用的本地事件计划快照" in source
-    assert "No local event-plan snapshot is available on this device" in source
+    assert "移动端暂无可用的本地计划快照" in source
+    assert "No local plan snapshot is available on this device" in source
 
 
 def test_mobile_plan_capability_copy_does_not_claim_read_only_or_unavailable_editing():
