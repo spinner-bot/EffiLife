@@ -108,7 +108,12 @@ def test_home_refreshes_unified_summaries_after_workspace_changes():
 
 def test_home_dashboard_previews_multiple_active_plans_without_merging_todos():
     source = HOME.read_text(encoding="utf-8")
-    assert "const eventPlanPreview = computed(() => eventPlans.value.slice(0, 3))" in source
+    assert "function isPlanComplete(plan: PlanSummary): boolean" in source
+    assert "const activeEventPlans = computed(() => eventPlans.value.filter((plan) => !isPlanComplete(plan)))" in source
+    assert "const eventPlanPreview = computed(() => activeEventPlans.value.slice(0, 3))" in source
+    assert "const eventPlanRemainingCount = computed(() => Math.max(0, activeEventPlans.value.length - eventPlanPreview.value.length))" in source
+    assert "home.allPlansComplete" in source
+    assert "home.completedPlanCount" in source
     assert "plan.completed_tasks" in source
     assert "plan.progress_percentage" in source
     assert "home.moreActivePlans" in source

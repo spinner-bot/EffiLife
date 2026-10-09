@@ -241,8 +241,14 @@ const eventPlanCompletedCount = computed(() => eventPlans.value.reduce((sum, pla
 const eventPlanProgress = computed(() => eventPlanTaskCount.value > 0
   ? Math.round((eventPlanCompletedCount.value / eventPlanTaskCount.value) * 100)
   : 0)
-const eventPlanPreview = computed(() => eventPlans.value.slice(0, 3))
-const eventPlanRemainingCount = computed(() => Math.max(0, eventPlans.value.length - eventPlanPreview.value.length))
+function isPlanComplete(plan: PlanSummary): boolean {
+  const total = Number(plan.total_tasks || 0)
+  return total > 0 && Number(plan.completed_tasks || 0) >= total
+}
+const activeEventPlans = computed(() => eventPlans.value.filter((plan) => !isPlanComplete(plan)))
+const completedEventPlanCount = computed(() => eventPlans.value.filter(isPlanComplete).length)
+const eventPlanPreview = computed(() => activeEventPlans.value.slice(0, 3))
+const eventPlanRemainingCount = computed(() => Math.max(0, activeEventPlans.value.length - eventPlanPreview.value.length))
 const isEventPlanSnapshot = computed(() => planDataSource.value === 'cache' || planDataSource.value === 'mobile')
 const eventPlanSnapshotLabel = computed(() => planDataSource.value === 'mobile'
   ? t('plans.mobileLocalTitle')
@@ -628,9 +634,9 @@ onUnmounted(() => {
             <span class="home-module-heading"><span class="home-module-code">PH</span><span><span class="home-module-label">{{ t('home.planModuleSummary') }}</span><strong class="stats-title">{{ t('home.eventPlans') }}</strong></span></span><ChevronRight :size="18" />
           </button>
           <template v-if="eventPlanState === 'ready'">
-            <strong class="event-overview-count">{{ eventPlans.length }}</strong>
+            <strong class="event-overview-count">{{ activeEventPlans.length }}</strong>
             <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
-            <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.openPlanCenter') }}</span></div>
+            <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.completedPlanCount', { count: completedEventPlanCount }) }}</span></div>
             <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
             <div v-if="eventPlanPreview.length" class="event-plan-preview" :aria-label="t('home.eventPlans')">
               <button v-for="plan in eventPlanPreview" :key="plan.id" type="button" class="event-plan-preview-row" @click.stop="openEventPlan(plan)">
@@ -642,6 +648,7 @@ onUnmounted(() => {
               </button>
               <span v-if="eventPlanRemainingCount" class="event-plan-preview-more">{{ t('home.moreActivePlans', { count: eventPlanRemainingCount }) }}</span>
             </div>
+            <span v-else-if="eventPlans.length" class="event-overview-muted">{{ t('home.allPlansComplete') }}</span>
             <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
