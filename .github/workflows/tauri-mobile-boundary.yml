@@ -55,5 +55,4 @@ jobs:
         run: python -m pytest -q tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py
 
       - name: Build shared mobile frontend
-        working-directory: time-helper/desk
-        run: npm run build
+        run: python scripts/build_frontend.py

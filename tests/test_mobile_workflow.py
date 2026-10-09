@@ -11,8 +11,7 @@ def test_mobile_boundary_workflow_runs_configuration_and_frontend_contracts():
     assert "effilife-mobile-boundary-${{ github.ref }}" in source
     assert "python scripts/check_mobile_release_config.py" in source
     assert "tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py" in source
-    assert "working-directory: time-helper/desk" in source
-    assert "run: npm run build" in source
+    assert "python scripts/build_frontend.py" in source
 
 
 def test_mobile_boundary_workflow_does_not_claim_to_publish_installers():
@@ -32,7 +31,7 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert workflow.count("python scripts/check_mobile_release_config.py") == 2
     assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 2
     assert workflow.count("name: Build shared mobile frontend") == 2
-    assert workflow.count("run: npm run build") == 2
+    assert workflow.count("python scripts/build_frontend.py") == 2
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "python scripts/check_build_environment.py --target android" in workflow
     assert "npm run mobile:android:build" in workflow
