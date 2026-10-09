@@ -62,8 +62,7 @@ jobs:
           python scripts/check_mobile_release_config.py
 
       - name: Build desktop frontend
-        working-directory: time-helper/desk
-        run: npm run build
+        run: python scripts/build_frontend.py
 
       - name: Install compatibility UI dependencies
         working-directory: to-dos/ui
