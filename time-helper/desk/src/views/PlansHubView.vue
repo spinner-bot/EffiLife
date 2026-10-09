@@ -788,6 +788,8 @@ async function recordLinkedTodoTime(taskId: string): Promise<void> {
 
 async function createLinkedTodos(): Promise<void> {
   if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
+  if (!unlinkedActiveTaskCount.value) return
+  if (!(await requestConfirm(t('plans.linkAllTodosConfirm', { count: unlinkedActiveTaskCount.value })))) return
   isLoading.value = true
   errorMessage.value = ''
   try {
