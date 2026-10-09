@@ -158,6 +158,8 @@ export interface ArchivePreview {
   recordCount: number
   categoryCount: number
   repairedLinkCount: number
+  repairedTodoRecordLinks: number
+  repairedTodoPlanTaskLinks: number
   planStatus: 'available' | 'cache' | 'snapshot' | 'stale' | 'unavailable'
   integrity: 'verified' | 'legacy'
 }
@@ -200,6 +202,8 @@ function summarizeArchive(data: ArchiveData): ArchivePreview {
     todoCount: data.todos.length,
     recordCount: Object.values(data.records || {}).reduce((total, records) => total + records.length, 0),
     categoryCount: data.categories.length,
+    repairedTodoRecordLinks: data.importRepairs?.todoRecordLinks || 0,
+    repairedTodoPlanTaskLinks: data.importRepairs?.todoPlanTaskLinks || 0,
     repairedLinkCount: (data.importRepairs?.todoRecordLinks || 0) + (data.importRepairs?.todoPlanTaskLinks || 0),
     planStatus,
     integrity: data.archiveIntegrity || 'legacy',

@@ -92,6 +92,20 @@ def test_archive_preview_discloses_active_and_archived_plan_counts():
     assert i18n.count("{archivedPlans}") == 2
 
 
+def test_archive_preview_explains_export_time_and_repair_domains():
+    service = SERVICE.read_text(encoding="utf-8")
+    settings = SETTINGS.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "repairedTodoRecordLinks: number" in service
+    assert "repairedTodoPlanTaskLinks: number" in service
+    assert "preview.repairedTodoRecordLinks" in settings
+    assert "preview.repairedTodoPlanTaskLinks" in settings
+    assert "settings.archive.importExportDate" in settings
+    assert "settings.archive.importRepairs" in settings
+    assert i18n.count("'settings.archive.importExportDate':") == 2
+    assert i18n.count("'settings.archive.importRepairs':") == 2
+
+
 def test_archive_import_rejects_partial_canonical_bundles_before_writing():
     source = SERVICE.read_text(encoding="utf-8")
     i18n = I18N.read_text(encoding="utf-8")
