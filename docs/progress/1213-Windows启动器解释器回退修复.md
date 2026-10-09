@@ -24,8 +24,8 @@ Windows 测试启动入口会优先检测 `py.exe`。此前只要系统存在 `p
 
 ## 提交与推送
 
-- `待提交`：Windows 启动脚本和回归测试。
-- 本报告随实现提交推送至 `origin/main`。
+- `9dd98ed fix(launcher): fall back when py lacks Python 3`：Windows 启动脚本和回归测试，已推送。
+- `fac1951 docs(launcher): record interpreter fallback fix`：本报告，已推送。
 
 ## 边界
 
