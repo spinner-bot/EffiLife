@@ -149,6 +149,31 @@ function refreshSystemTheme() {
   if (appStore.config.theme.type === 'system') applyTheme()
 }
 
+function stopSystemThemeMediaQuery() {
+  if (!systemThemeMediaQuery) return
+  if (typeof systemThemeMediaQuery.removeEventListener === 'function') {
+    systemThemeMediaQuery.removeEventListener('change', refreshSystemTheme)
+  } else {
+    systemThemeMediaQuery.removeListener(refreshSystemTheme)
+  }
+  systemThemeMediaQuery = null
+}
+
+function syncSystemThemeMediaQuery() {
+  const shouldListen = appStore.config.theme.type === 'system'
+  if (!shouldListen) {
+    stopSystemThemeMediaQuery()
+    return
+  }
+  if (systemThemeMediaQuery || typeof window.matchMedia !== 'function') return
+  systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  if (typeof systemThemeMediaQuery.addEventListener === 'function') {
+    systemThemeMediaQuery.addEventListener('change', refreshSystemTheme)
+  } else {
+    systemThemeMediaQuery.addListener(refreshSystemTheme)
+  }
+}
+
 // 检查进度事件
 function checkProgressEvents() {
   const stat = appStore.todayStat
@@ -199,14 +224,6 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', refreshWhenVisible)
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
-  if (typeof window.matchMedia === 'function') {
-    systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    if (typeof systemThemeMediaQuery.addEventListener === 'function') {
-      systemThemeMediaQuery.addEventListener('change', refreshSystemTheme)
-    } else {
-      systemThemeMediaQuery.addListener(refreshSystemTheme)
-    }
-  }
   stopWorkspaceListener = onWorkspaceChanged((source, remote) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive', 'network'].includes(source)) return
     if (source === 'settings') {
@@ -256,6 +273,7 @@ onMounted(async () => {
     return
   }
   applyTheme()
+  syncSystemThemeMediaQuery()
   runtimeReady.value = true
   // The shell is visible now; wait only before running maintenance that uses
   // the optional services, so a delayed service cannot hide the workspace.
@@ -320,19 +338,16 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', refreshWhenVisible)
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
-  if (systemThemeMediaQuery) {
-    if (typeof systemThemeMediaQuery.removeEventListener === 'function') {
-      systemThemeMediaQuery.removeEventListener('change', refreshSystemTheme)
-    } else {
-      systemThemeMediaQuery.removeListener(refreshSystemTheme)
-    }
-    systemThemeMediaQuery = null
-  }
+  stopSystemThemeMediaQuery()
   stopWorkspaceListener?.()
   stopWorkspaceListener = null
 })
 
 watch(() => appStore.config, applyTheme, { deep: true })
+watch(() => appStore.config.theme.type, () => {
+  syncSystemThemeMediaQuery()
+  applyTheme()
+})
 
 watch([() => route.path, locale], () => {
   document.title = t('app.documentTitle', { page: pageTitle.value })
