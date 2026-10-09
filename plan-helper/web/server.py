@@ -325,6 +325,10 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
 
 def run_server(host="127.0.0.1", port=8765, data_dir=None):
     """Start the web server, optionally rooted at an application data directory."""
+    # Keep direct companion launches consistent with the unified launcher. The
+    # launcher forwards this value as --data-dir, while packaged sidecars and
+    # developer scripts may provide the same root through the environment.
+    data_dir = data_dir or os.environ.get("EFFILIFE_DATA_DIR", "").strip() or None
     if data_dir:
         runtime_dir = Path(data_dir).expanduser().resolve()
         runtime_dir.mkdir(parents=True, exist_ok=True)
