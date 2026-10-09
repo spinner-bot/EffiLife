@@ -89,7 +89,24 @@ def test_archive_preview_discloses_active_and_archived_plan_counts():
     assert "archivedPlanCount: number" in service
     assert "data.planHelper.archives" in service
     assert "archivedPlans: preview.archivedPlanCount" in settings
-    assert i18n.count("{archivedPlans}") == 2
+    assert i18n.count("{archivedPlans}") == 4
+
+
+def test_archive_preview_discloses_local_replacement_scope():
+    service = SERVICE.read_text(encoding="utf-8")
+    settings = SETTINGS.read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    for field in (
+        "localPlanCount",
+        "localArchivedPlanCount",
+        "localTodoCount",
+        "localRecordCount",
+        "localCategoryCount",
+    ):
+        assert f"{field}: number" in service
+        assert f"preview.{field}" in settings
+    assert "settings.archive.importReplacement" in settings
+    assert i18n.count("'settings.archive.importReplacement'") == 2
 
 
 def test_archive_preview_explains_export_time_and_repair_domains():

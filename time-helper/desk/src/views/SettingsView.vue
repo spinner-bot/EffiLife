@@ -622,6 +622,13 @@ function formatArchivePreview(preview: ArchivePreview): string {
     categories: preview.categoryCount,
     repairs: preview.repairedLinkCount,
   })
+  const replacement = t('settings.archive.importReplacement', {
+    plans: preview.localPlanCount,
+    archivedPlans: preview.localArchivedPlanCount,
+    todos: preview.localTodoCount,
+    records: preview.localRecordCount,
+    categories: preview.localCategoryCount,
+  })
   const integrity = preview.integrity === 'verified'
     ? t('settings.archive.integrityVerified')
     : t('settings.archive.integrityLegacy')
@@ -641,7 +648,7 @@ function formatArchivePreview(preview: ArchivePreview): string {
     timeRecords: preview.repairedTodoRecordLinks,
     planTasks: preview.repairedTodoPlanTaskLinks,
   })
-  return `${summary}\n${t('settings.archive.importExportDate', { date: formattedExportDate })}\n${repairs}\n${planStatus}\n${integrity}`
+  return `${summary}\n${replacement}\n${t('settings.archive.importExportDate', { date: formattedExportDate })}\n${repairs}\n${planStatus}\n${integrity}`
 }
 
 function openLegacyTodoImport() {

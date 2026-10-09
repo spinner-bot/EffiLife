@@ -168,12 +168,21 @@ export interface ArchivePreview {
   todoCount: number
   recordCount: number
   categoryCount: number
+  localPlanCount: number
+  localArchivedPlanCount: number
+  localTodoCount: number
+  localRecordCount: number
+  localCategoryCount: number
   repairedLinkCount: number
   repairedTodoRecordLinks: number
   repairedTodoPlanTaskLinks: number
   planStatus: 'available' | 'cache' | 'snapshot' | 'stale' | 'unavailable'
   integrity: 'verified' | 'legacy'
 }
+
+type ArchiveContentPreview = Omit<ArchivePreview,
+  'localPlanCount' | 'localArchivedPlanCount' | 'localTodoCount' | 'localRecordCount' | 'localCategoryCount'
+>
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -198,7 +207,7 @@ function normalizeImportedPlanHelper(raw: unknown): PlanHelperData {
   }
 }
 
-function summarizeArchive(data: ArchiveData): ArchivePreview {
+function summarizeArchive(data: ArchiveData): ArchiveContentPreview {
   const planStatus = !data.planHelper?.available
     ? 'unavailable'
     : data.planHelper.source === 'snapshot'
@@ -762,7 +771,16 @@ export async function previewArchive(file: Blob): Promise<ArchivePreview> {
   assertArchiveBlobSize(file)
   const zip = await JSZip.loadAsync(file)
   assertArchiveEntryCount(zip)
-  return summarizeArchive(await parseArchiveData(zip))
+  const preview = summarizeArchive(await parseArchiveData(zip))
+  const localStats = await getDataStats()
+  return {
+    ...preview,
+    localPlanCount: localStats.eventPlanCount,
+    localArchivedPlanCount: localStats.archivedEventPlanCount,
+    localTodoCount: localStats.todoCount,
+    localRecordCount: localStats.totalRecords,
+    localCategoryCount: localStats.todoCategoryCount,
+  }
 }
 
 // 处理存档数据（内部函数）
