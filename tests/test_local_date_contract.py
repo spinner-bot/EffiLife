@@ -44,6 +44,14 @@ def test_archive_filename_uses_local_business_date():
     assert "new Date().toISOString().split('T')[0]" not in archive
 
 
+def test_archive_export_remembers_directory_and_rebuilds_full_default_filename():
+    archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
+    assert "function archiveDefaultPath(fileName: string): string" in archive
+    assert "defaultPath: archiveDefaultPath(fileName)" in archive
+    assert "setDownloadPath(dir)" in archive
+    assert "fileName.replace(/_[\\d-]+\\.efl$/, '_')" not in archive
+
+
 def test_schedule_and_emergency_backup_use_local_business_dates():
     assert "const date = parseLocalDate(targetDay)" in DATA_SERVICE
     assert "const targetDate = parseLocalDate(targetDay)" in DATA_SERVICE

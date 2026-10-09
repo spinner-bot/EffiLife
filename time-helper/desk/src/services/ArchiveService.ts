@@ -84,6 +84,13 @@ function getDownloadPath(): string | null {
   return localStorage.getItem('efflife_download_path')
 }
 
+function archiveDefaultPath(fileName: string): string {
+  const directory = getDownloadPath()
+  if (!directory) return fileName
+  const separator = directory.includes('\\') ? '\\' : '/'
+  return `${directory.replace(/[\\/]+$/, '')}${separator}${fileName}`
+}
+
 // 设置下载路径
 export function setDownloadPath(path: string): void {
   localStorage.setItem('efflife_download_path', path)
@@ -462,7 +469,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
 
       const filePath = await save({
         title: translate('settings.archive.exportDialogTitle'),
-        defaultPath: getDownloadPath() || fileName,
+        defaultPath: archiveDefaultPath(fileName),
         filters: [{ name: translate('settings.archive.fileType'), extensions: ['efl'] }]
       })
 
@@ -477,7 +484,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
       // 记住用户选择的目录
       const dir = filePath.substring(0, filePath.lastIndexOf('\\')) || filePath.substring(0, filePath.lastIndexOf('/'))
       if (dir) {
-        setDownloadPath(dir + '/' + fileName.replace(/_[\d-]+\.efl$/, '_'))
+        setDownloadPath(dir)
       }
 
       return {
