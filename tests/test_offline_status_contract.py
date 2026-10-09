@@ -23,4 +23,4 @@ def test_shell_exposes_local_first_offline_status_in_both_locales():
 
 def test_plan_center_accepts_network_recovery_events():
     plans = (ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue").read_text(encoding="utf-8")
-    assert "['plans', 'archive', 'network']" in plans
+    assert "['plans', 'archive', 'network', 'todos', 'records']" in plans

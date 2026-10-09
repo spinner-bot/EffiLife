@@ -8,6 +8,9 @@ PLANS = ROOT / "time-helper" / "desk" / "src" / "views" / "PlansHubView.vue"
 def test_plan_center_refreshes_external_plan_state_without_racing_local_saves():
     source = PLANS.read_text(encoding="utf-8")
     assert "async function refreshFromWorkspace(source?: string): Promise<void>" in source
+    assert "if (!source || !['plans', 'archive', 'network', 'todos', 'records'].includes(source)) return" in source
+    assert "if (selectedPlan.value && (source === 'todos' || source === 'records'))" in source
+    assert "await refreshLinkedTodoTaskIds()" in source
     assert "if (selectedPlan.value && (source === 'plans' || source === 'archive' || source === 'network'))" in source
     assert "selectedPlan.value = await getPlanFull(selectedPlan.value.id)" in source
     assert "if (view.value === 'events') await loadPlans()" in source
@@ -15,6 +18,13 @@ def test_plan_center_refreshes_external_plan_state_without_racing_local_saves():
     assert "async function drainWorkspaceRefresh(): Promise<void>" in source
     assert "pendingWorkspaceSources.add(source)" in source
     assert "watch(isLoading, (loading)" in source
+
+
+def test_plan_center_refreshes_read_only_time_projection_after_th_or_td_changes():
+    source = PLANS.read_text(encoding="utf-8")
+    assert "['plans', 'archive', 'network', 'todos', 'records']" in source
+    assert "pendingWorkspaceSources.add(source)" in source
+    assert "const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())" in source
 
 
 def test_plan_center_distinguishes_unavailable_archives_from_an_empty_archive_list():
