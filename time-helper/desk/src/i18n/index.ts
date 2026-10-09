@@ -2805,7 +2805,7 @@ export function registerLocale(
   navigationCatalog: Record<string, string> = {},
 ): boolean {
   const code = definition.code.trim()
-  if (!code || LOCALE_DEFINITIONS.some(({ code: existing }) => existing === code)) return false
+  if (!code || LOCALE_DEFINITIONS.some(({ code: existing }) => existing.toLowerCase() === code.toLowerCase())) return false
   const fallback = resolveRegisteredLocale(definition.fallback) || 'zh-CN'
   LOCALE_DEFINITIONS.push({ ...definition, code, fallback })
   SUPPORTED_LOCALES.push(code)
@@ -2815,7 +2815,7 @@ export function registerLocale(
 }
 
 export function setLocale(next: string): void {
-  const resolved = LOCALE_DEFINITIONS.find(({ code }) => code === next)?.code || 'zh-CN'
+  const resolved = resolveRegisteredLocale(next) || 'zh-CN'
   const changed = currentLocale.value !== resolved
   currentLocale.value = resolved
   syncDocumentLocale(currentLocale.value)

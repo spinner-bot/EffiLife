@@ -14,7 +14,7 @@ def test_locale_registry_accepts_optional_bcp47_like_codes():
 
 
 def test_locale_registration_rejects_empty_and_duplicate_codes_without_overwriting():
-    assert "if (!code || LOCALE_DEFINITIONS.some(({ code: existing }) => existing === code)) return false" in SOURCE
+    assert "if (!code || LOCALE_DEFINITIONS.some(({ code: existing }) => existing.toLowerCase() === code.toLowerCase())) return false" in SOURCE
     assert "navigationFallbacks[code] = { ...navigationCatalog }" in SOURCE
 
 
@@ -30,3 +30,7 @@ def test_dynamic_locale_translation_keeps_registered_fallback_chain():
     assert "navigationFallbacks[currentLocale.value]?.[key]" in SOURCE
     assert "const fallbackCatalog = catalogs[fallbackLocale] || {}" in SOURCE
     assert "const fallbackNavigationCatalog = navigationFallbacks[fallbackLocale] || {}" in SOURCE
+
+
+def test_runtime_locale_selection_reuses_registered_exact_and_prefix_resolution():
+    assert "const resolved = resolveRegisteredLocale(next) || 'zh-CN'" in SOURCE
