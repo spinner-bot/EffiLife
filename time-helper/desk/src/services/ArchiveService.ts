@@ -81,7 +81,11 @@ function canonicalJson(value: unknown): string {
 // 检测是否在移动端（Android/iOS）
 // 获取下载路径设置
 function getDownloadPath(): string | null {
-  return localStorage.getItem('efflife_download_path')
+  const stored = localStorage.getItem('efflife_download_path')
+  if (!stored) return null
+  // Versions before 1215 stored a directory plus the archive filename prefix.
+  // Strip that legacy suffix while preserving the platform separator/root.
+  return stored.replace(/([\\/])efflife_archive_$/, '$1')
 }
 
 function archiveDefaultPath(fileName: string): string {
@@ -93,7 +97,7 @@ function archiveDefaultPath(fileName: string): string {
 
 // 设置下载路径
 export function setDownloadPath(path: string): void {
-  localStorage.setItem('efflife_download_path', path)
+  localStorage.setItem('efflife_download_path', path.replace(/([\\/])efflife_archive_$/, '$1'))
 }
 
 // 所有需要保存的 localStorage 键

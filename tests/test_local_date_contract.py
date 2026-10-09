@@ -52,6 +52,12 @@ def test_archive_export_remembers_directory_and_rebuilds_full_default_filename()
     assert "fileName.replace(/_[\\d-]+\\.efl$/, '_')" not in archive
 
 
+def test_archive_export_normalizes_the_legacy_filename_prefix_path():
+    archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
+    assert r"return stored.replace(/([\\/])efflife_archive_$/" in archive
+    assert r"path.replace(/([\\/])efflife_archive_$/" in archive
+
+
 def test_schedule_and_emergency_backup_use_local_business_dates():
     assert "const date = parseLocalDate(targetDay)" in DATA_SERVICE
     assert "const targetDate = parseLocalDate(targetDay)" in DATA_SERVICE
