@@ -430,6 +430,49 @@ def test_frontend_probe_requires_effilife_identity(monkeypatch):
     assert launcher.service_is_ready(frontend_url) is True
 
 
+def test_workspace_probe_requires_effilife_identity_on_fallback_port(monkeypatch):
+    class Response:
+        status = 200
+
+        def __init__(self, body):
+            self.body = body
+
+        def read(self, _limit):
+            return self.body.encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    responses = iter([
+        Response("<html><title>Other service</title></html>"),
+        Response('<meta name="application-name" content="EffiLife">'),
+    ])
+    monkeypatch.setattr(launcher, "urlopen", lambda _url, timeout: next(responses))
+    fallback_url = "http://127.0.0.1:1422"
+    assert launcher.service_is_ready(fallback_url, "workspace") is False
+    assert launcher.service_is_ready(fallback_url, "workspace") is True
+
+
+def test_compatibility_web_probe_keeps_its_own_identity_contract(monkeypatch):
+    class Response:
+        status = 200
+
+        def read(self, _limit):
+            return "<title>待办事项 - EffLife</title>".encode("utf-8")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(launcher, "urlopen", lambda _url, timeout: Response())
+    assert launcher.service_is_ready("http://127.0.0.1:1450", "todos") is True
+
+
 def test_local_port_probe_reports_occupied_and_free_endpoints(monkeypatch):
     class FakeSocket:
         def __enter__(self):

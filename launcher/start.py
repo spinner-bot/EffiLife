@@ -513,6 +513,7 @@ def build_modules():
         "1": {
             "name": "EffiLife 统一工作台",
             "desc": "计划、待办、时间记录与主题统一入口",
+            "service_kind": "workspace",
             "cmd": th_cmd,
             "cwd": BASE_DIR / "time-helper" / "desk",
             "url": th_url,
@@ -541,6 +542,7 @@ def build_modules():
         "4": {
             "name": "to-dos（兼容 Web）",
             "desc": "旧版待办 Web 界面，统一工作台已提供替代入口",
+            "service_kind": "todos",
             "cmd": td_cmd,
             "cwd": BASE_DIR / "to-dos" / "ui",
             "url": td_url,
@@ -610,7 +612,7 @@ def collect_diagnostics(modules):
     for key, module in modules.items():
         url = module.get("url")
         port_occupied = bool(url and local_port_is_occupied(url))
-        service_ready = bool(url and service_is_ready(url))
+        service_ready = bool(url and service_is_ready_for_module(url, module))
         runtime_state = (
             "unavailable" if not module.get("available") else
             "ready" if service_ready else
@@ -952,7 +954,7 @@ def run_module(choice, modules, open_browser=True):
 
     # Reuse an already healthy main workspace, while still ensuring that
     # companions declared by this module are available beside it.
-    if module.get("url") and service_is_ready(module["url"]):
+    if module.get("url") and service_is_ready_for_module(module["url"], module):
         companion_processes = start_companions(module, env)
         if companion_processes is None:
             return 1
@@ -962,7 +964,10 @@ def run_module(choice, modules, open_browser=True):
             if open_browser:
                 webbrowser.open(module["url"])
             if companion_processes:
-                wait_for_existing_service(module["url"])
+                if module.get("service_kind"):
+                    wait_for_existing_service(module["url"], module["service_kind"])
+                else:
+                    wait_for_existing_service(module["url"])
         except KeyboardInterrupt:
             print("\nLauncher stopped.")
         finally:
@@ -977,14 +982,17 @@ def run_module(choice, modules, open_browser=True):
     # A separately started frontend may already occupy the configured port.
     # Reuse it instead of launching a second strict-port dev server that exits
     # immediately and is then reported as a startup failure.
-    if module.get("url") and service_is_ready(module["url"]):
+    if module.get("url") and service_is_ready_for_module(module["url"], module):
         record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
         print(f"使用已运行的主服务: {module['url']}")
         try:
             if open_browser:
                 webbrowser.open(module["url"])
             if companion_processes:
-                wait_for_existing_service(module["url"])
+                if module.get("service_kind"):
+                    wait_for_existing_service(module["url"], module["service_kind"])
+                else:
+                    wait_for_existing_service(module["url"])
         except KeyboardInterrupt:
             print("\n已停止")
         finally:
@@ -1022,7 +1030,11 @@ def run_module(choice, modules, open_browser=True):
         output_thread.start()
 
         if module.get("url"):
-            if not wait_for_service(process, module["url"]):
+            if module.get("service_kind"):
+                service_started = wait_for_service(process, module["url"], expected_kind=module["service_kind"])
+            else:
+                service_started = wait_for_service(process, module["url"])
+            if not service_started:
                 record_launcher_event(
                     "service_start_failed",
                     module=module.get("name"),
@@ -1067,21 +1079,35 @@ def stream_output(process):
         print(line, end="")
 
 
-def service_is_ready(url):
+def service_is_ready_for_module(url, module):
+    """Probe a module with its identity contract when one is declared."""
+    service_kind = module.get("service_kind")
+    if service_kind:
+        return service_is_ready(url, service_kind)
+    # Keep compatibility with legacy callers and small test modules that do
+    # not carry service metadata yet.
+    return service_is_ready(url)
+
+
+def service_is_ready(url, expected_kind=None):
     """Check whether a local companion service is already running."""
     try:
         with urlopen(url, timeout=1) as response:
             if response.status >= 500:
                 return False
-            if url.rstrip("/").endswith("/api/health"):
+            if url.rstrip("/").endswith("/api/health") or expected_kind == "plan-helper":
                 body = response.read(8192).decode("utf-8", errors="replace")
                 return "plan-helper" in body and '"status"' in body
-            # The configured workspace port identifies the unified frontend.
-            # Do not mistake an unrelated HTTP service for EffiLife.
+            # The workspace identity must be checked even when the launcher
+            # selected a fallback port after the preferred one was occupied.
+            # Otherwise any unrelated HTTP 200 response could be reused.
             parsed = urlparse(url)
-            if parsed.port == workspace_port():
+            if expected_kind == "workspace" or parsed.port == workspace_port():
                 body = response.read(65536).decode("utf-8", errors="replace").lower()
                 return 'name="application-name" content="effilife"' in body
+            if expected_kind == "todos":
+                body = response.read(65536).decode("utf-8", errors="replace").lower()
+                return "<title>待办事项 - efflife</title>" in body or "<title>todo" in body
             return True
     except (OSError, URLError):
         return False
@@ -1193,7 +1219,7 @@ def start_companions(module, env):
     return managed
 
 
-def wait_for_service(process, url, timeout=None):
+def wait_for_service(process, url, timeout=None, expected_kind=None):
     """Wait for an HTTP service instead of trusting a particular log format."""
     timeout = startup_timeout() if timeout is None else timeout
     deadline = time.monotonic() + timeout
@@ -1201,16 +1227,20 @@ def wait_for_service(process, url, timeout=None):
         if process.poll() is not None:
             print(f"\n❌ 服务提前退出，退出码: {process.returncode}")
             return False
-        if service_is_ready(url):
+        if expected_kind:
+            ready = service_is_ready(url, expected_kind)
+        else:
+            ready = service_is_ready(url)
+        if ready:
             return True
         time.sleep(0.25)
     print(f"\n⚠️ 服务在 {timeout} 秒内未响应，请手动打开: {url}")
     return False
 
 
-def wait_for_existing_service(url):
+def wait_for_existing_service(url, expected_kind=None):
     """Keep launcher-owned companions alive beside an external frontend."""
-    while service_is_ready(url):
+    while service_is_ready(url, expected_kind) if expected_kind else service_is_ready(url):
         time.sleep(0.5)
 
 
