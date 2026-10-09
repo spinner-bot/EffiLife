@@ -379,10 +379,16 @@ async function saveRecordInternal() {
   if (record.todo_id) {
     try {
       const todo = todos.value.find((item) => item.id === record.todo_id)
-      if (todo && !todo.related_time_record_ids?.includes(record.id as string)) {
+      const recordId = record.id as string
+      const alreadyLinkedToSameTodo = originalRecord?.todo_id === record.todo_id
+      if (todo && alreadyLinkedToSameTodo && !todo.related_time_record_ids?.includes(recordId)) {
         const updated = await TodoService.update(todo.id, {
-          related_time_record_ids: [...(todo.related_time_record_ids || []), record.id as string],
+          related_time_record_ids: [...(todo.related_time_record_ids || []), recordId],
         })
+        todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
+      } else if (todo && !alreadyLinkedToSameTodo) {
+        const minutes = Math.max(1, Math.round(record.duration * 60))
+        const updated = await TodoService.trackTime(todo.id, minutes, recordId)
         todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
       }
     } catch (error) {
