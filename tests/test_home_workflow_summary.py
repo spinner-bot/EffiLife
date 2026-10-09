@@ -12,9 +12,10 @@ def test_home_summary_aggregates_three_unified_workstreams():
     assert "home.timeModuleSummary" in HOME
     assert "home.planModuleSummary" in HOME
     assert "home.todoModuleSummary" in HOME
-    assert "router.push('/time')" in HOME
-    assert "router.push('/plans')" in HOME
-    assert "router.push('/tasks')" in HOME
+    assert "function openWorkflowSummary(module: WorkflowSummaryModule): void" in HOME
+    assert "openWorkflowSummary('time')" in HOME
+    assert "openWorkflowSummary('plans')" in HOME
+    assert "openWorkflowSummary('todos')" in HOME
 
 
 def test_home_ignores_invalid_time_record_durations_in_summary():
@@ -61,6 +62,16 @@ def test_home_workflow_summary_does_not_turn_unavailable_data_into_zero_values()
     assert "timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale)" in HOME
     assert "eventPlanState === 'unavailable' ? '—'" in HOME
     assert "todoSummaryUnavailable ? '—' : activeTodoCount" in HOME
+
+
+def test_home_unavailable_summary_cards_retry_in_place_before_navigating():
+    assert "if (timeSummaryUnavailable.value)" in HOME
+    assert "void refreshTimeSummary()" in HOME
+    assert "if (eventPlanState.value === 'unavailable' and !mobilePlanRuntime)" not in HOME
+    assert "if (eventPlanState.value === 'unavailable' && !mobilePlanRuntime)" in HOME
+    assert "void refreshEventPlanSummary()" in HOME
+    assert "if (todoSummaryUnavailable.value)" in HOME
+    assert "void refreshTodoSummary()" in HOME
 
 
 def test_home_inbox_has_dialog_semantics_and_escape_focus_return():
