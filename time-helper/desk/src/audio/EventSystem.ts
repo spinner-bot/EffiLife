@@ -420,7 +420,7 @@ class EventSystemClass {
       id,
       type: 'achievement_unlocked',  // 使用成就类型图标
       title: translate('settings.events.runtime.missedCheckinTitle'),
-      message: `${date} 完成了「${planName}」但未打卡，点击此处补打`,
+      message: translate('settings.events.runtime.missedCheckinMessage', { date, planName }),
       // Store a semantic icon id. Renderers resolve it through the shared
       // Lucide registry; legacy persisted emoji values remain readable but
       // are no longer produced by new events.
@@ -430,8 +430,6 @@ class EventSystemClass {
       checkinPlanName: planName,
       checkinDate: date
     }
-    entry.title = translate('settings.events.runtime.missedCheckinTitle')
-    entry.message = translate('settings.events.runtime.missedCheckinMessage', { date, planName })
     this.eventInbox.value.push(entry)
     this.saveEventInbox()
     return id

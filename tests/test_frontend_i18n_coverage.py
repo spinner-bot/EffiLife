@@ -21,8 +21,9 @@ def test_all_static_frontend_translation_calls_exist_in_both_locales():
 
 def test_runtime_event_service_localizes_missed_checkin_copy():
     event_system = (SRC / "audio" / "EventSystem.ts").read_text(encoding="utf-8")
-    assert "entry.title = translate('settings.events.runtime.missedCheckinTitle')" in event_system
-    assert "entry.message = translate('settings.events.runtime.missedCheckinMessage', { date, planName })" in event_system
+    assert "title: translate('settings.events.runtime.missedCheckinTitle')" in event_system
+    assert "message: translate('settings.events.runtime.missedCheckinMessage', { date, planName })" in event_system
+    assert "完成了「${planName}」但未打卡" not in event_system
 
 
 def test_dynamic_translation_key_families_exist_in_both_locales():
