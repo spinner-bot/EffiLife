@@ -207,6 +207,9 @@ data/（兼容运行时目录）
 # 运行完整测试
 python -m pytest -q
 
+# 使用与统一启动器相同的 Node.js 工具链构建前端
+python scripts/build_frontend.py
+
 # 运行性能基准
 python tests/test_benchmark.py
 
