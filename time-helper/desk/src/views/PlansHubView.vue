@@ -41,6 +41,7 @@ import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
 import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { dateSearchText } from '@/services/dateSearch'
+import { parseLocalDate } from '@/services/dataService'
 
 const router = useRouter()
 const route = useRoute()
@@ -175,6 +176,17 @@ function formatPlanDate(date?: [number, number, number]): string {
 function formatLogTime(time?: [number, number]): string {
   if (!time || time.length < 2 || time[0] === 99 || time[1] === 99) return t('plans.timeUnknown')
   return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
+}
+
+function formatLogDate(date?: string): string {
+  if (!date) return ''
+  const parsed = parseLocalDate(date)
+  if (Number.isNaN(parsed.getTime())) return date
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(parsed)
 }
 
 function displayLogPlanId(planId: string): string {
@@ -1105,7 +1117,7 @@ onUnmounted(() => {
         <section v-if="selectedPlan.logs.length" class="log-list theme-card">
           <header><strong>{{ t('plans.progressHistory') }}</strong><small>{{ selectedPlan.logs.length }}</small></header>
           <article v-for="log in [...selectedPlan.logs].reverse()" :key="log.index" class="log-row">
-            <div class="log-time"><strong>{{ log.day }}</strong><span>{{ formatLogTime(log.time) }}</span></div>
+            <div class="log-time"><strong>{{ log.day }}</strong><span v-if="formatLogDate(log.date)" class="log-date">{{ formatLogDate(log.date) }}</span><span>{{ formatLogTime(log.time) }}</span></div>
             <div><strong>{{ displayLogPlanId(log.plan) }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
