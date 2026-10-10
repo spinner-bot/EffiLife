@@ -8,6 +8,7 @@ import { TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPlanTasks, listPlanArchives, listPlanSummaries, planArchivesState, type PlanArchiveSummary, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import type { TimeRecord } from '@/types'
+import { dateSearchText } from '@/services/dateSearch'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -86,7 +87,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'plan' as const,
     title: plan.name,
     detail: t('search.planDetail'),
-    searchText: `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`,
+    searchText: `${plan.name} ${plan.id} ${dateSearchText(plan.date)}`,
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}`,
   })),
   ...archivedPlans.value.map((plan) => ({
@@ -102,7 +103,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'planTask' as const,
     title: task.content,
     detail: `${t('search.planTaskDetail')} ${t('search.detailSeparator')} ${plan.name || plan.file} ${t('search.detailSeparator')} ${task.display_id} ${t('search.detailSeparator')} ${t('search.archivedPlanDetail')}`,
-    searchText: `${task.content} ${plan.name || ''} ${task.display_id} ${plan.file}`,
+    searchText: `${task.content} ${plan.name || ''} ${task.display_id} ${dateSearchText(plan.date)} ${plan.file}`,
     route: `/plans?archive=${encodeURIComponent(plan.file)}&task=${encodeURIComponent(task.internal_id)}`,
   }))),
   ...planTasks.value.map(({ plan, task }) => ({
@@ -110,7 +111,7 @@ const allResults = computed<SearchResult[]>(() => [
     kind: 'planTask' as const,
     title: task.content,
     detail: `${t('search.planTaskDetail')} ${t('search.detailSeparator')} ${plan.name} ${t('search.detailSeparator')} ${task.display_id}`,
-    searchText: `${task.content} ${plan.name} ${task.display_id} ${plan.date?.join('-') || ''}`,
+    searchText: `${task.content} ${plan.name} ${task.display_id} ${dateSearchText(plan.date)}`,
     route: `/plans?plan=${encodeURIComponent(String(plan.id))}&task=${encodeURIComponent(task.internal_id)}`,
   })),
   ...records.value.map((record, index) => ({

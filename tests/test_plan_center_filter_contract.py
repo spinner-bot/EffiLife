@@ -19,3 +19,9 @@ def test_plan_center_filter_is_localized_and_accessible():
     assert 'v-model="planSearch"' in PLANS
     assert I18N.count("'plans.searchLabel'") == 2
     assert I18N.count("'plans.searchPlaceholder'") == 2
+
+
+def test_plan_center_search_uses_shared_locale_independent_date_tokens():
+    assert "import { dateSearchText } from '@/services/dateSearch'" in PLANS
+    assert "dateSearchText(plan.date)" in PLANS
+    assert "dateSearchText(archive.date)" in PLANS

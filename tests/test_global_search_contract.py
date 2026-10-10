@@ -18,5 +18,5 @@ def test_global_search_does_not_block_primary_results_on_plan_task_indexing():
 
 
 def test_global_search_indexes_active_plan_dates_for_plan_and_task_results():
-    assert "searchText: `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`" in SOURCE
-    assert "${task.display_id} ${plan.date?.join('-') || ''}" in SOURCE
+    assert "import { dateSearchText } from '@/services/dateSearch'" in SOURCE
+    assert "dateSearchText(plan.date)" in SOURCE

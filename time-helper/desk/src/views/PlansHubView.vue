@@ -40,6 +40,7 @@ import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
 import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { dateSearchText } from '@/services/dateSearch'
 
 const router = useRouter()
 const route = useRoute()
@@ -114,7 +115,7 @@ const filteredPlans = computed(() => {
     const matchesFilter = planFilter.value === 'all'
       || (planFilter.value === 'completed' && isCompleted)
       || (planFilter.value === 'active' && !isCompleted)
-    const matchesQuery = !query || `${plan.name} ${plan.id} ${plan.date?.join('-') || ''}`.toLocaleLowerCase().includes(query)
+    const matchesQuery = !query || `${plan.name} ${plan.id} ${dateSearchText(plan.date)}`.toLocaleLowerCase().includes(query)
     return matchesFilter && matchesQuery
   })
 })
@@ -122,7 +123,7 @@ const filteredPlans = computed(() => {
 const filteredArchives = computed(() => {
   const query = planSearch.value.trim().toLocaleLowerCase()
   if (!query) return archives.value
-  return archives.value.filter((archive) => `${archive.name || ''} ${archive.file} ${archive.plan_id ?? ''} ${archive.date?.join('-') || ''}`.toLocaleLowerCase().includes(query))
+  return archives.value.filter((archive) => `${archive.name || ''} ${archive.file} ${archive.plan_id ?? ''} ${dateSearchText(archive.date)}`.toLocaleLowerCase().includes(query))
 })
 
 function isArchivedTaskTarget(task: PlanTaskSummary): boolean {
