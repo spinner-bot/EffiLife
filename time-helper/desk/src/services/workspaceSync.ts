@@ -111,7 +111,11 @@ export async function repairTodoPlanTaskLinks(): Promise<number> {
         // summary request succeeded. That snapshot is not authoritative for
         // destructive link repair; leave all relations untouched.
         if (String(planDataSource.value) === 'cache') return 0
-        taskIdsByPlan.set(planId, new Set(tasks.flatMap((task) => [String(task.internal_id), String(task.display_id)])))
+        // TD relations persist the stable PH internal ID. A display ID is a
+        // projection and can be reused after soft deletion (for example, the
+        // old A3 may become the displayed A2), so it must never validate a
+        // persisted cross-module relation.
+        taskIdsByPlan.set(planId, new Set(tasks.map((task) => String(task.internal_id))))
       } catch {
         // A single plan may be temporarily unavailable; do not repair it.
       }

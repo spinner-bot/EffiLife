@@ -37,6 +37,14 @@ def test_startup_repairs_only_provably_stale_plan_task_links():
     assert "related_plan_id: undefined" in source
 
 
+def test_plan_link_repair_does_not_treat_reused_display_ids_as_stable_links():
+    source = SYNC.read_text(encoding="utf-8")
+    repair_block = source.split("async function repairTodoPlanTaskLinks()", 1)[1]
+    repair_block = repair_block.split("export", 1)[0]
+    assert "new Set(tasks.map((task) => String(task.internal_id)))" in repair_block
+    assert "flatMap((task) => [String(task.internal_id), String(task.display_id)])" not in repair_block
+
+
 def test_startup_preserves_links_to_archived_plans():
     source = SYNC.read_text(encoding="utf-8")
     absent_plan_branch = source.split("for (const planId of new Set(linkedTodos.map", 1)[1]
