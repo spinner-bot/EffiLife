@@ -591,9 +591,21 @@ def add_log(plan_id, day, task_id, time_input, content=""):
         if plan_id not in plan_module.Plan.registry:
             return error_response(f"Plan {plan_id} not found", code=404)
         p = plan_module.Plan.registry[plan_id]
-        log_idx = p.add_log(day, task_id, time_input, content)
+        requested_task_id = str(task_id or "base")
+        if requested_task_id == "base":
+            resolved_task_id = "base"
+        else:
+            resolved_task_id = _task_id_for_display(p, requested_task_id)
+            if resolved_task_id is None:
+                return error_response(f"Invalid task ID: {requested_task_id}", code=400)
+        log_idx = p.add_log(day, resolved_task_id, time_input, content)
         return success_response(
-            data={"plan_id": plan_id, "log_index": log_idx},
+            data={
+                "plan_id": plan_id,
+                "log_index": log_idx,
+                "task_id": requested_task_id,
+                "resolved_task_id": resolved_task_id,
+            },
             code=201
         )
     except ValueError as e:
