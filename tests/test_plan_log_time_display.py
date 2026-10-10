@@ -20,3 +20,10 @@ def test_plan_log_unknown_time_is_localized():
     assert "'plans.timeUnknown': '时间未记录'" in source
     assert "'plans.timeUnknown': 'Time not recorded'" in source
 
+
+def test_plan_logs_use_current_display_ids_without_rewriting_stored_references():
+    source = PLANS.read_text(encoding="utf-8")
+    assert "function displayLogPlanId(planId: string): string" in source
+    assert "item.internal_id === planId" in source
+    assert "return task?.display_id || planId" in source
+    assert "displayLogPlanId(log.plan)" in source

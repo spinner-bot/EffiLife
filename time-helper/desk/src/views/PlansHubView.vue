@@ -177,6 +177,14 @@ function formatLogTime(time?: [number, number]): string {
   return `${String(time[0]).padStart(2, '0')}:${String(time[1]).padStart(2, '0')}`
 }
 
+function displayLogPlanId(planId: string): string {
+  if (!planId || planId === 'base') return planId || 'base'
+  const task = selectedPlan.value?.sections
+    .flatMap((section) => section.tasks)
+    .find((item) => item.internal_id === planId)
+  return task?.display_id || planId
+}
+
 function templateDisplayName(template: PlanTemplateSummary): string {
   if (!template.built_in) return template.name
   if (template.type === 'workday') return t('plans.templateTypes.workdayName')
@@ -1098,7 +1106,7 @@ onUnmounted(() => {
           <header><strong>{{ t('plans.progressHistory') }}</strong><small>{{ selectedPlan.logs.length }}</small></header>
           <article v-for="log in [...selectedPlan.logs].reverse()" :key="log.index" class="log-row">
             <div class="log-time"><strong>{{ log.day }}</strong><span>{{ formatLogTime(log.time) }}</span></div>
-            <div><strong>{{ log.plan }}</strong><p>{{ log.content }}</p></div>
+            <div><strong>{{ displayLogPlanId(log.plan) }}</strong><p>{{ log.content }}</p></div>
           </article>
         </section>
           </aside>
