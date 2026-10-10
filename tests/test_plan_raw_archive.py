@@ -176,3 +176,20 @@ def test_hard_deleted_log_preserves_date_and_content_of_remaining_entries():
         }]
     finally:
         Plan.registry.pop(plan_id, None)
+
+
+def test_plan_full_api_preserves_optional_log_date():
+    plan_id = Plan.request_id()
+    created = api.create_plan(name="Log date", plan_id=plan_id)
+    assert created.success
+    plan = Plan.registry[plan_id]
+    plan.add_section("阶段", "说明")
+    plan.add_plan(0, "任务", 2)
+    plan.add_log(1, "A1", (10, 20), "带真实日期", date="2026-09-28")
+
+    try:
+        full = api.get_plan_full(plan_id)
+        assert full.success
+        assert full.data["logs"][0]["date"] == "2026-09-28"
+    finally:
+        Plan.registry.pop(plan_id, None)

@@ -629,6 +629,7 @@ def get_logs(plan_id):
                 "plan": log.get("plan", "base"),
                 "time": log.get("time"),
                 "content": log.get("content", ""),
+                **({"date": log["date"]} if "date" in log else {}),
             })
         return success_response(data={"plan_id": plan_id, "logs": logs})
     except Exception as e:
@@ -1032,6 +1033,7 @@ def _serialize_plan_full(p):
             "plan": log.get("plan", "base"),
             "time": log.get("time"),
             "content": log.get("content", ""),
+            **({"date": log["date"]} if "date" in log else {}),
         })
 
     return {

@@ -39,7 +39,7 @@ export interface PlanSection {
 
 export interface PlanFull extends PlanSummary {
   sections: PlanSection[]
-  logs: Array<{ index: number; day?: number; plan: string; time: [number, number]; content: string }>
+  logs: Array<{ index: number; day?: number; date?: string; plan: string; time: [number, number]; content: string }>
 }
 
 export interface InitialPlanSection {
@@ -78,7 +78,7 @@ export const planArchivesState = ref<PlanArchivesState>('idle')
 type RawPlan = {
   head?: { index?: number | string; name?: string; date?: [number, number, number] }
   main?: Array<{ name?: string; info?: string; plan?: Array<Record<string, unknown> | null>; group?: Record<string, { title?: string; description?: string }> }>
-  log?: Array<{ index?: number; day?: number; plan?: string; time?: [number, number]; content?: string }>
+  log?: Array<{ index?: number; day?: number; date?: string; plan?: string; time?: [number, number]; content?: string }>
 }
 type RawSection = NonNullable<RawPlan['main']>[number]
 type RawArchive = {
@@ -354,6 +354,7 @@ function toMobilePlanFull(raw: RawPlan, fallbackIndex: number): PlanFull {
   const logs = (Array.isArray(raw.log) ? raw.log : []).map((log, index) => ({
     index: Number(log.index ?? index),
     day: log.day,
+    date: typeof log.date === 'string' ? log.date : undefined,
     plan: String(log.plan || 'base'),
     time: (Array.isArray(log.time) && log.time.length >= 2 ? [Number(log.time[0]), Number(log.time[1])] : [99, 99]) as [number, number],
     content: String(log.content || ''),
