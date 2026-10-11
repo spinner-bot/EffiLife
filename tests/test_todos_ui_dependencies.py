@@ -7,12 +7,17 @@ PACKAGE = json.loads((ROOT / "to-dos" / "ui" / "package.json").read_text(encodin
 LOCK = json.loads((ROOT / "to-dos" / "ui" / "package-lock.json").read_text(encoding="utf-8"))
 
 
-def test_compatibility_ui_pins_safe_source_map_runtime():
-    assert PACKAGE["overrides"]["source-map-js"] == "^1.2.2"
-    assert LOCK["packages"]["node_modules/source-map-js"]["version"] == "1.2.2"
+def test_compatibility_ui_does_not_ship_an_unused_tailwind_toolchain():
+    assert "tailwindcss" not in PACKAGE["devDependencies"]
+    assert "postcss" not in PACKAGE["devDependencies"]
+    assert "autoprefixer" not in PACKAGE["devDependencies"]
+    assert not (ROOT / "to-dos" / "ui" / "tailwind.config.js").exists()
+    assert not (ROOT / "to-dos" / "ui" / "postcss.config.js").exists()
+    assert "@tailwind" not in (ROOT / "to-dos" / "ui" / "src" / "styles" / "main.css").read_text(encoding="utf-8")
 
 
-def test_compatibility_ui_keeps_tailwind_major_version_explicitly_unchanged():
-    # Tailwind 4 is a separate migration and must not be pulled in by an
-    # automatic audit fix until the compatibility UI has been migrated.
-    assert PACKAGE["devDependencies"]["tailwindcss"].startswith("^3.")
+def test_compatibility_ui_lockfile_matches_the_reduced_toolchain():
+    root_package = LOCK["packages"][""]["devDependencies"]
+    assert "tailwindcss" not in root_package
+    assert "postcss" not in root_package
+    assert "autoprefixer" not in root_package
