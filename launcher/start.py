@@ -180,6 +180,40 @@ def native_toolchain_status():
     }
 
 
+def release_signing_status():
+    """Report signing prerequisites without treating unsigned builds as shipped."""
+    sdk_dir = android_sdk_dir()
+    apksigner = None
+    zipalign = None
+    if sdk_dir is not None:
+        build_tools = sdk_dir / "build-tools"
+        if build_tools.is_dir():
+            for candidate in sorted(build_tools.iterdir(), reverse=True):
+                if not candidate.is_dir():
+                    continue
+                signer = candidate / ("apksigner.bat" if os.name == "nt" else "apksigner")
+                aligner = candidate / ("zipalign.exe" if os.name == "nt" else "zipalign")
+                if apksigner is None and signer.is_file():
+                    apksigner = str(signer)
+                if zipalign is None and aligner.is_file():
+                    zipalign = str(aligner)
+    signtool = shutil.which("signtool.exe") or shutil.which("signtool")
+    user_profile = os.environ.get("USERPROFILE")
+    debug_keystore = Path(user_profile) / ".android" / "debug.keystore" if user_profile else Path.home() / ".android" / "debug.keystore"
+    return {
+        "android": {
+            "apksigner": apksigner,
+            "zipalign": zipalign,
+            "debug_keystore": str(debug_keystore) if debug_keystore.is_file() else None,
+            "ready": bool(apksigner and zipalign and debug_keystore.is_file()),
+        },
+        "windows": {
+            "signtool": signtool,
+            "ready": bool(signtool),
+        },
+    }
+
+
 def node_environment():
     """Build an environment that can run npm and its child processes."""
     env = os.environ.copy()
@@ -736,6 +770,7 @@ def collect_diagnostics(modules):
             "hint": "Keep the iOS toolchain check available, but do not run the iOS workflow until this scope is reopened",
         })
     installer_status = installer_artifacts()
+    signing_status = release_signing_status()
     usable_installers = [
         item for item in installer_status
         if item["exists"] and item["non_empty"] and item.get("version_matches", True)
@@ -757,6 +792,20 @@ def collect_diagnostics(modules):
             "severity": "info",
             "message": "A native installer exists, but its embedded filename version does not match the current application version",
             "hint": "Build a new installer before distributing this checkout",
+        })
+    if usable_installers and not signing_status["windows"]["ready"]:
+        hints.append({
+            "code": "windows-signing-missing",
+            "severity": "info",
+            "message": "A version-matched installer exists, but Windows code-signing tools are unavailable",
+            "hint": "Sign the installer in the controlled release environment before distribution",
+        })
+    if not signing_status["android"]["ready"]:
+        hints.append({
+            "code": "android-signing-missing",
+            "severity": "info",
+            "message": "Android signing prerequisites are unavailable; APK output remains unsigned",
+            "hint": "Use the controlled Android release environment to align and sign the APK",
         })
     if any(status.get("needs_setup") for status in module_status.values()):
         hints.append({
@@ -788,8 +837,10 @@ def collect_diagnostics(modules):
             for path in time_helper_binary_paths()
         ],
         "installer_artifacts": installer_status,
+        "release_signing": signing_status,
         "launch_ready": not issues,
         "distribution_ready": bool(usable_installers),
+        "formal_distribution_ready": bool(usable_installers and signing_status["windows"]["ready"]),
         "modules": module_status,
         "companions": companion_status,
         "issues": issues,
@@ -822,6 +873,14 @@ def print_doctor_report(report):
         "stale (version mismatch)" if installers_stale else "not found (binary-only or source checkout)"
     )
     print(f"Native installer: {installer_state}")
+    signing = report.get("release_signing") or {}
+    android_signing = signing.get("android") or {}
+    windows_signing = signing.get("windows") or {}
+    print(
+        "Release signing: ready"
+        if android_signing.get("ready") and windows_signing.get("ready")
+        else "Release signing: not ready (unsigned artifacts are for internal validation only)"
+    )
     stale_details = [
         item for item in installer_status
         if item.get("exists") and item.get("non_empty") and not item.get("version_matches", True)
@@ -833,8 +892,13 @@ def print_doctor_report(report):
             "Stale installer detail: "
             f"{artifact_path} (artifact {artifact_version}, current {report.get('version') or 'unknown'})"
         )
-    if installers_ready:
+    formal_distribution_ready = bool(
+        installers_ready and (report.get("release_signing") or {}).get("windows", {}).get("ready")
+    )
+    if formal_distribution_ready:
         print("Distribution status: ready")
+    elif installers_ready:
+        print("Distribution status: not ready; installer signing is incomplete")
     else:
         print("Distribution status: not ready; build a version-matched installer before shipping")
     print()
