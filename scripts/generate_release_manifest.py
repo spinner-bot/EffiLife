@@ -20,7 +20,9 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _is_selected(path: Path, extensions: tuple[str, ...], bundle_extensions: tuple[str, ...]) -> bool:
+def _is_selected(path: Path, extensions: tuple[str, ...], bundle_extensions: tuple[str, ...], prefix: str = "") -> bool:
+    if prefix and not path.name.lower().startswith(prefix.lower()):
+        return False
     if not extensions and not bundle_extensions:
         return True
     if path.suffix.lower() in extensions:
@@ -35,12 +37,13 @@ def generate(
     target: str,
     extensions: tuple[str, ...] = (),
     bundle_extensions: tuple[str, ...] = (),
+    prefix: str = "",
 ) -> dict:
     if not directory.is_dir():
         raise FileNotFoundError(f"Release directory does not exist: {directory}")
     files = sorted(
         path for path in directory.rglob("*")
-        if path.is_file() and _is_selected(path, extensions, bundle_extensions)
+        if path.is_file() and _is_selected(path, extensions, bundle_extensions, prefix)
     )
     if not files:
         raise FileNotFoundError(f"No release artifacts found in {directory}")
@@ -72,10 +75,11 @@ def main() -> int:
     parser.add_argument("--target", required=True)
     parser.add_argument("--extension", action="append", default=[], help="Include files with this extension")
     parser.add_argument("--bundle-extension", action="append", default=[], help="Include files inside bundles with this extension")
+    parser.add_argument("--prefix", default="", help="Only include files whose basename starts with this prefix")
     args = parser.parse_args()
     extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.extension)
     bundle_extensions = tuple(value.lower() if value.startswith(".") else f".{value.lower()}" for value in args.bundle_extension)
-    generate(args.directory, args.output, args.version_file.read_text(encoding="utf-8").strip(), args.target, extensions, bundle_extensions)
+    generate(args.directory, args.output, args.version_file.read_text(encoding="utf-8").strip(), args.target, extensions, bundle_extensions, args.prefix)
     return 0
 
 

@@ -141,6 +141,7 @@ jobs:
           --directory time-helper/desk/src-tauri/target/release/bundle/${{ matrix.bundle }}
           --output release-checksums/EffiLife-${{ matrix.name }}.sha256
           --extension ${{ matrix.extension }}
+          --prefix EffiLife
 
       - name: Generate release manifest
         run: >-
@@ -150,6 +151,7 @@ jobs:
           --version-file time-helper/VERSION
           --target ${{ matrix.target }}
           --extension ${{ matrix.extension }}
+          --prefix EffiLife
 
       - name: Verify release manifest
         run: >-

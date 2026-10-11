@@ -54,11 +54,47 @@ def test_generate_checksums_can_limit_entries_to_uploaded_artifacts(tmp_path):
     assert files == [app_file, apk]
 
 
+def test_generate_checksums_can_exclude_legacy_brand_files(tmp_path):
+    generator = load_generator()
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    current = bundle / "EffiLife_1.7.0_x64-setup.exe"
+    current.write_bytes(b"current")
+    legacy = bundle / "LegacyClock_1.0.11_x64-setup.exe"
+    legacy.write_bytes(b"legacy")
+    output = tmp_path / "checksums.sha256"
+
+    files = generator.generate(bundle, output, (".exe",), (), "EffiLife")
+
+    assert files == [current]
+
+
+def test_release_manifest_can_exclude_legacy_brand_files(tmp_path):
+    import importlib.util
+
+    manifest_script = ROOT / "scripts" / "generate_release_manifest.py"
+    spec = importlib.util.spec_from_file_location("effilife_release_manifest_prefix", manifest_script)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    current = bundle / "EffiLife_1.7.0_x64-setup.exe"
+    current.write_bytes(b"current")
+    (bundle / "LegacyClock_1.0.11_x64-setup.exe").write_bytes(b"legacy")
+    output = tmp_path / "manifest.json"
+
+    manifest = module.generate(bundle, output, "1.7.0", "windows-nsis", (".exe",), (), "EffiLife")
+
+    assert [item["path"] for item in manifest["artifacts"]] == [current.name]
+
+
 def test_release_workflow_uploads_checksum_next_to_each_installer():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "scripts/generate_checksums.py" in workflow
     assert "release-checksums/EffiLife-${{ matrix.name }}.sha256" in workflow
     assert "${{ matrix.artifact }}" in workflow
+    assert "--prefix EffiLife" in workflow
 
 
 def test_release_manifest_contains_version_target_and_artifact_hashes(tmp_path):
