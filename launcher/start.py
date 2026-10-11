@@ -180,6 +180,30 @@ def native_toolchain_status():
     }
 
 
+def windows_signtool_candidates() -> list[Path]:
+    """Return common Windows SDK signtool locations in newest-first order."""
+    roots = []
+    program_files_x86 = os.environ.get("ProgramFiles(x86)")
+    if program_files_x86:
+        roots.append(Path(program_files_x86) / "Windows Kits" / "10")
+    program_files = os.environ.get("ProgramFiles")
+    if program_files:
+        roots.append(Path(program_files) / "Windows Kits" / "10")
+    candidates: list[Path] = []
+    for root in roots:
+        for pattern in ("bin/*/x64/signtool.exe", "bin/*/x86/signtool.exe", "App Certification Kit/signtool.exe"):
+            candidates.extend(root.glob(pattern))
+    return sorted({candidate for candidate in candidates if candidate.is_file()}, reverse=True)
+
+
+def find_windows_signtool() -> str | None:
+    """Find signtool on PATH or in an installed Windows SDK."""
+    return shutil.which("signtool.exe") or shutil.which("signtool") or next(
+        (str(candidate) for candidate in windows_signtool_candidates()),
+        None,
+    )
+
+
 def release_signing_status():
     """Report signing prerequisites without treating unsigned builds as shipped."""
     sdk_dir = android_sdk_dir()
@@ -197,7 +221,7 @@ def release_signing_status():
                     apksigner = str(signer)
                 if zipalign is None and aligner.is_file():
                     zipalign = str(aligner)
-    signtool = shutil.which("signtool.exe") or shutil.which("signtool")
+    signtool = find_windows_signtool()
     user_profile = os.environ.get("USERPROFILE")
     debug_keystore = Path(user_profile) / ".android" / "debug.keystore" if user_profile else Path.home() / ".android" / "debug.keystore"
     return {

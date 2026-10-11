@@ -90,6 +90,7 @@ def test_release_signing_status_detects_android_and_windows_prerequisites(monkey
 
 def test_release_signing_status_reports_unsigned_boundary(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "android_sdk_dir", lambda: tmp_path / "missing-sdk")
+    monkeypatch.setattr(launcher, "windows_signtool_candidates", lambda: [])
     monkeypatch.delenv("USERPROFILE", raising=False)
     monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
 
@@ -97,6 +98,15 @@ def test_release_signing_status_reports_unsigned_boundary(monkeypatch, tmp_path)
 
     assert status["android"]["ready"] is False
     assert status["windows"]["ready"] is False
+
+
+def test_windows_signtool_can_be_found_in_the_windows_sdk(monkeypatch, tmp_path):
+    signtool = tmp_path / "signtool.exe"
+    signtool.write_bytes(b"tool")
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(launcher, "windows_signtool_candidates", lambda: [signtool])
+
+    assert launcher.find_windows_signtool() == str(signtool)
 
 
 def test_doctor_exposes_native_toolchain_readiness(capsys):
