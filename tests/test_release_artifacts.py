@@ -47,3 +47,13 @@ def test_verifier_rejects_stale_artifact_version(tmp_path, verifier):
     (bundle / "EffiLife_1.0.11_x64-setup.exe").write_bytes(b"installer")
     with pytest.raises(ValueError, match="version mismatch"):
         verifier.verify(bundle, ".exe", "1.7.0")
+
+
+def test_verifier_ignores_legacy_brand_artifacts(tmp_path, verifier):
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "浪兮效率时钟_1.0.11_x64-setup.exe").write_bytes(b"legacy")
+    current = bundle / "EffiLife_1.7.0_x64-setup.exe"
+    current.write_bytes(b"installer")
+
+    assert verifier.verify(bundle, ".exe", "1.7.0") == [current]

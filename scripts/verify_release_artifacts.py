@@ -7,12 +7,16 @@ import argparse
 import re
 from pathlib import Path
 
+PRODUCT_PREFIX = 'EffiLife'
 
-def find_artifacts(directory: Path, extension: str) -> list[Path]:
+
+def find_artifacts(directory: Path, extension: str, prefix: str = PRODUCT_PREFIX) -> list[Path]:
     normalized = extension if extension.startswith('.') else f'.{extension}'
     return sorted(
         path for path in directory.rglob(f'*{normalized}')
-        if path.is_file() and path.stat().st_size > 0
+        if path.is_file()
+        and path.stat().st_size > 0
+        and path.name.lower().startswith(prefix.lower())
     )
 
 
