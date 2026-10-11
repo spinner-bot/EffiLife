@@ -429,6 +429,9 @@ watch(() => appStore.todayStat, () => {
           <Settings :size="19" /> <span>{{ t('nav.settings') }}</span>
         </RouterLink>
       </nav>
+      <RouterLink class="mobile-quick-capture" to="/tasks?compose=1" :aria-label="t('tasks.quickCapture')" :title="t('tasks.quickCapture')">
+        <Plus :size="20" />
+      </RouterLink>
       <main ref="mainContent" id="main-content" class="app-main" tabindex="-1">
         <RouterView v-slot="{ Component }">
           <Transition name="page-fade" mode="out-in">
@@ -547,6 +550,7 @@ watch(() => appStore.todayStat, () => {
 .global-nav-link:hover, .global-nav-link.active { color: var(--color-text-primary); background: var(--color-primary-muted); }
 .global-nav-shortcut { border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 3px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 9px; line-height: 1.1; }
 .mobile-bottom-nav { display: none; }
+.mobile-quick-capture { display: none; }
 .global-search-trigger { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 9px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
 .global-search-trigger:hover { color: var(--color-text-primary); border-color: var(--color-border-hover); }
 .global-search-trigger kbd { border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 4px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 10px; }
@@ -688,5 +692,7 @@ watch(() => appStore.todayStat, () => {
   .mobile-nav-module-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 8px; font-weight: 800; letter-spacing: .04em; line-height: 1; }
   .mobile-bottom-nav::-webkit-scrollbar { display: none; }
   .mobile-bottom-nav-link.active { color: var(--color-primary); background: var(--color-primary-muted); font-weight: 650; }
+  .mobile-quick-capture { position: fixed; z-index: 11; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--color-primary); border-radius: 50%; color: var(--color-button-text); background: var(--color-primary); box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 18%)); }
+  .mobile-quick-capture:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 }
 </style>

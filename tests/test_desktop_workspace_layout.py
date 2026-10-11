@@ -66,6 +66,14 @@ def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
     assert "scrollbar-width: none;" in mobile_block
 
 
+def test_mobile_shell_exposes_quick_capture_above_bottom_navigation():
+    app = (ROOT / "time-helper/desk/src/App.vue").read_text(encoding="utf-8")
+    mobile_block = app.split("@media (max-width: 680px)", 1)[1]
+    assert 'class="mobile-quick-capture"' in app
+    assert 'to="/tasks?compose=1"' in app
+    assert "bottom: calc(78px + env(safe-area-inset-bottom));" in mobile_block
+
+
 def test_time_workspace_has_a_wide_screen_content_budget():
     assert "@media (min-width: 1100px)" in TIME
     assert "max-width: 1180px" in TIME
