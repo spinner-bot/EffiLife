@@ -97,7 +97,11 @@ async function waitForCoreWorkspace(ready: Promise<void>): Promise<void> {
 }
 
 function onGlobalKeydown(event: KeyboardEvent) {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
+    if (isEditableTarget(event.target)) return
+    event.preventDefault()
+    void router.push('/tasks?compose=1')
+  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     if (isEditableTarget(event.target)) return
     event.preventDefault()
     showGlobalSearch.value = true
@@ -405,7 +409,7 @@ watch(() => appStore.todayStat, () => {
         <button id="global-search-trigger" class="global-search-trigger" type="button" :aria-label="t('search.open')" aria-haspopup="dialog" :aria-expanded="showGlobalSearch" aria-controls="global-search-dialog" aria-keyshortcuts="Control+K Meta+K" @click="showGlobalSearch = true">
           <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
-        <RouterLink class="global-quick-capture" to="/tasks?compose=1" :aria-label="t('tasks.quickCapture')" :title="t('tasks.quickCapture')">
+        <RouterLink class="global-quick-capture" to="/tasks?compose=1" :aria-label="t('tasks.quickCapture')" :title="t('tasks.quickCapture')" aria-keyshortcuts="Control+Shift+A Meta+Shift+A">
           <Plus :size="16" /><span>{{ t('tasks.quickCapture') }}</span>
         </RouterLink>
       </header>

@@ -25,6 +25,9 @@ def test_workspace_navigation_exposes_module_responsibilities_as_titles():
 
 def test_global_shell_exposes_td_quick_capture_without_owning_todo_mutations():
     assert 'to="/tasks?compose=1"' in APP
+    assert "event.ctrlKey || event.metaKey" in APP
+    assert "event.shiftKey && event.key.toLowerCase() === 'a'" in APP
+    assert 'aria-keyshortcuts="Control+Shift+A Meta+Shift+A"' in APP
     tasks = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")
     assert 'ref="newTaskInput"' in tasks
     assert "route.query.compose" in tasks
