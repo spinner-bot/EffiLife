@@ -993,7 +993,7 @@ def run_module(choice, modules, open_browser=True):
         if companion_processes is None:
             return 1
         record_launcher_event("reuse_existing_service", module=module.get("name"), url=module["url"])
-        print(f"浣跨敤宸茶繍琛岀殑涓绘湇鍔? {module['url']}")
+        print(f"使用已运行的主服务: {module['url']}")
         try:
             if open_browser:
                 webbrowser.open(module["url"])

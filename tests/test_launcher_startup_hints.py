@@ -14,6 +14,13 @@ def test_startup_failure_hint_points_to_both_diagnostics_modes(capsys, monkeypat
     assert str(tmp_path / "launcher.log") in output
 
 
+def test_launcher_reuse_message_is_readable_for_cjk_console_users():
+    source = (Path(launcher.BASE_DIR) / "launcher" / "start.py").read_text(encoding="utf-8")
+
+    assert "使用已运行的主服务" in source
+    assert "浣跨敤宸茶繍琛岀殑涓绘湇鍔?" not in source
+
+
 def test_port_conflict_prints_actionable_hint(monkeypatch, capsys):
     companion = object()
     monkeypatch.setattr(launcher, "start_companions", lambda _module, _env: [companion])
