@@ -260,7 +260,7 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box
             "--data-dir",
             plan_runtime_root.to_string_lossy().as_ref(),
         ]);
-    let (mut events, mut child) = command.spawn()?;
+    let (mut events, child) = command.spawn()?;
 
     // Keep the child handle alive for the lifetime of the sidecar and drain
     // its event channel so its stdout/stderr pipes cannot block the service.
@@ -288,7 +288,7 @@ pub fn run() {
             #[cfg(all(not(debug_assertions), desktop))]
             {
                 let child = start_plan_helper_sidecar(_app.handle())?;
-                app.manage(PlanHelperSidecarState(Mutex::new(Some(child))));
+                _app.manage(PlanHelperSidecarState(Mutex::new(Some(child))));
             }
             Ok(())
         })
