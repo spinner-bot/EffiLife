@@ -32,6 +32,7 @@ function parseTodoTags(value: string): string[] {
 
 const todos = ref<UnifiedTodo[]>([])
 const title = ref('')
+const newTaskInput = ref<HTMLInputElement | null>(null)
 const description = ref('')
 const tagsInput = ref('')
 const priorityRank = ref(0)
@@ -860,12 +861,19 @@ async function revealSearchTarget(): Promise<void> {
 
 let stopWorkspaceListener: (() => void) | null = null
 
+async function focusQuickCapture(): Promise<void> {
+  if (route.query.compose !== '1') return
+  await nextTick()
+  newTaskInput.value?.focus()
+}
+
 onMounted(async () => {
   stopWorkspaceListener = onWorkspaceChanged(queueWorkspaceRefresh)
   await loadTodos()
   await loadCategories()
   loadTodoSettings()
   await revealSearchTarget()
+  await focusQuickCapture()
 })
 
 onUnmounted(() => {
@@ -885,6 +893,10 @@ onUnmounted(() => {
 
 watch(() => route.query.todo, () => {
   if (todos.value.length > 0) void revealSearchTarget()
+})
+
+watch(() => route.query.compose, () => {
+  void focusQuickCapture()
 })
 </script>
 
@@ -920,7 +932,7 @@ watch(() => route.query.todo, () => {
     <div class="task-content">
       <form class="task-create theme-card" @submit.prevent="AudioManager.playSound('click'); addTodo()">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
-        <input id="new-task-title" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" />
+        <input id="new-task-title" ref="newTaskInput" v-model="title" class="task-input" :placeholder="t('tasks.addPlaceholder')" />
         <details class="task-create-advanced">
           <summary>{{ t('tasks.advancedOptions') }}</summary>
         <label class="task-field-label task-description-label" for="new-task-description">{{ t('tasks.description') }}</label>

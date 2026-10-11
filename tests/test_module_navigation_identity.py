@@ -23,6 +23,13 @@ def test_workspace_navigation_exposes_module_responsibilities_as_titles():
     assert ':title="t(\'tasks.moduleDescription\')"' in APP
 
 
+def test_global_shell_exposes_td_quick_capture_without_owning_todo_mutations():
+    assert 'to="/tasks?compose=1"' in APP
+    tasks = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")
+    assert 'ref="newTaskInput"' in tasks
+    assert "route.query.compose" in tasks
+
+
 def test_plan_and_todo_workspaces_keep_explicit_context_switchers():
     plans = (ROOT / "time-helper/desk/src/views/PlansHubView.vue").read_text(encoding="utf-8")
     tasks = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")

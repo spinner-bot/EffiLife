@@ -8,7 +8,7 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
-import { Home, ClipboardList, Clock3, History, ListTodo, Settings, Search } from 'lucide-vue-next'
+import { Home, ClipboardList, Clock3, History, ListTodo, Plus, Settings, Search } from 'lucide-vue-next'
 import { refreshLocaleFromStorage, useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
@@ -405,6 +405,9 @@ watch(() => appStore.todayStat, () => {
         <button id="global-search-trigger" class="global-search-trigger" type="button" :aria-label="t('search.open')" aria-haspopup="dialog" :aria-expanded="showGlobalSearch" aria-controls="global-search-dialog" aria-keyshortcuts="Control+K Meta+K" @click="showGlobalSearch = true">
           <Search :size="15" /><span>{{ t('search.open') }}</span><kbd>{{ searchShortcut }}</kbd>
         </button>
+        <RouterLink class="global-quick-capture" to="/tasks?compose=1" :aria-label="t('tasks.quickCapture')" :title="t('tasks.quickCapture')">
+          <Plus :size="16" /><span>{{ t('tasks.quickCapture') }}</span>
+        </RouterLink>
       </header>
       <nav class="mobile-bottom-nav theme-card" :aria-label="t('nav.primary')">
         <RouterLink class="mobile-bottom-nav-link" to="/" :class="{ active: route.path === '/' }" :aria-current="route.path === '/' ? 'page' : undefined">
@@ -547,6 +550,8 @@ watch(() => appStore.todayStat, () => {
 .global-search-trigger { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; border: 1px solid var(--color-border); border-radius: 10px; padding: 7px 9px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; font-size: 11px; }
 .global-search-trigger:hover { color: var(--color-text-primary); border-color: var(--color-border-hover); }
 .global-search-trigger kbd { border: 1px solid var(--color-border); border-radius: 5px; padding: 1px 4px; color: var(--color-text-tertiary); background: var(--color-bg-elevated); font: inherit; font-size: 10px; }
+.global-quick-capture { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--color-primary); border-radius: 10px; padding: 7px 9px; color: var(--color-button-text); background: var(--color-primary); font-size: 11px; text-decoration: none; white-space: nowrap; }
+.global-quick-capture:hover { filter: brightness(1.06); }
 
 /* Give wide desktop screens a real workbench rail while keeping tablet and
    mobile navigation compact and touch-oriented. */
@@ -582,6 +587,8 @@ watch(() => appStore.todayStat, () => {
   .global-nav-shortcut { display: none; }
   .global-search-trigger { flex: 0 0 auto; padding: 7px; }
   .global-search-trigger span, .global-search-trigger kbd { display: none; }
+  .global-quick-capture span { display: none; }
+  .global-quick-capture { padding: 8px; }
 }
 
 @media (min-width: 821px) and (max-width: 1020px) {
