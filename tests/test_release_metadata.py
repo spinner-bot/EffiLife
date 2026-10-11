@@ -161,6 +161,15 @@ def test_release_workflow_publishes_checksums_and_manifests_with_installers():
     assert "gh release create" in workflow
 
 
+def test_public_release_is_fail_closed_until_windows_installer_is_signed():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+    assert "Sign Windows installer for formal release" in workflow
+    assert "EFFILIFE_WINDOWS_CERT_BASE64" in workflow
+    assert "signtool.exe verify /pa" in workflow
+    assert "if: startsWith(github.ref, 'refs/tags/v') && vars.EFFILIFE_FORMAL_RELEASE_ENABLED == 'true'" in workflow
+    assert workflow.index("Sign Windows installer for formal release") < workflow.index("Verify packaged installer")
+
+
 def test_publish_job_rejects_tag_that_does_not_match_repository_version():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "expected_tag=\"v$(cat time-helper/VERSION)\"" in workflow

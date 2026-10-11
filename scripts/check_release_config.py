@@ -53,6 +53,12 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow does not pass the matrix bundle target to Tauri")
     if "scripts/verify_release_artifacts.py" not in workflow:
         errors.append("release workflow has no packaged installer artifact verification step")
+    if ("Sign Windows installer for formal release" not in workflow
+            or "EFFILIFE_WINDOWS_CERT_BASE64" not in workflow
+            or "signtool.exe verify /pa" not in workflow):
+        errors.append("release workflow has no fail-closed Windows signing step")
+    if "vars.EFFILIFE_FORMAL_RELEASE_ENABLED == 'true'" not in workflow:
+        errors.append("release workflow does not gate public publication on formal signing readiness")
     if "actions/download-artifact@v4" not in workflow or "gh release create" not in workflow:
         errors.append("release workflow has no tagged GitHub Release publication step")
     if "needs:" not in workflow or "compatibility" not in workflow or "build" not in workflow:
