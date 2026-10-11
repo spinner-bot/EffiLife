@@ -590,7 +590,15 @@ watch(() => appStore.todayStat, () => {
   .global-nav-link { gap: 5px; padding: 8px 6px; }
 }
 
-@media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .app-startup { transition: none; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* Keep tablet navigation horizontal while reserving room for every module. */
 @media (min-width: 681px) and (max-width: 820px) {
