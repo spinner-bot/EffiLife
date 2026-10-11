@@ -67,6 +67,38 @@ def test_doctor_machine_report_separates_launch_and_distribution_ready():
     assert '"distribution_ready": bool(usable_installers)' in source
 
 
+def test_release_signing_status_detects_android_and_windows_prerequisites(monkeypatch, tmp_path):
+    sdk = tmp_path / "android-sdk"
+    build_tools = sdk / "build-tools" / "35.0.0"
+    build_tools.mkdir(parents=True)
+    (build_tools / "apksigner.bat").write_text("", encoding="utf-8")
+    (build_tools / "zipalign.exe").write_text("", encoding="utf-8")
+    profile = tmp_path / "profile"
+    (profile / ".android").mkdir(parents=True)
+    (profile / ".android" / "debug.keystore").write_bytes(b"test")
+    monkeypatch.setattr(launcher, "android_sdk_dir", lambda: sdk)
+    monkeypatch.setenv("USERPROFILE", str(profile))
+    monkeypatch.setattr(launcher.shutil, "which", lambda name: "C:/Windows Kits/signtool.exe" if name == "signtool.exe" else None)
+
+    status = launcher.release_signing_status()
+
+    assert status["android"]["ready"] is True
+    assert status["android"]["apksigner"].endswith("apksigner.bat")
+    assert status["android"]["zipalign"].endswith("zipalign.exe")
+    assert status["windows"] == {"signtool": "C:/Windows Kits/signtool.exe", "ready": True}
+
+
+def test_release_signing_status_reports_unsigned_boundary(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "android_sdk_dir", lambda: tmp_path / "missing-sdk")
+    monkeypatch.delenv("USERPROFILE", raising=False)
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+
+    status = launcher.release_signing_status()
+
+    assert status["android"]["ready"] is False
+    assert status["windows"]["ready"] is False
+
+
 def test_doctor_exposes_native_toolchain_readiness(capsys):
     report = {
         "version": "1.7.0",
