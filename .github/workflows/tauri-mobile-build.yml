@@ -6,12 +6,10 @@ on:
       target:
         description: Platform to build
         required: true
-        default: all
+        default: android
         type: choice
         options:
-          - all
           - android
-          - ios
 
 permissions:
   contents: read
@@ -23,7 +21,7 @@ concurrency:
 jobs:
   android:
     name: Android APK
-    if: inputs.target == 'all' || inputs.target == 'android'
+    if: inputs.target == 'android'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -126,102 +124,4 @@ jobs:
             time-helper/desk/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
             release-checksums/EffiLife-android.sha256
             release-checksums/EffiLife-android.manifest.json
-          if-no-files-found: error
-
-  ios:
-    name: iOS app bundle
-    if: inputs.target == 'all' || inputs.target == 'ios'
-    runs-on: macos-14
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Synchronize desktop release version
-        run: python scripts/sync_desktop_version.py
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: time-helper/desk/package-lock.json
-
-      - name: Install Python test dependencies
-        run: python -m pip install --disable-pip-version-check pytest
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
-
-      - name: Install frontend dependencies
-        working-directory: time-helper/desk
-        run: npm ci
-
-      - name: Validate mobile boundary and contracts
-        run: |
-          python scripts/check_mobile_release_config.py
-          python -m pytest -q tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py
-
-      - name: Build shared mobile frontend
-        run: python scripts/build_frontend.py
-
-      - name: Initialize Tauri iOS project
-        working-directory: time-helper/desk
-        run: npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json
-
-      - name: Verify iOS native build environment
-        run: python scripts/check_build_environment.py --target ios
-
-      - name: Build iOS app bundle
-        working-directory: time-helper/desk
-        run: npm run mobile:ios:build -- --debug
-
-      - name: Verify iOS artifact
-        run: >-
-          python scripts/verify_mobile_artifacts.py
-          --directory time-helper/desk/src-tauri/gen/apple/build
-          --target ios
-
-      - name: Generate iOS checksums
-        run: >-
-          python scripts/generate_checksums.py
-          --directory time-helper/desk/src-tauri/gen/apple/build
-          --output release-checksums/EffiLife-ios.sha256
-          --extension .ipa
-          --bundle-extension .app
-
-      - name: Generate iOS release manifest
-        run: >-
-          python scripts/generate_release_manifest.py
-          --directory time-helper/desk/src-tauri/gen/apple/build
-          --output release-checksums/EffiLife-ios.manifest.json
-          --version-file time-helper/VERSION
-          --target ios
-          --extension .ipa
-          --bundle-extension .app
-
-      - name: Verify iOS release manifest
-        run: >-
-          python scripts/verify_release_manifest.py
-          --manifest release-checksums/EffiLife-ios.manifest.json
-          --directory time-helper/desk/src-tauri/gen/apple/build
-          --version-file time-helper/VERSION
-          --target ios
-
-      - name: Upload iOS app bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: EffiLife-ios-app
-          path: |
-            time-helper/desk/src-tauri/gen/apple/build/**/*.app
-            time-helper/desk/src-tauri/gen/apple/build/**/*.ipa
-            release-checksums/EffiLife-ios.sha256
-            release-checksums/EffiLife-ios.manifest.json
           if-no-files-found: error

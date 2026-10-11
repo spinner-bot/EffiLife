@@ -23,7 +23,7 @@ def test_mobile_boundary_syncs_lock_metadata_before_frontend_install():
 
 def test_manual_mobile_build_syncs_each_platform_job_before_npm_ci():
     workflow = _workflow("tauri-mobile-build.yml")
-    for job in ("\n  android:", "\n  ios:"):
+    for job in ("\n  android:",):
         job_source = workflow.split(job, 1)[1]
         assert "python scripts/sync_desktop_version.py" in job_source
         assert job_source.index("python scripts/sync_desktop_version.py") < job_source.index("uses: actions/setup-node@v5")

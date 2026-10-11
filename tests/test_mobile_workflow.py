@@ -25,13 +25,17 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "workflow_dispatch:" in workflow
     assert "effilife-mobile-build-${{ github.ref }}-${{ inputs.target }}" in workflow
     assert "cancel-in-progress: false" in workflow
-    assert workflow.count("timeout-minutes: 45") == 2
-    assert workflow.count("actions/setup-python@v6") == 2
-    assert workflow.count("python -m pip install --disable-pip-version-check pytest") == 2
-    assert workflow.count("python scripts/check_mobile_release_config.py") == 2
-    assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 2
-    assert workflow.count("name: Build shared mobile frontend") == 2
-    assert workflow.count("python scripts/build_frontend.py") == 2
+    assert "default: android" in workflow
+    assert "          - android" in workflow
+    assert "          - ios" not in workflow
+    assert "  ios:" not in workflow
+    assert workflow.count("timeout-minutes: 45") == 1
+    assert workflow.count("actions/setup-python@v6") == 1
+    assert workflow.count("python -m pip install --disable-pip-version-check pytest") == 1
+    assert workflow.count("python scripts/check_mobile_release_config.py") == 1
+    assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 1
+    assert workflow.count("name: Build shared mobile frontend") == 1
+    assert workflow.count("python scripts/build_frontend.py") == 1
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "python scripts/check_build_environment.py --target android" in workflow
     assert "npm run mobile:android:build" in workflow
@@ -43,14 +47,12 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "release-checksums/EffiLife-android.sha256" in workflow
     assert "python scripts/generate_release_manifest.py" in workflow
     assert "release-checksums/EffiLife-android.manifest.json" in workflow
-    assert "npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
-    assert "python scripts/check_build_environment.py --target ios" in workflow
-    assert "npm run mobile:ios:build -- --debug" in workflow
-    assert "gen/apple/build/**/*.app" in workflow
-    assert "--target ios" in workflow
-    assert "release-checksums/EffiLife-ios.sha256" in workflow
-    assert "release-checksums/EffiLife-ios.manifest.json" in workflow
-    assert workflow.count("--version-file time-helper/VERSION") == 4
+    assert "npm run tauri -- ios init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" not in workflow
+    assert "python scripts/check_build_environment.py --target ios" not in workflow
+    assert "npm run mobile:ios:build -- --debug" not in workflow
+    assert "release-checksums/EffiLife-ios.sha256" not in workflow
+    assert "release-checksums/EffiLife-ios.manifest.json" not in workflow
+    assert workflow.count("--version-file time-helper/VERSION") == 2
 
 
 def test_mobile_build_workflow_does_not_use_desktop_sidecar():
