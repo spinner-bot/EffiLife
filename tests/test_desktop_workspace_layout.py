@@ -106,7 +106,14 @@ def test_task_center_only_stacks_editing_controls_on_mobile():
     mobile_block = tasks.split("@media (max-width: 700px)", 1)[1]
     assert ".task-edit-form { grid-template-columns: 1fr; }" in mobile_block
     assert ".task-item-actions { flex-basis: 100%;" in mobile_block
-    assert "@media (max-width: 1099px)" not in tasks
+
+
+def test_task_center_uses_a_two_column_workbench_on_tablet():
+    tasks = (VIEWS / "TaskCenterView.vue").read_text(encoding="utf-8")
+    tablet_block = tasks.split("@media (min-width: 761px) and (max-width: 1099px)", 1)[1].split("@media (prefers-reduced-motion", 1)[0]
+    assert ".task-content { display: grid; grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr); align-items: start; gap: 0 16px; }" in tablet_block
+    assert ".task-list, .task-result-state { grid-column: 2; grid-row: 1 / span 4; min-width: 0; }" in tablet_block
+    assert ".task-item-actions { flex-basis: 100%; justify-content: flex-start; margin-left: 36px; }" in tablet_block
 
 
 def test_task_center_toolbar_wraps_module_controls_without_overlap():
