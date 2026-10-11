@@ -1032,7 +1032,7 @@ def test_launcher_diagnostics_expose_platform_native_toolchain_hints(monkeypatch
     assert result["native_toolchain"]["ios"]["platform_supported"] is False
     hint_codes = {item["code"] for item in result["hints"]}
     assert "android-toolchain-missing" in hint_codes
-    assert "ios-toolchain-missing" in hint_codes
+    assert "ios-deferred" in hint_codes
 
 
 def test_diagnose_output_uses_ascii_safe_json():

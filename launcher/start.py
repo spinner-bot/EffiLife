@@ -696,10 +696,10 @@ def collect_diagnostics(modules):
         })
     if not native_tools["ios"]["ready"]:
         hints.append({
-            "code": "ios-toolchain-missing",
+            "code": "ios-deferred",
             "severity": "info",
-            "message": "iOS native tooling is unavailable in this environment",
-            "hint": "Run the iOS workflow on macOS with Xcode and Apple signing prerequisites",
+            "message": "iOS native delivery is deferred by the current project scope",
+            "hint": "Keep the iOS toolchain check available, but do not run the iOS workflow until this scope is reopened",
         })
     installer_status = installer_artifacts()
     usable_installers = [
