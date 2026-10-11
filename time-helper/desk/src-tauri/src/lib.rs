@@ -6,11 +6,13 @@ use std::io::Read;
 #[cfg(all(not(debug_assertions), desktop))]
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
+#[cfg(all(not(debug_assertions), desktop))]
 use std::sync::Mutex;
 #[cfg(all(not(debug_assertions), desktop))]
 use std::thread;
 #[cfg(all(not(debug_assertions), desktop))]
 use std::time::Duration;
+#[cfg(all(not(debug_assertions), desktop))]
 use tauri::Manager;
 
 #[cfg(all(not(debug_assertions), desktop))]
@@ -139,6 +141,7 @@ fn get_data_dir() -> PathBuf {
 // Plan Helper's legacy layout expects its runtime root to contain both
 // `plan/` and `data/`. A configured shared root is already that runtime root;
 // only the platform fallback stores the frontend data one level deeper.
+#[cfg(all(not(debug_assertions), desktop))]
 fn get_plan_helper_data_dir() -> PathBuf {
     if let Ok(configured) = std::env::var("EFFILIFE_DATA_DIR") {
         let configured = configured.trim();
@@ -277,14 +280,14 @@ pub fn run() {
     // 设置崩溃日志处理器
     setup_panic_handler();
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(all(not(debug_assertions), desktop))]
             {
-                let child = start_plan_helper_sidecar(app.handle())?;
+                let child = start_plan_helper_sidecar(_app.handle())?;
                 app.manage(PlanHelperSidecarState(Mutex::new(Some(child))));
             }
             Ok(())
@@ -294,10 +297,13 @@ pub fn run() {
             load_config,
             save_config,
         ])
-        .run(tauri::generate_context!(), |app_handle, event| {
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, _event| {
             #[cfg(all(not(debug_assertions), desktop))]
-            if let tauri::RunEvent::ExitRequested { .. } = event {
-                if let Some(state) = app_handle.try_state::<PlanHelperSidecarState>() {
+            if let tauri::RunEvent::ExitRequested { .. } = _event {
+                if let Some(state) = _app_handle.try_state::<PlanHelperSidecarState>() {
                     if let Ok(mut child) = state.0.lock() {
                         if let Some(child) = child.take() {
                             let _ = child.kill();
@@ -305,6 +311,5 @@ pub fn run() {
                     }
                 }
             }
-        })
-        .expect("error while running tauri application");
+        });
 }
