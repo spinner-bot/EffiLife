@@ -890,11 +890,11 @@ onUnmounted(() => {
 }
 
 @keyframes inboxShake {
-  0%, 90%, 100% { transform: translateY(-50%) rotate(0deg); }
-  92% { transform: translateY(-50%) rotate(-5deg); }
-  94% { transform: translateY(-50%) rotate(5deg); }
-  96% { transform: translateY(-50%) rotate(-3deg); }
-  98% { transform: translateY(-50%) rotate(3deg); }
+  0%, 90%, 100% { transform: rotate(0deg); }
+  92% { transform: rotate(-5deg); }
+  94% { transform: rotate(5deg); }
+  96% { transform: rotate(-3deg); }
+  98% { transform: rotate(3deg); }
 }
 
 /* 收件箱下拉面板 */

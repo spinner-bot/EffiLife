@@ -19,6 +19,12 @@ def test_home_inbox_panel_stays_inside_narrow_mobile_viewports():
     assert "max-width: calc(100vw - 32px);" in HOME
 
 
+def test_home_inbox_unread_animation_does_not_duplicate_parent_vertical_positioning():
+    animation = HOME.split("@keyframes inboxShake", 1)[1].split("}", 1)[0]
+    assert "rotate(0deg)" in animation
+    assert "translateY(-50%)" not in animation
+
+
 def test_home_does_not_render_zero_values_before_workspace_summary_is_ready():
     assert "const workspaceSummaryReady = ref(false)" in HOME
     assert ":aria-busy=\"!workspaceSummaryReady\"" in HOME
