@@ -479,6 +479,18 @@ onMounted(() => {
     </header>
 
     <!-- 内容区域 -->
+    <nav v-if="!props.embedded" class="pv-module-switcher" :aria-label="t('nav.primary')">
+      <RouterLink class="pv-module-switcher-link active" to="/time" aria-current="page">
+        <span class="pv-module-switcher-code">TH</span><span>{{ t('nav.time') }}</span>
+      </RouterLink>
+      <RouterLink class="pv-module-switcher-link" to="/plans">
+        <span class="pv-module-switcher-code">PH</span><span>{{ t('nav.plans') }}</span>
+      </RouterLink>
+      <RouterLink class="pv-module-switcher-link" to="/tasks">
+        <span class="pv-module-switcher-code">TD</span><span>{{ t('nav.tasks') }}</span>
+      </RouterLink>
+    </nav>
+
     <div class="pv-content">
       <!-- Transition 的两个分支必须保持相邻，避免注释节点破坏 v-if/v-else 配对。 -->
       <Transition name="tab-fade" mode="out-in">
@@ -1058,6 +1070,11 @@ onMounted(() => {
   margin-left: auto;
 }
 
+.pv-module-switcher { display: flex; gap: 6px; max-width: 1180px; margin: 0 auto; padding: 0 28px 4px; }
+.pv-module-switcher-link { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 999px; padding: 7px 11px; color: var(--color-text-tertiary); background: transparent; font-size: 11px; text-decoration: none; }
+.pv-module-switcher-link:hover, .pv-module-switcher-link.active { border-color: var(--color-border); color: var(--color-text-primary); background: var(--color-primary-muted); }
+.pv-module-switcher-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+
 .pv-add-btn {
   display: flex;
   align-items: center;
@@ -1102,6 +1119,7 @@ onMounted(() => {
 
 @media (max-width: 680px) {
   .pv-header { padding: var(--spacing-sm) var(--spacing-md); }
+  .pv-module-switcher { overflow-x: auto; padding-right: 18px; padding-left: 18px; }
   .pv-tabs { flex-basis: 100%; order: 3; width: 100%; }
   .pv-header-actions { margin-left: auto; }
   .pv-plan-hero-header { align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm); }

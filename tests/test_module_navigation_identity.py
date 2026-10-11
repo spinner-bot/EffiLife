@@ -34,6 +34,14 @@ def test_plan_and_todo_workspaces_keep_explicit_context_switchers():
         assert active_route in view
 
 
+def test_time_workspace_keeps_the_same_explicit_context_switcher():
+    time_view = (ROOT / "time-helper/desk/src/views/PlanView.vue").read_text(encoding="utf-8")
+    assert 'class="pv-module-switcher"' in time_view
+    assert 'to="/time" aria-current="page"' in time_view
+    assert 'to="/plans"' in time_view
+    assert 'to="/tasks"' in time_view
+
+
 def test_context_switcher_is_navigation_only_and_does_not_merge_module_routes():
     router = (ROOT / "time-helper/desk/src/router/index.ts").read_text(encoding="utf-8")
     assert "path: '/plans'" in router
