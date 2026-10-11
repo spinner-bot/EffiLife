@@ -59,3 +59,10 @@ def test_mobile_build_workflow_does_not_use_desktop_sidecar():
     workflow = (ROOT / ".github" / "workflows" / "tauri-mobile-build.yml").read_text(encoding="utf-8")
     assert "build:sidecar" not in workflow
     assert "tauri-desktop-release" not in workflow
+
+
+def test_android_workflow_installs_the_sdk_and_ndk_versions_used_by_tauri():
+    workflow = (ROOT / ".github/workflows/tauri-mobile-build.yml").read_text(encoding="utf-8")
+    assert '"platforms;android-36"' in workflow
+    assert '"build-tools;36.0.0"' in workflow
+    assert '"ndk;25.2.9519653"' in workflow
