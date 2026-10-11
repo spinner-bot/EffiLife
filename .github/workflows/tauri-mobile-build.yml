@@ -86,6 +86,23 @@ jobs:
         working-directory: time-helper/desk
         run: npm run mobile:android:build
 
+      - name: Sign Android APK for formal release
+        if: vars.EFFILIFE_FORMAL_RELEASE_ENABLED == 'true'
+        env:
+          EFFILIFE_ANDROID_KEYSTORE_BASE64: ${{ secrets.EFFILIFE_ANDROID_KEYSTORE_BASE64 }}
+          EFFILIFE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.EFFILIFE_ANDROID_KEYSTORE_PASSWORD }}
+          EFFILIFE_ANDROID_KEY_ALIAS: ${{ secrets.EFFILIFE_ANDROID_KEY_ALIAS }}
+          EFFILIFE_ANDROID_KEY_PASSWORD: ${{ secrets.EFFILIFE_ANDROID_KEY_PASSWORD }}
+        run: |
+          apk="$(find time-helper/desk/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-unsigned.apk' -print -quit)"
+          test -n "$apk"
+          output="${apk%-unsigned.apk}.apk"
+          python scripts/sign_android_artifact.py \
+            --input "$apk" \
+            --output "$output" \
+            --zipalign "$ANDROID_HOME/build-tools/36.0.0/zipalign" \
+            --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+
       - name: Verify Android artifact
         run: >-
           python scripts/verify_mobile_artifacts.py

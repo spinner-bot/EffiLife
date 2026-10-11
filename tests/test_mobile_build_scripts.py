@@ -51,3 +51,27 @@ def test_mobile_artifact_verifier_rejects_empty_or_missing_outputs(tmp_path):
     (root / "empty.apk").write_bytes(b"")
     with pytest.raises(FileNotFoundError):
         verify(root, "android")
+
+
+def test_android_signing_requires_release_credentials_without_touching_input(tmp_path, monkeypatch):
+    from scripts.sign_android_artifact import sign_android_artifact
+
+    input_apk = tmp_path / "app-arm64-release-unsigned.apk"
+    output_apk = tmp_path / "app-arm64-release.apk"
+    input_apk.write_bytes(b"unsigned")
+    zipalign = tmp_path / "zipalign"
+    apksigner = tmp_path / "apksigner"
+    zipalign.write_bytes(b"tool")
+    apksigner.write_bytes(b"tool")
+    for name in (
+        "EFFILIFE_ANDROID_KEYSTORE_BASE64",
+        "EFFILIFE_ANDROID_KEYSTORE_PASSWORD",
+        "EFFILIFE_ANDROID_KEY_ALIAS",
+        "EFFILIFE_ANDROID_KEY_PASSWORD",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    with pytest.raises(ValueError, match="Missing required signing environment variable"):
+        sign_android_artifact(input_apk, output_apk, zipalign=zipalign, apksigner=apksigner)
+
+    assert input_apk.read_bytes() == b"unsigned"

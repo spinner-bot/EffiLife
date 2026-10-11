@@ -43,6 +43,10 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "gen/android/app/build/outputs/apk/**/*.apk" in workflow
     assert "python scripts/verify_mobile_artifacts.py" in workflow
     assert "--target android" in workflow
+    assert "Sign Android APK for formal release" in workflow
+    assert "EFFILIFE_ANDROID_KEYSTORE_BASE64" in workflow
+    assert "python scripts/sign_android_artifact.py" in workflow
+    assert "apksigner" in workflow
     assert "python scripts/generate_checksums.py" in workflow
     assert "release-checksums/EffiLife-android.sha256" in workflow
     assert "python scripts/generate_release_manifest.py" in workflow
