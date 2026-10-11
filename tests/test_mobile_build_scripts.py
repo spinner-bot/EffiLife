@@ -75,3 +75,39 @@ def test_android_signing_requires_release_credentials_without_touching_input(tmp
         sign_android_artifact(input_apk, output_apk, zipalign=zipalign, apksigner=apksigner)
 
     assert input_apk.read_bytes() == b"unsigned"
+
+
+def test_android_signing_replaces_unsigned_input_after_verified_output(tmp_path, monkeypatch):
+    import subprocess
+
+    from scripts import sign_android_artifact as signing
+
+    input_apk = tmp_path / "app-arm64-release-unsigned.apk"
+    output_apk = tmp_path / "app-arm64-release.apk"
+    input_apk.write_bytes(b"unsigned")
+    zipalign = tmp_path / "zipalign"
+    apksigner = tmp_path / "apksigner"
+    zipalign.write_bytes(b"tool")
+    apksigner.write_bytes(b"tool")
+    monkeypatch.setenv("EFFILIFE_ANDROID_KEYSTORE_BASE64", "a2V5")
+    monkeypatch.setenv("EFFILIFE_ANDROID_KEYSTORE_PASSWORD", "store-secret")
+    monkeypatch.setenv("EFFILIFE_ANDROID_KEY_ALIAS", "effilife")
+    monkeypatch.setenv("EFFILIFE_ANDROID_KEY_PASSWORD", "key-secret")
+
+    def fake_run(command, *, check, env):
+        assert check is True
+        if command[1] == "-f":
+            Path(command[-1]).write_bytes(b"aligned")
+        elif command[1] == "sign":
+            Path(command[command.index("--out") + 1]).write_bytes(b"signed")
+        elif command[1] == "verify":
+            assert Path(command[-1]).read_bytes() == b"signed"
+        else:
+            raise AssertionError(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(signing.subprocess, "run", fake_run)
+
+    assert signing.sign_android_artifact(input_apk, output_apk, zipalign=zipalign, apksigner=apksigner) == output_apk
+    assert output_apk.read_bytes() == b"signed"
+    assert not input_apk.exists()
