@@ -10,7 +10,7 @@ import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
-import { listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary } from '@/services/planGateway'
+import { completePlanTask, getPlanFull, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
@@ -42,6 +42,9 @@ const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
+type FocusPlanTask = { planId: string; planName: string; task: PlanTaskSummary }
+const focusPlanTasks = ref<FocusPlanTask[]>([])
+const completingPlanTaskId = ref<string | null>(null)
 const mobilePlanRuntime = isMobilePlanRuntime()
 
 function openDailyPlan() {
@@ -50,6 +53,10 @@ function openDailyPlan() {
 
 function openEventPlan(plan: PlanSummary) {
   router.push({ path: '/plans', query: { plan: plan.id } })
+}
+
+function openFocusPlan(item: FocusPlanTask) {
+  router.push({ path: '/plans', query: { plan: item.planId, task: item.task.internal_id } })
 }
 
 async function refreshTodoSummary() {
@@ -180,11 +187,40 @@ async function refreshEventPlanSummary() {
     const activePlans = await listPlanSummaries()
     if (requestId !== eventPlanSummaryRequestId) return
     eventPlans.value = activePlans
+    const focusCandidates = activePlans
+      .filter((plan) => !isPlanComplete(plan) && plan.total_tasks > plan.completed_tasks)
+      .slice(0, 2)
+    const details = await Promise.allSettled(focusCandidates.map((plan) => getPlanFull(plan.id)))
+    if (requestId !== eventPlanSummaryRequestId) return
+    focusPlanTasks.value = details.flatMap((result, index) => {
+      if (result.status !== 'fulfilled') return []
+      const plan = focusCandidates[index]
+      return result.value.sections
+        .flatMap((section) => section.tasks)
+        .filter((task) => !task.finish && task.is_active !== false)
+        .slice(0, 3)
+        .map((task) => ({ planId: plan.id, planName: plan.name, task }))
+    }).slice(0, 5)
     eventPlanState.value = 'ready'
   } catch {
     if (requestId !== eventPlanSummaryRequestId) return
     eventPlans.value = []
+    focusPlanTasks.value = []
     eventPlanState.value = 'unavailable'
+  }
+}
+
+async function completeHomePlanTask(item: FocusPlanTask) {
+  if (completingPlanTaskId.value) return
+  completingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
+  try {
+    await completePlanTask(item.planId, item.task.internal_id)
+    await refreshEventPlanSummary()
+    notifyToast(t('home.planTaskCompleted'), 'success')
+  } catch (error) {
+    notifyToast(error instanceof Error ? error.message : t('plans.unavailable'), 'error')
+  } finally {
+    completingPlanTaskId.value = null
   }
 }
 
@@ -660,6 +696,34 @@ onUnmounted(() => {
           </div>
         </section>
         </div>
+        <section v-if="eventPlanState === 'ready' && focusPlanTasks.length" class="focus-plan-card theme-card" :aria-label="t('home.focusPlanTasks')">
+          <header class="focus-plan-header">
+            <div>
+              <p class="today-todos-eyebrow"><span class="home-module-code">PH</span>{{ t('home.focusPlanEyebrow') }}</p>
+              <h2 class="stats-title">{{ t('home.focusPlanTasks') }}</h2>
+            </div>
+            <button type="button" class="today-todos-link" @click="router.push('/plans')">
+              {{ t('home.openPlanCenter') }} <ChevronRight :size="16" />
+            </button>
+          </header>
+          <div class="focus-plan-list">
+            <article v-for="item in focusPlanTasks" :key="`${item.planId}:${item.task.internal_id}`" class="focus-plan-row">
+              <button
+                type="button"
+                class="focus-plan-complete"
+                :disabled="completingPlanTaskId !== null"
+                :aria-label="t('home.completePlanTask', { id: item.task.display_id, content: item.task.content })"
+                @click="completeHomePlanTask(item)"
+              >
+                <Check v-if="completingPlanTaskId === `${item.planId}:${item.task.internal_id}`" :size="13" />
+              </button>
+              <button type="button" class="focus-plan-main" @click="openFocusPlan(item)">
+                <span class="focus-plan-task"><strong>{{ item.task.display_id }}</strong><span>{{ item.task.content }}</span></span>
+                <span class="focus-plan-meta">{{ item.planName }} · {{ item.task.time_minutes }} {{ t('plans.minutesShort') }}</span>
+              </button>
+            </article>
+          </div>
+        </section>
       </section>
 
       <section class="today-todos-card theme-card">
@@ -1233,6 +1297,19 @@ onUnmounted(() => {
 .event-overview-retry { justify-self: start; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font: inherit; font-size: 12px; }
 .event-overview-retry:hover { border-color: var(--color-border-hover); }
 .event-overview-retry:disabled { cursor: wait; opacity: .6; }
+.focus-plan-card { margin-top: var(--spacing-md); padding: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
+.focus-plan-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
+.focus-plan-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
+.focus-plan-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+.focus-plan-row:hover { border-color: var(--color-primary); }
+.focus-plan-complete { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-primary); background: transparent; cursor: pointer; }
+.focus-plan-complete:hover, .focus-plan-complete:focus-visible { color: var(--color-button-text); background: var(--color-primary); outline: 0; }
+.focus-plan-complete:disabled { cursor: wait; opacity: .7; }
+.focus-plan-main { display: grid; min-width: 0; gap: 3px; border: 0; padding: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; }
+.focus-plan-task { display: flex; min-width: 0; gap: 8px; color: var(--color-text-primary); font-size: 13px; }
+.focus-plan-task strong { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
+.focus-plan-task span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.focus-plan-meta { overflow: hidden; color: var(--color-text-tertiary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 
 .today-todos-card {
   margin-top: var(--spacing-md);
@@ -1282,6 +1359,8 @@ onUnmounted(() => {
   .today-todos-link { min-height: 40px; }
   .today-todo-complete { width: 32px; height: 32px; }
   .today-todo-record { width: 40px; height: 40px; }
+  .focus-plan-header { align-items: center; }
+  .focus-plan-complete { width: 32px; height: 32px; }
 }
 
 /* 平板横向工作台：保留桌面层级，避免 761–899px 被窄单列容器浪费。 */
@@ -1310,6 +1389,7 @@ onUnmounted(() => {
   .checkin-badges { justify-content: flex-start; }
   .workflow-summary,
   .stats-section,
+  .focus-plan-card,
   .today-todos-card,
   .home-quick-actions { grid-column: 2; width: 100%; }
   .workflow-summary { margin-bottom: 0; }

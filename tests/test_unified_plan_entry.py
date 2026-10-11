@@ -29,6 +29,14 @@ def test_home_daily_plan_link_uses_dedicated_time_workspace():
 
 def test_home_todo_completion_stays_in_the_todo_module():
     source = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
-    assert "completePlanTask" not in source
     assert "todo.related_plan_id" not in source
-    assert "await TodoService.complete(todo.id)" in source
+    todo_completion = source[source.index("async function completeHomeTodo"):source.index("async function addQuickTodo")]
+    assert "completePlanTask" not in todo_completion
+    assert "await TodoService.complete(todo.id)" in todo_completion
+
+
+def test_home_plan_focus_completion_stays_in_the_ph_gateway():
+    source = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
+    focus_completion = source[source.index("async function completeHomePlanTask"):source.index("/** Serialize dashboard reads")]
+    assert "await completePlanTask(item.planId, item.task.internal_id)" in focus_completion
+    assert "TodoService.create" not in focus_completion
