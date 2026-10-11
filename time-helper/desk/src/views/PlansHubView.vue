@@ -660,6 +660,10 @@ function groupEntries(section: PlanFull['sections'][number]) {
   }))
 }
 
+function activePlanTasks(section: PlanFull['sections'][number]): PlanFull['sections'][number]['tasks'] {
+  return section.tasks.filter((task) => task.is_active !== false)
+}
+
 function groupDisplayRange(section: PlanFull['sections'][number], group: ReturnType<typeof groupEntries>[number]): string {
   const visibleTasks = section.tasks.filter((task) => task.is_active !== false)
   const first = visibleTasks.find((task) => task.internal_index >= group.start && task.internal_index <= group.end)
@@ -868,7 +872,7 @@ async function createLinkedTodos(): Promise<void> {
     )
     let created = 0
     for (const section of plan.sections) {
-      for (const task of section.tasks) {
+      for (const task of activePlanTasks(section)) {
         if (task.finish || existingTaskIds.has(task.internal_id)) continue
         await TodoService.create({
           title: task.content,
@@ -923,10 +927,10 @@ function backFromDetail() {
   loadPlans()
 }
 
-const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.length, 0) || 0)
-const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => task.finish).length, 0) || 0)
-const linkedTodoCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
-const unlinkedActiveTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + section.tasks.filter((task) => !task.finish && !linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
+const activeTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + activePlanTasks(section).length, 0) || 0)
+const completedTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + activePlanTasks(section).filter((task) => task.finish).length, 0) || 0)
+const linkedTodoCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + activePlanTasks(section).filter((task) => linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
+const unlinkedActiveTaskCount = computed(() => selectedPlan.value?.sections.reduce((total, section) => total + activePlanTasks(section).filter((task) => !task.finish && !linkedTodoTaskIds.value.has(task.internal_id)).length, 0) || 0)
 const selectedPlanProgress = computed(() => activeTaskCount.value > 0
   ? Math.round((completedTaskCount.value / activeTaskCount.value) * 100)
   : 0)
@@ -1153,7 +1157,7 @@ onUnmounted(() => {
             <select v-model="logTaskId">
               <option value="base">{{ t('plans.generalProgress') }}</option>
               <template v-for="section in selectedPlan.sections" :key="section.index">
-                <option v-for="task in section.tasks" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
+                <option v-for="task in activePlanTasks(section)" :key="task.internal_id" :value="task.internal_id">{{ task.display_id }} · {{ task.content }}</option>
               </template>
             </select>
           </label>
@@ -1180,7 +1184,7 @@ onUnmounted(() => {
         </form>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !section.tasks.length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !activePlanTasks(section).length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" required autofocus /></label>
             <label class="task-minutes-field"><span>{{ t('plans.taskMinutes') }}</span><small>{{ t('plans.taskMinutesHint') }}</small><input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
@@ -1190,13 +1194,13 @@ onUnmounted(() => {
           <form v-if="canEditPlan && groupSectionIndex === section.index" class="group-editor" @submit.prevent="saveGroup">
             <label>{{ t('plans.groupTitle') }}<input v-model="groupTitle" required autofocus /></label>
             <label>{{ t('plans.groupDescription') }}<input v-model="groupDescription" /></label>
-            <label>{{ t('plans.groupStart') }}<select v-model.number="groupStart"><option v-for="task in section.tasks" :key="`start-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
-            <label>{{ t('plans.groupEnd') }}<select v-model.number="groupEnd"><option v-for="task in section.tasks" :key="`end-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
+            <label>{{ t('plans.groupStart') }}<select v-model.number="groupStart"><option v-for="task in activePlanTasks(section)" :key="`start-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
+            <label>{{ t('plans.groupEnd') }}<select v-model.number="groupEnd"><option v-for="task in activePlanTasks(section)" :key="`end-${task.internal_id}`" :value="task.internal_index">{{ task.display_id }}</option></select></label>
             <button type="button" class="plans-secondary" @click="cancelGroupEdit">{{ t('plans.cancel') }}</button>
             <button type="submit" class="plans-primary" :disabled="isLoading || !groupTitle.trim() || groupEnd <= groupStart">{{ editingGroupKey ? t('plans.save') : t('plans.addGroup') }}</button>
           </form>
-          <p v-if="section.tasks.length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
-          <article v-for="task in section.tasks" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
+          <p v-if="activePlanTasks(section).length === 0" class="section-empty">{{ t('plans.noTasks') }}</p>
+          <article v-for="task in activePlanTasks(section)" :id="`plan-task-${task.internal_id}`" :key="task.internal_id" class="event-task-row" :class="{ finished: task.finish, 'search-target': searchTargetTaskId === task.internal_id }">
             <button type="button" class="task-complete" :disabled="!!task.finish || isLoading || !canEditPlan" :aria-label="t('plans.completeTaskLabel', { id: task.display_id, content: task.content })" @click="completeTask(task.internal_id)"><Check v-if="task.finish" :size="15" /></button>
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span><small v-if="linkedTodoTaskIds.has(task.internal_id)" class="task-todo-link" :title="t('plans.linkedTodo')">{{ t('plans.linkedTodo') }}</small><small v-if="linkedTodoMinutesByTask.has(task.internal_id)" class="task-time-spent" :title="t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 })">{{ t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 }) }}</small></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
