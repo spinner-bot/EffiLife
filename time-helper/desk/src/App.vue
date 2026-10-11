@@ -617,6 +617,8 @@ watch(() => appStore.todayStat, () => {
   .global-nav-shortcut { display: none; }
   .global-search-trigger { margin-left: 0; padding: 7px; }
   .global-search-trigger span, .global-search-trigger kbd { display: none; }
+  .global-quick-capture span { display: none; }
+  .global-quick-capture { padding: 7px; }
 }
 
 /* 全局主题效果 */

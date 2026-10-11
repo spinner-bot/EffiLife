@@ -51,6 +51,13 @@ def test_app_compacts_resized_desktop_navigation_before_wide_rail_breakpoint():
     assert ".global-nav-module-code { display: none; }" in compact_block
 
 
+def test_global_quick_capture_compacts_with_tablet_navigation():
+    app = (ROOT / "time-helper/desk/src/App.vue").read_text(encoding="utf-8")
+    tablet_block = app.split("@media (min-width: 681px) and (max-width: 820px)", 1)[1].split("/* ", 1)[0]
+    assert ".global-quick-capture span { display: none; }" in tablet_block
+    assert ".global-quick-capture { padding: 7px; }" in tablet_block
+
+
 def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     mobile_block = app.split("@media (max-width: 680px)", 1)[1]
