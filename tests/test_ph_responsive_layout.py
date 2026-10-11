@@ -41,6 +41,18 @@ def test_plan_index_uses_activity_and_archive_columns_on_wide_desktop():
     assert ".plan-index-main .event-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in source
 
 
+def test_plan_detail_uses_a_two_column_workbench_on_tablet():
+    source = SOURCE.read_text(encoding="utf-8")
+    tablet_block = source.split("@media (min-width: 761px) and (max-width: 1099px)", 1)[1].split("@media (max-width: 760px)", 1)[0]
+    assert ".plan-detail-layout { grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr); align-items: start; gap: 16px; }" in tablet_block
+
+
+def test_plan_detail_returns_to_single_column_on_mobile():
+    source = SOURCE.read_text(encoding="utf-8")
+    mobile_block = source.split("@media (max-width: 760px)", 1)[1]
+    assert ".plan-detail-layout { grid-template-columns: 1fr; }" in mobile_block
+
+
 def test_plan_cards_wrap_long_theme_names_inside_their_grid_cells():
     source = SOURCE.read_text(encoding="utf-8")
     assert ".event-plan-card > strong { min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }" in source
