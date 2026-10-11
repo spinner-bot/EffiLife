@@ -24,6 +24,8 @@ def test_plan_center_uses_active_task_projection_for_display_and_statistics():
     assert "return section.tasks.filter((task) => task.is_active !== false)" in source
     assert "v-for=\"task in activePlanTasks(section)\"" in source
     assert "activePlanTasks(section).length" in source
+    assert "const taskIndexes = activePlanTasks(section).map" in source
+    assert ".flatMap((section) => activePlanTasks(section))" in source
     assert "section.tasks.length, 0)" not in source
 
 

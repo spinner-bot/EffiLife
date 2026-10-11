@@ -673,7 +673,7 @@ function groupDisplayRange(section: PlanFull['sections'][number], group: ReturnT
 }
 
 function startNewGroup(section: PlanFull['sections'][number]) {
-  const taskIndexes = section.tasks.map((task) => task.internal_index)
+  const taskIndexes = activePlanTasks(section).map((task) => task.internal_index)
   groupSectionIndex.value = section.index
   editingGroupKey.value = null
   groupTitle.value = ''
@@ -973,7 +973,7 @@ async function revealSearchTarget(): Promise<void> {
     return
   }
   const task = selectedPlan.value?.sections
-    .flatMap((section) => section.tasks)
+    .flatMap((section) => activePlanTasks(section))
     .find((item) => item.internal_id === taskId || item.display_id === taskId)
   if (!task) {
     searchTargetTaskId.value = null
