@@ -269,10 +269,35 @@ fn start_plan_helper_sidecar(app: &tauri::AppHandle) -> Result<CommandChild, Box
     });
 
     if !plan_helper_is_ready() {
-        let _ = child.kill();
+        stop_plan_helper_sidecar(child);
         return Err("plan-helper sidecar did not pass its health check".into());
     }
     Ok(child)
+}
+
+#[cfg(all(not(debug_assertions), desktop))]
+fn stop_plan_helper_sidecar(child: CommandChild) {
+    let pid = child.pid();
+
+    // PyInstaller one-file executables keep a bootstrap process and a worker
+    // process. CommandChild::kill() only targets the bootstrap PID on Windows,
+    // so terminate the complete process tree to avoid leaving a stale service
+    // on port 8765 after EffiLife exits.
+    #[cfg(windows)]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .status();
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = pid;
+    }
+
+    // Keep the plugin-level cleanup as a fallback and to release its process
+    // handle on every platform.
+    let _ = child.kill();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -306,7 +331,7 @@ pub fn run() {
                 if let Some(state) = _app_handle.try_state::<PlanHelperSidecarState>() {
                     if let Ok(mut child) = state.0.lock() {
                         if let Some(child) = child.take() {
-                            let _ = child.kill();
+                            stop_plan_helper_sidecar(child);
                         }
                     }
                 }
