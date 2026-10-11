@@ -53,6 +53,18 @@ python launcher/start.py --unified
 
 > 当前 launcher 脚本仅用于开发、测试、迁移与回归验证。正式版本使用 Tauri 安装包启动，不要求用户单独安装 Python 或手动运行 plan-helper。
 
+Windows 本地需要验证或构建 Tauri 原生桌面包时，可使用仓库包装脚本。它会自动定位已安装的 Visual Studio MSVC 环境，并接入统一环境站中的 Rust/Node；不会修改系统级环境变量：
+
+```powershell
+# 只做 Rust/Tauri 原生检查
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows_native.ps1 -Action check
+
+# 构建 Windows NSIS 安装包
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows_native.ps1 -Action build -Bundle nsis
+```
+
+如果工作站使用不同的工具目录，可通过 `EFFILIFE_RUST_TOOLCHAIN_DIR` 和 `EFFILIFE_NODE_DIR` 覆盖默认路径。iOS 当前仍按项目范围暂缓。
+
 统一工作台由 `time-helper/desk` 提供应用壳和主题系统，融合以下能力：
 
 - 计划中心：整份主题计划、分组与嵌套任务组、任务编辑、进展记录和归档恢复
