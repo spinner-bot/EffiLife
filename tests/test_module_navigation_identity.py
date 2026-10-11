@@ -21,3 +21,22 @@ def test_workspace_navigation_exposes_module_responsibilities_as_titles():
     assert ':title="t(\'plans.moduleDescription\')"' in APP
     assert ':title="t(\'home.timeModuleSummary\')"' in APP
     assert ':title="t(\'tasks.moduleDescription\')"' in APP
+
+
+def test_plan_and_todo_workspaces_keep_explicit_context_switchers():
+    plans = (ROOT / "time-helper/desk/src/views/PlansHubView.vue").read_text(encoding="utf-8")
+    tasks = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")
+    for view, active_route in ((plans, 'to="/plans" aria-current="page"'), (tasks, 'to="/tasks" aria-current="page"')):
+        assert 'class="module-switcher"' in view
+        assert 'to="/time"' in view
+        assert 'to="/plans"' in view
+        assert 'to="/tasks"' in view
+        assert active_route in view
+
+
+def test_context_switcher_is_navigation_only_and_does_not_merge_module_routes():
+    router = (ROOT / "time-helper/desk/src/router/index.ts").read_text(encoding="utf-8")
+    assert "path: '/plans'" in router
+    assert "path: '/tasks'" in router
+    assert "component: () => import('@/views/PlansHubView.vue')" in router
+    assert "component: () => import('@/views/TaskCenterView.vue')" in router
