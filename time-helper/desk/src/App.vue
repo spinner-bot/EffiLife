@@ -572,6 +572,24 @@ watch(() => appStore.todayStat, () => {
   .global-search-trigger { width: 100%; margin-top: auto; margin-left: 0; justify-content: center; }
 }
 
+/* Keep the desktop shell usable in a resized window before the wide-screen
+   rail takes over. Core module entries remain visible; secondary shortcuts and
+   duplicate labels give the content area the space they need. */
+@media (min-width: 821px) and (max-width: 1199px) {
+  .global-nav { gap: 12px; }
+  .global-nav-links { min-width: 0; flex: 1 1 auto; justify-content: flex-end; }
+  .global-nav-link { min-width: 0; padding: 8px 7px; }
+  .global-nav-shortcut { display: none; }
+  .global-search-trigger { flex: 0 0 auto; padding: 7px; }
+  .global-search-trigger span, .global-search-trigger kbd { display: none; }
+}
+
+@media (min-width: 821px) and (max-width: 1020px) {
+  .global-brand > span:last-child { display: none; }
+  .global-nav-module-code { display: none; }
+  .global-nav-link { gap: 5px; padding: 8px 6px; }
+}
+
 @media (prefers-reduced-motion: reduce) { .app-startup { transition: none; } }
 
 /* Keep tablet navigation horizontal while reserving room for every module. */

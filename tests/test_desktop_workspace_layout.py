@@ -40,6 +40,17 @@ def test_app_keeps_tablet_navigation_horizontal_without_overflowing_controls():
     assert ".global-search-trigger span, .global-search-trigger kbd { display: none; }" in tablet_block
 
 
+def test_app_compacts_resized_desktop_navigation_before_wide_rail_breakpoint():
+    app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
+    medium_block = app.split("@media (min-width: 821px) and (max-width: 1199px)", 1)[1].split("@media (min-width: 821px) and (max-width: 1020px)", 1)[0]
+    compact_block = app.split("@media (min-width: 821px) and (max-width: 1020px)", 1)[1].split("@media (prefers-reduced-motion", 1)[0]
+    assert ".global-nav-links { min-width: 0; flex: 1 1 auto; justify-content: flex-end; }" in medium_block
+    assert ".global-nav-shortcut { display: none; }" in medium_block
+    assert ".global-search-trigger span, .global-search-trigger kbd { display: none; }" in medium_block
+    assert ".global-brand > span:last-child { display: none; }" in compact_block
+    assert ".global-nav-module-code { display: none; }" in compact_block
+
+
 def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
     app = (ROOT / "time-helper" / "desk" / "src" / "App.vue").read_text(encoding="utf-8")
     mobile_block = app.split("@media (max-width: 680px)", 1)[1]
