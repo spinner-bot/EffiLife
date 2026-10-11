@@ -44,6 +44,8 @@ VERSION_FILE = BASE_DIR / "time-helper" / "VERSION"
 # at call time so an embedded launcher and the build diagnostics observe the
 # same runtime configuration.
 CUSTOM_NODE_DIR = Path("F:/dev-tools/node")
+CUSTOM_RUST_TOOLCHAIN_DIR = Path("F:/dev-tools/rustup/toolchains/stable-x86_64-pc-windows-msvc/bin")
+CUSTOM_ANDROID_SDK_DIR = Path("F:/dev-tools/android-sdk")
 
 
 def custom_node_dir() -> Path | None:
@@ -129,21 +131,46 @@ def find_node():
 
 
 def find_rust_tool(name):
-    """Find a Rust toolchain executable for release diagnostics."""
+    """Find Rust, preferring the managed toolchain over a broken rustup shim."""
+    configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
+    toolchain_dir = Path(configured).expanduser() if configured else CUSTOM_RUST_TOOLCHAIN_DIR
+    if os.name == "nt":
+        managed = toolchain_dir / f"{name}.exe"
+        if managed.is_file():
+            return str(managed)
     return shutil.which(name) or shutil.which(f"{name}.exe")
+
+
+def android_sdk_dir() -> Path | None:
+    """Return the managed Android SDK when no explicit SDK variable is set."""
+    for key in ("ANDROID_HOME", "ANDROID_SDK_ROOT"):
+        configured = os.environ.get(key, "").strip()
+        if configured:
+            return Path(configured).expanduser()
+    if os.name == "nt" and CUSTOM_ANDROID_SDK_DIR.is_dir():
+        return CUSTOM_ANDROID_SDK_DIR
+    return None
+
+
+def find_android_adb():
+    sdk_dir = android_sdk_dir()
+    if sdk_dir is not None:
+        managed = sdk_dir / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb")
+        if managed.is_file():
+            return str(managed)
+    return shutil.which("adb") or shutil.which("adb.exe")
 
 
 def native_toolchain_status():
     """Report optional native-build tools without changing launcher readiness."""
-    sdk_configured = bool(
-        os.environ.get("ANDROID_HOME", "").strip()
-        or os.environ.get("ANDROID_SDK_ROOT", "").strip()
-    )
+    sdk_dir = android_sdk_dir()
+    adb = find_android_adb()
     return {
         "android": {
-            "adb": shutil.which("adb") or shutil.which("adb.exe"),
-            "sdk_configured": sdk_configured,
-            "ready": bool((shutil.which("adb") or shutil.which("adb.exe")) and sdk_configured),
+            "adb": adb,
+            "sdk_root": str(sdk_dir) if sdk_dir else None,
+            "sdk_configured": sdk_dir is not None,
+            "ready": bool(adb and sdk_dir),
         },
         "ios": {
             "xcodebuild": shutil.which("xcodebuild") or shutil.which("xcodebuild.exe"),

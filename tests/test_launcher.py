@@ -937,6 +937,19 @@ def test_launcher_diagnostics_report_launch_mode_and_binary_candidates(monkeypat
     assert all("path" in item and "exists" in item and "non_empty" in item for item in result["installer_artifacts"])
 
 
+def test_launcher_prefers_managed_rust_toolchain_when_path_has_no_tool(monkeypatch, tmp_path):
+    toolchain = tmp_path / "rust" / "bin"
+    toolchain.mkdir(parents=True)
+    (toolchain / "cargo.exe").write_bytes(b"cargo")
+    (toolchain / "rustc.exe").write_bytes(b"rustc")
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "CUSTOM_RUST_TOOLCHAIN_DIR", toolchain)
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+
+    assert launcher.find_rust_tool("cargo") == str(toolchain / "cargo.exe")
+    assert launcher.find_rust_tool("rustc") == str(toolchain / "rustc.exe")
+
+
 def test_launcher_diagnostics_distinguish_binary_from_installer(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher.os, "name", "nt")
@@ -1038,6 +1051,7 @@ def test_launcher_diagnostics_expose_platform_native_toolchain_hints(monkeypatch
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
     monkeypatch.setattr(launcher, "find_rust_tool", lambda _name: None)
     monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(launcher, "CUSTOM_ANDROID_SDK_DIR", Path("F:/missing-effilife-android-sdk"))
     monkeypatch.delenv("ANDROID_HOME", raising=False)
     monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
 

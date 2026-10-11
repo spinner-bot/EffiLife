@@ -23,6 +23,7 @@ def test_build_environment_reports_missing_required_tools(monkeypatch):
 
 def test_android_report_requires_sdk_root_in_addition_to_tool_binaries(monkeypatch):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "CUSTOM_ANDROID_SDK_DIR", Path("F:/missing-effilife-android-sdk"))
     monkeypatch.delenv("ANDROID_HOME", raising=False)
     monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
 
@@ -91,3 +92,16 @@ def test_node_tool_path_falls_back_to_system_path(monkeypatch, tmp_path):
 
     assert MODULE.node_tool_path("node") == "/system/node"
     assert MODULE.node_tool_path("npm") == "/system/npm"
+
+
+def test_managed_windows_toolchain_is_used_when_path_is_missing(monkeypatch, tmp_path):
+    toolchain = tmp_path / "rust" / "bin"
+    toolchain.mkdir(parents=True)
+    for name in ("cargo", "rustc"):
+        (toolchain / f"{name}.exe").write_text(name, encoding="utf-8")
+    monkeypatch.setattr(MODULE.os, "name", "nt")
+    monkeypatch.setattr(MODULE, "CUSTOM_RUST_TOOLCHAIN_DIR", toolchain)
+    monkeypatch.setattr(MODULE.shutil, "which", lambda _name: None)
+
+    assert MODULE.executable_path("cargo") == str(toolchain / "cargo.exe")
+    assert MODULE.executable_path("rustc") == str(toolchain / "rustc.exe")

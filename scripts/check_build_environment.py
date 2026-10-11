@@ -10,6 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CUSTOM_RUST_TOOLCHAIN_DIR = Path("F:/dev-tools/rustup/toolchains/stable-x86_64-pc-windows-msvc/bin")
+CUSTOM_ANDROID_SDK_DIR = Path("F:/dev-tools/android-sdk")
 
 TARGET_REQUIREMENTS = {
     "desktop": ("node", "npm", "cargo", "rustc"),
@@ -25,6 +27,18 @@ MOBILE_PROJECTS = {
 
 
 def executable_path(name: str) -> str | None:
+    if os.name == "nt" and name in {"cargo", "rustc"}:
+        configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
+        toolchain_dir = Path(configured).expanduser() if configured else CUSTOM_RUST_TOOLCHAIN_DIR
+        candidate = toolchain_dir / f"{name}.exe"
+        if candidate.is_file():
+            return str(candidate)
+    if os.name == "nt" and name == "adb":
+        configured = os.environ.get("ANDROID_HOME", "").strip() or os.environ.get("ANDROID_SDK_ROOT", "").strip()
+        sdk_dir = Path(configured).expanduser() if configured else CUSTOM_ANDROID_SDK_DIR
+        candidate = sdk_dir / "platform-tools" / "adb.exe"
+        if candidate.is_file():
+            return str(candidate)
     return shutil.which(name)
 
 
@@ -55,9 +69,10 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         name: node_tool_path(name) if name in {"node", "npm"} else executable_path(name)
         for name in requirements
     }
+    managed_sdk = CUSTOM_ANDROID_SDK_DIR if os.name == "nt" and CUSTOM_ANDROID_SDK_DIR.is_dir() else None
     sdk_roots = {
-        "ANDROID_HOME": os.environ.get("ANDROID_HOME"),
-        "ANDROID_SDK_ROOT": os.environ.get("ANDROID_SDK_ROOT"),
+        "ANDROID_HOME": os.environ.get("ANDROID_HOME") or (str(managed_sdk) if managed_sdk else None),
+        "ANDROID_SDK_ROOT": os.environ.get("ANDROID_SDK_ROOT") or (str(managed_sdk) if managed_sdk else None),
     }
     missing = [name for name, path in tools.items() if not path]
     if target == "android" and not any(sdk_roots.values()):
