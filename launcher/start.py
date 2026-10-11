@@ -224,16 +224,27 @@ def release_signing_status():
     signtool = find_windows_signtool()
     user_profile = os.environ.get("USERPROFILE")
     debug_keystore = Path(user_profile) / ".android" / "debug.keystore" if user_profile else Path.home() / ".android" / "debug.keystore"
+    configured_keystore = os.environ.get("EFFILIFE_ANDROID_KEYSTORE", "").strip()
+    keystore = Path(configured_keystore).expanduser() if configured_keystore else debug_keystore
+    configured_certificate = os.environ.get("EFFILIFE_WINDOWS_SIGNING_CERT", "").strip()
+    certificate = Path(configured_certificate).expanduser() if configured_certificate else None
+    android_ready = bool(apksigner and zipalign and keystore.is_file())
+    windows_ready = bool(signtool)
     return {
         "android": {
             "apksigner": apksigner,
             "zipalign": zipalign,
-            "debug_keystore": str(debug_keystore) if debug_keystore.is_file() else None,
-            "ready": bool(apksigner and zipalign and debug_keystore.is_file()),
+            "keystore": str(keystore) if keystore.is_file() else None,
+            "keystore_configured": bool(configured_keystore and keystore.is_file()),
+            "ready": android_ready,
+            "formal_ready": bool(android_ready and configured_keystore),
         },
         "windows": {
             "signtool": signtool,
-            "ready": bool(signtool),
+            "certificate": str(certificate) if certificate and certificate.is_file() else None,
+            "certificate_configured": bool(certificate and certificate.is_file()),
+            "ready": windows_ready,
+            "formal_ready": bool(windows_ready and certificate and certificate.is_file()),
         },
     }
 
@@ -824,12 +835,26 @@ def collect_diagnostics(modules):
             "message": "A version-matched installer exists, but Windows code-signing tools are unavailable",
             "hint": "Sign the installer in the controlled release environment before distribution",
         })
+    if usable_installers and signing_status["windows"]["ready"] and not signing_status["windows"]["formal_ready"]:
+        hints.append({
+            "code": "windows-signing-certificate-missing",
+            "severity": "info",
+            "message": "Windows signing tool is available, but no release certificate path is configured",
+            "hint": "Provide EFFILIFE_WINDOWS_SIGNING_CERT only in the controlled release environment",
+        })
     if not signing_status["android"]["ready"]:
         hints.append({
             "code": "android-signing-missing",
             "severity": "info",
             "message": "Android signing prerequisites are unavailable; APK output remains unsigned",
             "hint": "Use the controlled Android release environment to align and sign the APK",
+        })
+    elif not signing_status["android"]["formal_ready"]:
+        hints.append({
+            "code": "android-signing-key-missing",
+            "severity": "info",
+            "message": "Android tools are available, but no release keystore is configured",
+            "hint": "Provide EFFILIFE_ANDROID_KEYSTORE only in the controlled release environment",
         })
     if any(status.get("needs_setup") for status in module_status.values()):
         hints.append({
@@ -864,7 +889,7 @@ def collect_diagnostics(modules):
         "release_signing": signing_status,
         "launch_ready": not issues,
         "distribution_ready": bool(usable_installers),
-        "formal_distribution_ready": bool(usable_installers and signing_status["windows"]["ready"]),
+        "formal_distribution_ready": bool(usable_installers and signing_status["windows"]["formal_ready"]),
         "modules": module_status,
         "companions": companion_status,
         "issues": issues,
@@ -917,7 +942,7 @@ def print_doctor_report(report):
             f"{artifact_path} (artifact {artifact_version}, current {report.get('version') or 'unknown'})"
         )
     formal_distribution_ready = bool(
-        installers_ready and (report.get("release_signing") or {}).get("windows", {}).get("ready")
+        installers_ready and (report.get("release_signing") or {}).get("windows", {}).get("formal_ready")
     )
     if formal_distribution_ready:
         print("Distribution status: ready")

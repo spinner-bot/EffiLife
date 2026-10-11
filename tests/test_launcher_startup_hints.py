@@ -76,16 +76,24 @@ def test_release_signing_status_detects_android_and_windows_prerequisites(monkey
     profile = tmp_path / "profile"
     (profile / ".android").mkdir(parents=True)
     (profile / ".android" / "debug.keystore").write_bytes(b"test")
+    release_keystore = tmp_path / "release.keystore"
+    release_keystore.write_bytes(b"release")
+    certificate = tmp_path / "release.pfx"
+    certificate.write_bytes(b"certificate")
     monkeypatch.setattr(launcher, "android_sdk_dir", lambda: sdk)
     monkeypatch.setenv("USERPROFILE", str(profile))
+    monkeypatch.setenv("EFFILIFE_ANDROID_KEYSTORE", str(release_keystore))
+    monkeypatch.setenv("EFFILIFE_WINDOWS_SIGNING_CERT", str(certificate))
     monkeypatch.setattr(launcher.shutil, "which", lambda name: "C:/Windows Kits/signtool.exe" if name == "signtool.exe" else None)
 
     status = launcher.release_signing_status()
 
     assert status["android"]["ready"] is True
+    assert status["android"]["formal_ready"] is True
     assert status["android"]["apksigner"].endswith("apksigner.bat")
     assert status["android"]["zipalign"].endswith("zipalign.exe")
-    assert status["windows"] == {"signtool": "C:/Windows Kits/signtool.exe", "ready": True}
+    assert status["windows"]["signtool"] == "C:/Windows Kits/signtool.exe"
+    assert status["windows"]["formal_ready"] is True
 
 
 def test_release_signing_status_reports_unsigned_boundary(monkeypatch, tmp_path):
@@ -98,6 +106,27 @@ def test_release_signing_status_reports_unsigned_boundary(monkeypatch, tmp_path)
 
     assert status["android"]["ready"] is False
     assert status["windows"]["ready"] is False
+
+
+def test_signing_tools_without_release_credentials_are_not_formal_ready(monkeypatch, tmp_path):
+    sdk = tmp_path / "android-sdk"
+    build_tools = sdk / "build-tools" / "35.0.0"
+    build_tools.mkdir(parents=True)
+    (build_tools / "apksigner.bat").write_text("", encoding="utf-8")
+    (build_tools / "zipalign.exe").write_text("", encoding="utf-8")
+    monkeypatch.setattr(launcher, "android_sdk_dir", lambda: sdk)
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.setattr(launcher, "windows_signtool_candidates", lambda: [tmp_path / "signtool.exe"])
+    (tmp_path / "signtool.exe").write_bytes(b"tool")
+    monkeypatch.delenv("EFFILIFE_ANDROID_KEYSTORE", raising=False)
+    monkeypatch.delenv("EFFILIFE_WINDOWS_SIGNING_CERT", raising=False)
+    monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
+
+    status = launcher.release_signing_status()
+
+    assert status["android"]["formal_ready"] is False
+    assert status["windows"]["ready"] is True
+    assert status["windows"]["formal_ready"] is False
 
 
 def test_windows_signtool_can_be_found_in_the_windows_sdk(monkeypatch, tmp_path):
