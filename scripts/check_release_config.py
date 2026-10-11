@@ -12,6 +12,8 @@ def validate(root: Path) -> list[str]:
     errors: list[str] = []
     version = (root / "time-helper" / "VERSION").read_text(encoding="utf-8").strip()
     package = json.loads((root / "time-helper" / "desk" / "package.json").read_text(encoding="utf-8"))
+    lock_path = root / "time-helper" / "desk" / "package-lock.json"
+    lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.exists() else {}
     tauri = json.loads((root / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
     cargo = (root / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
     workflow = (root / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
@@ -20,6 +22,10 @@ def validate(root: Path) -> list[str]:
     versions = {version, str(package.get("version")), str(tauri.get("version")), cargo_match.group(1) if cargo_match else ""}
     if len(versions) != 1:
         errors.append(f"desktop versions are not aligned: {sorted(versions)}")
+    lock_root = lock.get("packages", {}).get("") if isinstance(lock.get("packages"), dict) else {}
+    lock_versions = {str(lock.get("version", "")), str(lock_root.get("version", "")) if isinstance(lock_root, dict) else ""}
+    if lock_path.exists() and (lock_versions != {version}):
+        errors.append(f"desktop package-lock versions are not aligned: {sorted(lock_versions)}")
     if "binaries/efflife-plan-helper" not in tauri.get("bundle", {}).get("externalBin", []):
         errors.append("Tauri config does not declare the Plan Helper sidecar")
     if "nsis" not in tauri.get("bundle", {}).get("targets", []):

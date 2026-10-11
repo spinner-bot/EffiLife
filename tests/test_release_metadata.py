@@ -12,10 +12,11 @@ def test_desktop_release_versions_are_aligned():
     tauri = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
     mobile = json.loads((ROOT / "time-helper" / "desk" / "src-tauri" / "tauri.mobile.conf.json").read_text(encoding="utf-8"))
     cargo_text = (ROOT / "time-helper" / "desk" / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+    lock = json.loads((ROOT / "time-helper" / "desk" / "package-lock.json").read_text(encoding="utf-8"))
     cargo_version = re.search(r'^version\s*=\s*"([^"]+)"', cargo_text, re.MULTILINE)
 
     assert cargo_version is not None
-    assert source_version == package["version"] == tauri["version"] == mobile["version"] == cargo_version.group(1)
+    assert source_version == package["version"] == lock["version"] == lock["packages"][""]["version"] == tauri["version"] == mobile["version"] == cargo_version.group(1)
     assert mobile["productName"] == tauri["productName"]
     assert mobile["identifier"] == tauri["identifier"]
 
