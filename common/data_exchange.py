@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import math
 import os
 import shutil
 import tempfile
@@ -70,8 +71,34 @@ def _validate_workspace_dataset_shapes(datasets: Mapping[str, Any]) -> None:
         raise ValueError("Workspace plan_helper archives must be an array")
 
 
+def _canonical_json_value(value: Any) -> Any:
+    """Normalize Python values to the JSON representation used by the frontend.
+
+    JavaScript's ``JSON.stringify`` does not preserve Python's spelling of
+    integral floats: ``1.0`` becomes ``1`` and ``-0.0`` becomes ``0``.  The
+    bundle checksum is over serialized bytes, so leaving this distinction in
+    the Python writer makes an otherwise valid cross-runtime archive fail
+    frontend integrity verification.  Normalize only JSON-compatible values
+    here; domain fields remain otherwise untouched.
+    """
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("Non-finite numbers are not supported in workspace bundles")
+        if value == 0 or value.is_integer():
+            return int(value)
+        return value
+    if isinstance(value, Mapping):
+        return {str(key): _canonical_json_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_canonical_json_value(item) for item in value]
+    return value
+
+
 def _json_bytes(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+    normalized = _canonical_json_value(value)
+    return json.dumps(normalized, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False).encode("utf-8")
 
 
 def _sha256(value: bytes) -> str:

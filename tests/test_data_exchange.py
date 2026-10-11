@@ -37,6 +37,29 @@ def test_bundle_roundtrip(tmp_path):
     assert json.loads((destination / "plans.json").read_text(encoding="utf-8")) == datasets["plans"]
 
 
+def test_bundle_json_canonicalization_matches_javascript_number_spelling():
+    from common.data_exchange import _json_bytes
+
+    assert _json_bytes({"b": 1.0, "a": -0.0, "nested": {"z": 1.25}}).decode("utf-8") == (
+        '{\n'
+        '  "a": 0,\n'
+        '  "b": 1,\n'
+        '  "nested": {\n'
+        '    "z": 1.25\n'
+        '  }\n'
+        '}'
+    )
+
+
+def test_bundle_rejects_non_finite_numbers_before_writing(tmp_path):
+    bundle = tmp_path / "non-finite.efl"
+
+    with pytest.raises(ValueError, match="Non-finite numbers"):
+        export_bundle(bundle, {"app": {"value": float("nan")}})
+
+    assert not bundle.exists()
+
+
 def test_workspace_bundle_matches_unified_frontend_dataset_contract(tmp_path):
     bundle = tmp_path / "workspace.efl"
     export_workspace_bundle(
