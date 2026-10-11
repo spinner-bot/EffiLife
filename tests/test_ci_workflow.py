@@ -23,6 +23,15 @@ def test_general_ci_covers_full_python_suite_and_desktop_build():
     assert "working-directory: to-dos/ui" in source
 
 
+def test_general_ci_audits_compatibility_ui_dependencies_before_build():
+    source = WORKFLOW.read_text(encoding="utf-8")
+    audit_index = source.index("npm audit --audit-level=high")
+    build_index = source.index("python scripts/build_todos_ui.py")
+    assert "name: Audit compatibility UI dependencies" in source
+    assert "working-directory: to-dos/ui" in source[audit_index - 180:audit_index]
+    assert audit_index < build_index
+
+
 def test_general_ci_runs_the_unified_workspace_startup_smoke_check():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "python scripts/smoke_startup.py" in source

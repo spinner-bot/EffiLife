@@ -68,6 +68,10 @@ jobs:
         working-directory: to-dos/ui
         run: npm ci
 
+      - name: Audit compatibility UI dependencies
+        working-directory: to-dos/ui
+        run: npm audit --audit-level=high
+
       - name: Build compatibility UI
         run: python scripts/build_todos_ui.py
 
