@@ -975,6 +975,21 @@ def test_launcher_marks_old_version_installer_as_stale(monkeypatch, tmp_path):
     assert not any(item["code"] == "installer-artifact-missing" for item in result["hints"])
 
 
+def test_launcher_ignores_legacy_brand_installer_when_scanning_current_release(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(launcher.os, "name", "nt")
+    bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
+    bundle.mkdir(parents=True)
+    legacy = bundle / "浪兮效率时钟_1.0.11_x64-setup.exe"
+    legacy.write_bytes(b"legacy installer")
+
+    result = launcher.collect_diagnostics({})
+
+    assert result["installer_artifacts"][0]["exists"] is False
+    assert any(item["code"] == "installer-artifact-missing" for item in result["hints"])
+    assert not any(item["code"] == "installer-artifact-stale" for item in result["hints"])
+
+
 def test_launcher_reports_missing_installer_without_blocking_workspace(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher.os, "name", "nt")

@@ -445,7 +445,14 @@ def installer_artifacts():
     current_version = app_version()
     artifacts = []
     for pattern in installer_artifact_patterns():
-        matches = sorted(path for path in pattern.parent.glob(pattern.name) if path.is_file())
+        # Release directories can contain installers from the former product
+        # branding. They remain useful historical files, but must not be
+        # compared with the current EffiLife version or make `--doctor` report
+        # a stale current-product installer.
+        matches = sorted(
+            path for path in pattern.parent.glob(pattern.name)
+            if path.is_file() and path.name.lower().startswith("effilife")
+        )
         if matches:
             artifacts.extend(
                 {
