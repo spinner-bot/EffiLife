@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AlertTriangle, ArrowLeft, ChevronRight, Mail, Copy } from 'lucide-vue-next'
 import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThemeConfig, NeonThemeConfig } from '@/types'
@@ -86,6 +86,7 @@ async function copyEmail() {
 }
 
 const router = useRouter()
+const route = useRoute()
 const appStore = useAppStore()
 const { t, locale } = useI18n()
 const mobilePlanRuntime = isMobilePlanRuntime()
@@ -94,9 +95,17 @@ const config = computed(() => appStore.config)
 
 // 当前视图
 type ViewType = 'main' | 'custom' | 'theme' | 'help' | 'archive' | 'reset' | 'feedback' | 'version-info' | 'more' | 'restore'
-const currentView = ref<ViewType>('main')
+const SETTINGS_VIEWS = new Set<ViewType>(['main', 'custom', 'theme', 'help', 'archive', 'reset', 'feedback', 'version-info', 'more', 'restore'])
+function parseSettingsView(value: unknown): ViewType {
+  const candidate = Array.isArray(value) ? value[0] : value
+  return typeof candidate === 'string' && SETTINGS_VIEWS.has(candidate as ViewType)
+    ? candidate as ViewType
+    : 'main'
+}
+const initialView = parseSettingsView(route.query.view)
+const currentView = ref<ViewType>(initialView)
 // 导航历史栈（用于返回上一级）
-const viewHistory = ref<ViewType[]>(['main'])
+const viewHistory = ref<ViewType[]>(initialView === 'main' ? ['main'] : ['main', initialView])
 
 // 导航到指定视图（记录历史）
 async function navigateTo(view: ViewType) {
@@ -758,6 +767,20 @@ watch([themeType, solidConfig, gradientConfig, glassConfig, neonConfig], () => {
 
 watch(currentView, (view) => {
   if (view === 'archive') void refreshDataStats()
+})
+
+watch(currentView, (view) => {
+  const queryView = view === 'main' ? undefined : view
+  if (parseSettingsView(route.query.view) === view) return
+  void router.replace({ query: queryView ? { view: queryView } : {} })
+})
+
+watch(() => route.query.view, (value) => {
+  const nextView = parseSettingsView(value)
+  if (nextView === currentView.value) return
+  currentView.value = nextView
+  viewHistory.value = nextView === 'main' ? ['main'] : ['main', nextView]
+  if (nextView === 'restore') void loadDataStatus()
 })
 
 // 初始化完成后关闭加载状态
