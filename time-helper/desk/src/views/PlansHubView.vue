@@ -976,6 +976,18 @@ onUnmounted(() => {
       <div v-if="view === 'events' && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
+    <nav class="module-switcher" :aria-label="t('nav.primary')">
+      <RouterLink class="module-switcher-link" to="/time" :class="{ active: route.path.startsWith('/time') }">
+        <span class="module-switcher-code">TH</span><span>{{ t('nav.time') }}</span>
+      </RouterLink>
+      <RouterLink class="module-switcher-link active" to="/plans" aria-current="page">
+        <span class="module-switcher-code">PH</span><span>{{ t('nav.plans') }}</span>
+      </RouterLink>
+      <RouterLink class="module-switcher-link" to="/tasks" :class="{ active: route.path.startsWith('/tasks') }">
+        <span class="module-switcher-code">TD</span><span>{{ t('nav.tasks') }}</span>
+      </RouterLink>
+    </nav>
+
     <div class="plans-content">
 
       <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card">
@@ -1215,6 +1227,10 @@ onUnmounted(() => {
 .plans-eyebrow { margin: 0 0 4px; color: var(--color-text-tertiary); font-size: 12px; letter-spacing: .08em; }
 .plans-module-description { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .plans-header h1 { margin: 0; font-size: 25px; }
+.module-switcher { display: flex; gap: 6px; max-width: 1080px; margin: 0 auto; padding: 0 28px 4px; }
+.module-switcher-link { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 999px; padding: 7px 11px; color: var(--color-text-tertiary); background: transparent; font-size: 11px; text-decoration: none; }
+.module-switcher-link:hover, .module-switcher-link.active { border-color: var(--color-border); color: var(--color-text-primary); background: var(--color-primary-muted); }
+.module-switcher-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 .plans-primary, .plans-secondary, .plans-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
 .plan-entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
 .plans-primary { margin-left: auto; border: 1px solid var(--color-primary); color: var(--color-button-text); background: var(--color-primary); }
@@ -1400,4 +1416,5 @@ onUnmounted(() => {
   .event-task-actions { grid-column: 2 / -1; justify-content: flex-start; flex-wrap: wrap; }
 }
 @media (max-width: 760px) { .plans-header, .plans-content { padding-left: 18px; padding-right: 18px; } .plan-entry-actions { margin-left: auto; } .template-workspace-header { flex-direction: column; } .template-workspace-form { grid-template-columns: 1fr; } .template-workspace-actions { justify-content: flex-end; } .plan-domain-grid, .event-plan-grid { grid-template-columns: 1fr; } .plans-list-tools { align-items: stretch; flex-direction: column; gap: 10px; } .plans-filter { align-items: flex-start; } .meta-editor > div { display: flex; justify-content: flex-end; } .plan-detail-summary { gap: 18px; justify-content: space-between; } .section-actions { justify-content: flex-end; } .group-editor { grid-template-columns: 1fr; } .group-editor label:nth-child(1), .group-editor label:nth-child(2) { grid-column: auto; } .group-editor button { width: 100%; } .event-task-row { grid-template-columns: 36px minmax(0, 1fr) auto; } .event-task-row > div:not(.event-task-actions) { grid-column: 2 / -1; grid-row: 1; } .event-task-row > small { grid-column: 2 / -1; grid-row: 2; } .event-task-actions { grid-column: 2 / -1; grid-row: 3; justify-content: flex-start; flex-wrap: wrap; } .event-task-actions button, .group-action { min-width: 40px; min-height: 40px; padding: 8px 10px; } .task-complete { width: 32px; height: 32px; } .create-task-row { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .module-switcher { overflow-x: auto; padding-right: 18px; padding-left: 18px; } }
 </style>

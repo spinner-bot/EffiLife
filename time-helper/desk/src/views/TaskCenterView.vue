@@ -905,6 +905,18 @@ watch(() => route.query.todo, () => {
       </div>
     </header>
 
+    <nav class="module-switcher" :aria-label="t('nav.primary')">
+      <RouterLink class="module-switcher-link" to="/time" :class="{ active: route.path.startsWith('/time') }">
+        <span class="module-switcher-code">TH</span><span>{{ t('nav.time') }}</span>
+      </RouterLink>
+      <RouterLink class="module-switcher-link" to="/plans" :class="{ active: route.path.startsWith('/plans') }">
+        <span class="module-switcher-code">PH</span><span>{{ t('nav.plans') }}</span>
+      </RouterLink>
+      <RouterLink class="module-switcher-link active" to="/tasks" aria-current="page">
+        <span class="module-switcher-code">TD</span><span>{{ t('nav.tasks') }}</span>
+      </RouterLink>
+    </nav>
+
     <div class="task-content">
       <form class="task-create theme-card" @submit.prevent="AudioManager.playSound('click'); addTodo()">
         <label class="task-field-label" for="new-task-title">{{ t('tasks.new') }}</label>
@@ -1191,6 +1203,10 @@ watch(() => route.query.todo, () => {
 .task-eyebrow { margin: 0 0 3px; color: var(--color-text-tertiary); font-size: 12px; letter-spacing: .08em; }
 .task-module-description { margin: 5px 0 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
 .task-header h1 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 25px; }
+.module-switcher { display: flex; gap: 6px; max-width: 980px; margin: 0 auto; padding: 0 28px 4px; }
+.module-switcher-link { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 999px; padding: 7px 11px; color: var(--color-text-tertiary); background: transparent; font-size: 11px; text-decoration: none; }
+.module-switcher-link:hover, .module-switcher-link.active { border-color: var(--color-border); color: var(--color-text-primary); background: var(--color-primary-muted); }
+.module-switcher-code { color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 .task-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; color: var(--color-text-secondary); font-size: 13px; }
 .task-counts span { padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-bg-secondary); }
 .task-content { max-width: 980px; margin: 0 auto; padding: 8px 28px 48px; }
@@ -1352,4 +1368,5 @@ watch(() => route.query.todo, () => {
 }
 @media (prefers-reduced-motion: reduce) { .task-item { transition: none; } }
 @media (max-width: 700px) { .task-header { padding: 24px 18px 16px; } .task-content { padding: 8px 18px 36px; } .task-counts { display: none; } .task-create { flex-wrap: wrap; } .task-create-advanced[open] { grid-template-columns: 1fr; } .task-create-advanced[open] .task-description-label { padding-top: 0; } .task-input { flex-basis: 100%; height: 38px; } .task-select, .task-add { height: 38px; } .task-edit-form { grid-template-columns: 1fr; } .task-edit-form label { margin-top: 2px; } .task-edit-actions { justify-content: flex-end; } .task-item-actions { flex-basis: 100%; justify-content: flex-end; margin-left: 36px; } .task-item-actions > button, .task-rank-control button { min-width: 40px; min-height: 40px; } .task-details-toggle { min-height: 40px; } .category-row { flex-wrap: wrap; } .category-row strong { min-width: 0; flex: 1 1 auto; } .category-row small { order: 5; flex: 1 1 100%; margin-right: 0; } .category-row > button { min-width: 40px; min-height: 40px; } }
+@media (max-width: 700px) { .module-switcher { overflow-x: auto; padding-right: 18px; padding-left: 18px; } }
 </style>
