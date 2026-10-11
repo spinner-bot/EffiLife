@@ -96,6 +96,7 @@ const logContent = ref('')
 const linkedTodoTaskIds = ref<Set<string>>(new Set())
 const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())
 const recordingTodoTaskId = ref<string | null>(null)
+const linkingTodoTaskId = ref<string | null>(null)
 
 const archivedPlanTarget = computed(() => {
   const targetFile = String(route.query.archive || '')
@@ -815,6 +816,41 @@ async function recordLinkedTodoTime(taskId: string): Promise<void> {
   }
 }
 
+async function createLinkedTodo(task: { internal_id: string; content: string; time_minutes: number; finish?: unknown }): Promise<void> {
+  if (isLoading.value || linkingTodoTaskId.value || !selectedPlan.value || !canEditPlan.value || task.finish) return
+  if (linkedTodoTaskIds.value.has(task.internal_id)) {
+    notifyToast(t('plans.todoAlreadyLinked'), 'info')
+    return
+  }
+  linkingTodoTaskId.value = task.internal_id
+  try {
+    const planId = String(selectedPlan.value.id)
+    const existing = (await TodoService.list()).find((todo) => (
+      todo.related_plan_id === planId && todo.related_plan_task_id === task.internal_id
+    ))
+    if (existing) {
+      await refreshLinkedTodoTaskIds()
+      notifyToast(t('plans.todoAlreadyLinked'), 'info')
+      return
+    }
+    await TodoService.create({
+      title: task.content,
+      description: selectedPlan.value.name,
+      related_plan_id: planId,
+      related_plan_task_id: task.internal_id,
+      estimated_time: task.time_minutes,
+      time_estimate: task.time_minutes,
+    })
+    await refreshLinkedTodoTaskIds()
+    notifyToast(t('plans.todoLinked'), 'success')
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    notifyToast(t('plans.todoCreateFailed'), 'error')
+  } finally {
+    linkingTodoTaskId.value = null
+  }
+}
+
 async function createLinkedTodos(): Promise<void> {
   if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
   if (!unlinkedActiveTaskCount.value) return
@@ -1165,6 +1201,7 @@ onUnmounted(() => {
             <div><strong>{{ task.display_id }}</strong><span>{{ task.content }}</span><small v-if="linkedTodoTaskIds.has(task.internal_id)" class="task-todo-link" :title="t('plans.linkedTodo')">{{ t('plans.linkedTodo') }}</small><small v-if="linkedTodoMinutesByTask.has(task.internal_id)" class="task-time-spent" :title="t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 })">{{ t('plans.recordedTimeValue', { minutes: linkedTodoMinutesByTask.get(task.internal_id) ?? 0 }) }}</small></div>
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <div v-if="canEditPlan" class="event-task-actions">
+              <button v-if="!task.finish && !linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log" :disabled="isLoading || linkingTodoTaskId === task.internal_id" :aria-label="t('plans.linkTodo')" @click="createLinkedTodo(task)"><Plus :size="13" /> {{ t('plans.linkTodo') }}</button>
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
               <button v-if="linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log task-record-time" :disabled="isLoading || recordingTodoTaskId === task.internal_id" :aria-label="t('plans.recordTodoTime')" @click="recordLinkedTodoTime(task.internal_id)"><Clock3 :size="13" /> {{ t('plans.recordTodoTime') }}</button>
               <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
