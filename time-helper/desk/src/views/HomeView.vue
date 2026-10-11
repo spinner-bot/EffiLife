@@ -1629,6 +1629,7 @@ onUnmounted(() => {
   .checkin-badges { justify-content: flex-start; }
   .workflow-summary,
   .stats-section,
+  .focus-plan-card,
   .today-todos-card,
   .home-quick-actions { grid-column: 2; width: 100%; }
   .workflow-summary { margin-bottom: 0; }

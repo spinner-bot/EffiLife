@@ -11,6 +11,7 @@ def test_home_uses_wide_desktop_control_panel_layout():
     assert ".main-content" in desktop_block
     assert "max-width: 1180px" in desktop_block
     assert ".workflow-summary," in desktop_block
+    assert ".focus-plan-card," in desktop_block
     assert "grid-column: 2; width: 100%" in desktop_block
     assert ".overview-grid { grid-template-columns:" in desktop_block
     assert "grid-template-columns: minmax(220px, .58fr) minmax(0, 1.42fr)" in desktop_block
