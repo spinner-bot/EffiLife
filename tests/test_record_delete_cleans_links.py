@@ -32,6 +32,16 @@ def test_deleted_todo_unlinks_time_records_without_deleting_history():
     assert "await DataService.unlinkTodoFromRecords(todo.id)" in tasks
 
 
+def test_bulk_todo_unlink_restores_previous_days_when_a_record_store_write_fails():
+    data = (ROOT / "time-helper/desk/src/services/dataService.ts").read_text(encoding="utf-8")
+    unlink = data.split("async unlinkTodoFromRecords(todoId: string)", 1)[1].split("async saveRecord", 1)[0]
+    assert "const changedEntries: Array<{ key: string; previous: TimeRecord[]; next: TimeRecord[] }> = []" in unlink
+    assert "await idbSet(STORE_NAMES.RECORDS, entry.key, entry.next)" in unlink
+    assert "await idbSet(STORE_NAMES.RECORDS, entry.key, entry.previous)" in unlink
+    assert "throw error" in unlink
+    assert unlink.index("await idbSet(STORE_NAMES.RECORDS, entry.key, entry.next)") < unlink.index("writeLegacyMirror(STORAGE_PREFIX + 'records_' + entry.key, entry.next)")
+
+
 def test_data_service_delete_paths_clean_todo_reverse_links_at_storage_boundary():
     data = (ROOT / "time-helper" / "desk" / "src" / "services" / "dataService.ts").read_text(encoding="utf-8")
     assert "async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void>" in data
