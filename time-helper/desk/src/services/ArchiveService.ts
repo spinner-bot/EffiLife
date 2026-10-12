@@ -621,7 +621,7 @@ async function parseArchiveData(zip: JSZip): Promise<ArchiveData> {
   assertArchiveEntryCount(zip)
   const manifestFile = zip.file('manifest.json')
   if (manifestFile) {
-    let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[]; dataset_sha256?: Record<string, string> }
+    let manifest: { format?: string; format_version?: string; created_at?: string; datasets?: string[]; dataset_sha256?: Record<string, string> | null }
     try {
       manifest = JSON.parse(await manifestFile.async('text'))
     } catch {

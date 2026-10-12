@@ -59,3 +59,10 @@ def test_frontend_checksum_format_matches_python_manifest_contract():
     source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
     assert "/^[0-9a-f]{64}$/" in source
     assert "manifest.dataset_sha256?.[name] || ''" in source
+
+
+def test_frontend_manifest_type_preserves_legacy_null_checksum_compatibility():
+    source = FRONTEND_ARCHIVE.read_text(encoding="utf-8")
+    assert "dataset_sha256?: Record<string, string> | null" in source
+    assert "const hasChecksums = !!manifest.dataset_sha256" in source
+    assert "const expected = manifest.dataset_sha256?.[name]" in source
