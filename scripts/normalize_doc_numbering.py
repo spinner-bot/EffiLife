@@ -91,6 +91,27 @@ def update_design_headings(mapping: dict[str, str]) -> int:
     return changed
 
 
+def sync_numbered_headings() -> int:
+    changed = 0
+    for directory in NAMESPACE_DIRS:
+        for _number, path in entries(directory):
+            match = NUMBERED.match(path.name)
+            if not match or int(match.group("number")) == 0:
+                continue
+            expected = int(match.group("number"))
+            content = path.read_text(encoding="utf-8")
+            updated = re.sub(
+                rf"(?m)^(#\s*)\d{{4}}(?=\s|｜|\|)",
+                rf"\g<1>{expected:04d}",
+                content,
+                count=1,
+            )
+            if updated != content:
+                path.write_text(updated, encoding="utf-8", newline="")
+                changed += 1
+    return changed
+
+
 def apply_mapping(mapping: dict[str, str]) -> None:
     staged: dict[Path, Path] = {}
     for old, new in mapping.items():
@@ -121,7 +142,8 @@ def main() -> int:
     apply_mapping(mapping)
     changed = update_text_references(mapping)
     headings = update_design_headings(mapping)
-    print(json.dumps({"renames": len(mapping), "reference_files_changed": changed, "design_headings_changed": headings}, ensure_ascii=False))
+    headings += sync_numbered_headings()
+    print(json.dumps({"renames": len(mapping), "reference_files_changed": changed, "numbered_headings_changed": headings}, ensure_ascii=False))
     return 0
 
 

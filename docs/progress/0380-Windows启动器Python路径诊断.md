@@ -1,4 +1,4 @@
-# 0806 Windows 启动器 Python 路径诊断
+# 0380 Windows 启动器 Python 路径诊断
 
 ## 日期
 
