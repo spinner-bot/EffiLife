@@ -17,7 +17,8 @@ def test_record_route_can_preselect_a_todo_for_a_new_time_record():
     source = RECORDS.read_text(encoding="utf-8")
     assert "route.query.todo" in source
     assert "openAddForm()" in source
-    assert "selectedTodoId.value = linkedTodoFromQuery.value" in source
+    assert "selectedTodoId.value = linkedTodo.id" in source
+    assert "formContent.value = linkedTodo.title" in source
 
 
 def test_record_todo_navigation_is_localized():

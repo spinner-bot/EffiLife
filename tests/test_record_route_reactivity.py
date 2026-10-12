@@ -16,4 +16,5 @@ def test_records_view_reacts_to_reused_todo_deep_links():
 
 def test_records_view_does_not_preselect_unknown_todos():
     assert "const todoId = linkedTodoFromQuery.value" in SOURCE
-    assert "todos.value.some((todo) => todo.id === todoId)" in SOURCE
+    assert "const linkedTodo = todos.value.find((todo) => todo.id === todoId)" in SOURCE
+    assert "if (!linkedTodo) return" in SOURCE

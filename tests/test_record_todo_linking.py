@@ -22,12 +22,13 @@ def test_record_edit_reconciles_previous_todo_link():
     assert "records.todoLinkFailed" in source
 
 
-def test_new_th_record_uses_todo_time_tracking_but_same_record_edit_is_idempotent():
+def test_new_th_record_tracks_time_and_same_record_edit_applies_a_delta():
     source = RECORDS.read_text(encoding="utf-8")
     assert "const alreadyLinkedToSameTodo = originalRecord?.todo_id === record.todo_id" in source
-    assert "const minutes = Math.max(1, Math.round(record.duration * 60))" in source
-    assert "TodoService.trackTime(todo.id, minutes, recordId)" in source
-    assert "if (todo && alreadyLinkedToSameTodo && !todo.related_time_record_ids?.includes(recordId))" in source
+    assert "const recordMinutes = Math.max(1, Math.round(record.duration * 60))" in source
+    assert "TodoService.trackTime(todo.id, recordMinutes, recordId)" in source
+    assert "const hasRecordLink = todo.related_time_record_ids?.includes(recordId) || false" in source
+    assert "TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))" in source
 
 
 def test_record_todo_link_copy_exists_in_both_locales():
