@@ -589,22 +589,17 @@ async function onFileSelected(event: Event) {
   // 重置 input 以便可以再次选择同一文件
   input.value = ''
   archiveBusy.value = true
-
-  let preview: ArchivePreview
   try {
-    preview = await previewArchive(file)
-  } catch (error) {
-    notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
-    archiveBusy.value = false
-    return
-  }
-
-  if (!await requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' })) {
-    archiveBusy.value = false
-    return
-  }
-
-  try {
+    let preview: ArchivePreview
+    try {
+      preview = await previewArchive(file)
+    } catch (error) {
+      notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+      return
+    }
+    if (!await requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' })) {
+      return
+    }
     const result = await importArchive(file)
     notifyToast(result.message, result.success ? 'success' : 'error')
 
