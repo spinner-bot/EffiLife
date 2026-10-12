@@ -56,3 +56,12 @@ def test_legacy_icon_picker_uses_shared_translations():
     assert "t('searchIcons')" in picker
     assert "t('customColor')" in picker
 
+
+def test_legacy_import_result_uses_locale_aware_message_and_boolean_state():
+    store = (UI / "stores" / "todos.ts").read_text(encoding="utf-8")
+    workspace = (UI / "views" / "TodosView.vue").read_text(encoding="utf-8")
+    assert "translateLegacy('importSuccess'" in store
+    assert "translateLegacy('parseJsonFailed')" in store
+    assert "importSucceeded" in workspace
+    assert "importMessage.includes('成功')" not in workspace
+

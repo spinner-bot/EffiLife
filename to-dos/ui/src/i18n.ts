@@ -23,6 +23,7 @@ const messages = {
     notesPlaceholder: '添加备注或笔记（支持 Markdown 语法）...', save: '保存', create: '创建', noRepeat: '不重复', daily: '每日', weekly: '每周', monthly: '每月', sameDay: '当天', daysBefore: '{count} 天前', weekBefore: '1 周前',
     settingsTitle: '设置', scoreFrequency: '分数更新频率', manual: '手动', scoreFrequencyDescription: '优先排位分实时计算的刷新间隔。设为“手动”需手动刷新。', categoryExpandCount: '分类展开数量', categoryExpandDescription: '侧栏中按分数排序后，前 X 名分类展开显示，其余折叠收纳。', manualActions: '手动操作', refreshScores: '立即刷新分数',
     iconTab: '图标', asciiTab: 'ASCII', colorsTab: '颜色', searchIcons: '搜索图标...', customColor: '自定义颜色',
+    invalidData: '无效的数据格式', importSuccess: '导入成功: {count} 个待办', parseJsonFailed: '解析 JSON 失败',
   },
   'en-US': {
     all: 'All', today: 'Today', overdue: 'Overdue', categories: 'Categories', otherCategories: '{count} other categories',
@@ -43,6 +44,7 @@ const messages = {
     notesPlaceholder: 'Add notes (Markdown supported)...', save: 'Save', create: 'Create', noRepeat: 'No repeat', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', sameDay: 'Same day', daysBefore: '{count} days before', weekBefore: '1 week before',
     settingsTitle: 'Settings', scoreFrequency: 'Score update frequency', manual: 'Manual', scoreFrequencyDescription: 'How often priority scores refresh. Manual requires an explicit refresh.', categoryExpandCount: 'Expanded categories', categoryExpandDescription: 'Show the top X scored categories in the sidebar and collapse the rest.', manualActions: 'Manual actions', refreshScores: 'Refresh scores now',
     iconTab: 'Icons', asciiTab: 'ASCII', colorsTab: 'Colors', searchIcons: 'Search icons...', customColor: 'Custom color',
+    invalidData: 'Invalid data format', importSuccess: 'Imported {count} to-dos', parseJsonFailed: 'Failed to parse JSON',
   },
 } as const
 
@@ -66,6 +68,12 @@ export function useLegacyI18n() {
     if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, next)
   }
   return { locale: computed(() => locale.value), t, setLocale }
+}
+
+export function translateLegacy(key: MessageKey, values: Record<string, string | number> = {}): string {
+  let value: string = messages[locale.value][key] || messages['zh-CN'][key]
+  for (const [name, replacement] of Object.entries(values)) value = value.replace(`{${name}}`, String(replacement))
+  return value
 }
 
 export function getLegacyLocale(): LegacyLocale {

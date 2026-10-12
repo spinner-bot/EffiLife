@@ -22,6 +22,7 @@ const focusedIndex = ref(-1)
 const showImportModal = ref(false)
 const importText = ref('')
 const importMessage = ref('')
+const importSucceeded = ref(false)
 const showSettings = ref(false)  // v0.5.0
 
 // 键盘快捷键 + 导航
@@ -152,11 +153,13 @@ function handleImport() {
   if (!importText.value.trim()) return
   const result = store.importData(importText.value)
   importMessage.value = result.message
+  importSucceeded.value = result.success
   if (result.success) {
     setTimeout(() => {
       showImportModal.value = false
       importText.value = ''
       importMessage.value = ''
+      importSucceeded.value = false
     }, 1500)
   }
 }
@@ -328,7 +331,7 @@ onUnmounted(() => {
                 <input type="file" accept=".json" @change="handleFileImport" class="file-input" />
               </label>
             </div>
-            <p v-if="importMessage" class="import-message" :class="{ success: importMessage.includes('成功') }">
+            <p v-if="importMessage" class="import-message" :class="{ success: importSucceeded }">
               {{ importMessage }}
             </p>
           </div>

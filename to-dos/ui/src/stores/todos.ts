@@ -3,6 +3,7 @@
 
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { defineStore } from 'pinia'
+import { translateLegacy } from '@/i18n'
 import type { Todo, Category, TodoStats, FilterState, Priority, TodoStatus, SortOption, RecurrenceType, AppSettings } from '@/types'
 import { DEFAULT_SETTINGS } from '@/types'
 import { calcPriorityScore, formatScoreDisplay, calcAllScores } from '@/utils/priority'
@@ -459,15 +460,15 @@ export const useTodosStore = defineStore('todos', () => {
     try {
       const data = JSON.parse(jsonStr)
       if (!data.todos || !Array.isArray(data.todos)) {
-        return { success: false, message: '无效的数据格式', count: 0 }
+        return { success: false, message: translateLegacy('invalidData'), count: 0 }
       }
       todos.value = data.todos
       if (data.categories) {
         categories.value = data.categories
       }
-      return { success: true, message: `导入成功: ${data.todos.length} 个待办`, count: data.todos.length }
+      return { success: true, message: translateLegacy('importSuccess', { count: data.todos.length }), count: data.todos.length }
     } catch {
-      return { success: false, message: '解析 JSON 失败', count: 0 }
+      return { success: false, message: translateLegacy('parseJsonFailed'), count: 0 }
     }
   }
 
