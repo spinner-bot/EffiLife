@@ -578,21 +578,21 @@ function testWarning(rule: WarningRule) {
               <label>{{ t('settings.events.triggerTime') }}</label>
               <div class="time-picker">
                 <div class="time-unit">
-                  <label>{{ t('settings.events.hour') }}</label>
-                  <input type="number" v-model.number="newRule.hour" min="0" max="23" />
+                  <label for="event-rule-hour">{{ t('settings.events.hour') }}</label>
+                  <input id="event-rule-hour" type="number" v-model.number="newRule.hour" min="0" max="23" />
                 </div>
                 <span class="time-sep">:</span>
                 <div class="time-unit">
-                  <label>{{ t('settings.events.minute') }}</label>
-                  <input type="number" v-model.number="newRule.minute" min="0" max="59" step="5" />
+                  <label for="event-rule-minute">{{ t('settings.events.minute') }}</label>
+                  <input id="event-rule-minute" type="number" v-model.number="newRule.minute" min="0" max="59" step="5" />
                 </div>
               </div>
             </div>
 
             <div class="form-row">
-              <label>{{ t('settings.events.completionThreshold') }}</label>
+              <label for="event-rule-threshold">{{ t('settings.events.completionThreshold') }}</label>
               <div class="threshold-picker">
-                <input type="range" v-model.number="newRule.threshold" min="0" max="100" step="5" />
+                <input id="event-rule-threshold" type="range" v-model.number="newRule.threshold" min="0" max="100" step="5" />
                 <span class="threshold-value">{{ newRule.threshold }}%</span>
               </div>
               <p class="form-hint">{{ t('settings.events.thresholdHint') }}</p>

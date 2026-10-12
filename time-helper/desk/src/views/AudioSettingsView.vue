@@ -130,19 +130,19 @@ const currentTab = ref<SettingTab>('audio')
           </div>
 
           <div class="volume-row">
-            <span>{{ t('settings.audio.masterVolume') }}</span>
-            <input type="range" min="0" max="100" :value="audioSettings.sfxVolume" @input="updateAudioSetting('sfxVolume', Number(($event.target as HTMLInputElement).value))" />
+            <span id="sfx-master-volume-label">{{ t('settings.audio.masterVolume') }}</span>
+            <input id="sfx-master-volume" type="range" min="0" max="100" aria-labelledby="sfx-master-volume-label" :value="audioSettings.sfxVolume" @input="updateAudioSetting('sfxVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.sfxVolume }}%</span>
           </div>
 
           <div class="sfx-list">
             <div v-for="sfx in soundTypes" :key="sfx.type" class="sfx-item">
               <div class="sfx-info">
-                <span class="sfx-name">{{ t(sfx.nameKey) }}</span>
+                <span :id="`sfx-volume-label-${sfx.type}`" class="sfx-name">{{ t(sfx.nameKey) }}</span>
                 <span class="sfx-desc">{{ t(sfx.descriptionKey) }}</span>
               </div>
               <div class="sfx-controls">
-                <input type="range" min="0" max="100" :value="audioSettings.sfxVolumes[sfx.type]" @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))" />
+                <input :id="`sfx-volume-${sfx.type}`" type="range" min="0" max="100" :aria-labelledby="`sfx-volume-label-${sfx.type}`" :value="audioSettings.sfxVolumes[sfx.type]" @input="updateSfxVolume(sfx.type, Number(($event.target as HTMLInputElement).value))" />
                 <button class="test-btn" type="button" :aria-label="t('settings.audio.testSound')" @click="testSound(sfx.type)"><Play :size="14" /></button>
               </div>
             </div>
@@ -159,8 +159,8 @@ const currentTab = ref<SettingTab>('audio')
           </div>
 
           <div class="volume-row">
-            <span>{{ t('settings.audio.volume') }}</span>
-            <input type="range" min="0" max="100" :value="audioSettings.bgmVolume" @input="updateAudioSetting('bgmVolume', Number(($event.target as HTMLInputElement).value))" />
+            <span id="bgm-volume-label">{{ t('settings.audio.volume') }}</span>
+            <input id="bgm-volume" type="range" min="0" max="100" aria-labelledby="bgm-volume-label" :value="audioSettings.bgmVolume" @input="updateAudioSetting('bgmVolume', Number(($event.target as HTMLInputElement).value))" />
             <span class="volume-value">{{ audioSettings.bgmVolume }}%</span>
           </div>
 
