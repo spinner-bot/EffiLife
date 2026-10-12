@@ -44,6 +44,19 @@ def test_mobile_navigation_keeps_records_as_a_first_class_sixth_entry():
     assert 'overflow-x: auto;' in APP
 
 
+def test_task_center_discloses_expandable_control_state():
+    task_center = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+
+    assert ':aria-expanded="showCategoryManager"' in task_center
+    assert 'aria-controls="task-category-manager"' in task_center
+    assert ':aria-expanded="showAllCategories"' in task_center
+    assert 'aria-controls="task-category-more-list"' in task_center
+    assert ':aria-expanded="showEmptyCategories"' in task_center
+    assert 'aria-controls="task-empty-category-list"' in task_center
+    assert ':aria-expanded="expandedTodoId === todo.id"' in task_center
+    assert ':aria-controls="`task-details-${todo.id}`"' in task_center
+
+
 def test_wide_desktop_shell_has_a_sidebar_workbench_without_removing_mobile_navigation():
     assert "@media (min-width: 1200px)" in APP
     wide = APP.split("@media (min-width: 1200px)", 1)[1].split("@media (prefers-reduced-motion", 1)[0]

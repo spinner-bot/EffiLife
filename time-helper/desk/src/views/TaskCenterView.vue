@@ -981,7 +981,7 @@ watch(() => route.query.compose, () => {
           <option v-for="item in categories" :key="item.id" :value="item.id">{{ categoryLabel(item) }}</option>
         </select>
         <input v-model="taskSearch" class="task-search-input" type="search" :placeholder="t('tasks.searchPlaceholder')" :aria-label="t('tasks.searchLabel')" />
-        <button type="button" class="task-category-manage" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
+        <button type="button" class="task-category-manage" :aria-expanded="showCategoryManager" aria-controls="task-category-manager" @click="showCategoryManager = !showCategoryManager" @keydown.esc="showCategoryManager = false">
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
         </button>
         <label v-if="visibleTodos.length" class="task-select-all">
@@ -1008,7 +1008,7 @@ watch(() => route.query.compose, () => {
           </div>
           <span v-if="activeCategorySummaries.length === 0" class="task-plan-status">{{ t('tasks.noActiveCategory') }}</span>
         </div>
-        <div class="task-category-nav-list">
+        <div id="task-category-more-list" class="task-category-nav-list">
           <button type="button" class="task-category-chip" :class="{ active: !categoryFilter }" @click="categoryFilter = ''">
             {{ t('tasks.allCategories') }}
           </button>
@@ -1024,16 +1024,16 @@ watch(() => route.query.compose, () => {
             <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
     <span>{{ categoryLabel(item.category) }}</span><small>{{ item.count }}</small>
           </button>
-          <button v-if="activeCategorySummaries.length > Math.max(1, todoSettings.expandCount)" type="button" class="task-category-chip task-category-chip-more" @click="showAllCategories = !showAllCategories">
+          <button v-if="activeCategorySummaries.length > Math.max(1, todoSettings.expandCount)" type="button" class="task-category-chip task-category-chip-more" :aria-expanded="showAllCategories" aria-controls="task-category-more-list" @click="showAllCategories = !showAllCategories">
             {{ showAllCategories ? t('tasks.hideMoreCategories') : t('tasks.showMoreCategories') }}
           </button>
         </div>
         <div v-if="emptyCategorySummaries.length" class="task-empty-category-toggle">
-          <button type="button" @click="showEmptyCategories = !showEmptyCategories">
+          <button type="button" :aria-expanded="showEmptyCategories" aria-controls="task-empty-category-list" @click="showEmptyCategories = !showEmptyCategories">
             {{ showEmptyCategories ? t('tasks.hideEmptyCategories') : t('tasks.showEmptyCategories') }} ({{ emptyCategorySummaries.length }})
           </button>
         </div>
-        <div v-if="showEmptyCategories" class="task-category-nav-list task-empty-category-list">
+        <div v-if="showEmptyCategories" id="task-empty-category-list" class="task-category-nav-list task-empty-category-list">
           <button v-for="item in emptyCategorySummaries" :key="item.category.id" type="button" class="task-category-chip" :class="{ active: categoryFilter === item.category.id }" :style="{ '--category-color': item.category.color }" @click="categoryFilter = item.category.id">
             <CategoryIconPreview :name="item.category.icon" :ascii="item.category.ascii_icon" />
     <span>{{ categoryLabel(item.category) }}</span><small>0</small>
@@ -1041,7 +1041,7 @@ watch(() => route.query.compose, () => {
         </div>
       </section>
 
-      <section v-if="showCategoryManager" class="category-manager theme-card" @keydown.esc="showCategoryManager = false">
+      <section v-if="showCategoryManager" id="task-category-manager" class="category-manager theme-card" @keydown.esc="showCategoryManager = false">
         <div class="category-manager-header">
           <div>
             <h2>{{ t('tasks.manageCategories') }}</h2>
@@ -1177,14 +1177,14 @@ watch(() => route.query.compose, () => {
               <button type="button" :aria-label="t('tasks.decreaseRank')" :disabled="!todo.priority_rank" @click="adjustTodoRank(todo, -1)"><ChevronDown :size="13" /></button>
             </div>
             <span class="task-score" :class="{ expired: scoreFor(todo).expired }" :title="t('tasks.priorityScore')">{{ scoreFor(todo).display }}</span>
-            <button type="button" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" @click="toggleTodoDetails(todo)">
+            <button type="button" class="task-details-toggle" :class="{ expanded: expandedTodoId === todo.id }" :aria-label="t('tasks.details')" :aria-expanded="expandedTodoId === todo.id" :aria-controls="`task-details-${todo.id}`" @click="toggleTodoDetails(todo)">
               <span>{{ t('tasks.subtasks') }} <small v-if="todo.subtasks.length">{{ subtaskProgress(todo) }}</small></span><ChevronDown :size="16" />
             </button>
             <button type="button" class="task-pin" :class="{ active: todo.pinned }" :aria-label="todo.pinned ? t('tasks.unpinTodo') : t('tasks.pinTodo')" @click="toggleTodoPinned(todo)"><Pin :size="16" /></button>
             <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
             <button type="button" class="task-delete" :disabled="confirmationPending" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           </div>
-          <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
+          <div v-if="expandedTodoId === todo.id && editingId !== todo.id" :id="`task-details-${todo.id}`" class="task-subtasks">
             <div class="task-score-detail"><span>{{ t('tasks.priorityScore') }}</span><strong>{{ scoreFor(todo).score }}</strong></div>
             <div v-if="todo.subtasks.length" class="subtask-list">
               <div v-for="subtask in todo.subtasks" :key="subtask.id" class="subtask-row" :class="{ completed: subtask.completed }">
