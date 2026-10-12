@@ -26,3 +26,11 @@ def test_collection_and_empty_checks_clear_read_timeouts():
         assert "const timeout = setTimeout" in block
         assert "clearTimeout(timeout)" in block
         assert "IndexedDB read timed out after" in block
+
+
+def test_version_changes_invalidate_the_cached_connection_for_reopen():
+    assert "connection.onversionchange = () =>" in INDEXED_DB
+    assert "connection.close()" in INDEXED_DB
+    assert "if (dbInstance === connection)" in INDEXED_DB
+    assert "dbInstance = null" in INDEXED_DB
+    assert "dbPromise = null" in INDEXED_DB

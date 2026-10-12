@@ -67,8 +67,16 @@ export async function openDB(): Promise<IDBDatabase> {
 
     request.onsuccess = () => {
       clearTimeout(timeout)
-      dbInstance = request.result
-      resolve(dbInstance)
+      const connection = request.result
+      connection.onversionchange = () => {
+        connection.close()
+        if (dbInstance === connection) {
+          dbInstance = null
+          dbPromise = null
+        }
+      }
+      dbInstance = connection
+      resolve(connection)
     }
 
     request.onupgradeneeded = (event) => {
