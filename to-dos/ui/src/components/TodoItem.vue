@@ -9,6 +9,7 @@ import {
 import type { Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/types'
 import { formatScoreDisplay } from '@/utils/priority'
+import { useLegacyI18n } from '@/i18n'
 
 const props = defineProps<{
   todo: Todo
@@ -23,6 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useTodosStore()
+const { t, locale } = useLegacyI18n()
 const showActions = ref(false)
 
 const isCompleted = computed(() => props.todo.status === 'completed')
@@ -52,11 +54,11 @@ const deadlineText = computed(() => {
   const diff = dl.getTime() - now.getTime()
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
 
-  if (days < 0) return `已逾期 ${Math.abs(days)} 天`
-  if (days === 0) return '今天截止'
-  if (days === 1) return '明天截止'
-  if (days <= 7) return `${days} 天后截止`
-  return dl.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+  if (days < 0) return t('overdueDays', { count: Math.abs(days) })
+  if (days === 0) return t('dueToday')
+  if (days === 1) return t('dueTomorrow')
+  if (days <= 7) return t('dueInDays', { count: days })
+  return dl.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 })
 
 const subtaskProgress = computed(() => {
@@ -123,7 +125,7 @@ function highlightText(text: string, query: string): string {
       class="checkbox"
       :class="{ checked: isCompleted }"
       @click.stop="toggleComplete"
-      :aria-label="isCompleted ? '取消完成' : '标记完成'"
+      :aria-label="isCompleted ? t('cancelComplete') : t('markComplete')"
     >
       <Check v-if="isCompleted" :size="14" />
     </button>
@@ -158,7 +160,7 @@ function highlightText(text: string, query: string): string {
           <span
             v-if="deadlineText"
             class="deadline-badge"
-            :class="{ overdue: isOverdue, today: deadlineText === '今天截止', soon: isDeadlineSoon && !isOverdue }"
+            :class="{ overdue: isOverdue, today: deadlineText === t('dueToday'), soon: isDeadlineSoon && !isOverdue }"
           >
            <CalendarIcon :size="12" />
             {{ deadlineText }}
@@ -168,8 +170,8 @@ function highlightText(text: string, query: string): string {
           <span
             v-if="scoreDisplay && scoreDisplay !== '0'"
             class="score-badge"
-            :class="{ 'score-high': (todo._score ?? 0) >= 1000, 'score-expired': scoreDisplay === '过期' }"
-            :title="`优先排位分: ${todo._score ?? 0}`"
+            :class="{ 'score-high': (todo._score ?? 0) >= 1000, 'score-expired': scoreDisplay === t('expired') }"
+            :title="`${t('priorityScore')}: ${todo._score ?? 0}`"
           >
             {{ scoreDisplay }}
           </span>
@@ -179,7 +181,7 @@ function highlightText(text: string, query: string): string {
             type="button"
             class="action-trigger"
             @click.stop="toggleActionMenu"
-            aria-label="更多操作"
+            :aria-label="t('moreActions')"
           >
             <MoreHorizontal :size="16" />
           </button>
@@ -193,7 +195,7 @@ function highlightText(text: string, query: string): string {
       <div v-if="subtaskProgress" class="subtask-progress">
         <ChevronRight :size="12" class="progress-icon" />
         <span class="progress-text">
-          {{ subtaskProgress.done }}/{{ subtaskProgress.total }} 子任务已完成
+          {{ subtaskProgress.done }}/{{ subtaskProgress.total }} {{ t('subtasksDone') }}
         </span>
         <div class="progress-bar">
           <div
@@ -211,7 +213,7 @@ function highlightText(text: string, query: string): string {
       <!-- 时间预估 -->
       <div v-if="todo.time_estimate" class="time-estimate">
         <Clock :size="12" />
-        <span>{{ todo.time_estimate }}分钟</span>
+        <span>{{ todo.time_estimate }}{{ t('minutes') }}</span>
       </div>
     </div>
 
@@ -220,15 +222,15 @@ function highlightText(text: string, query: string): string {
       <div v-if="showActions" class="action-menu" @click.stop>
         <button type="button" @click="emit('edit', todo.id); showActions = false" class="action-item">
           <Edit3 :size="14" />
-          编辑
+          {{ t('edit') }}
         </button>
         <button type="button" @click="handleArchive" class="action-item">
           <Archive :size="14" />
-          归档
+          {{ t('archive') }}
         </button>
         <button type="button" @click="handleDelete" class="action-item danger">
           <Trash2 :size="14" />
-          删除
+          {{ t('deleteAction') }}
         </button>
       </div>
     </Transition>

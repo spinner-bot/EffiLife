@@ -28,3 +28,14 @@ def test_legacy_workspace_controls_use_shared_translations():
     for key in ("searchPlaceholder", "newTodo", "importData", "exportJson", "completeAction"):
         assert f"t('{key}')" in workspace
 
+
+def test_legacy_todo_list_and_item_use_shared_translations():
+    todo_list = (UI / "components" / "TodoList.vue").read_text(encoding="utf-8")
+    todo_item = (UI / "components" / "TodoItem.vue").read_text(encoding="utf-8")
+    assert "useLegacyI18n" in todo_list
+    assert "t('emptyTitle')" in todo_list
+    assert "t('completed')" in todo_list
+    assert "useLegacyI18n" in todo_item
+    assert "t('dueToday')" in todo_item
+    assert "t('moreActions')" in todo_item
+

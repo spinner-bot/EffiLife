@@ -14,6 +14,9 @@ const messages = {
     dark: '深色', light: '浅色', auto: '自动', settings: '设置', exportJson: '导出 JSON', importJson: '导入 JSON',
     newTodo: '新建待办', selected: '已选择', items: '项', completeAction: '完成', deleteAction: '删除', cancel: '取消',
     importData: '导入数据', importDescription: '粘贴 JSON 数据或选择文件导入', pasteJson: '粘贴 JSON 数据（格式: {"todos": [...], "categories": [...]}）...', chooseFile: '选择文件', importAction: '导入',
+    emptyTitle: '暂无待办事项', emptyDescription: '一切就绪！点击下方按钮或按 N 键创建第一个待办', organizeTip: '使用分类和标签组织待办', deadlineTip: '设置截止日期跟踪进度',
+    overdueDays: '已逾期 {count} 天', dueToday: '今天截止', dueTomorrow: '明天截止', dueInDays: '{count} 天后截止', cancelComplete: '取消完成', markComplete: '标记完成', moreActions: '更多操作',
+    subtasksDone: '子任务已完成', minutes: '分钟', edit: '编辑', archive: '归档', priorityScore: '优先排位分', expired: '过期',
   },
   'en-US': {
     all: 'All', today: 'Today', overdue: 'Overdue', categories: 'Categories', otherCategories: '{count} other categories',
@@ -25,6 +28,9 @@ const messages = {
     dark: 'Dark', light: 'Light', auto: 'Auto', settings: 'Settings', exportJson: 'Export JSON', importJson: 'Import JSON',
     newTodo: 'New to-do', selected: 'Selected', items: 'items', completeAction: 'Complete', deleteAction: 'Delete', cancel: 'Cancel',
     importData: 'Import data', importDescription: 'Paste JSON data or choose a file to import', pasteJson: 'Paste JSON data (format: {"todos": [...], "categories": [...]})...', chooseFile: 'Choose file', importAction: 'Import',
+    emptyTitle: 'No to-dos yet', emptyDescription: 'All clear! Click below or press N to create your first to-do', organizeTip: 'Organize to-dos with categories and tags', deadlineTip: 'Set deadlines to track progress',
+    overdueDays: '{count} days overdue', dueToday: 'Due today', dueTomorrow: 'Due tomorrow', dueInDays: 'Due in {count} days', cancelComplete: 'Mark incomplete', markComplete: 'Mark complete', moreActions: 'More actions',
+    subtasksDone: 'subtasks complete', minutes: 'min', edit: 'Edit', archive: 'Archive', priorityScore: 'Priority score', expired: 'Expired',
   },
 } as const
 

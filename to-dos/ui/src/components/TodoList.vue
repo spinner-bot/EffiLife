@@ -3,8 +3,10 @@ import { computed } from 'vue'
 import { useTodosStore } from '@/stores/todos'
 import TodoItem from './TodoItem.vue'
 import { Inbox, CheckCircle2, ClipboardList, Sparkles } from 'lucide-vue-next'
+import { useLegacyI18n } from '@/i18n'
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 const emit = defineEmits<{
   (e: 'edit', id: string): void
@@ -47,16 +49,16 @@ function handleArchive(id: string) {
           </div>
           <Sparkles :size="16" class="empty-sparkle" />
         </div>
-        <h3 class="empty-title">暂无待办事项</h3>
-        <p class="empty-desc">一切就绪！点击下方按钮或按 <kbd>N</kbd> 键创建第一个待办</p>
+        <h3 class="empty-title">{{ t('emptyTitle') }}</h3>
+        <p class="empty-desc">{{ t('emptyDescription') }}</p>
         <div class="empty-tips">
           <div class="tip">
             <ClipboardList :size="14" />
-            <span>使用分类和标签组织待办</span>
+            <span>{{ t('organizeTip') }}</span>
           </div>
           <div class="tip">
             <CheckCircle2 :size="14" />
-            <span>设置截止日期跟踪进度</span>
+            <span>{{ t('deadlineTip') }}</span>
           </div>
         </div>
       </div>
@@ -65,7 +67,7 @@ function handleArchive(id: string) {
     <!-- 待处理列表 -->
     <div v-if="hasActive" class="list-section">
       <div class="section-header">
-        <span class="section-title">待处理</span>
+        <span class="section-title">{{ t('pending') }}</span>
         <span class="section-count">{{ pendingTodos.length }}</span>
       </div>
       <TransitionGroup name="list" tag="div" class="section-items">
@@ -86,7 +88,7 @@ function handleArchive(id: string) {
       <div v-if="hasCompleted" class="list-section completed-section">
         <div class="section-header">
           <CheckCircle2 :size="16" class="section-icon" />
-          <span class="section-title">已完成</span>
+          <span class="section-title">{{ t('completed') }}</span>
           <span class="section-count">{{ completedTodos.length }}</span>
         </div>
         <TransitionGroup name="list" tag="div" class="section-items">
