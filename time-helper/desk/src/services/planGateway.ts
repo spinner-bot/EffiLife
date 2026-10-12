@@ -307,7 +307,7 @@ async function mutateMobilePlan(planId: string, mutate: (plan: RawPlan) => void)
   })
 }
 
-function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSection; task: Record<string, unknown> } | undefined {
+function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSection; task: Record<string, unknown>; internalId: string } | undefined {
   const sections = Array.isArray(plan.main) ? plan.main : []
   const normalizedId = String(taskId)
   for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
@@ -320,7 +320,7 @@ function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSectio
       if (!task || task.is_active === false) continue
       displayIndex += 1
       if (normalizedId === `${letter}${internalIndex}` || normalizedId === `${letter}${displayIndex}`) {
-        return { section, task }
+        return { section, task, internalId: `${letter}${internalIndex}` }
       }
     }
   }
@@ -907,7 +907,12 @@ export async function addPlanLog(planId: string, day: number, taskId: string, co
     await mutateMobilePlan(planId, (plan) => {
       if (!Array.isArray(plan.log)) plan.log = []
       const current = mobileCurrentTime()
-      plan.log.push({ index: plan.log.length, day, plan: taskId || 'base', time: current.time, content })
+      const requestedTaskId = taskId || 'base'
+      const resolvedTaskId = requestedTaskId === 'base'
+        ? 'base'
+        : mobileTaskLocation(plan, requestedTaskId)?.internalId
+      if (!resolvedTaskId) throw new Error(translate('plans.taskMissing'))
+      plan.log.push({ index: plan.log.length, day, plan: resolvedTaskId, time: current.time, content })
     })
     return
   }

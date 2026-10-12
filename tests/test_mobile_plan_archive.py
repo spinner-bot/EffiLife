@@ -20,6 +20,15 @@ def test_mobile_plan_task_minutes_preserve_fractional_six_minute_units():
     assert "Math.round" not in task_unit
 
 
+def test_mobile_plan_logs_resolve_display_ids_to_stable_internal_ids():
+    location = GATEWAY.split("function mobileTaskLocation", 1)[1].split("function mobileTaskUnit", 1)[0]
+    log_block = GATEWAY.split("export async function addPlanLog", 1)[1]
+    assert "internalId: string" in location
+    assert "internalId: `${letter}${internalIndex}`" in location
+    assert "mobileTaskLocation(plan, requestedTaskId)?.internalId" in log_block
+    assert "plan: resolvedTaskId" in log_block
+
+
 def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "async function getMobileRawArchives()" in GATEWAY
     assert "if (getPlanRuntime() === 'mobile-unavailable')" in GATEWAY
