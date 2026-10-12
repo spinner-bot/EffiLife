@@ -74,3 +74,13 @@ def test_startup_repair_cleans_time_records_pointing_to_deleted_todos():
     assert "if (!record?.todo_id || todoIds.has(record.todo_id)) return record" in sync
     assert "delete nextRecord.todo_id" in sync
     assert "await idbSet(STORE_NAMES.RECORDS, recordEntry.key, nextRecords)" in sync
+
+
+def test_startup_plan_link_repair_rolls_back_partial_multi_todo_repairs():
+    sync = SYNC.read_text(encoding="utf-8")
+    repair = sync.split("export async function repairTodoPlanTaskLinks", 1)[1]
+    assert "const repairedTodos: typeof linkedTodos = []" in repair
+    assert "await TodoService.update(todo.id, {" in repair
+    assert "todo.related_plan_id" in repair
+    assert "todo.related_plan_task_id" in repair
+    assert "Failed to roll back plan-task link repair" in repair

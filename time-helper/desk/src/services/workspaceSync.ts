@@ -138,15 +138,31 @@ export async function repairTodoPlanTaskLinks(): Promise<number> {
     }
 
     let repaired = 0
-    for (const todo of linkedTodos) {
-      const planId = String(todo.related_plan_id)
-      const taskIds = taskIdsByPlan.get(planId)
-      if (!taskIds || taskIds.has(String(todo.related_plan_task_id))) continue
-      await TodoService.update(todo.id, {
-        related_plan_id: undefined,
-        related_plan_task_id: undefined,
-      })
-      repaired += 1
+    const repairedTodos: typeof linkedTodos = []
+    try {
+      for (const todo of linkedTodos) {
+        const planId = String(todo.related_plan_id)
+        const taskIds = taskIdsByPlan.get(planId)
+        if (!taskIds || taskIds.has(String(todo.related_plan_task_id))) continue
+        await TodoService.update(todo.id, {
+          related_plan_id: undefined,
+          related_plan_task_id: undefined,
+        })
+        repairedTodos.push(todo)
+        repaired += 1
+      }
+    } catch (error) {
+      for (const todo of repairedTodos) {
+        try {
+          await TodoService.update(todo.id, {
+            related_plan_id: todo.related_plan_id,
+            related_plan_task_id: todo.related_plan_task_id,
+          })
+        } catch (rollbackError) {
+          console.error('Failed to roll back plan-task link repair:', rollbackError)
+        }
+      }
+      throw error
     }
     return repaired
   } catch {
