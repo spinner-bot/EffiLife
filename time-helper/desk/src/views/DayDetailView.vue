@@ -52,6 +52,8 @@ function planTypeLabel(value?: string): string {
 
 // 计划选择弹窗
 const showPlanSelector = ref(false)
+const planSelectorModal = ref<HTMLElement | null>(null)
+const planSelectorReturnTarget = ref<HTMLElement | null>(null)
 const deletingRecord = ref(false)
 const changingPlan = ref(false)
 
@@ -192,7 +194,39 @@ async function deleteRecord(index: number) {
 // 切换日计划 - 打开选择弹窗
 function openPlanSelector() {
   if (changingPlan.value) return
+  planSelectorReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   showPlanSelector.value = true
+  void nextTick(() => planSelectorModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
+}
+
+function closePlanSelector() {
+  if (changingPlan.value) return
+  showPlanSelector.value = false
+  const target = planSelectorReturnTarget.value
+  planSelectorReturnTarget.value = null
+  if (target?.isConnected) target.focus()
+}
+
+function onPlanSelectorKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closePlanSelector()
+    return
+  }
+  if (event.key !== 'Tab' || !planSelectorModal.value) return
+  const focusable = Array.from(planSelectorModal.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 // 选择新计划
@@ -201,7 +235,7 @@ async function selectPlan(planName: string) {
   changingPlan.value = true
   try {
     await DataService.saveDayPlan(planName, dateStr.value)
-    showPlanSelector.value = false
+    closePlanSelector()
     await loadData()
     notifyWorkspaceChanged('plans')
     notifyToast(t('dayDetail.planChanged'), 'success')
@@ -314,11 +348,11 @@ onUnmounted(() => {
     <!-- 计划选择弹窗 -->
     <Teleport to="body">
       <Transition name="modal">
-        <div v-if="showPlanSelector" class="modal-overlay" @click.self="!changingPlan && (showPlanSelector = false)">
-          <div class="modal">
+        <div v-if="showPlanSelector" class="modal-overlay" @click.self="closePlanSelector">
+          <div ref="planSelectorModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="day-plan-selector-title" @keydown="onPlanSelectorKeydown">
             <div class="modal-header">
-              <h3>{{ t('dayDetail.switchPlan') }}</h3>
-              <button type="button" class="close-btn" :aria-label="t('dayDetail.close')" :disabled="changingPlan" @click="showPlanSelector = false">
+              <h3 id="day-plan-selector-title">{{ t('dayDetail.switchPlan') }}</h3>
+              <button type="button" class="close-btn" :aria-label="t('dayDetail.close')" :disabled="changingPlan" @click="closePlanSelector">
                 <X :size="20" />
               </button>
             </div>
@@ -340,7 +374,7 @@ onUnmounted(() => {
                 <Check v-if="name === dayPlanName" :size="18" class="check-icon" />
               </button>
             </div>
-            <button type="button" class="btn secondary full" :disabled="changingPlan" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
+            <button type="button" class="btn secondary full" :disabled="changingPlan" @click="closePlanSelector">{{ t('settings.cancel') }}</button>
           </div>
         </div>
       </Transition>

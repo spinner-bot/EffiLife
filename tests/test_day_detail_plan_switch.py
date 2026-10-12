@@ -13,4 +13,5 @@ def test_historical_plan_switch_is_serialized_and_disables_modal_actions():
     assert "changingPlan.value = false" in block
     assert "finally" in block
     assert ":disabled=\"changingPlan\"" in VIEW
-    assert "!changingPlan && (showPlanSelector = false)" in VIEW
+    assert "function closePlanSelector()" in VIEW
+    assert "if (changingPlan.value) return" in VIEW.split("function closePlanSelector", 1)[1].split("function onPlanSelectorKeydown", 1)[0]
