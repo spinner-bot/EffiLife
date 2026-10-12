@@ -160,7 +160,8 @@ function openEditForm(index: number) {
   void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
 
-function closeForm() {
+function closeForm(force = false) {
+  if (isSaving.value && !force) return
   showForm.value = false
   const returnTarget = recordReturnFocus.value
   recordReturnFocus.value = null
@@ -406,7 +407,7 @@ async function saveRecordInternal() {
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
 
-  closeForm()
+  closeForm(true)
   resetForm()
 }
 
@@ -540,12 +541,12 @@ onUnmounted(() => {
     </div>
 
     <!-- 表单弹窗 -->
-    <div class="modal-overlay" v-if="showForm" @click.self="closeForm">
+    <div class="modal-overlay" v-if="showForm" @click.self="closeForm()">
       <div ref="recordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="record-modal-title" @keydown="onRecordModalKeydown">
         <form class="modal-form" @submit.prevent="saveRecord">
         <div class="modal-header">
           <h2 id="record-modal-title">{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
-          <button type="button" class="close-btn" :aria-label="t('search.close')" @click="closeForm">
+          <button type="button" class="close-btn" :aria-label="t('search.close')" :disabled="isSaving" @click="closeForm()">
             <X :size="20" />
           </button>
         </div>
@@ -645,7 +646,7 @@ onUnmounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn secondary" @click="closeForm">{{ t('records.cancel') }}</button>
+          <button type="button" class="btn secondary" :disabled="isSaving" @click="closeForm()">{{ t('records.cancel') }}</button>
           <button type="submit" class="btn primary" :disabled="isSaving">
             <Check :size="16" />
             <span>{{ t('records.save') }}</span>

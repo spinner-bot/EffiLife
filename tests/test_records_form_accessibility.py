@@ -22,7 +22,14 @@ def test_record_modal_has_focusable_dialog_semantics_and_focus_return():
     assert 'recordReturnFocus' in VIEW
     assert 'recordModal.value?.querySelector<HTMLElement>' in VIEW
     assert 'function onRecordModalKeydown' in VIEW
-    assert '@click.self="closeForm"' in VIEW
+    assert '@click.self="closeForm()"' in VIEW
+
+
+def test_records_modal_does_not_close_during_save_but_force_closes_after_success():
+    assert "function closeForm(force = false)" in VIEW
+    assert "if (isSaving.value && !force) return" in VIEW
+    assert "closeForm(true)" in VIEW
+    assert ':disabled="isSaving" @click="closeForm()"' in VIEW
 
 
 def test_empty_records_state_offers_a_direct_create_action():
