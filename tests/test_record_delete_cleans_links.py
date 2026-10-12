@@ -37,7 +37,11 @@ def test_data_service_delete_paths_clean_todo_reverse_links_at_storage_boundary(
     assert "async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void>" in data
     assert "await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')" in data
     assert "await unlinkRecordFromTodoReverseLinks(removed?.id || id)" in data
-    assert "related_time_record_ids.filter((id) => id !== recordId)" in data
+    assert "related_time_record_ids?.filter((id) => id !== recordId)" in data
+    assert "const previousRecords = records.slice()" in data
+    assert "await idbSet(STORE_NAMES.RECORDS, targetDay, previousRecords)" in data
+    assert "throw error" in data.split("async function unlinkRecordFromTodoReverseLinks", 1)[1].split("export const DataService", 1)[0]
+    assert "Record deletion remains authoritative" not in data
 
 
 def test_data_service_update_cleans_previous_reverse_link_when_record_relation_changes():
