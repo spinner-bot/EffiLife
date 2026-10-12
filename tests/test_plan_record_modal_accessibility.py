@@ -13,5 +13,7 @@ def test_legacy_record_modal_has_dialog_and_focus_contract():
     assert '@keydown="onRecordModalKeydown"' in VIEW
     assert "if (event.key === 'Escape')" in VIEW
     assert "recordReturnTarget" in VIEW
-    assert "function closeRecordForm()" in VIEW
+    assert "function closeRecordForm(force = false)" in VIEW
+    assert "if (isSavingRecord.value && !force) return" in VIEW
+    assert "closeRecordForm(true)" in VIEW
     assert "recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus()" in VIEW

@@ -133,8 +133,8 @@ function openEditForm(index: number) {
   void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
 
-function closeRecordForm() {
-  if (isSavingRecord.value) return
+function closeRecordForm(force = false) {
+  if (isSavingRecord.value && !force) return
   showRecordForm.value = false
   const target = recordReturnTarget.value
   recordReturnTarget.value = null
@@ -259,7 +259,7 @@ async function saveRecordInternal() {
     : editingIndex.value
   if (isEditing.value && resolvedEditingIndex < 0) {
     notifyToast(t('legacyPlan.recordMissing'), 'error')
-    closeRecordForm()
+    closeRecordForm(true)
     resetRecordForm()
     return
   }
@@ -314,7 +314,7 @@ async function saveRecordInternal() {
     }
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
-  closeRecordForm()
+  closeRecordForm(true)
   resetRecordForm()
 }
 
@@ -1024,11 +1024,11 @@ onUnmounted(() => {
 
     <!-- 记录表单弹窗 -->
     <Transition name="modal">
-      <div v-if="showRecordForm" class="pv-modal-overlay" @click.self="closeRecordForm">
+      <div v-if="showRecordForm" class="pv-modal-overlay" @click.self="closeRecordForm()">
         <div ref="recordModal" class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-record-modal-title" @keydown="onRecordModalKeydown">
           <div class="pv-modal-header">
             <h3 id="legacy-record-modal-title">{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
-            <button type="button" class="pv-modal-close" @click="closeRecordForm" :aria-label="t('common.cancel')" :title="t('common.cancel')">
+            <button type="button" class="pv-modal-close" @click="closeRecordForm()" :aria-label="t('common.cancel')" :title="t('common.cancel')">
               <X :size="18" />
             </button>
           </div>
@@ -1120,7 +1120,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="pv-modal-footer">
-            <button type="button" class="pv-secondary-btn" @click="closeRecordForm">{{ t('legacyPlan.cancel') }}</button>
+            <button type="button" class="pv-secondary-btn" @click="closeRecordForm()">{{ t('legacyPlan.cancel') }}</button>
             <button type="button" class="pv-primary-btn" :disabled="isSavingRecord" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
               <span>{{ isSavingRecord ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
