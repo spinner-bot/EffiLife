@@ -187,7 +187,14 @@ export async function runMigration(): Promise<{
     const backupData = collectLocalStorageData()
     await createBackup('pre_migration_full', backupData)
   } catch (error) {
-    console.warn('Failed to create pre-migration backup:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const failure = `pre_migration_full: ${message}`
+    console.error('Failed to create pre-migration backup:', error)
+    return {
+      success: false,
+      migrated: [],
+      errors: [failure],
+    }
   }
 
   // 执行各项迁移

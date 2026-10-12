@@ -18,3 +18,13 @@ def test_migration_retry_discards_rejected_promise_for_startup_retry():
     assert "migrationPromise = null" in block
     assert "throw error" in block
     assert "migrationPromise = runMigration()" in block
+
+
+def test_migration_does_not_write_any_dataset_when_pre_migration_backup_fails():
+    source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
+    migration = source.split("export async function runMigration", 1)[1]
+    backup_block = migration.split("// 执行各项迁移", 1)[0]
+    assert "return {" in backup_block
+    assert "success: false" in backup_block
+    assert "errors: [failure]" in backup_block
+    assert migration.index("errors: [failure]") < migration.index("const migrations:")
