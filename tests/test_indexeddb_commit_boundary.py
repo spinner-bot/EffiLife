@@ -13,3 +13,23 @@ def test_indexeddb_set_resolves_after_transaction_commit_not_request_success():
     assert "transaction.onabort" in set_block
     assert "request.onsuccess" not in set_block
     assert set_block.index("transaction.oncomplete") < set_block.index("resolve()")
+
+
+def test_raw_writes_wait_for_transaction_commit_before_resolving():
+    source = STORAGE.read_text(encoding="utf-8")
+    for function_name in ("putRaw", "deleteRaw"):
+        block = source.split(f"export async function {function_name}", 1)[1]
+        block = block.split("export async function", 1)[0]
+        assert "transaction.oncomplete" in block
+        assert "transaction.onerror" in block
+        assert "transaction.onabort" in block
+        assert "request.onsuccess" not in block
+
+
+def test_clear_waits_for_transaction_commit_before_removing_fallback_mirrors():
+    source = STORAGE.read_text(encoding="utf-8")
+    block = source.split("export async function clear", 1)[1].split("export async function isEmpty", 1)[0]
+    assert "transaction.oncomplete" in block
+    assert "transaction.onerror" in block
+    assert "transaction.onabort" in block
+    assert block.index("transaction.oncomplete") < block.index("removeFallbackEntries(storeName)")

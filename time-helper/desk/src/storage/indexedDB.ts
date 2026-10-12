@@ -299,7 +299,12 @@ export async function putRaw<T>(storeName: string, value: T): Promise<void> {
       const store = transaction.objectStore(storeName)
       const request = store.put(value)
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
+      // Request success only means the write was accepted by the transaction.
+      // Recovery/import callers may immediately read or write another store,
+      // so wait until the transaction has durably committed.
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
     })
   } catch (error) {
     console.warn(`IndexedDB raw put failed for ${storeName}, falling back to localStorage:`, error)
@@ -316,7 +321,9 @@ export async function deleteRaw(storeName: string, key: IDBValidKey): Promise<vo
       const store = transaction.objectStore(storeName)
       const request = store.delete(key)
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
+      transaction.oncomplete = () => resolve()
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
     })
   } catch (error) {
     console.warn(`IndexedDB raw delete failed for ${storeName}, falling back to localStorage:`, error)
@@ -353,10 +360,12 @@ export async function clear(storeName: string): Promise<void> {
       const request = store.clear()
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
+      transaction.oncomplete = () => {
         removeFallbackEntries(storeName)
         resolve()
       }
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
     })
   } catch (error) {
     console.warn(`IndexedDB clear failed for ${storeName}, falling back to localStorage:`, error)
