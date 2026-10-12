@@ -152,6 +152,18 @@ def test_release_workflow_verifies_non_empty_platform_installer():
     assert "--version-file time-helper/VERSION" in workflow
 
 
+def test_windows_release_workflow_runs_isolated_installer_lifecycle_smoke():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+
+    assert "Smoke test Windows installer lifecycle" in workflow
+    smoke_index = workflow.index("python scripts/smoke_windows_installer.py")
+    step_start = workflow.rfind("- name:", 0, smoke_index)
+    assert "if: matrix.target == 'windows-nsis'" in workflow[step_start:smoke_index]
+    assert smoke_index > workflow.index("npm run tauri build")
+    assert smoke_index < workflow.index("Verify packaged installer")
+    assert "effilife-installer-smoke" in workflow
+
+
 def test_release_workflow_publishes_checksums_and_manifests_with_installers():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "scripts/generate_release_manifest.py" in workflow

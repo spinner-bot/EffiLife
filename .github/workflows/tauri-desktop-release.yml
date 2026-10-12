@@ -158,6 +158,15 @@ jobs:
             Remove-Item -LiteralPath $certificate -Force -ErrorAction SilentlyContinue
           }
 
+      - name: Smoke test Windows installer lifecycle
+        if: matrix.target == 'windows-nsis'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -LiteralPath 'time-helper/desk/src-tauri/target/release/bundle/nsis' -Filter '*.exe' -File | Select-Object -First 1
+          if ($null -eq $installer) { throw 'Installer smoke test found no Windows installer' }
+          $target = Join-Path $env:RUNNER_TEMP 'effilife-installer-smoke'
+          python scripts/smoke_windows_installer.py --installer $installer.FullName --target $target
+
       - name: Verify packaged installer
         run: >-
           python scripts/verify_release_artifacts.py
