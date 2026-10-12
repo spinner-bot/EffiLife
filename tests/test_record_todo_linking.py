@@ -19,6 +19,7 @@ def test_record_edit_reconciles_previous_todo_link():
     source = RECORDS.read_text(encoding="utf-8")
     assert "originalRecord?.todo_id && originalRecord.todo_id !== record.todo_id" in source
     assert "unlinkTodoFromTimeRecord({ ...record, todo_id: originalRecord.todo_id })" in source
+    assert "await appStore.updateRecord(resolvedEditingIndex, originalRecord)" in source
     assert "records.todoLinkFailed" in source
 
 
@@ -29,6 +30,13 @@ def test_new_th_record_tracks_time_and_same_record_edit_applies_a_delta():
     assert "TodoService.trackTime(todo.id, recordMinutes, recordId)" in source
     assert "const hasRecordLink = todo.related_time_record_ids?.includes(recordId) || false" in source
     assert "TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))" in source
+
+
+def test_record_todo_link_failure_clears_the_persisted_record_reference():
+    source = RECORDS.read_text(encoding="utf-8")
+    assert "const persistedIndex = isEditing.value" in source
+    assert "await appStore.updateRecord(persistedIndex, { ...record, todo_id: undefined })" in source
+    assert "if (!todo) throw new Error(`Linked todo ${record.todo_id} was not found`)" in source
 
 
 def test_record_todo_link_copy_exists_in_both_locales():

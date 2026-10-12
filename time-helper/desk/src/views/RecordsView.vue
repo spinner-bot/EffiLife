@@ -380,11 +380,19 @@ async function saveRecordInternal() {
     } catch (error) {
       todoLinkFailed = true
       console.warn('Failed to unlink previous todo record reference', error)
+      try {
+        await appStore.updateRecord(resolvedEditingIndex, originalRecord)
+      } catch (rollbackError) {
+        console.error('Failed to roll back time record after todo unlink failure', rollbackError)
+      }
+      notifyToast(t('records.todoLinkFailed'), 'error')
+      return
     }
   }
   if (record.todo_id) {
     try {
       const todo = todos.value.find((item) => item.id === record.todo_id)
+      if (!todo) throw new Error(`Linked todo ${record.todo_id} was not found`)
       const recordId = record.id as string
       const alreadyLinkedToSameTodo = originalRecord?.todo_id === record.todo_id
       const recordMinutes = Math.max(1, Math.round(record.duration * 60))
@@ -403,6 +411,16 @@ async function saveRecordInternal() {
     } catch (error) {
       todoLinkFailed = true
       console.warn('Failed to link saved record to todo', error)
+      const persistedIndex = isEditing.value
+        ? resolvedEditingIndex
+        : records.value.findIndex((item) => item.id === record.id)
+      if (persistedIndex >= 0) {
+        try {
+          await appStore.updateRecord(persistedIndex, { ...record, todo_id: undefined })
+        } catch (rollbackError) {
+          console.error('Failed to clear time record todo reference after link failure', rollbackError)
+        }
+      }
     }
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
