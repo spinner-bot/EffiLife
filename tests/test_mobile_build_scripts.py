@@ -27,6 +27,24 @@ def test_mobile_build_scripts_remain_separate_from_desktop_sidecar_build():
         assert "build:sidecar" not in scripts[name]
 
 
+def test_windows_managed_android_build_preserves_symlink_fallback_contract():
+    script = (ROOT / "scripts/build_android_managed.ps1").read_text(encoding="utf-8")
+
+    assert "Tauri Android build stopped at the Windows symlink step" in script
+    assert "Get-Item -LiteralPath $library" in script
+    assert "LastWriteTime -lt $buildStart" in script
+    assert "Copy-Item -LiteralPath $library -Destination $jniLibrary -Force" in script
+    assert "app:assembleArm64Release -x rustBuildArm64Release" in script
+    assert "android.overridePathCheck=true" in script
+
+
+def test_windows_managed_android_build_rejects_stale_rust_output_after_failure():
+    script = (ROOT / "scripts/build_android_managed.ps1").read_text(encoding="utf-8")
+
+    assert "if (-not (Test-Path -LiteralPath $library) -or" in script
+    assert "throw \"Tauri Android build failed before producing a fresh Rust library" in script
+
+
 def test_mobile_artifact_verifier_accepts_non_empty_android_apk_and_ios_bundle(tmp_path):
     from scripts.verify_mobile_artifacts import verify
 
