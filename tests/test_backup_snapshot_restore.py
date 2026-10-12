@@ -22,6 +22,19 @@ def test_records_backup_restore_accepts_single_day_entries_without_erasing_other
     assert "throw new Error('Invalid records backup')" in records_case
 
 
+def test_normal_backup_restore_validates_each_module_payload_before_writing():
+    for module, error in (
+        ('config', "Invalid config backup"),
+        ('plans', "Invalid plans backup"),
+        ('schedule_rules', "Invalid schedule rules backup"),
+        ('manual_plans', "Invalid manual plans backup"),
+    ):
+        module_case = SOURCE[SOURCE.index(f"case '{module}':"):]
+        assert error in module_case
+    assert "if (!isObjectRecord(data)) throw new Error('Invalid config backup')" in SOURCE
+    assert "if (!Array.isArray(data)) throw new Error('Invalid schedule rules backup')" in SOURCE
+
+
 def test_manual_plans_backup_restore_replaces_the_existing_snapshot():
     clear = "await clear(STORE_NAMES.MANUAL_PLANS)"
     plans_case = SOURCE.index("case 'manual_plans':")

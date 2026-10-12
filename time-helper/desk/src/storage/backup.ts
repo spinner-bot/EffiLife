@@ -58,6 +58,10 @@ function isRecordBackupEntry(value: unknown): value is RecordBackupEntry {
   return typeof entry.date === 'string' && entry.date.length > 0 && Array.isArray(entry.records)
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
 // 防抖计时器
 const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -245,10 +249,12 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
       break
     }
     case 'config':
+      if (!isObjectRecord(data)) throw new Error('Invalid config backup')
       await set(STORE_NAMES.CONFIG, 'config', data)
       changeSource = 'settings'
       break
     case 'plans':
+      if (!isObjectRecord(data)) throw new Error('Invalid plans backup')
       await set(STORE_NAMES.PLANS, 'plans', data)
       changeSource = 'plans'
       break
@@ -275,17 +281,20 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
       }
       break
     case 'schedule_rules':
+      if (!Array.isArray(data)) throw new Error('Invalid schedule rules backup')
       await set(STORE_NAMES.SCHEDULE_RULES, 'rules', data)
       changeSource = 'plans'
       break
     case 'manual_plans':
-      if (typeof data === 'object' && data !== null) {
+      if (isObjectRecord(data)) {
         // Manual plans are also restored as a complete date -> plan snapshot.
         await clear(STORE_NAMES.MANUAL_PLANS)
         for (const [date, planName] of Object.entries(data)) {
           await set(STORE_NAMES.MANUAL_PLANS, date, planName)
         }
         changeSource = 'plans'
+      } else {
+        throw new Error('Invalid manual plans backup')
       }
       break
   }
