@@ -14,6 +14,12 @@ def test_mobile_plan_snapshot_mutations_serialize_the_complete_read_modify_write
     assert "await enqueueMobilePlanWrite(async () =>" in GATEWAY
 
 
+def test_mobile_plan_task_minutes_preserve_fractional_six_minute_units():
+    task_unit = GATEWAY.split("function mobileTaskUnit", 1)[1].split("}", 1)[0]
+    assert "Number(minutes) || 0) / 6" in task_unit
+    assert "Math.round" not in task_unit
+
+
 def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "async function getMobileRawArchives()" in GATEWAY
     assert "if (getPlanRuntime() === 'mobile-unavailable')" in GATEWAY

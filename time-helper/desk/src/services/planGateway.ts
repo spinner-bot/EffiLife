@@ -328,7 +328,10 @@ function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSectio
 }
 
 function mobileTaskUnit(minutes: number): number {
-  return Math.max(0, Math.round(Math.max(0, Number(minutes) || 0) / 6))
+  // PH stores time in six-minute units, but the unit is allowed to be
+  // fractional. Rounding here made mobile edits silently change a 10-minute
+  // task into 12 minutes, unlike the desktop sidecar path.
+  return Math.max(0, Number(minutes) || 0) / 6
 }
 
 function mobileCurrentTime(): { day: number; time: [number, number] } {
