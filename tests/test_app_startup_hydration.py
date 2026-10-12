@@ -49,6 +49,14 @@ def test_startup_error_exposes_localized_diagnostic_detail():
     assert source.count("'app.startupFailedDetail'") == 4
 
 
+def test_startup_error_focuses_the_recovery_action():
+    app = APP.read_text(encoding="utf-8")
+    assert "const startupRetryButton = ref<HTMLButtonElement | null>(null)" in app
+    assert "await nextTick()" in app
+    assert "startupRetryButton.value?.focus()" in app
+    assert 'ref="startupRetryButton"' in app
+
+
 def test_checkin_refresh_has_a_recoverable_error_boundary():
     app = APP.read_text(encoding="utf-8")
     checkin_block = app.split("function onCheckinComplete()", 1)[1].split("function onCheckinClose", 1)[0]

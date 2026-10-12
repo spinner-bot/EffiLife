@@ -44,6 +44,7 @@ const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
 const startupError = ref(false)
 const startupErrorMessage = ref('')
+const startupRetryButton = ref<HTMLButtonElement | null>(null)
 const showGlobalSearch = ref(false)
 const mainContent = ref<HTMLElement | null>(null)
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
@@ -274,6 +275,8 @@ onMounted(async () => {
     console.error('Failed to initialize EffiLife workspace:', error)
     startupErrorMessage.value = error instanceof Error ? error.message : String(error)
     startupError.value = true
+    await nextTick()
+    startupRetryButton.value?.focus()
     return
   }
   applyTheme()
@@ -468,7 +471,7 @@ watch(() => appStore.todayStat, () => {
       <strong>{{ t('app.startupFailed') }}</strong>
       <span>{{ t('app.startupFailedDescription') }}</span>
       <small v-if="startupErrorMessage" class="app-startup-detail">{{ t('app.startupFailedDetail', { detail: startupErrorMessage }) }}</small>
-      <button class="app-startup-retry" type="button" @click="retryStartup">
+      <button ref="startupRetryButton" class="app-startup-retry" type="button" @click="retryStartup">
         {{ t('app.retryStartup') }}
       </button>
     </div>
