@@ -65,6 +65,16 @@ def test_day_detail_keeps_history_when_only_day_plan_read_fails():
     assert "dayDetail.planUnavailable" in source
 
 
+def test_day_detail_plan_switch_surfaces_success_and_failure():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+    i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+    assert "notifyToast(t('dayDetail.planChanged'), 'success')" in source
+    assert "t('dayDetail.planChangeFailed')" in source
+    assert "Failed to change historical day plan:" in source
+    assert i18n.count("'dayDetail.planChanged':") == 2
+    assert i18n.count("'dayDetail.planChangeFailed':") == 2
+
+
 def test_app_store_exposes_atomic_workspace_refresh_and_emits_mutation_sources():
     source = STORE.read_text(encoding="utf-8")
     assert "async function refreshWorkspaceData()" in source

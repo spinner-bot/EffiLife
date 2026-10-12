@@ -190,10 +190,16 @@ function openPlanSelector() {
 
 // 选择新计划
 async function selectPlan(planName: string) {
-  await DataService.saveDayPlan(planName, dateStr.value)
-  showPlanSelector.value = false
-  await loadData()
-  notifyWorkspaceChanged('plans')
+  try {
+    await DataService.saveDayPlan(planName, dateStr.value)
+    showPlanSelector.value = false
+    await loadData()
+    notifyWorkspaceChanged('plans')
+    notifyToast(t('dayDetail.planChanged'), 'success')
+  } catch (error) {
+    console.error('Failed to change historical day plan:', error)
+    notifyToast(error instanceof Error ? error.message : t('dayDetail.planChangeFailed'), 'error')
+  }
 }
 
 onMounted(() => {
