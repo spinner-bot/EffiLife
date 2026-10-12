@@ -50,6 +50,9 @@ def test_data_service_update_cleans_previous_reverse_link_when_record_relation_c
     assert "const previousRecord = records[index]" in update
     assert "previousRecord.id !== record.id || previousRecord.todo_id !== record.todo_id" in update
     assert "await unlinkRecordFromTodoReverseLinks(previousRecord.id)" in update
+    assert "const previousRecords = records.slice()" in update
+    assert "await idbSet(STORE_NAMES.RECORDS, targetDay, previousRecords)" in update
+    assert update.index("await unlinkRecordFromTodoReverseLinks(previousRecord.id)") < update.index("writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)")
 
 
 def test_day_detail_delete_cleans_linked_todo_reference():

@@ -592,18 +592,25 @@ export const DataService = {
       const records = await this.loadRecords(targetDay)
       if (index >= 0 && index < records.length) {
         const previousRecord = records[index]
-        records[index] = record
-        await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
-        triggerBackup('records', { date: targetDay, records })
+        const previousRecords = records.slice()
+        const nextRecords = records.slice()
+        nextRecords[index] = record
+        await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
         // Keep the storage boundary safe for non-UI callers too. Views also
         // perform the forward TD aggregate update, but a direct record edit
         // must never leave the old todo pointing at this record.
-        if (previousRecord?.id && (
-          previousRecord.id !== record.id || previousRecord.todo_id !== record.todo_id
-        )) {
-          await unlinkRecordFromTodoReverseLinks(previousRecord.id)
+        try {
+          if (previousRecord?.id && (
+            previousRecord.id !== record.id || previousRecord.todo_id !== record.todo_id
+          )) {
+            await unlinkRecordFromTodoReverseLinks(previousRecord.id)
+          }
+        } catch (error) {
+          await idbSet(STORE_NAMES.RECORDS, targetDay, previousRecords)
+          throw error
         }
+        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
+        triggerBackup('records', { date: targetDay, records: nextRecords })
       }
     })
   },
