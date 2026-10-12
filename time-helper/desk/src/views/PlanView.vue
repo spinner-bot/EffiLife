@@ -305,6 +305,9 @@ const editingPlanName = ref('')
 const editingPlanType = ref<'切分制' | '分配制'>('切分制')
 const editingPlanBgTag = ref('')
 const editingPlanColor = ref([128, 128, 128])
+const isSavingPlan = ref(false)
+const isSavingRule = ref(false)
+const isChangingTodayPlan = ref(false)
 type DraftPlanItem = PlanItem & { draftId: string }
 let draftPlanItemSequence = 0
 function createDraftPlanItem(item: Partial<PlanItem> = {}): DraftPlanItem {
@@ -339,6 +342,19 @@ function removePlanItem(index: number) {
   editingPlanItems.value.splice(index, 1)
 }
 async function savePlan() {
+  if (isSavingPlan.value) return
+  isSavingPlan.value = true
+  try {
+    await savePlanInternal()
+  } catch (error) {
+    console.error('Failed to save daily plan:', error)
+    notifyToast(t('legacyPlan.operationFailed'), 'error')
+  } finally {
+    isSavingPlan.value = false
+  }
+}
+
+async function savePlanInternal() {
   const name = editingPlanName.value.trim()
   // 使用表单验证
   const valid = planValidation.validate({ planName: name })
@@ -409,6 +425,19 @@ function openEditRule(index: number) {
   manageView.value = 'editRule'
 }
 async function saveRule() {
+  if (isSavingRule.value) return
+  isSavingRule.value = true
+  try {
+    await saveRuleInternal()
+  } catch (error) {
+    console.error('Failed to save schedule rule:', error)
+    notifyToast(t('legacyPlan.operationFailed'), 'error')
+  } finally {
+    isSavingRule.value = false
+  }
+}
+
+async function saveRuleInternal() {
   if (!editingRulePlan.value) { notifyToast(t('legacyPlan.relatedPlanRequired'), 'error'); return }
   if (editingRuleType.value === 'default') { notifyToast(t('legacyPlan.defaultRuleImmutable'), 'error'); return }
 
@@ -447,9 +476,17 @@ async function moveRuleUp(index: number) {
 }
 
 async function changeTodayPlan(planName: string) {
-  if (planName === todayPlan.value.name) return
-  await appStore.changeTodayPlan(planName)
-  notifyToast(t('legacyPlan.switchedPlan', { name: planName }), 'success')
+  if (planName === todayPlan.value.name || isChangingTodayPlan.value) return
+  isChangingTodayPlan.value = true
+  try {
+    await appStore.changeTodayPlan(planName)
+    notifyToast(t('legacyPlan.switchedPlan', { name: planName }), 'success')
+  } catch (error) {
+    console.error('Failed to switch today plan:', error)
+    notifyToast(t('legacyPlan.operationFailed'), 'error')
+  } finally {
+    isChangingTodayPlan.value = false
+  }
 }
 
 const weekDays = computed(() => [
@@ -790,9 +827,9 @@ onUnmounted(() => {
 
             <div class="pv-form-footer">
               <button type="button" class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'plans'">{{ t('legacyPlan.cancel') }}</button>
-              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); savePlan()">
+              <button type="button" class="pv-primary-btn" :disabled="isSavingPlan" @click="AudioManager.playSound('click'); savePlan()">
                 <Check :size="14" />
-                <span>{{ t('legacyPlan.save') }}</span>
+                <span>{{ isSavingPlan ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
               </button>
             </div>
           </template>
@@ -906,9 +943,9 @@ onUnmounted(() => {
 
             <div class="pv-form-footer">
               <button type="button" class="pv-secondary-btn" @click="AudioManager.playSound('click'); manageView = 'rules'">{{ t('legacyPlan.cancel') }}</button>
-              <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRule()">
+              <button type="button" class="pv-primary-btn" :disabled="isSavingRule" @click="AudioManager.playSound('click'); saveRule()">
                 <Check :size="14" />
-                <span>{{ t('legacyPlan.save') }}</span>
+                <span>{{ isSavingRule ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
               </button>
             </div>
           </template>

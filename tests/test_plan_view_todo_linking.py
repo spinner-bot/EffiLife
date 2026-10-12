@@ -33,3 +33,14 @@ def test_primary_time_entry_prevents_duplicate_saves_and_surfaces_storage_failur
     assert "await saveRecordInternal()" in VIEW
     assert "t('legacyPlan.saveFailed')" in VIEW
     assert ':disabled="isSavingRecord"' in VIEW
+
+
+def test_daily_plan_controls_use_product_grade_save_guards():
+    assert "const isSavingPlan = ref(false)" in VIEW
+    assert "const isSavingRule = ref(false)" in VIEW
+    assert "const isChangingTodayPlan = ref(false)" in VIEW
+    assert "await savePlanInternal()" in VIEW
+    assert "await saveRuleInternal()" in VIEW
+    assert "t('legacyPlan.operationFailed')" in VIEW
+    assert ':disabled="isSavingPlan"' in VIEW
+    assert ':disabled="isSavingRule"' in VIEW
