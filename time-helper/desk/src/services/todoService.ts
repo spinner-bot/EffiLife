@@ -305,6 +305,34 @@ export const TodoSettingsService = {
   },
 }
 
+// TD mutations also use a read-modify-write cycle. Serialize by task id so
+// quick edits, subtask changes, and time aggregation cannot overwrite a newer
+// snapshot from another workspace surface.
+const todoWriteQueues = new Map<string, Promise<unknown>>()
+
+function enqueueTodoWrite<T>(id: string, operation: () => Promise<T>): Promise<T> {
+  const previous = todoWriteQueues.get(id) || Promise.resolve()
+  const current = previous.catch(() => undefined).then(operation)
+  const queued = current.finally(() => {
+    if (todoWriteQueues.get(id) === queued) todoWriteQueues.delete(id)
+  })
+  todoWriteQueues.set(id, queued)
+  return current
+}
+
+async function mutateTodo(id: string, patchFactory: (current: UnifiedTodo) => Partial<UnifiedTodo>): Promise<UnifiedTodo> {
+  return enqueueTodoWrite(id, async () => {
+    const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
+    const patch = patchFactory(current)
+    const next = normalize({ ...current, ...patch, id: current.id, created_at: current.created_at, title: patch.title ?? current.title })
+    await putRaw(STORE_NAMES.TODOS, next)
+    notifyWorkspaceChanged('todos')
+    return next
+  })
+}
+
 export const TodoService = {
   async migrateLegacyLocalStorage(): Promise<{ migrated: number; categories: number; skipped: number }> {
     if (legacyMigrationAttempted) return { migrated: 0, categories: 0, skipped: 0 }
@@ -371,13 +399,7 @@ export const TodoService = {
   },
 
   async update(id: string, patch: Partial<UnifiedTodo>): Promise<UnifiedTodo> {
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
-    const next = normalize({ ...current, ...patch, id: current.id, created_at: current.created_at, title: patch.title ?? current.title })
-    await putRaw(STORE_NAMES.TODOS, next)
-    notifyWorkspaceChanged('todos')
-    return next
+    return mutateTodo(id, () => patch)
   },
 
   async complete(id: string): Promise<UnifiedTodo> {
@@ -387,84 +409,77 @@ export const TodoService = {
   async addSubtask(id: string, title: string): Promise<UnifiedTodo> {
     const cleanTitle = title.trim()
     if (!cleanTitle) throw new Error(translate('tasks.error.subtaskTitleRequired'))
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
-    return this.update(id, {
+    return mutateTodo(id, (current) => ({
       subtasks: [...current.subtasks, { id: makeSubtaskId(), title: cleanTitle, completed: false }],
-    })
+    }))
   },
 
   async toggleSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
-    let found = false
-    const subtasks = current.subtasks.map((subtask) => {
-      if (subtask.id !== subtaskId) return subtask
-      found = true
-      const completed = !subtask.completed
-      return { ...subtask, completed, completed_at: completed ? now() : undefined }
+    return mutateTodo(id, (current) => {
+      let found = false
+      const subtasks = current.subtasks.map((subtask) => {
+        if (subtask.id !== subtaskId) return subtask
+        found = true
+        const completed = !subtask.completed
+        return { ...subtask, completed, completed_at: completed ? now() : undefined }
+      })
+      if (!found) throw new Error(translate('tasks.error.subtaskMissing'))
+      return { subtasks }
     })
-    if (!found) throw new Error(translate('tasks.error.subtaskMissing'))
-    return this.update(id, { subtasks })
   },
 
   async removeSubtask(id: string, subtaskId: string): Promise<UnifiedTodo> {
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
-    const subtasks = current.subtasks.filter((subtask) => subtask.id !== subtaskId)
-    if (subtasks.length === current.subtasks.length) throw new Error(translate('tasks.error.subtaskMissing'))
-    return this.update(id, { subtasks })
+    return mutateTodo(id, (current) => {
+      const subtasks = current.subtasks.filter((subtask) => subtask.id !== subtaskId)
+      if (subtasks.length === current.subtasks.length) throw new Error(translate('tasks.error.subtaskMissing'))
+      return { subtasks }
+    })
   },
 
   async remove(id: string): Promise<void> {
-    try {
-      // Keep TH history intact while removing the reverse TD reference. The
-      // view layer also performs this cleanup for older callers, but the
-      // service boundary must remain safe when used directly.
-      await DataService.unlinkTodoFromRecords(id)
-    } catch (error) {
-      console.warn('Failed to clean deleted todo record links:', error)
-    }
-    await deleteRaw(STORE_NAMES.TODOS, id)
-    notifyWorkspaceChanged('todos')
+    await enqueueTodoWrite(id, async () => {
+      try {
+        // Keep TH history intact while removing the reverse TD reference. The
+        // view layer also performs this cleanup for older callers, but the
+        // service boundary must remain safe when used directly.
+        await DataService.unlinkTodoFromRecords(id)
+      } catch (error) {
+        console.warn('Failed to clean deleted todo record links:', error)
+      }
+      await deleteRaw(STORE_NAMES.TODOS, id)
+      notifyWorkspaceChanged('todos')
+    })
   },
 
   async trackTime(id: string, minutes: number, timeRecordId?: string | string[]): Promise<UnifiedTodo> {
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
       throw new Error(translate('tasks.error.invalidMinutes'))
     }
     const recordIds = Array.isArray(timeRecordId)
       ? timeRecordId.filter(Boolean)
       : timeRecordId ? [timeRecordId] : []
-    const existingRecordIds = current.related_time_record_ids || []
-    const hasNewRecordId = recordIds.some((id) => !existingRecordIds.includes(id))
-    const addedMinutes = recordIds.length > 0 && !hasNewRecordId ? 0 : minutes
-    const relatedTimeRecordIds = recordIds.length > 0
-      ? [...new Set([...existingRecordIds, ...recordIds])]
-      : current.related_time_record_ids
-    return this.update(id, {
-      time_spent: (current.time_spent || 0) + addedMinutes,
-      related_time_record_ids: relatedTimeRecordIds,
+    return mutateTodo(id, (current) => {
+      const existingRecordIds = current.related_time_record_ids || []
+      const hasNewRecordId = recordIds.some((id) => !existingRecordIds.includes(id))
+      const addedMinutes = recordIds.length > 0 && !hasNewRecordId ? 0 : minutes
+      const relatedTimeRecordIds = recordIds.length > 0
+        ? [...new Set([...existingRecordIds, ...recordIds])]
+        : current.related_time_record_ids
+      return {
+        time_spent: (current.time_spent || 0) + addedMinutes,
+        related_time_record_ids: relatedTimeRecordIds,
+      }
     })
   },
 
   /** Adjust the aggregate for an existing linked time record after editing it. */
   async adjustTrackedTime(id: string, deltaMinutes: number): Promise<UnifiedTodo> {
-    const todos = await this.list()
-    const current = todos.find((todo) => todo.id === id)
-    if (!current) throw new Error(translate('tasks.error.taskMissing'))
     if (!Number.isInteger(deltaMinutes) || deltaMinutes === 0 || Math.abs(deltaMinutes) > 1440) {
       throw new Error(translate('tasks.error.invalidMinutes'))
     }
-    return this.update(id, {
+    return mutateTodo(id, (current) => ({
       time_spent: Math.max(0, Number(current.time_spent || 0) + deltaMinutes),
-    })
+    }))
   },
 }
 
