@@ -42,3 +42,18 @@ def test_missing_primary_values_can_recover_from_the_compatibility_mirror():
     ):
         block = source.split(marker, 1)[1].split("\n  },", 1)[0]
         assert "readLegacyMirror" in block
+
+
+def test_time_record_read_modify_write_cycles_are_serialized_per_day():
+    source = DATA_SERVICE.read_text(encoding="utf-8")
+    assert "const recordWriteQueues = new Map<string, Promise<void>>()" in source
+    assert "function enqueueRecordWrite(day: string, operation: () => Promise<void>): Promise<void>" in source
+    assert "const previous = recordWriteQueues.get(day) || Promise.resolve()" in source
+    for marker in (
+        "async saveRecord(record: TimeRecord, day?: string)",
+        "async deleteRecord(index: number, day?: string)",
+        "async deleteRecordById(id: string, day?: string)",
+        "async updateRecord(index: number, record: TimeRecord, day?: string)",
+    ):
+        block = source.split(marker, 1)[1].split("\n  },", 1)[0]
+        assert "return enqueueRecordWrite(targetDay, async () =>" in block

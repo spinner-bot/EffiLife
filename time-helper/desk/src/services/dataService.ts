@@ -328,6 +328,21 @@ type TodoRecordLinkSnapshot = {
   related_time_record_ids?: string[]
 }
 
+// Record mutations use a read-modify-write cycle. Serialize that cycle per
+// day so rapid edits from different workspace surfaces cannot overwrite one
+// another with an older array snapshot.
+const recordWriteQueues = new Map<string, Promise<void>>()
+
+function enqueueRecordWrite(day: string, operation: () => Promise<void>): Promise<void> {
+  const previous = recordWriteQueues.get(day) || Promise.resolve()
+  const current = previous.catch(() => undefined).then(operation)
+  const queued = current.finally(() => {
+    if (recordWriteQueues.get(day) === queued) recordWriteQueues.delete(day)
+  })
+  recordWriteQueues.set(day, queued)
+  return current
+}
+
 /** Keep TD reverse references valid when TH records are removed directly. */
 async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void> {
   if (!recordId) return
@@ -492,47 +507,55 @@ export const DataService = {
 
   async saveRecord(record: TimeRecord, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
-    const records = await this.loadRecords(targetDay)
-    records.push(record)
-    await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-    writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
-    triggerBackup('records', { date: targetDay, records })
+    return enqueueRecordWrite(targetDay, async () => {
+      const records = await this.loadRecords(targetDay)
+      records.push(record)
+      await idbSet(STORE_NAMES.RECORDS, targetDay, records)
+      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
+      triggerBackup('records', { date: targetDay, records })
+    })
   },
 
   async deleteRecord(index: number, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
-    const records = await this.loadRecords(targetDay)
-    if (index >= 0 && index < records.length) {
-      const removedRecord = records[index]
-      records.splice(index, 1)
-      await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
-      triggerBackup('records', { date: targetDay, records })
-      await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')
-    }
+    return enqueueRecordWrite(targetDay, async () => {
+      const records = await this.loadRecords(targetDay)
+      if (index >= 0 && index < records.length) {
+        const removedRecord = records[index]
+        records.splice(index, 1)
+        await idbSet(STORE_NAMES.RECORDS, targetDay, records)
+        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
+        triggerBackup('records', { date: targetDay, records })
+        await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')
+      }
+    })
   },
 
   async deleteRecordById(id: string, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
-    const records = await this.loadRecords(targetDay)
-    const removed = records.find((record) => record.id === id)
-    const nextRecords = records.filter((record) => record.id !== id)
-    if (nextRecords.length === records.length) return
-    await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
-    writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
-    triggerBackup('records', { date: targetDay, records: nextRecords })
-    await unlinkRecordFromTodoReverseLinks(removed?.id || id)
+    return enqueueRecordWrite(targetDay, async () => {
+      const records = await this.loadRecords(targetDay)
+      const removed = records.find((record) => record.id === id)
+      const nextRecords = records.filter((record) => record.id !== id)
+      if (nextRecords.length === records.length) return
+      await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
+      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
+      triggerBackup('records', { date: targetDay, records: nextRecords })
+      await unlinkRecordFromTodoReverseLinks(removed?.id || id)
+    })
   },
 
   async updateRecord(index: number, record: TimeRecord, day?: string): Promise<void> {
     const targetDay = day || getTodayDate()
-    const records = await this.loadRecords(targetDay)
-    if (index >= 0 && index < records.length) {
-      records[index] = record
-      await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-      writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
-      triggerBackup('records', { date: targetDay, records })
-    }
+    return enqueueRecordWrite(targetDay, async () => {
+      const records = await this.loadRecords(targetDay)
+      if (index >= 0 && index < records.length) {
+        records[index] = record
+        await idbSet(STORE_NAMES.RECORDS, targetDay, records)
+        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
+        triggerBackup('records', { date: targetDay, records })
+      }
+    })
   },
 
   // 日计划
