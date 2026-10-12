@@ -164,8 +164,11 @@ function currentCustomSettings(): CustomSettingsDraft {
 
 const savedCustomSettingsSnapshot = ref<CustomSettingsDraft>(customSettingsFrom(config.value))
 const customSettingsDirty = computed(() => JSON.stringify(currentCustomSettings()) !== JSON.stringify(savedCustomSettingsSnapshot.value))
+const savingCustomSettings = ref(false)
 
 async function saveCustomSettings() {
+  if (savingCustomSettings.value) return
+  savingCustomSettings.value = true
   const newConfig: Config = {
     ...config.value,
     overtime_threshold: overtimeThreshold.value,
@@ -180,6 +183,8 @@ async function saveCustomSettings() {
   } catch (error) {
     console.error('Failed to save custom settings:', error)
     notifyToast(t('settings.saveFailed'), 'error')
+  } finally {
+    savingCustomSettings.value = false
   }
 }
 
@@ -898,24 +903,24 @@ onUnmounted(() => {
         <div class="form-section">
           <label>{{ t('settings.threshold') }}</label>
           <div class="threshold-control">
-            <button type="button" class="threshold-btn" @click="subThreshold">-</button>
+            <button type="button" class="threshold-btn" :disabled="savingCustomSettings" @click="subThreshold">-</button>
             <span class="threshold-value">{{ t('settings.currentThreshold') }}：{{ overtimeThreshold }}%</span>
-            <button type="button" class="threshold-btn" @click="addThreshold">+</button>
+            <button type="button" class="threshold-btn" :disabled="savingCustomSettings" @click="addThreshold">+</button>
           </div>
         </div>
 
         <div class="form-section">
           <label>{{ t('settings.timeDisplay') }}</label>
           <div class="checkbox-list">
-            <label><input type="checkbox" v-model="showSeconds" /><span>{{ t('settings.showSeconds') }}</span></label>
-            <label><input type="checkbox" v-model="use24h" /><span>{{ t('settings.use24h') }}</span></label>
-            <label><input type="checkbox" v-model="showAmPm" /><span>{{ t('settings.showAmPm') }}</span></label>
+            <label><input type="checkbox" v-model="showSeconds" :disabled="savingCustomSettings" /><span>{{ t('settings.showSeconds') }}</span></label>
+            <label><input type="checkbox" v-model="use24h" :disabled="savingCustomSettings" /><span>{{ t('settings.use24h') }}</span></label>
+            <label><input type="checkbox" v-model="showAmPm" :disabled="savingCustomSettings" /><span>{{ t('settings.showAmPm') }}</span></label>
           </div>
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
-          <button type="submit" class="btn primary">{{ t('settings.save') }}</button>
+          <button type="button" class="btn secondary" :disabled="savingCustomSettings" @click="goBack">{{ t('settings.back') }}</button>
+          <button type="submit" class="btn primary" :disabled="savingCustomSettings">{{ savingCustomSettings ? t('settings.saving') : t('settings.save') }}</button>
         </div>
         </form>
       </template>
