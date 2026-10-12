@@ -48,6 +48,8 @@ def test_legacy_form_and_settings_use_shared_translations():
     assert "t('deadlineReminder')" in form
     assert "useLegacyI18n" in settings
     assert "t('scoreFrequency')" in settings
+    assert "t(priorityLabelKey(key as Priority))" in form
+    assert "t('seconds', { count: 5 })" in settings
 
 
 def test_legacy_icon_picker_uses_shared_translations():
@@ -55,6 +57,12 @@ def test_legacy_icon_picker_uses_shared_translations():
     assert "useLegacyI18n" in picker
     assert "t('searchIcons')" in picker
     assert "t('customColor')" in picker
+
+
+def test_legacy_priority_badges_and_expired_score_are_locale_aware():
+    item = (UI / "components" / "TodoItem.vue").read_text(encoding="utf-8")
+    assert ':title="t(priorityLabelKey(todo.priority))"' in item
+    assert "return t('expired')" in item
 
 
 def test_legacy_import_result_uses_locale_aware_message_and_boolean_state():

@@ -26,9 +26,9 @@ const { t } = useLegacyI18n()
 
 const frequencyOptions = [
   { value: 0, label: t('manual') },
-  { value: 1000, label: '1 秒' },
-  { value: 5000, label: '5 秒' },
-  { value: 30000, label: '30 秒' },
+  { value: 1000, label: t('seconds', { count: 1 }) },
+  { value: 5000, label: t('seconds', { count: 5 }) },
+  { value: 30000, label: t('seconds', { count: 30 }) },
 ]
 
 const expandCountOptions = [

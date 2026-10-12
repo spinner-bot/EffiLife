@@ -6,7 +6,7 @@ import {
   ChevronRight, Clock, Calendar as CalendarIcon,
   MoreHorizontal, Edit3, Trash2, Archive,
 } from 'lucide-vue-next'
-import type { Todo } from '@/types'
+import type { Priority, Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/types'
 import { formatScoreDisplay } from '@/utils/priority'
 import { useLegacyI18n } from '@/i18n'
@@ -26,6 +26,12 @@ const emit = defineEmits<{
 const store = useTodosStore()
 const { t, locale } = useLegacyI18n()
 const showActions = ref(false)
+
+function priorityLabelKey(priorityValue: Priority) {
+  return priorityValue === 'urgent-important'
+    ? 'urgentImportant'
+    : priorityValue
+}
 
 const isCompleted = computed(() => props.todo.status === 'completed')
 const isCancelled = computed(() => props.todo.status === 'cancelled')
@@ -71,7 +77,8 @@ const category = computed(() => store.getCategoryById(props.todo.category))
 
 // v0.5.0: 优先排位分显示
 const scoreDisplay = computed(() => {
-  if (props.todo._score_display) return props.todo._score_display
+  if (props.todo._score !== undefined && props.todo._score < 0) return t('expired')
+  if (props.todo._score_display && props.todo._score_display !== '过期') return props.todo._score_display
   if (props.todo._score !== undefined) return formatScoreDisplay(props.todo._score)
   return ''
 })
@@ -140,7 +147,7 @@ function highlightText(text: string, query: string): string {
             v-if="todo.priority !== 'normal'"
             class="priority-badge"
             :style="{ color: PRIORITY_CONFIG[todo.priority].color }"
-            :title="PRIORITY_CONFIG[todo.priority].label"
+            :title="t(priorityLabelKey(todo.priority))"
           >
             <AlertCircle v-if="todo.priority === 'urgent-important'" :size="14" />
             <Star v-else-if="todo.priority === 'important'" :size="14" />

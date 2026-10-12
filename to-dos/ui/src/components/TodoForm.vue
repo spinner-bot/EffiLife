@@ -25,6 +25,12 @@ const emit = defineEmits<{
 const store = useTodosStore()
 const { t } = useLegacyI18n()
 
+function priorityLabelKey(priorityValue: Priority) {
+  return priorityValue === 'urgent-important'
+    ? 'urgentImportant'
+    : priorityValue
+}
+
 // 表单数据
 const title = ref('')
 const description = ref('')
@@ -201,7 +207,7 @@ const warningDayOptions = [
             <label class="form-label">{{ t('priority') }}</label>
             <select v-model="priority" class="form-input select">
               <option v-for="(config, key) in PRIORITY_CONFIG" :key="key" :value="key">
-                {{ config.label }}
+                {{ t(priorityLabelKey(key as Priority)) }}
               </option>
             </select>
           </div>
