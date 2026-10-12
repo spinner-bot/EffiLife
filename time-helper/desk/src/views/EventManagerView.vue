@@ -14,6 +14,7 @@ const router = useRouter()
 const { t } = useI18n()
 
 const eventSettings = ref(EventSystem.getSettings())
+const checkingInEntryId = ref<string | null>(null)
 
 // 基础事件
 const baseEventTypes: Array<{ type: EventType; nameKey: string; descriptionKey: string }> = [
@@ -205,7 +206,8 @@ async function clearRead() {
 
 // 从收件箱条目进行补打卡
 async function handleCheckinFromInbox(entry: InboxEntry) {
-  if (!entry.checkinPlanName || !entry.checkinDate) return
+  if (!entry.checkinPlanName || !entry.checkinDate || checkingInEntryId.value === entry.id) return
+  checkingInEntryId.value = entry.id
 
   // 执行补打卡
   try {
@@ -223,6 +225,8 @@ async function handleCheckinFromInbox(entry: InboxEntry) {
   } catch (error) {
     console.error('Failed to complete inbox check-in:', error)
     notifyToast(t('settings.events.checkinFailed'), 'error')
+  } finally {
+    checkingInEntryId.value = null
   }
 }
 
@@ -489,6 +493,7 @@ function testWarning(rule: WarningRule) {
                 type="button"
                 v-if="entry.checkinPlanName && entry.checkinDate"
                 class="checkin-btn"
+                :disabled="checkingInEntryId === entry.id"
                 @click.stop="handleCheckinFromInbox(entry)"
                 :title="t('settings.events.makeUpCheckin')"
               >
