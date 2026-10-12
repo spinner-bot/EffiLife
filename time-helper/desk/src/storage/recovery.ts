@@ -191,11 +191,32 @@ export async function exportEmergencyBackup(): Promise<string> {
   }
 }
 
+function isCompleteEmergencySnapshot(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const snapshot = value as Record<string, unknown>
+  return Boolean(
+    snapshot.localStorage && typeof snapshot.localStorage === 'object' && !Array.isArray(snapshot.localStorage)
+      && snapshot.records && typeof snapshot.records === 'object' && !Array.isArray(snapshot.records)
+      && Array.isArray(snapshot.todos)
+      && Array.isArray(snapshot.todoCategories)
+      && Array.isArray(snapshot.planHelperSnapshot),
+  )
+}
+
 // 从紧急备份恢复
 export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
   success: boolean
   message: string
 }> {
+  let rollbackJson: string | null = null
+  try {
+    const candidate = await exportEmergencyBackup()
+    const parsed = JSON.parse(candidate) as unknown
+    if (isCompleteEmergencySnapshot(parsed)) rollbackJson = candidate
+  } catch (error) {
+    console.warn('Failed to capture emergency restore rollback snapshot:', error)
+  }
+
   try {
     const data = JSON.parse(jsonStr)
 
@@ -259,9 +280,23 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
       message: translate('settings.restore.emergencyRestored'),
     }
   } catch (error) {
+    const detail = (error as Error).message
+    if (rollbackJson) {
+      const rollback = await restoreFromEmergencyBackup(rollbackJson)
+      if (rollback.success) {
+        return {
+          success: false,
+          message: translate('settings.restore.restoreRolledBack', { detail }),
+        }
+      }
+      return {
+        success: false,
+        message: translate('settings.restore.restoreRollbackFailed', { detail: `${detail}; ${rollback.message}` }),
+      }
+    }
     return {
       success: false,
-      message: translate('settings.restore.restoreFailedDetail', { detail: (error as Error).message }),
+      message: translate('settings.restore.restoreFailedDetail', { detail }),
     }
   }
 }
