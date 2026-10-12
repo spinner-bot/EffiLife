@@ -88,6 +88,7 @@ const editingCategoryColor = ref('#6366f1')
 const editingCategoryIcon = ref('circle')
 const editingCategoryAsciiIcon = ref('')
 const editingCategoryDifficulty = ref(5)
+const categoryMutationKey = ref<string | null>(null)
 const priorityClock = ref(Date.now())
 const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
 
@@ -333,7 +334,8 @@ function cancelCategoryEdit() {
 }
 
 async function createCategory() {
-  if (!categoryName.value.trim()) return
+  if (!categoryName.value.trim() || categoryMutationKey.value) return
+  categoryMutationKey.value = 'create'
   try {
     const created = await TodoCategoryService.create({
       name: categoryName.value,
@@ -350,10 +352,14 @@ async function createCategory() {
     categoryDifficulty.value = 5
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  } finally {
+    categoryMutationKey.value = null
   }
 }
 
 async function saveCategory(item: TodoCategory) {
+  if (categoryMutationKey.value) return
+  categoryMutationKey.value = `save:${item.id}`
   try {
     const updated = await TodoCategoryService.update(item.id, {
       name: editingCategoryName.value,
@@ -366,11 +372,15 @@ async function saveCategory(item: TodoCategory) {
     editingCategoryId.value = null
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  } finally {
+    categoryMutationKey.value = null
   }
 }
 
 async function removeCategory(item: TodoCategory) {
   if (item.id === 'default' || !(await confirmTaskAction(`${t('tasks.deleteCategory')}?`, 'danger'))) return
+  if (categoryMutationKey.value) return
+  categoryMutationKey.value = `remove:${item.id}`
   try {
     const affected = todos.value.filter((todo) => todo.category === item.id)
     for (const todo of affected) {
@@ -383,15 +393,21 @@ async function removeCategory(item: TodoCategory) {
     if (category.value === item.id) category.value = 'default'
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  } finally {
+    categoryMutationKey.value = null
   }
 }
 
 async function toggleCategoryPinned(item: TodoCategory) {
+  if (categoryMutationKey.value) return
+  categoryMutationKey.value = `pin:${item.id}`
   try {
     const updated = await TodoCategoryService.update(item.id, { pinned: !item.pinned })
     categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+  } finally {
+    categoryMutationKey.value = null
   }
 }
 
@@ -1057,7 +1073,7 @@ watch(() => route.query.compose, () => {
           <label for="category-difficulty">{{ t('tasks.categoryDifficulty') }}</label>
           <input id="category-difficulty" v-model.number="categoryDifficulty" type="number" min="0" max="10" />
           <CategoryIconPicker v-model="categoryIcon" v-model:model-color="categoryColor" v-model:model-ascii="categoryAsciiIcon" />
-          <button type="submit" class="task-edit-save" :disabled="!categoryName.trim()"><Plus :size="14" /> {{ t('tasks.add') }}</button>
+          <button type="submit" class="task-edit-save" :disabled="!categoryName.trim() || !!categoryMutationKey"><Plus :size="14" /> {{ categoryMutationKey === 'create' ? t('tasks.saving') : t('tasks.add') }}</button>
         </form>
         <div class="category-list">
           <div v-for="item in categories" :key="item.id" class="category-row">
@@ -1069,17 +1085,17 @@ watch(() => route.query.compose, () => {
               <label :for="`edit-category-difficulty-${item.id}`">{{ t('tasks.categoryDifficulty') }}</label>
               <input :id="`edit-category-difficulty-${item.id}`" v-model.number="editingCategoryDifficulty" class="category-difficulty" type="number" min="0" max="10" />
               <CategoryIconPicker v-model="editingCategoryIcon" v-model:model-color="editingCategoryColor" v-model:model-ascii="editingCategoryAsciiIcon" />
-              <button type="button" class="task-edit-save" @click="saveCategory(item)">{{ t('tasks.save') }}</button>
-              <button type="button" class="task-edit-cancel" @click="cancelCategoryEdit">{{ t('tasks.cancel') }}</button>
+              <button type="button" class="task-edit-save" :disabled="!!categoryMutationKey" @click="saveCategory(item)">{{ categoryMutationKey === `save:${item.id}` ? t('tasks.saving') : t('tasks.save') }}</button>
+              <button type="button" class="task-edit-cancel" :disabled="!!categoryMutationKey" @click="cancelCategoryEdit">{{ t('tasks.cancel') }}</button>
             </template>
             <template v-else>
               <span class="category-swatch" :style="{ background: item.color }" />
               <CategoryIconPreview :name="item.icon" :ascii="item.ascii_icon" :style="{ '--category-color': item.color }" />
               <strong>{{ categoryLabel(item) }}</strong>
               <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
-              <button type="button" class="category-pin" :class="{ active: item.pinned }" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
-              <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
-              <button v-if="item.id !== 'default'" type="button" class="task-delete" :disabled="confirmationPending" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
+              <button type="button" class="category-pin" :class="{ active: item.pinned }" :disabled="!!categoryMutationKey" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
+              <button type="button" class="task-edit" :disabled="!!categoryMutationKey" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
+              <button v-if="item.id !== 'default'" type="button" class="task-delete" :disabled="confirmationPending || !!categoryMutationKey" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
             </template>
           </div>
         </div>
