@@ -199,10 +199,12 @@ export async function del(storeName: string, key: string): Promise<void> {
       const request = store.delete(key)
 
       request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
+      transaction.oncomplete = () => {
         localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
         resolve()
       }
+      transaction.onerror = () => reject(transaction.error)
+      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
     })
   } catch (error) {
     console.warn(`IndexedDB delete failed for ${storeName}/${key}, falling back to localStorage:`, error)

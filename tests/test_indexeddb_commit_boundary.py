@@ -26,6 +26,16 @@ def test_raw_writes_wait_for_transaction_commit_before_resolving():
         assert "request.onsuccess" not in block
 
 
+def test_generic_delete_cleans_fallback_only_after_transaction_commit():
+    source = STORAGE.read_text(encoding="utf-8")
+    block = source.split("export async function del", 1)[1].split("// 获取存储中的所有数据", 1)[0]
+    assert "transaction.oncomplete" in block
+    assert "transaction.onerror" in block
+    assert "transaction.onabort" in block
+    assert "request.onsuccess" not in block
+    assert block.index("transaction.oncomplete") < block.index("localStorage.removeItem")
+
+
 def test_clear_waits_for_transaction_commit_before_removing_fallback_mirrors():
     source = STORAGE.read_text(encoding="utf-8")
     block = source.split("export async function clear", 1)[1].split("export async function isEmpty", 1)[0]
