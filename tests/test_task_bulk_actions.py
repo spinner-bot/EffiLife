@@ -10,7 +10,8 @@ def test_task_center_exposes_safe_bulk_actions():
     source = TASKS.read_text(encoding="utf-8")
     assert "async function bulkCompleteTodos()" in source
     assert "async function bulkDeleteTodos()" in source
-    assert "DataService.unlinkTodoFromRecords(todo.id)" in source
+    assert "await TodoService.remove(todo.id)" in source
+    assert "Failed to clean deleted todo record links" not in source
     assert "completePlanTask" not in source
     assert "clearTodoSelection()" in source
     assert "t('tasks.bulkDeleteConfirm'" in source

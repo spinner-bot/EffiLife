@@ -25,11 +25,11 @@ def test_record_delete_paths_clean_linked_todo_references():
 
 def test_deleted_todo_unlinks_time_records_without_deleting_history():
     data = (ROOT / "time-helper" / "desk" / "src" / "services" / "dataService.ts").read_text(encoding="utf-8")
-    tasks = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    todos = (ROOT / "time-helper" / "desk" / "src" / "services" / "todoService.ts").read_text(encoding="utf-8")
 
     assert "async unlinkTodoFromRecords(todoId: string): Promise<number>" in data
     assert "delete nextRecord.todo_id" in data
-    assert "await DataService.unlinkTodoFromRecords(todo.id)" in tasks
+    assert "await DataService.unlinkTodoFromRecords(id)" in todos
 
 
 def test_bulk_todo_unlink_restores_previous_days_when_a_record_store_write_fails():

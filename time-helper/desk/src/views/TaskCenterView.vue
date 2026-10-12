@@ -540,11 +540,9 @@ async function saveEdit(todo: UnifiedTodo) {
 async function removeTodo(todo: UnifiedTodo) {
   if (!(await confirmTaskAction(t('tasks.deleteConfirm'), 'danger'))) return
   try {
-    try {
-      await DataService.unlinkTodoFromRecords(todo.id)
-    } catch (error) {
-      console.warn('Failed to clean deleted todo record links', error)
-    }
+    // TodoService owns the TD -> TH unlink transaction. Keeping the cleanup
+    // at the service boundary prevents this view from swallowing a partial
+    // unlink and then issuing a duplicate write.
     await TodoService.remove(todo.id)
     todos.value = todos.value.filter((item) => item.id !== todo.id)
     reconcileTodoSelection()
@@ -600,11 +598,6 @@ async function bulkDeleteTodos() {
   let deleted = 0
   try {
     for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
-      try {
-        await DataService.unlinkTodoFromRecords(todo.id)
-      } catch (error) {
-        console.warn('Failed to clean deleted todo record links', error)
-      }
       await TodoService.remove(todo.id)
       deleted += 1
     }
