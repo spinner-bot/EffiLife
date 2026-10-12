@@ -166,7 +166,7 @@ const currentTab = ref<SettingTab>('audio')
 
           <div class="bgm-list">
             <div class="bgm-section-title">{{ t('settings.audio.builtIn') }}</div>
-            <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" type="button" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" @click="selectBgm(bgm.id)">
+            <button v-for="bgm in allBgm.filter(b => !b.custom)" :key="bgm.id" type="button" class="bgm-item" :class="{ active: audioSettings.currentBgm === bgm.id }" :aria-pressed="audioSettings.currentBgm === bgm.id" @click="selectBgm(bgm.id)">
               <Music :size="16" />
               <span>{{ displayBgmName(bgm) }}</span>
               <span v-if="audioSettings.currentBgm === bgm.id" class="check-mark">✓</span>

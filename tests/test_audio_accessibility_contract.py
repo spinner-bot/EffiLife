@@ -14,6 +14,11 @@ def test_custom_audio_item_does_not_nest_interactive_buttons():
     assert 'role="button" tabindex="0"' not in source
 
 
+def test_built_in_audio_selection_exposes_pressed_state():
+    source = AUDIO_VIEW.read_text(encoding="utf-8")
+    assert ':aria-pressed="audioSettings.currentBgm === bgm.id"' in source
+
+
 def test_custom_audio_keyboard_selection_preserves_enter_and_space_support():
     source = AUDIO_VIEW.read_text(encoding="utf-8")
 

@@ -12,6 +12,13 @@ def test_motion_settings_expose_only_supported_fps_presets():
         assert value in source
 
 
+def test_motion_option_cards_expose_selected_state_to_assistive_technology():
+    source = VIEW.read_text(encoding="utf-8")
+    assert ':aria-pressed="settings.targetFps === opt.value"' in source
+    assert ':aria-pressed="settings.animationSpeed === opt.value"' in source
+    assert ':aria-pressed="settings.particleCountMultiplier === opt.value"' in source
+
+
 def test_auto_recommendation_changes_only_target_fps():
     source = MOTION.read_text(encoding="utf-8")
     assert "const currentSettings = { ...motionState.settings }" in source

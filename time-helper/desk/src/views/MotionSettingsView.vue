@@ -151,6 +151,7 @@ const performanceRating = computed(() => getPerformanceRating())
             :key="opt.value"
             class="option-card"
             :class="{ active: settings.targetFps === opt.value }"
+            :aria-pressed="settings.targetFps === opt.value"
             @click="updateSetting('targetFps', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
@@ -215,6 +216,7 @@ const performanceRating = computed(() => getPerformanceRating())
             :key="opt.value"
             class="option-card"
             :class="{ active: settings.animationSpeed === opt.value }"
+            :aria-pressed="settings.animationSpeed === opt.value"
             @click="updateSetting('animationSpeed', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
@@ -235,6 +237,7 @@ const performanceRating = computed(() => getPerformanceRating())
             :key="opt.value"
             class="option-card"
             :class="{ active: settings.particleCountMultiplier === opt.value }"
+            :aria-pressed="settings.particleCountMultiplier === opt.value"
             @click="updateSetting('particleCountMultiplier', opt.value)"
           >
             <span class="option-label">{{ opt.label }}</span>
