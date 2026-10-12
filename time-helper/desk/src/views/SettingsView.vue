@@ -700,10 +700,12 @@ const backupsList = ref<BackupData[]>([])
 const dataStatus = ref<DataStatus | null>(null)
 
 async function loadDataStatus() {
+  // Loading the recovery entries is independent from the optional integrity
+  // probe. A failed IndexedDB status check must not hide usable local backups.
+  backupsList.value = getAllBackups()
   try {
     const status = await checkDataIntegrity()
     dataStatus.value = status
-    backupsList.value = getAllBackups()
   } catch (e) {
     console.error('Failed to load data status:', e)
   }
