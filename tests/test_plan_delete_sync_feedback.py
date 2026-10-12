@@ -10,3 +10,5 @@ def test_single_plan_task_delete_reports_the_plan_mutation_directly():
     assert "todoSyncFailed" in delete_block
     assert "unlinkTodosFromPlanTask(planId, taskId)" in delete_block
     assert "\n    showPlanSaved()" in delete_block
+    assert delete_block.index("unlinkTodosFromPlanTask(planId, taskId)") < delete_block.index("await deletePlanTask(planId, taskId)")
+    assert "notifyToast(t('plans.todoSyncFailed'), 'error')" in delete_block

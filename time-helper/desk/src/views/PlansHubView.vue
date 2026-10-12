@@ -916,13 +916,14 @@ async function deleteTask(taskId: string) {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    await deletePlanTask(planId, taskId)
     try {
       await unlinkTodosFromPlanTask(planId, taskId)
     } catch (error) {
-      console.warn('Plan task deleted but linked todo reference could not be cleared:', error)
-      notifyToast(t('plans.todoSyncFailed'), 'info')
+      console.warn('Plan task deletion stopped because linked todo references could not be cleared:', error)
+      notifyToast(t('plans.todoSyncFailed'), 'error')
+      return
     }
+    await deletePlanTask(planId, taskId)
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
