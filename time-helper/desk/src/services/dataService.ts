@@ -591,9 +591,15 @@ export const DataService = {
     const manualPlans = await this.loadManualPlans()
     const plans = await this.loadPlans()
 
+    const resolvePlan = (planName: string | undefined): DayPlanInfo | null => {
+      if (!planName || !plans[planName]) return null
+      return { name: planName, type: plans[planName].plan_type || '切分制' }
+    }
+
     if (targetDay in manualPlans) {
       const planName = manualPlans[targetDay]
-      return { name: planName, type: plans[planName]?.plan_type || '切分制' }
+      const manualPlan = resolvePlan(planName)
+      if (manualPlan) return manualPlan
     }
 
     const rules = await this.loadScheduleRules()
@@ -609,25 +615,31 @@ export const DataService = {
       if (rule.rule_type === 'week') {
         const weekSet = parseWeekSelection(rule.value)
         if (weekSet.has(weekNum)) {
-          return { name: rule.plan_name, type: plans[rule.plan_name]?.plan_type || '切分制' }
+          const matchedPlan = resolvePlan(rule.plan_name)
+          if (matchedPlan) return matchedPlan
         }
       } else if (rule.rule_type === 'month') {
         const monthSet = new Set(rule.value.split(','))
         if (monthSet.has(month)) {
-          return { name: rule.plan_name, type: plans[rule.plan_name]?.plan_type || '切分制' }
+          const matchedPlan = resolvePlan(rule.plan_name)
+          if (matchedPlan) return matchedPlan
         }
       } else if (rule.rule_type === 'year') {
         const yearSet = new Set(rule.value.split(','))
         if (yearSet.has(monthDay)) {
-          return { name: rule.plan_name, type: plans[rule.plan_name]?.plan_type || '切分制' }
+          const matchedPlan = resolvePlan(rule.plan_name)
+          if (matchedPlan) return matchedPlan
         }
       } else if (rule.rule_type === 'month_week' && rule.value === monthWeek) {
-        return { name: rule.plan_name, type: plans[rule.plan_name]?.plan_type || '切分制' }
+        const matchedPlan = resolvePlan(rule.plan_name)
+        if (matchedPlan) return matchedPlan
       }
     }
 
-    const defaultPlan = rules[rules.length - 1].plan_name
-    return { name: defaultPlan, type: plans[defaultPlan]?.plan_type || '切分制' }
+    const defaultPlan = resolvePlan(rules[rules.length - 1]?.plan_name)
+    if (defaultPlan) return defaultPlan
+    const firstPlanName = Object.keys(plans)[0]
+    return resolvePlan(firstPlanName) || { name: '', type: '切分制' }
   },
 
   async saveDayPlan(planName: string, day?: string): Promise<void> {
