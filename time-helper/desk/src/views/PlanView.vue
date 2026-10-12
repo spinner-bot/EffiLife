@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
 import {
-  hoursToHm, isTimeOverlap, getTodayDate,
+  DataService, hoursToHm, isTimeOverlap, getTodayDate,
   rgbToHex, autoBalance
 } from '@/services/dataService'
 import {
@@ -426,8 +426,24 @@ async function savePlanInternal() {
 async function deletePlan(name: string) {
   if (!await requestConfirm(t('legacyPlan.deletePlanConfirm', { name }), { tone: 'danger' })) return
   const newPlans = { ...plans.value }
+  const remainingNames = Object.keys(newPlans).filter((planName) => planName !== name)
+  if (remainingNames.length === 0) {
+    notifyToast(t('legacyPlan.cannotDeleteLastPlan'), 'error')
+    return
+  }
+  const fallbackPlan = remainingNames[0]
   delete newPlans[name]
   await appStore.savePlans(newPlans)
+  const nextRules = scheduleRules.value.map((rule) =>
+    rule.plan_name === name ? { ...rule, plan_name: fallbackPlan } : rule,
+  )
+  await appStore.saveScheduleRules(nextRules)
+  const manualPlans = await DataService.loadManualPlans()
+  const cleanedManualPlans = Object.fromEntries(
+    Object.entries(manualPlans).filter(([, planName]) => planName !== name),
+  )
+  await DataService.saveManualPlans(cleanedManualPlans)
+  await appStore.refreshTodayData()
 }
 
 // 日程规则
