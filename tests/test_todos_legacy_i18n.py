@@ -49,3 +49,10 @@ def test_legacy_form_and_settings_use_shared_translations():
     assert "useLegacyI18n" in settings
     assert "t('scoreFrequency')" in settings
 
+
+def test_legacy_icon_picker_uses_shared_translations():
+    picker = (UI / "components" / "IconPicker.vue").read_text(encoding="utf-8")
+    assert "useLegacyI18n" in picker
+    assert "t('searchIcons')" in picker
+    assert "t('customColor')" in picker
+

@@ -27,6 +27,9 @@ import {
 } from 'lucide-vue-next'
 import type { LucideIcon } from 'lucide-vue-next'
 import { PRESET_COLORS, ASCII_ICONS } from '@/types'
+import { useLegacyI18n } from '@/i18n'
+
+const { t } = useLegacyI18n()
 
 const props = defineProps<{
   modelValue: string          // 当前选中的图标名
@@ -159,9 +162,9 @@ function selectColor(color: string) {
 }
 
 const tabs = [
-  { key: 'icons' as const, label: '图标' },
-  { key: 'ascii' as const, label: 'ASCII' },
-  { key: 'colors' as const, label: '颜色' },
+  { key: 'icons' as const, label: t('iconTab') },
+  { key: 'ascii' as const, label: t('asciiTab') },
+  { key: 'colors' as const, label: t('colorsTab') },
 ]
 </script>
 
@@ -187,7 +190,7 @@ const tabs = [
         v-model="searchQuery"
         type="text"
         class="picker-search"
-        placeholder="搜索图标..."
+        :placeholder="t('searchIcons')"
       />
       <div class="icon-grid">
         <button
@@ -235,7 +238,7 @@ const tabs = [
         />
       </div>
       <div class="custom-color">
-        <label class="color-label">自定义颜色</label>
+        <label class="color-label">{{ t('customColor') }}</label>
         <input
           type="color"
           :value="modelColor"
