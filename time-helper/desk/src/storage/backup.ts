@@ -32,6 +32,21 @@ function parseBackupRecord(value: unknown): BackupData | null {
   return candidate as BackupData
 }
 
+function formatBackupTimestamp(timestamp: string): string {
+  return new Date(timestamp).toISOString().replace(/[:.]/g, '-')
+}
+
+function formatLegacyBackupTimestamp(timestamp: string): string {
+  return formatBackupTimestamp(timestamp).slice(0, 19)
+}
+
+function removeLocalStorageBackup(moduleName: string, timestamp: string): void {
+  const prefix = `${STORAGE_PREFIX}${moduleName}_`
+  localStorage.removeItem(`${prefix}${formatBackupTimestamp(timestamp)}`)
+  // Keep cleanup compatible with backups written before millisecond keys.
+  localStorage.removeItem(`${prefix}${formatLegacyBackupTimestamp(timestamp)}`)
+}
+
 // 防抖计时器
 const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -60,8 +75,8 @@ export function getBackups(moduleName: string): BackupData[] {
 
 // 保存备份到 localStorage
 function saveBackupToLocalStorage(moduleName: string, data: unknown): void {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  const key = `${STORAGE_PREFIX}${moduleName}_${timestamp}`
+  const timestamp = new Date().toISOString()
+  const key = `${STORAGE_PREFIX}${moduleName}_${formatBackupTimestamp(timestamp)}`
 
   const backup: BackupData = {
     version: '1.0',
@@ -76,10 +91,7 @@ function saveBackupToLocalStorage(moduleName: string, data: unknown): void {
   const backups = getBackups(moduleName)
   if (backups.length > MAX_BACKUPS_PER_MODULE) {
     const toDelete = backups.slice(MAX_BACKUPS_PER_MODULE)
-    toDelete.forEach((b) => {
-      const ts = new Date(b.timestamp).toISOString().replace(/[:.]/g, '-').slice(0, 19)
-      localStorage.removeItem(`${STORAGE_PREFIX}${moduleName}_${ts}`)
-    })
+    toDelete.forEach((b) => removeLocalStorageBackup(moduleName, b.timestamp))
   }
 }
 
@@ -104,8 +116,8 @@ async function saveBackupToFileSystem(
       await mkdir(backupsDir, { recursive: true })
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-    const filename = `${moduleName}_${timestamp}.json`
+    const timestamp = new Date().toISOString()
+    const filename = `${moduleName}_${formatBackupTimestamp(timestamp)}.json`
     const filePath = await join(backupsDir, filename)
 
     const backup: BackupData = {
@@ -313,8 +325,7 @@ export function getAllBackups(): BackupData[] {
 
 // 删除指定备份
 export function deleteBackup(moduleName: string, timestamp: string): void {
-  const ts = new Date(timestamp).toISOString().replace(/[:.]/g, '-').slice(0, 19)
-  localStorage.removeItem(`${STORAGE_PREFIX}${moduleName}_${ts}`)
+  removeLocalStorageBackup(moduleName, timestamp)
 }
 
 // 清除指定模块的所有备份

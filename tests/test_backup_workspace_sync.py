@@ -34,3 +34,11 @@ def test_backup_readers_validate_record_shape_before_exposing_recovery_entries()
 def test_backup_module_discovery_does_not_expose_malformed_json_as_an_empty_module():
     assert "// A malformed record must not create an empty recovery module." in SOURCE
     assert "continue\n      }\n      const rest = key.slice(prefix.length)" in SOURCE
+
+
+def test_backup_keys_keep_millisecond_precision_and_delete_legacy_second_keys():
+    assert "function formatBackupTimestamp(timestamp: string): string" in SOURCE
+    assert "const timestamp = new Date().toISOString()" in SOURCE
+    assert "formatBackupTimestamp(timestamp)" in SOURCE
+    assert "function removeLocalStorageBackup(moduleName: string, timestamp: string): void" in SOURCE
+    assert "formatLegacyBackupTimestamp(timestamp)" in SOURCE
