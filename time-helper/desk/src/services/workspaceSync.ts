@@ -15,11 +15,27 @@ export async function unlinkTodosFromPlanTask(planId: string, planTaskId: string
     && todo.related_plan_task_id === String(planTaskId)
   )
 
-  for (const todo of linked) {
-    await TodoService.update(todo.id, {
-      related_plan_id: undefined,
-      related_plan_task_id: undefined,
-    })
+  const updated: typeof linked = []
+  try {
+    for (const todo of linked) {
+      await TodoService.update(todo.id, {
+        related_plan_id: undefined,
+        related_plan_task_id: undefined,
+      })
+      updated.push(todo)
+    }
+  } catch (error) {
+    for (const todo of updated) {
+      try {
+        await TodoService.update(todo.id, {
+          related_plan_id: todo.related_plan_id,
+          related_plan_task_id: todo.related_plan_task_id,
+        })
+      } catch (rollbackError) {
+        console.error('Failed to roll back plan-task todo unlink:', rollbackError)
+      }
+    }
+    throw error
   }
   return linked.length
 }

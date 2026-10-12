@@ -14,6 +14,12 @@ def test_deleting_a_plan_task_clears_only_its_todo_relation():
     assert "related_plan_id: undefined" in sync
     assert "related_plan_task_id: undefined" in sync
     assert "unlinkTodosFromPlanTask(planId, taskId)" in plans
+    unlink = sync.split("export async function unlinkTodosFromPlanTask", 1)[1].split("/** Remove a deleted time-record", 1)[0]
+    assert "const updated: typeof linked = []" in unlink
+    assert "await TodoService.update(todo.id, {" in unlink
+    assert "todo.related_plan_id" in unlink
+    assert "todo.related_plan_task_id" in unlink
+    assert "throw error" in unlink
 
 
 def test_plan_task_edit_does_not_sync_linked_todo_fields():
