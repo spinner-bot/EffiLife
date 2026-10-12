@@ -590,13 +590,10 @@ async function deleteSection(section: PlanFull['sections'][number]) {
   isLoading.value = true
   errorMessage.value = ''
   try {
+    // Clear TD references before the PH soft-delete. If cleanup fails, keep
+    // the section so the user can retry instead of leaving dangling links.
+    for (const taskId of deletedTaskIds) await unlinkTodosFromPlanTask(planId, taskId)
     await deletePlanSection(planId, section.index)
-    try {
-      for (const taskId of deletedTaskIds) await unlinkTodosFromPlanTask(planId, taskId)
-    } catch (error) {
-      console.warn('Section deleted but linked todo references could not be cleared:', error)
-      notifyToast(t('plans.todoSyncFailed'), 'info')
-    }
     cancelSectionEdit()
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()

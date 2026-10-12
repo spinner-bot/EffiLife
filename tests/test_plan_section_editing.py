@@ -21,6 +21,9 @@ def test_plan_center_cleans_links_when_a_section_is_soft_deleted():
     assert "startSectionEdit(section)" in source
     assert "deleteSection(section)" in source
     assert "unlinkTodosFromPlanTask(planId, taskId)" in source
+    section_delete = source.split("async function deleteSection", 1)[1].split("async function saveTask", 1)[0]
+    assert section_delete.index("unlinkTodosFromPlanTask(planId, taskId)") < section_delete.index("await deletePlanSection(planId, section.index)")
+    assert "Section deleted but linked todo references could not be cleared" not in section_delete
 
 
 def test_single_task_delete_also_clears_its_stale_todo_relation():
