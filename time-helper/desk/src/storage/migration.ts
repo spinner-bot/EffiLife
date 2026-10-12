@@ -6,6 +6,24 @@ import { createBackup } from './backup'
 
 const STORAGE_PREFIX = 'efflife_'
 const MIGRATION_FLAG_KEY = 'efflife_db_migration_done'
+const NON_DATA_STORAGE_KEYS = new Set([
+  MIGRATION_FLAG_KEY,
+  'efflife_locale',
+  'efflife_download_path',
+  'efflife_workspace_event',
+  'efflife_plan_helper_reset_pending',
+])
+const NON_DATA_STORAGE_PREFIXES = [
+  'efflife_backup_',
+  'efflife_emergency_backup_',
+  'efflife_guide_',
+]
+
+function isWorkspaceDataStorageKey(key: string): boolean {
+  return key.startsWith(STORAGE_PREFIX)
+    && !NON_DATA_STORAGE_KEYS.has(key)
+    && !NON_DATA_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))
+}
 
 // 检测是否已完成迁移
 export function isMigrationDone(): boolean {
@@ -274,7 +292,7 @@ export async function hasIndexedDBData(): Promise<boolean> {
 export function hasLocalStorageData(): boolean {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key && key.startsWith(STORAGE_PREFIX) && key !== MIGRATION_FLAG_KEY) {
+    if (key && isWorkspaceDataStorageKey(key)) {
       return true
     }
   }

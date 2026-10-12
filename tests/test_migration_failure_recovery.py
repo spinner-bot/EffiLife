@@ -28,3 +28,12 @@ def test_migration_does_not_write_any_dataset_when_pre_migration_backup_fails():
     assert "success: false" in backup_block
     assert "errors: [failure]" in backup_block
     assert migration.index("errors: [failure]") < migration.index("const migrations:")
+
+
+def test_local_storage_integrity_ignores_backup_and_runtime_metadata_keys():
+    source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
+    assert "function isWorkspaceDataStorageKey(key: string): boolean" in source
+    assert "'efflife_backup_'" in source
+    assert "'efflife_emergency_backup_'" in source
+    assert "'efflife_workspace_event'" in source
+    assert "if (key && isWorkspaceDataStorageKey(key))" in source
