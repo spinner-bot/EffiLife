@@ -449,7 +449,11 @@ def release_check_command(strict_build=False):
         target: build_report(target, BASE_DIR)
         for target in ("desktop", "android", "ios")
     }
-    build_ready = all(report["ready"] for report in environment.values())
+    # iOS remains intentionally deferred by the current product scope. Keep
+    # its diagnostic report visible, but do not let an unavailable iOS
+    # toolchain make the desktop/Android release gate fail.
+    required_targets = ("desktop", "android")
+    build_ready = all(environment[target]["ready"] for target in required_targets)
     print(json.dumps({
         "ok": not errors,
         "build_ready": build_ready,

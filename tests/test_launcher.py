@@ -146,6 +146,26 @@ def test_release_check_reports_desktop_and_mobile_boundaries(capsys):
     assert "missing" in report["environment"]["desktop"]
 
 
+def test_release_check_strict_ignores_deferred_ios_toolchain(monkeypatch, capsys):
+    import scripts.check_build_environment as build_environment
+    import scripts.check_mobile_release_config as mobile_release
+    import scripts.check_release_config as desktop_release
+
+    reports = {
+        "desktop": {"ready": True},
+        "android": {"ready": True},
+        "ios": {"ready": False},
+    }
+    monkeypatch.setattr(build_environment, "build_report", lambda target, _root: reports[target])
+    monkeypatch.setattr(desktop_release, "validate", lambda _root: [])
+    monkeypatch.setattr(mobile_release, "validate", lambda _root: [])
+
+    assert launcher.release_check_command(strict_build=True) is True
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["build_ready"] is True
+    assert payload["environment"]["ios"]["ready"] is False
+
+
 def test_launcher_defaults_to_unified_workspace_without_legacy_flag(monkeypatch):
     modules = {"1": {"name": "EffiLife unified workspace"}}
     calls = []
