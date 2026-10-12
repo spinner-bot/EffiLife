@@ -39,3 +39,13 @@ def test_legacy_todo_list_and_item_use_shared_translations():
     assert "t('dueToday')" in todo_item
     assert "t('moreActions')" in todo_item
 
+
+def test_legacy_form_and_settings_use_shared_translations():
+    form = (UI / "components" / "TodoForm.vue").read_text(encoding="utf-8")
+    settings = (UI / "components" / "SettingsPanel.vue").read_text(encoding="utf-8")
+    assert "useLegacyI18n" in form
+    assert "t('titlePlaceholder')" in form
+    assert "t('deadlineReminder')" in form
+    assert "useLegacyI18n" in settings
+    assert "t('scoreFrequency')" in settings
+

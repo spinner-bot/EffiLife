@@ -17,6 +17,11 @@ const messages = {
     emptyTitle: '暂无待办事项', emptyDescription: '一切就绪！点击下方按钮或按 N 键创建第一个待办', organizeTip: '使用分类和标签组织待办', deadlineTip: '设置截止日期跟踪进度',
     overdueDays: '已逾期 {count} 天', dueToday: '今天截止', dueTomorrow: '明天截止', dueInDays: '{count} 天后截止', cancelComplete: '取消完成', markComplete: '标记完成', moreActions: '更多操作',
     subtasksDone: '子任务已完成', minutes: '分钟', edit: '编辑', archive: '归档', priorityScore: '优先排位分', expired: '过期',
+    close: '关闭', editTodo: '编辑待办', title: '标题', titlePlaceholder: '输入待办标题...', description: '描述', descriptionPlaceholder: '添加详细描述（可选）...', category: '分类',
+    priorityAttributes: '优先属性', rank: '排位', rankTitle: '优先级排位，0 为最高', deadline: '截止日期', startTime: '开始时间', estimatedMinutes: '预估时间（分钟）',
+    exampleMinutes: '例如：120', deadlineReminder: '截止提醒', recurrence: '重复', timeRecord: '时间记录（分钟）', actualTime: '实际花费的时间', tag: '标签', tagPlaceholder: '输入标签后按 Enter...', notes: '备注', markdown: '支持 Markdown',
+    notesPlaceholder: '添加备注或笔记（支持 Markdown 语法）...', save: '保存', create: '创建', noRepeat: '不重复', daily: '每日', weekly: '每周', monthly: '每月', sameDay: '当天', daysBefore: '{count} 天前', weekBefore: '1 周前',
+    settingsTitle: '设置', scoreFrequency: '分数更新频率', manual: '手动', scoreFrequencyDescription: '优先排位分实时计算的刷新间隔。设为“手动”需手动刷新。', categoryExpandCount: '分类展开数量', categoryExpandDescription: '侧栏中按分数排序后，前 X 名分类展开显示，其余折叠收纳。', manualActions: '手动操作', refreshScores: '立即刷新分数',
   },
   'en-US': {
     all: 'All', today: 'Today', overdue: 'Overdue', categories: 'Categories', otherCategories: '{count} other categories',
@@ -31,6 +36,11 @@ const messages = {
     emptyTitle: 'No to-dos yet', emptyDescription: 'All clear! Click below or press N to create your first to-do', organizeTip: 'Organize to-dos with categories and tags', deadlineTip: 'Set deadlines to track progress',
     overdueDays: '{count} days overdue', dueToday: 'Due today', dueTomorrow: 'Due tomorrow', dueInDays: 'Due in {count} days', cancelComplete: 'Mark incomplete', markComplete: 'Mark complete', moreActions: 'More actions',
     subtasksDone: 'subtasks complete', minutes: 'min', edit: 'Edit', archive: 'Archive', priorityScore: 'Priority score', expired: 'Expired',
+    close: 'Close', editTodo: 'Edit to-do', title: 'Title', titlePlaceholder: 'Enter a to-do title...', description: 'Description', descriptionPlaceholder: 'Add a description (optional)...', category: 'Category',
+    priorityAttributes: 'Priority attributes', rank: 'Rank', rankTitle: 'Priority rank; 0 is highest', deadline: 'Deadline', startTime: 'Start time', estimatedMinutes: 'Estimated time (minutes)',
+    exampleMinutes: 'e.g. 120', deadlineReminder: 'Deadline reminder', recurrence: 'Repeat', timeRecord: 'Time recorded (minutes)', actualTime: 'Actual time spent', tag: 'Tags', tagPlaceholder: 'Enter a tag and press Enter...', notes: 'Notes', markdown: 'Markdown supported',
+    notesPlaceholder: 'Add notes (Markdown supported)...', save: 'Save', create: 'Create', noRepeat: 'No repeat', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', sameDay: 'Same day', daysBefore: '{count} days before', weekBefore: '1 week before',
+    settingsTitle: 'Settings', scoreFrequency: 'Score update frequency', manual: 'Manual', scoreFrequencyDescription: 'How often priority scores refresh. Manual requires an explicit refresh.', categoryExpandCount: 'Expanded categories', categoryExpandDescription: 'Show the top X scored categories in the sidebar and collapse the rest.', manualActions: 'Manual actions', refreshScores: 'Refresh scores now',
   },
 } as const
 

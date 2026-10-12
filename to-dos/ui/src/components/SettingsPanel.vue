@@ -11,6 +11,7 @@
 import { ref, computed } from 'vue'
 import { useTodosStore } from '@/stores/todos'
 import { X, RefreshCw, List, Calendar, Zap } from 'lucide-vue-next'
+import { useLegacyI18n } from '@/i18n'
 
 const props = defineProps<{
   show: boolean
@@ -21,9 +22,10 @@ const emit = defineEmits<{
 }>()
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 const frequencyOptions = [
-  { value: 0, label: '手动' },
+  { value: 0, label: t('manual') },
   { value: 1000, label: '1 秒' },
   { value: 5000, label: '5 秒' },
   { value: 30000, label: '30 秒' },
@@ -34,7 +36,7 @@ const expandCountOptions = [
   { value: 5, label: '5' },
   { value: 8, label: '8' },
   { value: 10, label: '10' },
-  { value: 999, label: '全部' },
+  { value: 999, label: t('all') },
 ]
 
 function updateFrequency(val: number) {
@@ -59,7 +61,7 @@ function handleBackdropClick(e: MouseEvent) {
         <header class="settings-header">
           <h2 class="settings-title">
             <Zap :size="18" />
-            设置
+            {{ t('settingsTitle') }}
           </h2>
     <button type="button" class="close-btn" @click="emit('close')">
             <X :size="18" />
@@ -71,7 +73,7 @@ function handleBackdropClick(e: MouseEvent) {
           <div class="setting-group">
             <div class="setting-label">
               <RefreshCw :size="14" />
-              <span>分数更新频率</span>
+              <span>{{ t('scoreFrequency') }}</span>
             </div>
             <div class="setting-options">
               <button
@@ -86,7 +88,7 @@ function handleBackdropClick(e: MouseEvent) {
               </button>
             </div>
             <p class="setting-desc">
-              优先排位分实时计算的刷新间隔。设为"手动"需手动刷新。
+              {{ t('scoreFrequencyDescription') }}
             </p>
           </div>
 
@@ -94,7 +96,7 @@ function handleBackdropClick(e: MouseEvent) {
           <div class="setting-group">
             <div class="setting-label">
               <List :size="14" />
-              <span>分类展开数量</span>
+              <span>{{ t('categoryExpandCount') }}</span>
             </div>
             <div class="setting-options">
               <button
@@ -109,7 +111,7 @@ function handleBackdropClick(e: MouseEvent) {
               </button>
             </div>
             <p class="setting-desc">
-              侧栏中按分数排序后，前 X 名分类展开显示，其余折叠收纳。
+              {{ t('categoryExpandDescription') }}
             </p>
           </div>
 
@@ -117,11 +119,11 @@ function handleBackdropClick(e: MouseEvent) {
           <div class="setting-group">
             <div class="setting-label">
               <Zap :size="14" />
-              <span>手动操作</span>
+              <span>{{ t('manualActions') }}</span>
             </div>
           <button type="button" class="refresh-btn" @click="store.recalculateScores()">
               <RefreshCw :size="14" />
-              立即刷新分数
+              {{ t('refreshScores') }}
             </button>
           </div>
         </div>

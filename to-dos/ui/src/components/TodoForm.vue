@@ -12,6 +12,7 @@ import {
 } from 'lucide-vue-next'
 import type { Priority, RecurrenceType } from '@/types'
 import { PRIORITY_CONFIG, RECURRENCE_CONFIG } from '@/types'
+import { useLegacyI18n } from '@/i18n'
 
 const props = defineProps<{
   todoId?: string | null
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 // 表单数据
 const title = ref('')
@@ -140,17 +142,17 @@ function handleBackdropClick(e: MouseEvent) {
 }
 
 const recurrenceOptions: { value: RecurrenceType; label: string }[] = [
-  { value: 'none', label: '不重复' },
-  { value: 'daily', label: '每日' },
-  { value: 'weekly', label: '每周' },
-  { value: 'monthly', label: '每月' },
+  { value: 'none', label: t('noRepeat') },
+  { value: 'daily', label: t('daily') },
+  { value: 'weekly', label: t('weekly') },
+  { value: 'monthly', label: t('monthly') },
 ]
 
 const warningDayOptions = [
-  { value: 0, label: '当天' },
-  { value: 1, label: '1 天前' },
-  { value: 3, label: '3 天前' },
-  { value: 7, label: '1 周前' },
+  { value: 0, label: t('sameDay') },
+  { value: 1, label: t('daysBefore', { count: 1 }) },
+  { value: 3, label: t('daysBefore', { count: 3 }) },
+  { value: 7, label: t('weekBefore') },
 ]
 </script>
 
@@ -159,8 +161,8 @@ const warningDayOptions = [
     <div class="form-modal">
       <!-- 头部 -->
       <header class="form-header">
-        <h2 class="form-title">{{ isEditing ? '编辑待办' : '新建待办' }}</h2>
-    <button type="button" class="close-btn" @click="emit('close')" aria-label="关闭">
+        <h2 class="form-title">{{ isEditing ? t('editTodo') : t('newTodo') }}</h2>
+    <button type="button" class="close-btn" @click="emit('close')" :aria-label="t('close')">
           <X :size="20" />
         </button>
       </header>
@@ -169,12 +171,12 @@ const warningDayOptions = [
       <form @submit.prevent="handleSubmit" class="form-body">
         <!-- 标题 -->
         <div class="form-group">
-          <label class="form-label">标题</label>
+          <label class="form-label">{{ t('title') }}</label>
           <input
             v-model="title"
             type="text"
             class="form-input title"
-            placeholder="输入待办标题..."
+            :placeholder="t('titlePlaceholder')"
             required
           />
         </div>
@@ -183,12 +185,12 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <AlignLeft :size="14" />
-            描述
+            {{ t('description') }}
           </label>
           <textarea
             v-model="description"
             class="form-input textarea"
-            placeholder="添加详细描述（可选）..."
+            :placeholder="t('descriptionPlaceholder')"
             rows="3"
           ></textarea>
         </div>
@@ -196,7 +198,7 @@ const warningDayOptions = [
         <!-- 行：优先级 + 分类 -->
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">优先级</label>
+            <label class="form-label">{{ t('priority') }}</label>
             <select v-model="priority" class="form-input select">
               <option v-for="(config, key) in PRIORITY_CONFIG" :key="key" :value="key">
                 {{ config.label }}
@@ -205,7 +207,7 @@ const warningDayOptions = [
           </div>
 
           <div class="form-group">
-            <label class="form-label">分类</label>
+            <label class="form-label">{{ t('category') }}</label>
             <select v-model="category" class="form-input select">
               <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">
                 {{ cat.name }}
@@ -218,18 +220,18 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <AlertTriangle :size="14" />
-            优先属性
+            {{ t('priorityAttributes') }}
           </label>
           <div class="priority-toggles">
             <label class="toggle-chip" :class="{ active: urgent }">
               <input type="checkbox" v-model="urgent" class="toggle-input" />
               <AlertTriangle :size="14" />
-              紧急
+              {{ t('urgent') }}
             </label>
             <label class="toggle-chip" :class="{ active: important }">
               <input type="checkbox" v-model="important" class="toggle-input" />
               <Star :size="14" />
-              重要
+              {{ t('important') }}
             </label>
             <div class="rank-input-wrap">
               <Hash :size="14" class="rank-icon" />
@@ -237,9 +239,9 @@ const warningDayOptions = [
                 v-model.number="priorityRank"
                 type="number"
                 class="form-input rank-input"
-                placeholder="排位"
+                :placeholder="t('rank')"
                 min="0"
-                title="优先级排位，0 为最高"
+                :title="t('rankTitle')"
               />
             </div>
           </div>
@@ -249,7 +251,7 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <Calendar :size="14" />
-            截止日期
+            {{ t('deadline') }}
           </label>
           <input
             v-model="deadline"
@@ -263,7 +265,7 @@ const warningDayOptions = [
           <div class="form-group">
             <label class="form-label">
               <Clock :size="14" />
-              开始时间
+              {{ t('startTime') }}
             </label>
             <input
               v-model="startTime"
@@ -275,13 +277,13 @@ const warningDayOptions = [
           <div class="form-group">
             <label class="form-label">
               <Clock :size="14" />
-              预估时间（分钟）
+              {{ t('estimatedMinutes') }}
             </label>
             <input
               v-model.number="estimatedTime"
               type="number"
               class="form-input"
-              placeholder="例如：120"
+              :placeholder="t('exampleMinutes')"
               min="0"
             />
           </div>
@@ -292,7 +294,7 @@ const warningDayOptions = [
           <div class="form-group">
             <label class="form-label">
               <Bell :size="14" />
-              截止提醒
+              {{ t('deadlineReminder') }}
             </label>
             <select v-model.number="deadlineWarningDays" class="form-input select">
               <option v-for="opt in warningDayOptions" :key="opt.value" :value="opt.value">
@@ -304,7 +306,7 @@ const warningDayOptions = [
           <div class="form-group">
             <label class="form-label">
               <Repeat :size="14" />
-              重复
+              {{ t('recurrence') }}
             </label>
             <select v-model="recurrence" class="form-input select">
               <option v-for="opt in recurrenceOptions" :key="opt.value" :value="opt.value">
@@ -318,13 +320,13 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <Clock :size="14" />
-            时间记录（分钟）
+            {{ t('timeRecord') }}
           </label>
           <input
             v-model.number="timeEstimate"
             type="number"
             class="form-input"
-            placeholder="实际花费的时间"
+            :placeholder="t('actualTime')"
             min="0"
           />
         </div>
@@ -333,7 +335,7 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <Tag :size="14" />
-            标签
+            {{ t('tag') }}
           </label>
           <div class="tags-input">
             <div class="tags-list">
@@ -346,7 +348,7 @@ const warningDayOptions = [
               v-model="tagInput"
               type="text"
               class="form-input tag-input"
-              placeholder="输入标签后按 Enter..."
+              :placeholder="t('tagPlaceholder')"
               @keydown="handleTagKeydown"
             />
           </div>
@@ -356,13 +358,13 @@ const warningDayOptions = [
         <div class="form-group">
           <label class="form-label">
             <FileText :size="14" />
-            备注
-            <span class="label-hint">支持 Markdown</span>
+            {{ t('notes') }}
+            <span class="label-hint">{{ t('markdown') }}</span>
           </label>
           <textarea
             v-model="notes"
             class="form-input textarea mono"
-            placeholder="添加备注或笔记（支持 Markdown 语法）...&#10;&#10;支持 **加粗**、- 列表、[链接](url) 等"
+            :placeholder="t('notesPlaceholder')"
             rows="4"
           ></textarea>
         </div>
@@ -370,10 +372,10 @@ const warningDayOptions = [
         <!-- 提交按钮 -->
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" @click="emit('close')">
-            取消
+            {{ t('cancel') }}
           </button>
           <button type="submit" class="btn btn-primary" :disabled="!title.trim()">
-            {{ isEditing ? '保存' : '创建' }}
+            {{ isEditing ? t('save') : t('create') }}
           </button>
         </div>
       </form>
