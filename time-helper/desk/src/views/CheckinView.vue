@@ -169,6 +169,7 @@ const last7Days = computed(() => {
               <span>{{ t('checkin.click') }}</span>
             </button>
             <button
+              type="button"
               v-else
               class="checkin-btn disabled"
               disabled
