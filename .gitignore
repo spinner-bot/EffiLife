@@ -13,6 +13,10 @@
 /artifacts/releases/*.deb
 /artifacts/releases/*.rpm
 
+# CI/local release verification output; manifests are uploaded with the build
+# artifact and must not accumulate as working-tree changes.
+/release-checksums/
+
 # IDE
 .idea/
 .vscode/
