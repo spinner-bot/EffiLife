@@ -445,6 +445,9 @@ export const TodoService = {
         await DataService.unlinkTodoFromRecords(id)
       } catch (error) {
         console.warn('Failed to clean deleted todo record links:', error)
+        // Do not delete the todo while historical records may still point to
+        // it. Callers can retry after the records store becomes available.
+        throw error
       }
       await deleteRaw(STORE_NAMES.TODOS, id)
       notifyWorkspaceChanged('todos')

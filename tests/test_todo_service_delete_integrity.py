@@ -13,3 +13,4 @@ def test_todo_service_delete_cleans_time_record_reverse_links():
     assert "await deleteRaw(STORE_NAMES.TODOS, id)" in remove_block
     assert remove_block.index("await DataService.unlinkTodoFromRecords(id)") < remove_block.index("await deleteRaw(STORE_NAMES.TODOS, id)")
     assert "console.warn('Failed to clean deleted todo record links:', error)" in remove_block
+    assert "throw error" in remove_block
