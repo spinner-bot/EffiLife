@@ -22,3 +22,15 @@ def test_emergency_backup_contains_and_restores_unified_todos():
     assert "clear(STORE_NAMES.PLAN_HELPER_SNAPSHOT)" in source
     assert "putRaw(STORE_NAMES.PLAN_HELPER_SNAPSHOT, snapshot)" in source
     assert "notifyWorkspaceChanged('archive')" in source
+
+
+def test_emergency_restore_clears_explicitly_empty_optional_datasets():
+    source = RECOVERY.read_text(encoding="utf-8")
+    for field, store in (
+        ("config", "CONFIG"),
+        ("plans", "PLANS"),
+        ("scheduleRules", "SCHEDULE_RULES"),
+        ("manualPlans", "MANUAL_PLANS"),
+    ):
+        assert f"if (data.{field} !== undefined)" in source
+        assert f"clear(STORE_NAMES.{store})" in source

@@ -221,17 +221,24 @@ export async function restoreFromEmergencyBackup(jsonStr: string): Promise<{
     const data = JSON.parse(jsonStr)
 
     // 恢复 IndexedDB 数据
-    if (data.config) {
-      await set(STORE_NAMES.CONFIG, 'config', data.config)
+    // A present null is an explicit empty snapshot and must clear stale
+    // IndexedDB data. An absent field belongs to an older backup format and
+    // remains backward-compatible by preserving the current dataset.
+    if (data.config !== undefined) {
+      if (data.config === null) await clear(STORE_NAMES.CONFIG)
+      else await set(STORE_NAMES.CONFIG, 'config', data.config)
     }
-    if (data.plans) {
-      await set(STORE_NAMES.PLANS, 'plans', data.plans)
+    if (data.plans !== undefined) {
+      if (data.plans === null) await clear(STORE_NAMES.PLANS)
+      else await set(STORE_NAMES.PLANS, 'plans', data.plans)
     }
-    if (data.scheduleRules) {
-      await set(STORE_NAMES.SCHEDULE_RULES, 'rules', data.scheduleRules)
+    if (data.scheduleRules !== undefined) {
+      if (data.scheduleRules === null) await clear(STORE_NAMES.SCHEDULE_RULES)
+      else await set(STORE_NAMES.SCHEDULE_RULES, 'rules', data.scheduleRules)
     }
-    if (data.manualPlans) {
-      await set(STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans)
+    if (data.manualPlans !== undefined) {
+      if (data.manualPlans === null) await clear(STORE_NAMES.MANUAL_PLANS)
+      else await set(STORE_NAMES.MANUAL_PLANS, 'all', data.manualPlans)
     }
     if (data.records) {
       await clear(STORE_NAMES.RECORDS)
