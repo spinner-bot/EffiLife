@@ -8,7 +8,10 @@ I18N = ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts"
 
 def test_task_deletion_requires_a_localized_confirmation():
     source = TASK_VIEW.read_text(encoding="utf-8")
-    assert "requestConfirm(t('tasks.deleteConfirm'), { tone: 'danger' })" in source
+    assert "async function confirmTaskAction(" in source
+    assert "return await requestConfirm(message, { tone })" in source
+    assert "confirmTaskAction(t('tasks.deleteConfirm'), 'danger')" in source
+    assert "confirmationPending.value" in source
     host = (ROOT / "time-helper" / "desk" / "src" / "components" / "ConfirmHost.vue").read_text(encoding="utf-8")
     assert "common.confirmTitle" in host
     assert "common.cancel" in host

@@ -64,6 +64,7 @@ const creatingTodo = ref(false)
 const completingTodoId = ref<string | null>(null)
 const selectedTodoIds = ref<Set<string>>(new Set())
 const bulkWorking = ref(false)
+const confirmationPending = ref(false)
 const expandedTodoId = ref<string | null>(null)
 const searchTargetTodoId = ref<string | null>(null)
 const missingTodoTargetId = ref<string | null>(null)
@@ -89,6 +90,16 @@ const editingCategoryAsciiIcon = ref('')
 const editingCategoryDifficulty = ref(5)
 const priorityClock = ref(Date.now())
 const todoSettings = ref<TodoSettings>({ updateFrequency: 60_000, expandCount: 5 })
+
+async function confirmTaskAction(message: string, tone: 'danger' | 'default' = 'default'): Promise<boolean> {
+  if (confirmationPending.value) return false
+  confirmationPending.value = true
+  try {
+    return await requestConfirm(message, { tone })
+  } finally {
+    confirmationPending.value = false
+  }
+}
 const settingsSaving = ref(false)
 const taskTabButtons = ref<HTMLButtonElement[]>([])
 let priorityTimer: number | null = null
@@ -359,7 +370,7 @@ async function saveCategory(item: TodoCategory) {
 }
 
 async function removeCategory(item: TodoCategory) {
-  if (item.id === 'default' || !(await requestConfirm(`${t('tasks.deleteCategory')}?`, { tone: 'danger' }))) return
+  if (item.id === 'default' || !(await confirmTaskAction(`${t('tasks.deleteCategory')}?`, 'danger'))) return
   try {
     const affected = todos.value.filter((todo) => todo.category === item.id)
     for (const todo of affected) {
@@ -511,7 +522,7 @@ async function saveEdit(todo: UnifiedTodo) {
 }
 
 async function removeTodo(todo: UnifiedTodo) {
-  if (!(await requestConfirm(t('tasks.deleteConfirm'), { tone: 'danger' }))) return
+  if (!(await confirmTaskAction(t('tasks.deleteConfirm'), 'danger'))) return
   try {
     try {
       await DataService.unlinkTodoFromRecords(todo.id)
@@ -568,7 +579,7 @@ async function bulkCompleteTodos() {
 }
 
 async function bulkDeleteTodos() {
-  if (bulkWorking.value || selectedTodoCount.value === 0 || !(await requestConfirm(t('tasks.bulkDeleteConfirm', { count: selectedTodoCount.value }), { tone: 'danger' }))) return
+  if (bulkWorking.value || selectedTodoCount.value === 0 || !(await confirmTaskAction(t('tasks.bulkDeleteConfirm', { count: selectedTodoCount.value }), 'danger'))) return
   bulkWorking.value = true
   let deleted = 0
   try {
@@ -787,7 +798,7 @@ async function toggleSubtask(todo: UnifiedTodo, subtaskId: string) {
 }
 
 async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
-  if (subtaskSaving.value || !(await requestConfirm(`${t('tasks.deleteSubtask')}?`, { tone: 'danger' }))) return
+  if (subtaskSaving.value || !(await confirmTaskAction(`${t('tasks.deleteSubtask')}?`, 'danger'))) return
   subtaskSaving.value = true
   try {
     replaceTodo(await TodoService.removeSubtask(todo.id, subtaskId))
@@ -974,14 +985,14 @@ watch(() => route.query.compose, () => {
           <Settings2 :size="15" /> {{ t('tasks.manageCategories') }}
         </button>
         <label v-if="visibleTodos.length" class="task-select-all">
-          <input type="checkbox" :checked="allVisibleTodosSelected" :disabled="bulkWorking" @change="toggleVisibleTodoSelection" />
+          <input type="checkbox" :checked="allVisibleTodosSelected" :disabled="bulkWorking || confirmationPending" @change="toggleVisibleTodoSelection" />
           {{ t('tasks.selectVisible') }}
         </label>
         <div v-if="selectedTodoCount" class="task-bulk-actions">
           <span>{{ t('tasks.selectedCount', { count: selectedTodoCount }) }}</span>
-          <button type="button" :disabled="bulkWorking" @click="bulkCompleteTodos"><Check :size="14" /> {{ t('tasks.bulkComplete') }}</button>
-          <button type="button" class="danger" :disabled="bulkWorking" @click="bulkDeleteTodos"><Trash2 :size="14" /> {{ t('tasks.bulkDelete') }}</button>
-          <button type="button" class="task-bulk-clear" :disabled="bulkWorking" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
+          <button type="button" :disabled="bulkWorking || confirmationPending" @click="bulkCompleteTodos"><Check :size="14" /> {{ t('tasks.bulkComplete') }}</button>
+          <button type="button" class="danger" :disabled="bulkWorking || confirmationPending" @click="bulkDeleteTodos"><Trash2 :size="14" /> {{ t('tasks.bulkDelete') }}</button>
+          <button type="button" class="task-bulk-clear" :disabled="bulkWorking || confirmationPending" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
         <span v-if="errorMessage" class="task-error" role="alert">{{ errorMessage }}</span>
         <span v-if="missingTodoTargetId" class="task-deeplink-note" role="status" aria-live="polite">
@@ -1068,7 +1079,7 @@ watch(() => route.query.compose, () => {
               <small>{{ t('tasks.categoryDifficulty') }} {{ item.difficulty }}</small>
               <button type="button" class="category-pin" :class="{ active: item.pinned }" :aria-label="item.pinned ? t('tasks.unpinCategory') : t('tasks.pinCategory')" @click="toggleCategoryPinned(item)"><Pin :size="14" /></button>
               <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="beginCategoryEdit(item)"><Pencil :size="14" /></button>
-              <button v-if="item.id !== 'default'" type="button" class="task-delete" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
+              <button v-if="item.id !== 'default'" type="button" class="task-delete" :disabled="confirmationPending" :aria-label="t('tasks.deleteCategory')" @click="removeCategory(item)"><Trash2 :size="14" /></button>
             </template>
           </div>
         </div>
@@ -1171,7 +1182,7 @@ watch(() => route.query.compose, () => {
             </button>
             <button type="button" class="task-pin" :class="{ active: todo.pinned }" :aria-label="todo.pinned ? t('tasks.unpinTodo') : t('tasks.pinTodo')" @click="toggleTodoPinned(todo)"><Pin :size="16" /></button>
             <button type="button" class="task-edit" :aria-label="t('tasks.edit')" @click="startEdit(todo)"><Pencil :size="16" /></button>
-            <button type="button" class="task-delete" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
+            <button type="button" class="task-delete" :disabled="confirmationPending" :aria-label="t('tasks.delete')" @click="removeTodo(todo)"><Trash2 :size="16" /></button>
           </div>
           <div v-if="expandedTodoId === todo.id && editingId !== todo.id" class="task-subtasks">
             <div class="task-score-detail"><span>{{ t('tasks.priorityScore') }}</span><strong>{{ scoreFor(todo).score }}</strong></div>
@@ -1179,7 +1190,7 @@ watch(() => route.query.compose, () => {
               <div v-for="subtask in todo.subtasks" :key="subtask.id" class="subtask-row" :class="{ completed: subtask.completed }">
                 <input type="checkbox" :aria-label="subtask.title" :checked="subtask.completed" :disabled="subtaskSaving" @change="toggleSubtask(todo, subtask.id)" />
                 <span>{{ subtask.title }}</span>
-                <button type="button" class="subtask-delete" :disabled="subtaskSaving" :aria-label="t('tasks.deleteSubtask')" @click.prevent="removeSubtask(todo, subtask.id)"><Trash2 :size="14" /></button>
+                <button type="button" class="subtask-delete" :disabled="subtaskSaving || confirmationPending" :aria-label="t('tasks.deleteSubtask')" @click.prevent="removeSubtask(todo, subtask.id)"><Trash2 :size="14" /></button>
               </div>
             </div>
             <p v-else class="subtask-empty">{{ t('tasks.noSubtasks') }}</p>
