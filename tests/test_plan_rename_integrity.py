@@ -21,3 +21,12 @@ def test_plan_rename_rejects_colliding_names_with_localized_feedback():
     assert "Object.prototype.hasOwnProperty.call(plans.value, name)" in block
     assert "legacyPlan.planNameExists" in block
     assert I18N.count("'legacyPlan.planNameExists':") == 2
+
+
+def test_plan_rename_rolls_back_all_reference_writes_when_a_followup_step_fails():
+    block = VIEW.split("async function savePlanInternal", 1)[1].split("async function deletePlan", 1)[0]
+    assert "const previousPlans = JSON.parse(JSON.stringify(plans.value)) as Plans" in block
+    assert "const previousRules = scheduleRules.value.map((rule) => ({ ...rule }))" in block
+    assert "try { await appStore.savePlans(previousPlans) }" in block
+    assert "try { await appStore.saveScheduleRules(previousRules) }" in block
+    assert "await DataService.saveManualPlans(previousManualPlans)" in block

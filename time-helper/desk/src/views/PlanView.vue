@@ -12,7 +12,7 @@ import {
   Calendar, FolderKanban, RefreshCw, ClipboardList,
   Clock, ChevronRight, History
 } from 'lucide-vue-next'
-import type { TimeRecord, PlanItem, ScheduleRule } from '@/types'
+import type { TimeRecord, PlanItem, Plans, ScheduleRule } from '@/types'
 import EmptyState from '@/components/EmptyState.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { useI18n } from '@/i18n'
@@ -429,18 +429,34 @@ async function savePlanInternal() {
     bg_tag: editingPlanType.value === '切分制' ? editingPlanBgTag.value : '',
     color: editingPlanColor.value
   }
-  await appStore.savePlans(newPlans)
-  if (originalName && originalName !== name) {
-    const nextRules = scheduleRules.value.map((rule) =>
-      rule.plan_name === originalName ? { ...rule, plan_name: name } : rule,
-    )
-    await appStore.saveScheduleRules(nextRules)
-    const manualPlans = await DataService.loadManualPlans()
-    const renamedManualPlans = Object.fromEntries(
-      Object.entries(manualPlans).map(([date, planName]) => [date, planName === originalName ? name : planName]),
-    )
-    await DataService.saveManualPlans(renamedManualPlans)
-    await appStore.refreshTodayData()
+  const isRename = Boolean(originalName && originalName !== name)
+  const previousPlans = JSON.parse(JSON.stringify(plans.value)) as Plans
+  const previousRules = scheduleRules.value.map((rule) => ({ ...rule }))
+  let previousManualPlans: Record<string, string> | null = null
+  try {
+    if (isRename) previousManualPlans = await DataService.loadManualPlans()
+    await appStore.savePlans(newPlans)
+    if (isRename) {
+      const nextRules = scheduleRules.value.map((rule) =>
+        rule.plan_name === originalName ? { ...rule, plan_name: name } : rule,
+      )
+      await appStore.saveScheduleRules(nextRules)
+      const manualPlans = previousManualPlans || {}
+      const renamedManualPlans = Object.fromEntries(
+        Object.entries(manualPlans).map(([date, planName]) => [date, planName === originalName ? name : planName]),
+      )
+      await DataService.saveManualPlans(renamedManualPlans)
+      await appStore.refreshTodayData()
+    }
+  } catch (error) {
+    if (isRename) {
+      try { await appStore.savePlans(previousPlans) } catch (rollbackError) { console.warn('Failed to roll back renamed plan data:', rollbackError) }
+      try { await appStore.saveScheduleRules(previousRules) } catch (rollbackError) { console.warn('Failed to roll back renamed plan rules:', rollbackError) }
+      if (previousManualPlans) {
+        try { await DataService.saveManualPlans(previousManualPlans) } catch (rollbackError) { console.warn('Failed to roll back renamed manual plans:', rollbackError) }
+      }
+    }
+    throw error
   }
   editingOriginalPlanName.value = name
   manageView.value = 'plans'
