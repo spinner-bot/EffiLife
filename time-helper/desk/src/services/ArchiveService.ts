@@ -95,6 +95,14 @@ function archiveDefaultPath(fileName: string): string {
   return `${directory.replace(/[\\/]+$/, '')}${separator}${fileName}`
 }
 
+function archiveFileName(date = new Date()): string {
+  const datePart = getTodayDate()
+  const timePart = [date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()]
+    .map((value, index) => String(value).padStart(index === 3 ? 3 : 2, '0'))
+    .join('')
+  return `efflife_archive_${datePart}_${timePart}.efl`
+}
+
 // 设置下载路径
 export function setDownloadPath(path: string): void {
   localStorage.setItem('efflife_download_path', path.replace(/([\\/])efflife_archive_$/, '$1'))
@@ -483,8 +491,7 @@ export async function exportArchive(): Promise<{ success: boolean; path?: string
   const blob = await zip.generateAsync({ type: 'blob' })
 
   // 生成文件名
-  const dateStr = getTodayDate()
-  const fileName = `efflife_archive_${dateStr}.efl`
+  const fileName = archiveFileName(new Date())
 
   // 如果在 Tauri 桌面环境，使用原生对话框
   if (isTauriRuntime() && !isMobilePlatform()) {

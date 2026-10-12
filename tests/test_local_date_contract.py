@@ -44,7 +44,8 @@ def test_user_visible_date_modules_parse_calendar_dates_locally():
 def test_archive_filename_uses_local_business_date():
     archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
     assert "getTodayDate, normalizeConfig" in archive
-    assert "const dateStr = getTodayDate()" in archive
+    assert "const datePart = getTodayDate()" in archive
+    assert "const fileName = archiveFileName(new Date())" in archive
     assert "new Date().toISOString().split('T')[0]" not in archive
 
 
@@ -54,6 +55,12 @@ def test_archive_export_remembers_directory_and_rebuilds_full_default_filename()
     assert "defaultPath: archiveDefaultPath(fileName)" in archive
     assert "setDownloadPath(dir)" in archive
     assert "fileName.replace(/_[\\d-]+\\.efl$/, '_')" not in archive
+
+
+def test_archive_exports_include_a_local_time_suffix_to_distinguish_snapshots():
+    archive = (ROOT / "time-helper" / "desk" / "src" / "services" / "ArchiveService.ts").read_text(encoding="utf-8")
+    assert "function archiveFileName(date = new Date()): string" in archive
+    assert "getMilliseconds()" in archive
 
 
 def test_archive_export_normalizes_the_legacy_filename_prefix_path():
