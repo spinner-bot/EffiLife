@@ -97,6 +97,7 @@ const linkedTodoTaskIds = ref<Set<string>>(new Set())
 const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())
 const recordingTodoTaskId = ref<string | null>(null)
 const linkingTodoTaskId = ref<string | null>(null)
+const confirmationPending = ref(false)
 
 const archivedPlanTarget = computed(() => {
   const targetFile = String(route.query.archive || '')
@@ -300,9 +301,19 @@ watch(isLoading, (loading) => {
   if (!loading) void drainWorkspaceRefresh()
 })
 
+async function confirmPlanAction(message: string, tone: 'danger' | 'default' = 'default'): Promise<boolean> {
+  if (confirmationPending.value) return false
+  confirmationPending.value = true
+  try {
+    return await requestConfirm(message, { tone })
+  } finally {
+    confirmationPending.value = false
+  }
+}
+
 async function archiveSelectedPlan() {
   if (isLoading.value) return
-  if (!selectedPlan.value || !(await requestConfirm(t('plans.archiveConfirm'), { tone: 'danger' }))) return
+  if (!selectedPlan.value || !(await confirmPlanAction(t('plans.archiveConfirm'), 'danger'))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
   errorMessage.value = ''
@@ -571,7 +582,7 @@ function cancelSectionEdit() {
 }
 
 async function deleteSection(section: PlanFull['sections'][number]) {
-  if (isLoading.value || !selectedPlan.value || !(await requestConfirm(t('plans.deleteSectionConfirm'), { tone: 'danger' }))) return
+  if (isLoading.value || !selectedPlan.value || !(await confirmPlanAction(t('plans.deleteSectionConfirm'), 'danger'))) return
   const planId = selectedPlan.value.id
   const deletedTaskIds = section.tasks.map((task) => task.internal_id)
   isLoading.value = true
@@ -721,7 +732,7 @@ async function saveGroup() {
 
 async function deleteGroup(sectionIndex: number, groupKey: string) {
   if (isLoading.value) return
-  if (!selectedPlan.value || !(await requestConfirm(t('plans.deleteGroupConfirm'), { tone: 'danger' }))) return
+  if (!selectedPlan.value || !(await confirmPlanAction(t('plans.deleteGroupConfirm'), 'danger'))) return
   isLoading.value = true
   try {
     await deletePlanGroup(selectedPlan.value.id, sectionIndex, groupKey)
@@ -858,7 +869,7 @@ async function createLinkedTodo(task: { internal_id: string; content: string; ti
 async function createLinkedTodos(): Promise<void> {
   if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
   if (!unlinkedActiveTaskCount.value) return
-  if (!(await requestConfirm(t('plans.linkAllTodosConfirm', { count: unlinkedActiveTaskCount.value })))) return
+  if (!(await confirmPlanAction(t('plans.linkAllTodosConfirm', { count: unlinkedActiveTaskCount.value })))) return
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -898,7 +909,7 @@ async function createLinkedTodos(): Promise<void> {
 
 async function deleteTask(taskId: string) {
   if (isLoading.value) return
-  if (!selectedPlan.value || !(await requestConfirm(`${t('plans.delete')}?`, { tone: 'danger' }))) return
+  if (!selectedPlan.value || !(await confirmPlanAction(`${t('plans.delete')}?`, 'danger'))) return
   const planId = selectedPlan.value.id
   isLoading.value = true
   errorMessage.value = ''
@@ -1132,7 +1143,7 @@ onUnmounted(() => {
           <button type="button" class="plans-link" @click="backFromDetail">← {{ t('plans.back') }}</button>
           <div v-if="canEditPlan" class="detail-actions">
             <button type="button" class="plans-secondary" @click="startMetaEdit"><Pencil :size="15" /> {{ t('plans.edit') }}</button>
-            <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
+            <button v-if="canArchivePlan" type="button" class="plans-secondary" :disabled="isLoading || confirmationPending" @click="archiveSelectedPlan">{{ t('plans.archive') }}</button>
           </div>
         </div>
         <form v-if="editingMeta && canEditPlan" class="meta-editor theme-card" @submit.prevent="savePlanMeta">
@@ -1148,7 +1159,7 @@ onUnmounted(() => {
           <div><span>{{ t('plans.completed') }}</span><strong>{{ completedTaskCount }}</strong></div>
           <div><span>{{ t('plans.linkedTodos') }}</span><strong>{{ linkedTodoCount }}</strong></div>
           <div class="plan-detail-progress"><span>{{ t('plans.progress') }}</span><strong>{{ selectedPlanProgress }}%</strong><div class="plan-progress-track"><span :style="{ width: `${selectedPlanProgress}%` }" /></div></div>
-          <button v-if="canEditPlan && activeTaskCount" type="button" class="plans-secondary plan-todo-action" :disabled="isLoading || !unlinkedActiveTaskCount" @click="createLinkedTodos">{{ unlinkedActiveTaskCount ? t('plans.linkAllTodos') : t('plans.todosAllLinked') }}</button>
+          <button v-if="canEditPlan && activeTaskCount" type="button" class="plans-secondary plan-todo-action" :disabled="isLoading || confirmationPending || !unlinkedActiveTaskCount" @click="createLinkedTodos">{{ unlinkedActiveTaskCount ? t('plans.linkAllTodos') : t('plans.todosAllLinked') }}</button>
           <small v-if="canEditPlan && activeTaskCount" class="plan-todo-hint">{{ t('plans.createTodosHint') }}</small>
         </section>
         <form v-if="canEditPlan" class="log-editor theme-card" @submit.prevent="saveLog">
@@ -1184,7 +1195,7 @@ onUnmounted(() => {
         </form>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !activePlanTasks(section).length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || confirmationPending" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !activePlanTasks(section).length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" required autofocus /></label>
             <label class="task-minutes-field"><span>{{ t('plans.taskMinutes') }}</span><small>{{ t('plans.taskMinutesHint') }}</small><input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
@@ -1209,7 +1220,7 @@ onUnmounted(() => {
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
               <button v-if="linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log task-record-time" :disabled="isLoading || recordingTodoTaskId === task.internal_id" :aria-label="t('plans.recordTodoTime')" @click="recordLinkedTodoTime(task.internal_id)"><Clock3 :size="13" /> {{ t('plans.recordTodoTime') }}</button>
               <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
-              <button type="button" class="task-delete" :disabled="isLoading" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
+              <button type="button" class="task-delete" :disabled="isLoading || confirmationPending" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
             </div>
           </article>
           <div v-if="groupEntries(section).length" class="group-list">
@@ -1217,7 +1228,7 @@ onUnmounted(() => {
               <span class="group-range">{{ groupDisplayRange(section, group) }}</span>
               <div><strong>{{ group.title }}</strong><small v-if="group.description">{{ group.description }}</small></div>
               <button v-if="canEditPlan" type="button" class="group-action" :aria-label="t('plans.editGroup')" @click="startGroupEdit(section, group)"><Pencil :size="13" /></button>
-              <button v-if="canEditPlan" type="button" class="group-action danger" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
+              <button v-if="canEditPlan" type="button" class="group-action danger" :disabled="isLoading || confirmationPending" :aria-label="t('plans.deleteGroup')" @click="deleteGroup(section.index, group.key)"><Trash2 :size="13" /></button>
             </div>
           </div>
         </section>

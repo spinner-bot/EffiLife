@@ -51,3 +51,16 @@ def test_plan_creation_uses_ph_section_lettering_beyond_z():
     assert "function sectionDisplayLetter(index: number): string" in HUB
     assert "value = Math.floor(value / 26) - 1" in HUB
     assert "sectionDisplayLetter(sectionIndex)" in HUB
+
+
+def test_plan_confirmed_mutations_share_a_single_confirmation_gate():
+    assert "const confirmationPending = ref(false)" in HUB
+    assert "async function confirmPlanAction(message: string, tone: 'danger' | 'default' = 'default')" in HUB
+    assert "if (confirmationPending.value) return false" in HUB
+    assert "confirmationPending.value = true" in HUB
+    assert "confirmationPending.value = false" in HUB
+    assert "confirmPlanAction(t('plans.archiveConfirm'), 'danger')" in HUB
+    assert "confirmPlanAction(t('plans.deleteSectionConfirm'), 'danger')" in HUB
+    assert "confirmPlanAction(t('plans.deleteGroupConfirm'), 'danger')" in HUB
+    assert "confirmPlanAction(`${t('plans.delete')}?`, 'danger')" in HUB
+    assert ":disabled=\"isLoading || confirmationPending\"" in HUB

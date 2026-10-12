@@ -15,7 +15,7 @@ def test_plan_detail_links_todos_without_merging_module_entities():
     assert "function createLinkedTodo" in source
     assert "t('plans.linkTodo')" in source
     assert "t('plans.todoAlreadyLinked')" in source
-    assert "requestConfirm(t('plans.linkAllTodosConfirm'" in source
+    assert "confirmPlanAction(t('plans.linkAllTodosConfirm'" in source
     assert "const linkedTodoCount = computed" in source
     assert "t('plans.linkedTodos')" in source
     assert 'class="task-todo-link"' in source
