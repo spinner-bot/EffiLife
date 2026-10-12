@@ -25,8 +25,8 @@ def main() -> int:
         return 1
 
     command = [npm, "run", "build"]
-    print(f"Building unified frontend with: {' '.join(command)}")
-    print(f"Working directory: {DESK}")
+    print(f"Building unified frontend with: {' '.join(command)}", flush=True)
+    print(f"Working directory: {DESK}", flush=True)
     completed = subprocess.run(command, cwd=DESK, env=start.node_environment(), check=False)
     return completed.returncode
 

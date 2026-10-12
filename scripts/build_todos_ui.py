@@ -25,8 +25,8 @@ def main() -> int:
         return 1
 
     command = [npm, "run", "build"]
-    print(f"Building to-dos compatibility UI with: {' '.join(command)}")
-    print(f"Working directory: {TODOS_UI}")
+    print(f"Building to-dos compatibility UI with: {' '.join(command)}", flush=True)
+    print(f"Working directory: {TODOS_UI}", flush=True)
     completed = subprocess.run(command, cwd=TODOS_UI, env=start.node_environment(), check=False)
     return completed.returncode
 
