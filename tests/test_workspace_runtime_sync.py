@@ -97,6 +97,16 @@ def test_app_store_rolls_back_today_plan_when_switch_fails():
     assert "throw error" in block
 
 
+def test_app_store_rolls_back_plan_and_rule_writes_when_persistence_fails():
+    source = STORE.read_text(encoding="utf-8")
+    plans_block = source.split("async function savePlans(newPlans: Plans)", 1)[1].split("// 淇濆瓨鏃ョ▼瑙勫垯", 1)[0]
+    rules_block = source.split("async function saveScheduleRules(newRules: ScheduleRule[])", 1)[1].split("// 娣诲姞璁板綍", 1)[0]
+    assert "const previousPlans = plans.value" in plans_block
+    assert "plans.value = previousPlans" in plans_block
+    assert "const previousRules = scheduleRules.value" in rules_block
+    assert "scheduleRules.value = previousRules" in rules_block
+
+
 def test_workspace_refreshes_are_serialized_and_later_requests_are_not_dropped():
     source = STORE.read_text(encoding="utf-8")
     refresh_block = source.split("async function refreshWorkspaceData()", 1)[1].split("// 保存配置", 1)[0]

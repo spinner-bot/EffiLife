@@ -178,16 +178,28 @@ export const useAppStore = defineStore('app', () => {
 
   // 保存计划
   async function savePlans(newPlans: Plans) {
+    const previousPlans = plans.value
     plans.value = newPlans
-    await DataService.savePlans(newPlans)
-    notifyWorkspaceChanged('plans')
+    try {
+      await DataService.savePlans(newPlans)
+      notifyWorkspaceChanged('plans')
+    } catch (error) {
+      plans.value = previousPlans
+      throw error
+    }
   }
 
   // 保存日程规则
   async function saveScheduleRules(newRules: ScheduleRule[]) {
+    const previousRules = scheduleRules.value
     scheduleRules.value = newRules
-    await DataService.saveScheduleRules(newRules)
-    notifyWorkspaceChanged('plans')
+    try {
+      await DataService.saveScheduleRules(newRules)
+      notifyWorkspaceChanged('plans')
+    } catch (error) {
+      scheduleRules.value = previousRules
+      throw error
+    }
   }
 
   // 添加记录
