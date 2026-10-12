@@ -109,14 +109,36 @@ const formDurationTime = ref({ h: '09', m: '00' })
 const formContent = ref('')
 const formTag = ref('')
 
+function formatInputClock(totalMinutes: number): { h: string; m: string } {
+  const bounded = Math.max(0, Math.min(24 * 60, Math.trunc(totalMinutes)))
+  return {
+    h: String(Math.floor(bounded / 60)).padStart(2, '0'),
+    m: String(bounded % 60).padStart(2, '0'),
+  }
+}
+
+function currentRecordDefaults(): { start: { h: string; m: string }; end: { h: string; m: string }; duration: { h: string; m: string }; reference: { h: string; m: string } } {
+  const now = new Date()
+  const startMinutes = now.getHours() * 60 + now.getMinutes()
+  const availableMinutes = Math.max(1, 24 * 60 - startMinutes)
+  const defaultDuration = Math.min(60, availableMinutes)
+  return {
+    start: formatInputClock(startMinutes),
+    end: formatInputClock(startMinutes + defaultDuration),
+    duration: { h: String(Math.floor(defaultDuration / 60)), m: String(defaultDuration % 60) },
+    reference: formatInputClock(startMinutes),
+  }
+}
+
 // 重置表单
 function resetForm() {
+  const defaults = currentRecordDefaults()
   formMode.value = 'time'
-  formStart.value = { h: '09', m: '00' }
-  formEnd.value = { h: '10', m: '00' }
-  formDuration.value = { h: '1', m: '0' }
+  formStart.value = defaults.start
+  formEnd.value = defaults.end
+  formDuration.value = defaults.duration
   formDurationRef.value = 'start'
-  formDurationTime.value = { h: '09', m: '00' }
+  formDurationTime.value = defaults.reference
   formContent.value = ''
   formTag.value = availableTags.value[0] || ''
   selectedTodoId.value = ''
