@@ -36,6 +36,8 @@ def test_windows_managed_android_build_preserves_symlink_fallback_contract():
     assert "Copy-Item -LiteralPath $library -Destination $jniLibrary -Force" in script
     assert "app:assembleArm64Release -x rustBuildArm64Release" in script
     assert "android.overridePathCheck=true" in script
+    assert "app\\build\\outputs\\apk\\arm64\\release\\app-arm64-release-unsigned.apk" in script
+    assert "Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256" in script
 
 
 def test_windows_managed_android_build_rejects_stale_rust_output_after_failure():

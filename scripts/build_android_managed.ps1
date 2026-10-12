@@ -87,7 +87,11 @@ try {
     Pop-Location
 }
 
-$apk = Get-ChildItem -LiteralPath (Join-Path $androidRoot 'app\build\outputs\apk') -Recurse -Filter '*.apk' -File | Select-Object -First 1
-if (-not $apk) { throw 'Android APK build completed without an APK artifact' }
+$apkPath = Join-Path $androidRoot 'app\build\outputs\apk\arm64\release\app-arm64-release-unsigned.apk'
+Assert-Path $apkPath 'Android ARM64 unsigned APK'
+$apk = Get-Item -LiteralPath $apkPath
+if ($apk.Length -le 0) { throw "Android APK artifact is empty: $apkPath" }
+$apkHash = (Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256).Hash
 Write-Output "Android APK: $($apk.FullName)"
 Write-Output "Size: $($apk.Length) bytes"
+Write-Output "SHA256: $apkHash"
