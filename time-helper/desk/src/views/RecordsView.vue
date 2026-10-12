@@ -421,8 +421,20 @@ async function deleteRecord(index: number) {
     notifyToast(t('records.validation.recordMissing'), 'error')
     return
   }
-  await appStore.deleteRecord(resolvedIndex)
-  try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  try {
+    await appStore.deleteRecord(resolvedIndex)
+    try {
+      await unlinkTodoFromTimeRecord(record)
+    } catch (error) {
+      // The record deletion is authoritative; reverse-link repair can be
+      // retried during workspace hydration without blocking the user action.
+      console.warn('Failed to clean deleted record link', error)
+    }
+    notifyToast(t('records.deleted'), 'success')
+  } catch (error) {
+    console.error('Failed to delete time record:', error)
+    notifyToast(error instanceof Error ? error.message : t('records.deleteFailed'), 'error')
+  }
 }
 
 onMounted(async () => {

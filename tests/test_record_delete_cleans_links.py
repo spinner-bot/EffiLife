@@ -67,3 +67,13 @@ def test_record_save_confirms_success_in_both_locales():
     i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
     assert "todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved')" in source
     assert i18n.count("'records.saved':") == 2
+
+
+def test_record_delete_confirms_success_and_surfaces_failure():
+    source = RECORDS.read_text(encoding="utf-8")
+    i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+    assert "notifyToast(t('records.deleted'), 'success')" in source
+    assert "t('records.deleteFailed')" in source
+    assert "Failed to delete time record:" in source
+    assert i18n.count("'records.deleted':") == 2
+    assert i18n.count("'records.deleteFailed':") == 2
