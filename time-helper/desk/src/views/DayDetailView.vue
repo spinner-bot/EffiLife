@@ -165,10 +165,22 @@ async function deleteRecord(index: number) {
     notifyToast(t('dayDetail.recordMissing'), 'error')
     return
   }
-  await DataService.deleteRecord(resolvedIndex, dateStr.value)
-  try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
-  await loadData()
-  notifyWorkspaceChanged('records')
+  try {
+    await DataService.deleteRecord(resolvedIndex, dateStr.value)
+    try {
+      await unlinkTodoFromTimeRecord(record)
+    } catch (error) {
+      // The historical record deletion is authoritative; reverse-link repair
+      // remains recoverable through workspace hydration.
+      console.warn('Failed to clean deleted record link', error)
+    }
+    await loadData()
+    notifyWorkspaceChanged('records')
+    notifyToast(t('dayDetail.deleted'), 'success')
+  } catch (error) {
+    console.error('Failed to delete historical time record:', error)
+    notifyToast(error instanceof Error ? error.message : t('dayDetail.deleteFailed'), 'error')
+  }
 }
 
 // 切换日计划 - 打开选择弹窗

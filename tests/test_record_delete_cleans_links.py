@@ -49,6 +49,16 @@ def test_day_detail_delete_cleans_linked_todo_reference():
     assert "notifyWorkspaceChanged('records')" in source
 
 
+def test_day_detail_delete_confirms_success_and_surfaces_failure():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
+    i18n = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(encoding="utf-8")
+    assert "notifyToast(t('dayDetail.deleted'), 'success')" in source
+    assert "t('dayDetail.deleteFailed')" in source
+    assert "Failed to delete historical time record:" in source
+    assert i18n.count("'dayDetail.deleted':") == 2
+    assert i18n.count("'dayDetail.deleteFailed':") == 2
+
+
 def test_time_record_actions_have_accessible_names_and_button_types():
     records = RECORDS.read_text(encoding="utf-8")
     day = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
