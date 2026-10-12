@@ -27,19 +27,25 @@ MOBILE_PROJECTS = {
 
 
 def executable_path(name: str) -> str | None:
-    if os.name == "nt" and name in {"cargo", "rustc"}:
+    if name in {"cargo", "rustc"}:
         configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
-        toolchain_dir = Path(configured).expanduser() if configured else CUSTOM_RUST_TOOLCHAIN_DIR
-        candidate = toolchain_dir / f"{name}.exe"
-        if candidate.is_file():
-            return str(candidate)
-    if os.name == "nt" and name == "adb":
+        toolchain_dir = Path(configured).expanduser() if configured else (
+            CUSTOM_RUST_TOOLCHAIN_DIR if os.name == "nt" else None
+        )
+        if toolchain_dir is not None:
+            candidate = toolchain_dir / (f"{name}.exe" if os.name == "nt" else name)
+            if candidate.is_file():
+                return str(candidate)
+    if name == "adb":
         configured = os.environ.get("ANDROID_HOME", "").strip() or os.environ.get("ANDROID_SDK_ROOT", "").strip()
-        sdk_dir = Path(configured).expanduser() if configured else CUSTOM_ANDROID_SDK_DIR
-        candidate = sdk_dir / "platform-tools" / "adb.exe"
-        if candidate.is_file():
-            return str(candidate)
-    return shutil.which(name)
+        sdk_dir = Path(configured).expanduser() if configured else (
+            CUSTOM_ANDROID_SDK_DIR if os.name == "nt" else None
+        )
+        if sdk_dir is not None:
+            candidate = sdk_dir / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb")
+            if candidate.is_file():
+                return str(candidate)
+    return shutil.which(name) or (shutil.which(f"{name}.exe") if os.name == "nt" else None)
 
 
 def node_tool_path(name: str) -> str | None:
@@ -69,10 +75,11 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         name: node_tool_path(name) if name in {"node", "npm"} else executable_path(name)
         for name in requirements
     }
+    configured_sdk = os.environ.get("ANDROID_HOME", "").strip() or os.environ.get("ANDROID_SDK_ROOT", "").strip()
     managed_sdk = CUSTOM_ANDROID_SDK_DIR if os.name == "nt" and CUSTOM_ANDROID_SDK_DIR.is_dir() else None
     sdk_roots = {
-        "ANDROID_HOME": os.environ.get("ANDROID_HOME") or (str(managed_sdk) if managed_sdk else None),
-        "ANDROID_SDK_ROOT": os.environ.get("ANDROID_SDK_ROOT") or (str(managed_sdk) if managed_sdk else None),
+        "ANDROID_HOME": configured_sdk or (str(managed_sdk) if managed_sdk else None),
+        "ANDROID_SDK_ROOT": configured_sdk or (str(managed_sdk) if managed_sdk else None),
     }
     missing = [name for name, path in tools.items() if not path]
     if target == "android" and not any(sdk_roots.values()):

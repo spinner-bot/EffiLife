@@ -131,14 +131,16 @@ def find_node():
 
 
 def find_rust_tool(name):
-    """Find Rust, preferring the managed toolchain over a broken rustup shim."""
+    """Find Rust, preferring an explicitly managed toolchain on every OS."""
     configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
-    toolchain_dir = Path(configured).expanduser() if configured else CUSTOM_RUST_TOOLCHAIN_DIR
-    if os.name == "nt":
-        managed = toolchain_dir / f"{name}.exe"
+    toolchain_dir = Path(configured).expanduser() if configured else (
+        CUSTOM_RUST_TOOLCHAIN_DIR if os.name == "nt" else None
+    )
+    if toolchain_dir is not None:
+        managed = toolchain_dir / (f"{name}.exe" if os.name == "nt" else name)
         if managed.is_file():
             return str(managed)
-    return shutil.which(name) or shutil.which(f"{name}.exe")
+    return shutil.which(name) or (shutil.which(f"{name}.exe") if os.name == "nt" else None)
 
 
 def android_sdk_dir() -> Path | None:
