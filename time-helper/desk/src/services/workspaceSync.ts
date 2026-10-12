@@ -61,6 +61,7 @@ export async function repairTodoTimeRecordLinks(): Promise<number> {
     const todos = await TodoService.list()
     const todoIds = new Set(todos.map((todo) => todo.id))
     const recordIds = new Set<string>()
+    const changedRecords: Array<{ key: string; previous: TimeRecord[]; next: TimeRecord[] }> = []
     let repaired = 0
     for (const entry of entries) {
       if (!Array.isArray(entry.value)) continue
@@ -76,8 +77,12 @@ export async function repairTodoTimeRecordLinks(): Promise<number> {
       })
       if (entryChanged) {
         const recordEntry = entry as { key?: string }
-        if (typeof recordEntry.key !== 'string') return 0
-        await idbSet(STORE_NAMES.RECORDS, recordEntry.key, nextRecords)
+        if (typeof recordEntry.key !== 'string') throw new Error('Record repair entry has no storage key')
+        changedRecords.push({
+          key: recordEntry.key,
+          previous: entry.value as TimeRecord[],
+          next: nextRecords,
+        })
       }
       for (const record of nextRecords) {
         if (record && typeof record.id === 'string') {
@@ -85,12 +90,38 @@ export async function repairTodoTimeRecordLinks(): Promise<number> {
         }
       }
     }
+    const changedTodos: Array<{ id: string; links: string[] }> = []
     for (const todo of todos) {
       const links = todo.related_time_record_ids || []
       const validLinks = [...new Set(links.filter((id) => recordIds.has(id)))]
       if (validLinks.length === links.length) continue
-      await TodoService.update(todo.id, { related_time_record_ids: validLinks })
+      changedTodos.push({ id: todo.id, links })
       repaired += 1
+    }
+    try {
+      for (const entry of changedRecords) {
+        await idbSet(STORE_NAMES.RECORDS, entry.key, entry.next)
+      }
+      for (const todo of changedTodos) {
+        const validLinks = [...new Set((todos.find((item) => item.id === todo.id)?.related_time_record_ids || []).filter((id) => recordIds.has(id)))]
+        await TodoService.update(todo.id, { related_time_record_ids: validLinks })
+      }
+    } catch (error) {
+      for (const todo of changedTodos) {
+        try {
+          await TodoService.update(todo.id, { related_time_record_ids: todo.links })
+        } catch (rollbackError) {
+          console.error('Failed to roll back todo/time-record link repair:', rollbackError)
+        }
+      }
+      for (const entry of changedRecords) {
+        try {
+          await idbSet(STORE_NAMES.RECORDS, entry.key, entry.previous)
+        } catch (rollbackError) {
+          console.error('Failed to roll back repaired time records:', rollbackError)
+        }
+      }
+      throw error
     }
     return repaired
   } catch {

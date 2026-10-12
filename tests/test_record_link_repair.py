@@ -11,6 +11,10 @@ def test_startup_repairs_only_unresolvable_record_links():
     assert "async function repairTodoTimeRecordLinks()" in source
     assert "recordIds.has(id)" in source
     assert "return 0" in source
+    repair = source.split("async function repairTodoTimeRecordLinks", 1)[1].split("/** Remove plan-task", 1)[0]
+    assert "const changedRecords: Array<{ key: string; previous: TimeRecord[]; next: TimeRecord[] }> = []" in repair
+    assert "await idbSet(STORE_NAMES.RECORDS, entry.key, entry.previous)" in repair
+    assert "Failed to roll back todo/time-record link repair" in repair
 
 
 def test_app_runs_link_repair_after_storage_migration():
@@ -73,7 +77,8 @@ def test_startup_repair_cleans_time_records_pointing_to_deleted_todos():
     assert "const todoIds = new Set(todos.map((todo) => todo.id))" in sync
     assert "if (!record?.todo_id || todoIds.has(record.todo_id)) return record" in sync
     assert "delete nextRecord.todo_id" in sync
-    assert "await idbSet(STORE_NAMES.RECORDS, recordEntry.key, nextRecords)" in sync
+    assert "changedRecords.push" in sync
+    assert "await idbSet(STORE_NAMES.RECORDS, entry.key, entry.next)" in sync
 
 
 def test_startup_plan_link_repair_rolls_back_partial_multi_todo_repairs():
