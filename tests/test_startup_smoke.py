@@ -9,6 +9,9 @@ def test_startup_smoke_is_bounded_and_checks_both_unified_services():
     source = SCRIPT.read_text(encoding="utf-8")
     assert '"--no-browser"' in source
     assert "def wait_for_endpoint" in source
+    assert "CORE_FRONTEND_ROUTES = ('/time', '/plans', '/tasks', '/records', '/settings')" in source
+    assert 'result["frontend_routes"] = frontend_routes' in source
+    assert "all(frontend_routes.values())" in source
     assert "application-name" in source
     assert "EffiLife" in source
     assert '"service":"plan-helper"' in source

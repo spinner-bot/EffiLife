@@ -15,6 +15,7 @@ from urllib.request import urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CORE_FRONTEND_ROUTES = ('/time', '/plans', '/tasks', '/records', '/settings')
 
 
 def endpoint_is_listening(host: str, port: int) -> bool:
@@ -122,6 +123,15 @@ def run_smoke_check(timeout: float = 45) -> dict[str, object]:
             process,
             timeout,
         )
+        frontend_routes = {
+            route: wait_for_endpoint(
+                f"{frontend_url.rstrip('/')}{route}",
+                lambda body: 'name="application-name" content="EffiLife"' in body,
+                process,
+                min(timeout, 10),
+            )
+            for route in CORE_FRONTEND_ROUTES
+        }
         plan_ready = wait_for_endpoint(
             health_url,
             lambda body: '"service":"plan-helper"' in "".join(body.split())
@@ -130,10 +140,11 @@ def run_smoke_check(timeout: float = 45) -> dict[str, object]:
             timeout,
         )
         result["frontend_ready"] = frontend_ready
+        result["frontend_routes"] = frontend_routes
         result["plan_helper_ready"] = plan_ready
-        result["ok"] = frontend_ready and plan_ready
+        result["ok"] = frontend_ready and all(frontend_routes.values()) and plan_ready
         if not result["ok"]:
-            result["error"] = "unified workspace did not pass both HTTP identity checks"
+            result["error"] = "unified workspace did not pass frontend route and plan-helper identity checks"
     finally:
         stop_process_tree(process)
         result["ports_released"] = wait_for_ports_to_close(ports)
