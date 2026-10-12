@@ -209,6 +209,10 @@ def read_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, An
     manifest = inspect_bundle(bundle_path)
     datasets: dict[str, Any] = {}
     total_bytes = 0
+    # ``inspect_bundle`` accepts an omitted checksum map for legacy bundles;
+    # treat an explicit JSON null the same way so compatible readers never
+    # fail with an incidental ``None.get`` while reading dataset bytes.
+    checksums = manifest.get("dataset_sha256") or {}
     with zipfile.ZipFile(bundle_path, "r") as bundle:
         for name in manifest["datasets"]:
             with bundle.open(f"{DATA_PREFIX}{name}.json", "r") as source:
@@ -218,7 +222,7 @@ def read_bundle(bundle_path: str | os.PathLike[str]) -> tuple[dict, dict[str, An
             total_bytes += len(raw)
             if total_bytes > MAX_TOTAL_DATASET_BYTES:
                 raise ValueError("Bundle datasets exceed the maximum supported total size")
-            expected = manifest.get("dataset_sha256", {}).get(name)
+            expected = checksums.get(name)
             if expected and _sha256(raw) != expected:
                 raise ValueError(f"Dataset checksum mismatch: {name}")
             try:

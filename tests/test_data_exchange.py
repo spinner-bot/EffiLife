@@ -381,6 +381,23 @@ def test_bundle_rejects_unsupported_version(tmp_path):
         inspect_bundle(bundle)
 
 
+def test_bundle_with_null_checksum_map_is_read_as_legacy_bundle(tmp_path):
+    bundle = tmp_path / "legacy-null-checksums.efl"
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": ["app"],
+            "dataset_sha256": None,
+        }))
+        archive.writestr("data/app.json", '{"version": "legacy"}')
+
+    manifest, datasets = read_bundle(bundle)
+
+    assert manifest["dataset_sha256"] is None
+    assert datasets == {"app": {"version": "legacy"}}
+
+
 def test_bundle_does_not_overwrite_by_default(tmp_path):
     bundle = tmp_path / "effilife.efl"
     export_bundle(bundle, {"plans": []})
