@@ -23,6 +23,15 @@ interface ArchiveImportSnapshot {
   stores: Record<string, unknown[]>
 }
 
+function parseBackupRecord(value: unknown): BackupData | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const candidate = value as Partial<BackupData>
+  if (typeof candidate.module !== 'string' || !candidate.module) return null
+  if (typeof candidate.timestamp !== 'string' || Number.isNaN(new Date(candidate.timestamp).getTime())) return null
+  if (!('data' in candidate)) return null
+  return candidate as BackupData
+}
+
 // 防抖计时器
 const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -35,8 +44,8 @@ export function getBackups(moduleName: string): BackupData[] {
     const key = localStorage.key(i)
     if (key && key.startsWith(prefix)) {
       try {
-        const backup = JSON.parse(localStorage.getItem(key) || '{}')
-        backups.push(backup)
+        const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
+        if (backup) backups.push(backup)
       } catch {
         // ignore corrupted backup
       }
@@ -288,8 +297,8 @@ export function getAllBackups(): BackupData[] {
     const key = localStorage.key(i)
     if (key && key.startsWith(STORAGE_PREFIX)) {
       try {
-        const backup = JSON.parse(localStorage.getItem(key) || '{}')
-        backups.push(backup)
+        const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
+        if (backup) backups.push(backup)
       } catch {
         // ignore corrupted backup
       }

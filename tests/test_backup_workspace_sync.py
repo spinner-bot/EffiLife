@@ -21,3 +21,11 @@ def test_backup_module_discovery_preserves_module_names_with_underscores():
     assert "backup.module === 'string'" in SOURCE
     assert "rest.lastIndexOf('_')" in SOURCE
     assert "rest.split('_')[0]" not in SOURCE
+
+
+def test_backup_readers_validate_record_shape_before_exposing_recovery_entries():
+    assert "function parseBackupRecord" in SOURCE
+    assert "typeof candidate.module !== 'string'" in SOURCE
+    assert "Number.isNaN(new Date(candidate.timestamp).getTime())" in SOURCE
+    assert "if (!('data' in candidate)) return null" in SOURCE
+    assert SOURCE.count("parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))") == 2
