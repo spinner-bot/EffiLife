@@ -162,6 +162,7 @@ def test_windows_release_workflow_runs_isolated_installer_lifecycle_smoke():
     assert smoke_index > workflow.index("npm run tauri build")
     assert smoke_index < workflow.index("Verify packaged installer")
     assert "effilife-installer-smoke" in workflow
+    assert "--version-file time-helper/VERSION" in workflow
 
 
 def test_release_workflow_publishes_checksums_and_manifests_with_installers():

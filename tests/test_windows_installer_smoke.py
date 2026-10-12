@@ -8,11 +8,14 @@ SCRIPT = (ROOT / "scripts" / "smoke_windows_installer.py").read_text(encoding="u
 def test_windows_installer_smoke_is_bounded_and_isolated():
     assert 'parser.add_argument("--installer"' in SCRIPT
     assert 'parser.add_argument("--target"' in SCRIPT
+    assert 'parser.add_argument("--version-file"' in SCRIPT
     assert "if resolved.exists():" in SCRIPT
     assert "Refusing to use a filesystem root" in SCRIPT
     assert '"/S"' in SCRIPT
     assert 'f"/D={target}"' in SCRIPT
     assert "_wait_removed(target, timeout)" in SCRIPT
+    assert "INSTALLER_VERSION_PATTERN" in SCRIPT
+    assert "Installer version mismatch" in SCRIPT
 
 
 def test_windows_installer_smoke_checks_desktop_sidecar_and_uninstaller():

@@ -165,7 +165,7 @@ jobs:
           $installer = Get-ChildItem -LiteralPath 'time-helper/desk/src-tauri/target/release/bundle/nsis' -Filter '*.exe' -File | Select-Object -First 1
           if ($null -eq $installer) { throw 'Installer smoke test found no Windows installer' }
           $target = Join-Path $env:RUNNER_TEMP 'effilife-installer-smoke'
-          python scripts/smoke_windows_installer.py --installer $installer.FullName --target $target
+          python scripts/smoke_windows_installer.py --installer $installer.FullName --target $target --version-file time-helper/VERSION
 
       - name: Verify packaged installer
         run: >-

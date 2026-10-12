@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 import time
@@ -19,12 +20,14 @@ EXPECTED_FILES = (
     "efflife-plan-helper.exe",
     "uninstall.exe",
 )
+INSTALLER_VERSION_PATTERN = re.compile(r"^EffiLife_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer", type=Path, required=True, help="Path to the NSIS installer")
     parser.add_argument("--target", type=Path, required=True, help="New isolated installation directory")
+    parser.add_argument("--version-file", type=Path, help="Optional file containing the expected installer version")
     parser.add_argument("--timeout", type=float, default=90.0, help="Timeout per installer process")
     return parser
 
@@ -51,12 +54,20 @@ def _wait_removed(path: Path, timeout: float) -> bool:
     return not path.exists()
 
 
-def run_smoke(installer: Path, target: Path, timeout: float) -> dict[str, object]:
+def run_smoke(installer: Path, target: Path, timeout: float, version_file: Path | None = None) -> dict[str, object]:
     if os.name != "nt":
         raise RuntimeError("Windows installer smoke test requires Windows")
     installer = installer.expanduser().resolve()
     if not installer.is_file():
         raise FileNotFoundError(f"Installer not found: {installer}")
+    artifact_match = INSTALLER_VERSION_PATTERN.match(installer.name)
+    if artifact_match is None:
+        raise ValueError(f"Installer filename does not match EffiLife NSIS convention: {installer.name}")
+    artifact_version = artifact_match.group("version")
+    if version_file is not None:
+        expected_version = version_file.expanduser().resolve().read_text(encoding="utf-8").strip()
+        if artifact_version != expected_version:
+            raise ValueError(f"Installer version mismatch: expected {expected_version}, got {artifact_version}")
     target = _ensure_safe_target(target)
 
     install = _run([str(installer), "/S", f"/D={target}"], timeout)
@@ -80,6 +91,7 @@ def run_smoke(installer: Path, target: Path, timeout: float) -> dict[str, object
         "ok": True,
         "installer": str(installer),
         "target": str(target),
+        "artifact_version": artifact_version,
         "installed_files": present,
         "install_returncode": install.returncode,
         "uninstall_returncode": remove.returncode,
@@ -92,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import json
 
-        print(json.dumps(run_smoke(args.installer, args.target, args.timeout), ensure_ascii=False, indent=2))
+        print(json.dumps(run_smoke(args.installer, args.target, args.timeout, args.version_file), ensure_ascii=False, indent=2))
     except (FileNotFoundError, FileExistsError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"Windows installer smoke test failed: {error}", file=sys.stderr)
         return 1
