@@ -10,6 +10,7 @@ def test_mobile_boundary_workflow_runs_configuration_and_frontend_contracts():
     assert "cancel-in-progress: true" in source
     assert "effilife-mobile-boundary-${{ github.ref }}" in source
     assert "python scripts/check_mobile_release_config.py" in source
+    assert "npm audit --audit-level=high --package-lock-only" in source
     assert "tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py" in source
     assert "python scripts/build_frontend.py" in source
 
@@ -33,6 +34,7 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert workflow.count("actions/setup-python@v6") == 1
     assert workflow.count("python -m pip install --disable-pip-version-check pytest") == 1
     assert workflow.count("python scripts/check_mobile_release_config.py") == 1
+    assert workflow.count("npm audit --audit-level=high --package-lock-only") == 1
     assert workflow.count("tests/test_mobile_build_scripts.py tests/test_mobile_release_config.py tests/test_mobile_workflow.py") == 1
     assert workflow.count("name: Build shared mobile frontend") == 1
     assert workflow.count("python scripts/build_frontend.py") == 1

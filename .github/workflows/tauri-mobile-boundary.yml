@@ -48,6 +48,10 @@ jobs:
         working-directory: time-helper/desk
         run: npm ci
 
+      - name: Audit desktop frontend lockfile
+        working-directory: time-helper/desk
+        run: npm audit --audit-level=high --package-lock-only
+
       - name: Validate mobile sidecar boundary
         run: python scripts/check_mobile_release_config.py
 

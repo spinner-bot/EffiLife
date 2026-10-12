@@ -32,6 +32,10 @@ jobs:
         working-directory: to-dos/ui
         run: npm ci
 
+      - name: Audit compatibility UI lockfile
+        working-directory: to-dos/ui
+        run: npm audit --audit-level=high --package-lock-only
+
       - name: Build compatibility UI
         run: python scripts/build_todos_ui.py
 
