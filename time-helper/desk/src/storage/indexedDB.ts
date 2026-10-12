@@ -226,9 +226,14 @@ export async function getAll<T>(storeName: string): Promise<T[]> {
       const transaction = db.transaction([storeName], 'readonly')
       const store = transaction.objectStore(storeName)
       const request = store.getAll()
+      const timeout = setTimeout(() => reject(new Error(`IndexedDB read timed out after ${DB_READ_TIMEOUT_MS}ms`)), DB_READ_TIMEOUT_MS)
 
-      request.onerror = () => reject(request.error)
+      request.onerror = () => {
+        clearTimeout(timeout)
+        reject(request.error)
+      }
       request.onsuccess = () => {
+        clearTimeout(timeout)
         const results = request.result || []
         resolve(results.map((item: any) => item.value))
       }
@@ -390,9 +395,14 @@ export async function isEmpty(storeName: string): Promise<boolean> {
       const transaction = db.transaction([storeName], 'readonly')
       const store = transaction.objectStore(storeName)
       const request = store.count()
+      const timeout = setTimeout(() => reject(new Error(`IndexedDB read timed out after ${DB_READ_TIMEOUT_MS}ms`)), DB_READ_TIMEOUT_MS)
 
-      request.onerror = () => reject(request.error)
+      request.onerror = () => {
+        clearTimeout(timeout)
+        reject(request.error)
+      }
       request.onsuccess = () => {
+        clearTimeout(timeout)
         resolve(request.result === 0)
       }
     })
