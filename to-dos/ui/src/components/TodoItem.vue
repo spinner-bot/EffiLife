@@ -9,7 +9,7 @@ import {
 import type { Priority, Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/types'
 import { formatScoreDisplay } from '@/utils/priority'
-import { useLegacyI18n } from '@/i18n'
+import { translateLegacyCategoryName, useLegacyI18n } from '@/i18n'
 
 const props = defineProps<{
   todo: Todo
@@ -74,6 +74,9 @@ const subtaskProgress = computed(() => {
 })
 
 const category = computed(() => store.getCategoryById(props.todo.category))
+const categoryName = computed(() =>
+  category.value ? translateLegacyCategoryName(category.value.id, category.value.name) : ''
+)
 
 // v0.5.0: 优先排位分显示
 const scoreDisplay = computed(() => {
@@ -160,7 +163,7 @@ function highlightText(text: string, query: string): string {
             class="category-badge"
             :style="{ background: category.color + '20', color: category.color }"
           >
-            {{ category.name }}
+            {{ categoryName }}
           </span>
 
           <!-- 截止日期 -->

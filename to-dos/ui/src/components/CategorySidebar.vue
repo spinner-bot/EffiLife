@@ -6,7 +6,7 @@
 
 import { computed, ref } from 'vue'
 import { useTodosStore } from '@/stores/todos'
-import { useLegacyI18n } from '@/i18n'
+import { translateLegacyCategoryName, useLegacyI18n } from '@/i18n'
 import {
   ListTodo, Calendar, AlertTriangle, Circle, Briefcase,
   BookOpen, Home, Heart, BarChart3, TrendingUp, ChevronDown,
@@ -55,7 +55,7 @@ const sortedCategories = computed((): SidebarCategory[] => {
 
     return {
       id: cat.id,
-      label: cat.name,
+      label: translateLegacyCategoryName(cat.id, cat.name),
       count: activeTodos.length,
       score,
       scoreDisplay: formatScoreDisplay(Math.round(score)),

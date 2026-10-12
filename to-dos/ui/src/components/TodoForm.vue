@@ -12,7 +12,7 @@ import {
 } from 'lucide-vue-next'
 import type { Priority, RecurrenceType } from '@/types'
 import { PRIORITY_CONFIG, RECURRENCE_CONFIG } from '@/types'
-import { useLegacyI18n } from '@/i18n'
+import { translateLegacyCategoryName, useLegacyI18n } from '@/i18n'
 
 const props = defineProps<{
   todoId?: string | null
@@ -216,7 +216,7 @@ const warningDayOptions = [
             <label class="form-label">{{ t('category') }}</label>
             <select v-model="category" class="form-input select">
               <option v-for="cat in store.categories" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
+                {{ translateLegacyCategoryName(cat.id, cat.name) }}
               </option>
             </select>
           </div>

@@ -65,6 +65,18 @@ def test_legacy_priority_badges_and_expired_score_are_locale_aware():
     assert "return t('expired')" in item
 
 
+def test_legacy_default_category_is_localized_only_at_display_boundary():
+    i18n = (UI / "i18n.ts").read_text(encoding="utf-8")
+    sidebar = (UI / "components" / "CategorySidebar.vue").read_text(encoding="utf-8")
+    form = (UI / "components" / "TodoForm.vue").read_text(encoding="utf-8")
+    item = (UI / "components" / "TodoItem.vue").read_text(encoding="utf-8")
+    assert "defaultCategory" in i18n
+    assert "translateLegacyCategoryName" in i18n
+    assert "translateLegacyCategoryName(cat.id, cat.name)" in sidebar
+    assert "translateLegacyCategoryName(cat.id, cat.name)" in form
+    assert "translateLegacyCategoryName(category.value.id, category.value.name)" in item
+
+
 def test_legacy_import_result_uses_locale_aware_message_and_boolean_state():
     store = (UI / "stores" / "todos.ts").read_text(encoding="utf-8")
     workspace = (UI / "views" / "TodosView.vue").read_text(encoding="utf-8")
