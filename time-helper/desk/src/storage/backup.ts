@@ -23,6 +23,11 @@ interface ArchiveImportSnapshot {
   stores: Record<string, unknown[]>
 }
 
+interface RecordBackupEntry {
+  date: string
+  records: unknown[]
+}
+
 function parseBackupRecord(value: unknown): BackupData | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const candidate = value as Partial<BackupData>
@@ -45,6 +50,12 @@ function removeLocalStorageBackup(moduleName: string, timestamp: string): void {
   localStorage.removeItem(`${prefix}${formatBackupTimestamp(timestamp)}`)
   // Keep cleanup compatible with backups written before millisecond keys.
   localStorage.removeItem(`${prefix}${formatLegacyBackupTimestamp(timestamp)}`)
+}
+
+function isRecordBackupEntry(value: unknown): value is RecordBackupEntry {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const entry = value as Partial<RecordBackupEntry>
+  return typeof entry.date === 'string' && entry.date.length > 0 && Array.isArray(entry.records)
 }
 
 // 防抖计时器
@@ -242,12 +253,22 @@ export async function restoreFromBackup(backup: BackupData): Promise<void> {
       changeSource = 'plans'
       break
     case 'records':
-      if (Array.isArray(data)) {
-        // A records backup is a complete snapshot. Clear first so removed
-        // dates (including an intentionally empty snapshot) do not survive.
-        await clear(STORE_NAMES.RECORDS)
-        for (const record of data) {
-          const r = record as { date: string; records: unknown[] }
+      {
+        // DataService writes one date per debounced backup. Older/manual
+        // recovery snapshots may contain the complete date -> records list.
+        // Keep the former replacement semantics for arrays, but merge a
+        // single valid date so restoring one day cannot erase other days.
+        const recordEntries = Array.isArray(data) ? data : [data]
+        if (!recordEntries.every(isRecordBackupEntry)) {
+          throw new Error('Invalid records backup')
+        }
+        if (Array.isArray(data)) {
+          // A records backup is a complete snapshot. Clear first so removed
+          // dates (including an intentionally empty snapshot) do not survive.
+          await clear(STORE_NAMES.RECORDS)
+        }
+        for (const record of recordEntries) {
+          const r = record
           await set(STORE_NAMES.RECORDS, r.date, r.records)
         }
         changeSource = 'records'
