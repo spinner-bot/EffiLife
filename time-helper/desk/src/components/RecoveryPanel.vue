@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ArrowLeft, Download, RotateCcw } from 'lucide-vue-next'
+import { ArrowLeft, Download, RotateCcw, Trash2 } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import type { BackupData, DataStatus } from '@/storage'
 
 defineProps<{ dataStatus: DataStatus | null; backups: BackupData[]; busy?: boolean }>()
-defineEmits<{ back: []; restore: [backup: BackupData]; emergencyExport: [] }>()
+defineEmits<{ back: []; restore: [backup: BackupData]; delete: [backup: BackupData]; emergencyExport: [] }>()
 const { t, locale } = useI18n()
 
 const BACKUP_TYPE_KEYS: Record<string, string> = {
@@ -50,7 +50,10 @@ function backupTypeLabel(module: string): string {
       <div v-if="backups.length" class="backup-list">
         <div v-for="backup in backups" :key="`${backup.module}_${backup.timestamp}`" class="backup-row">
           <div><strong>{{ backupTypeLabel(backup.module) }}</strong><span>{{ new Date(backup.timestamp).toLocaleString(locale) }}</span></div>
-          <button class="recovery-action secondary" type="button" :disabled="busy" @click="$emit('restore', backup)"><RotateCcw :size="15" /> {{ t('settings.restore.action') }}</button>
+          <div class="backup-actions">
+            <button class="recovery-action secondary" type="button" :disabled="busy" @click="$emit('restore', backup)"><RotateCcw :size="15" /> {{ t('settings.restore.action') }}</button>
+            <button class="recovery-action danger" type="button" :disabled="busy" :aria-label="t('settings.restore.delete')" @click="$emit('delete', backup)"><Trash2 :size="15" /> {{ t('settings.restore.delete') }}</button>
+          </div>
         </div>
       </div>
       <p v-else class="recovery-muted">{{ t('settings.restore.noBackups') }}</p>
@@ -77,7 +80,9 @@ function backupTypeLabel(module: string): string {
 .backup-list { display: grid; gap: var(--spacing-sm); margin-top: var(--spacing-md); }
 .backup-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: var(--spacing-sm); border-radius: var(--radius-md); background: var(--color-bg); }
 .backup-row div { display: grid; gap: 3px; min-width: 0; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); }
+.recovery-action.danger { border-color: var(--color-danger, #c94c4c); color: var(--color-danger, #c94c4c); background: var(--color-bg); }
 .recovery-muted { margin: var(--spacing-md) 0 0; }
 .recovery-close { width: 100%; margin-top: var(--spacing-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .7rem 1rem; color: var(--color-text-secondary); background: var(--color-bg-secondary); cursor: pointer; }
-@media (max-width: 680px) { .recovery-stats { grid-template-columns: 1fr; } .backup-row { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 680px) { .recovery-stats { grid-template-columns: 1fr; } .backup-row { align-items: flex-start; flex-direction: column; } .backup-actions { width: 100%; } }
 </style>

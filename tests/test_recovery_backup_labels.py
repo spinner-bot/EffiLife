@@ -26,3 +26,14 @@ def test_recovery_backup_labels_exist_in_both_locales():
         "settings.restore.backupMigration",
     ):
         assert source.count(f"'{key}':") == 2
+
+
+def test_recovery_panel_exposes_confirmed_single_backup_deletion():
+    panel = PANEL.read_text(encoding="utf-8")
+    settings = (ROOT / "time-helper/desk/src/views/SettingsView.vue").read_text(encoding="utf-8")
+    i18n = I18N.read_text(encoding="utf-8")
+    assert "delete: [backup: BackupData]" in panel
+    assert "$emit('delete', backup)" in panel
+    assert "deleteBackup(backup.module, backup.timestamp)" in settings
+    assert "settings.restore.deleteConfirm" in settings
+    assert i18n.count("'settings.restore.delete':") == 2

@@ -7,7 +7,7 @@ import type { Config, ThemeType, SolidThemeConfig, GradientThemeConfig, GlassThe
 import { GuideManager } from '@/guide'
 import { APP_VERSION, getBuildInfo, getVersionChanges, isDevVersion, VERSION_HISTORY } from '@/version'
 import { exportArchive, importArchive, importArchiveWithDialog, previewArchive, resetData, getDataStats, type ArchivePreview, type ResetType } from '@/services/ArchiveService'
-import { getAllBackups, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData, type DataStatus } from '@/storage'
+import { getAllBackups, deleteBackup, restoreFromSpecificBackup, checkDataIntegrity, exportEmergencyBackup, type BackupData, type DataStatus } from '@/storage'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import HelpCenterPanel from '@/components/HelpCenterPanel.vue'
@@ -735,6 +735,22 @@ async function handleRestoreBackup(backup: BackupData) {
   }
 }
 
+async function handleDeleteBackup(backup: BackupData) {
+  if (settingsDataOperationBusy.value) return
+  settingsDataOperationBusy.value = true
+  try {
+    const time = new Date(backup.timestamp).toLocaleString(locale.value)
+    if (!await requestConfirm(t('settings.restore.deleteConfirm', { time }), { tone: 'danger' })) return
+    deleteBackup(backup.module, backup.timestamp)
+    await loadDataStatus()
+    notifyToast(t('settings.restore.deleted'), 'success')
+  } catch (error) {
+    notifyToast(t('settings.restore.deleteFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+  } finally {
+    settingsDataOperationBusy.value = false
+  }
+}
+
 async function handleEmergencyExport() {
   if (settingsDataOperationBusy.value) return
   settingsDataOperationBusy.value = true
@@ -1217,7 +1233,7 @@ onUnmounted(() => {
 
       <!-- 数据恢复 -->
       <template v-else-if="currentView === 'restore'">
-        <RecoveryPanel :data-status="dataStatus" :backups="backupsList" :busy="settingsDataOperationBusy" @back="goBack" @restore="handleRestoreBackup" @emergency-export="handleEmergencyExport" />
+        <RecoveryPanel :data-status="dataStatus" :backups="backupsList" :busy="settingsDataOperationBusy" @back="goBack" @restore="handleRestoreBackup" @delete="handleDeleteBackup" @emergency-export="handleEmergencyExport" />
       </template>
 
       <!-- 恢复 -->
