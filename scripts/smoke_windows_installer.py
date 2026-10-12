@@ -1,0 +1,103 @@
+"""Run a bounded Windows NSIS install/uninstall smoke test in an isolated directory.
+
+The script deliberately refuses to operate on an existing target by default.
+It is intended for release validation, not for managing a user's installation.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+EXPECTED_FILES = (
+    "efflife-desk.exe",
+    "efflife-plan-helper.exe",
+    "uninstall.exe",
+)
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--installer", type=Path, required=True, help="Path to the NSIS installer")
+    parser.add_argument("--target", type=Path, required=True, help="New isolated installation directory")
+    parser.add_argument("--timeout", type=float, default=90.0, help="Timeout per installer process")
+    return parser
+
+
+def _ensure_safe_target(target: Path) -> Path:
+    resolved = target.expanduser().resolve()
+    if resolved == resolved.anchor or len(resolved.parts) < 3:
+        raise ValueError("Refusing to use a filesystem root or broad directory as the smoke-test target")
+    if resolved.exists():
+        raise FileExistsError(f"Smoke-test target already exists: {resolved}")
+    return resolved
+
+
+def _run(command: list[str], timeout: float) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, check=False, capture_output=True, text=True, timeout=timeout)
+
+
+def _wait_removed(path: Path, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if not path.exists():
+            return True
+        time.sleep(0.25)
+    return not path.exists()
+
+
+def run_smoke(installer: Path, target: Path, timeout: float) -> dict[str, object]:
+    if os.name != "nt":
+        raise RuntimeError("Windows installer smoke test requires Windows")
+    installer = installer.expanduser().resolve()
+    if not installer.is_file():
+        raise FileNotFoundError(f"Installer not found: {installer}")
+    target = _ensure_safe_target(target)
+
+    install = _run([str(installer), "/S", f"/D={target}"], timeout)
+    if install.returncode != 0:
+        raise RuntimeError(f"Installer failed with exit code {install.returncode}: {install.stderr.strip()}")
+
+    present = {name: (target / name).is_file() for name in EXPECTED_FILES}
+    missing = [name for name, exists in present.items() if not exists]
+    if missing:
+        raise RuntimeError(f"Installation is incomplete; missing: {', '.join(missing)}")
+
+    uninstall = target / "uninstall.exe"
+    remove = _run([str(uninstall), "/S"], timeout)
+    removed = _wait_removed(target, timeout)
+    if remove.returncode != 0:
+        raise RuntimeError(f"Uninstaller failed with exit code {remove.returncode}: {remove.stderr.strip()}")
+    if not removed:
+        raise RuntimeError(f"Installation directory was not removed: {target}")
+
+    return {
+        "ok": True,
+        "installer": str(installer),
+        "target": str(target),
+        "installed_files": present,
+        "install_returncode": install.returncode,
+        "uninstall_returncode": remove.returncode,
+        "removed": removed,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        import json
+
+        print(json.dumps(run_smoke(args.installer, args.target, args.timeout), ensure_ascii=False, indent=2))
+    except (FileNotFoundError, FileExistsError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
+        print(f"Windows installer smoke test failed: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
