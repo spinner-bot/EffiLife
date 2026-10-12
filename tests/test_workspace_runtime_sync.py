@@ -107,6 +107,19 @@ def test_app_store_rolls_back_plan_and_rule_writes_when_persistence_fails():
     assert "scheduleRules.value = previousRules" in rules_block
 
 
+def test_app_store_refreshes_today_workspace_atomically_after_record_mutations():
+    source = STORE.read_text(encoding="utf-8")
+    refresh_block = source.split("async function refreshTodayData()", 1)[1].split("// Keep the initial hydration", 1)[0]
+    assert "const [recordsResult, planResult, statResult] = await Promise.allSettled([" in refresh_block
+    assert "recordsResult.status !== 'fulfilled'" in refresh_block
+    assert "todayRecords.value = recordsResult.value" in refresh_block
+    assert "todayPlan.value = planResult.value" in refresh_block
+    assert "todayStat.value = statResult.value" in refresh_block
+    for mutation in ("addRecord", "deleteRecord", "updateRecord"):
+        block = source.split(f"async function {mutation}", 1)[1].split("//", 1)[0]
+        assert "workspaceWriteVersion += 1" in block
+
+
 def test_workspace_refreshes_are_serialized_and_later_requests_are_not_dropped():
     source = STORE.read_text(encoding="utf-8")
     refresh_block = source.split("async function refreshWorkspaceData()", 1)[1].split("// 保存配置", 1)[0]

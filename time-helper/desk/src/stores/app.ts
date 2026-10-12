@@ -89,9 +89,22 @@ export const useAppStore = defineStore('app', () => {
   // 刷新今日数据
   async function refreshTodayData() {
     const today = getTodayDate()
-    todayRecords.value = await DataService.loadRecords(today)
-    todayPlan.value = await DataService.getDayPlan(today)
-    todayStat.value = await DataService.calcRealTimeStat(today)
+    const [recordsResult, planResult, statResult] = await Promise.allSettled([
+      DataService.loadRecords(today),
+      DataService.getDayPlan(today),
+      DataService.calcRealTimeStat(today),
+    ])
+    if (recordsResult.status !== 'fulfilled' || planResult.status !== 'fulfilled' || statResult.status !== 'fulfilled') {
+      // Keep the day workspace atomic: records, selected plan, and statistics
+      // must describe the same storage read boundary.
+      const failure = [recordsResult, planResult, statResult].find((result) => result.status === 'rejected')
+      throw failure && failure.status === 'rejected'
+        ? failure.reason
+        : new Error('Today workspace refresh failed')
+    }
+    todayRecords.value = recordsResult.value
+    todayPlan.value = planResult.value
+    todayStat.value = statResult.value
   }
 
   // Keep the initial hydration stages separate so a cold-storage failure
@@ -205,6 +218,7 @@ export const useAppStore = defineStore('app', () => {
   // 添加记录
   async function addRecord(record: TimeRecord) {
     const today = getTodayDate()
+    workspaceWriteVersion += 1
     await DataService.saveRecord(record, today)
     await refreshTodayData()
     notifyWorkspaceChanged('records')
@@ -213,6 +227,7 @@ export const useAppStore = defineStore('app', () => {
   // 删除记录
   async function deleteRecord(index: number) {
     const today = getTodayDate()
+    workspaceWriteVersion += 1
     await DataService.deleteRecord(index, today)
     await refreshTodayData()
     notifyWorkspaceChanged('records')
@@ -221,6 +236,7 @@ export const useAppStore = defineStore('app', () => {
   // 更新记录
   async function updateRecord(index: number, record: TimeRecord) {
     const today = getTodayDate()
+    workspaceWriteVersion += 1
     await DataService.updateRecord(index, record, today)
     await refreshTodayData()
     notifyWorkspaceChanged('records')
