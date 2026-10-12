@@ -19,3 +19,13 @@ def test_in_process_archive_rollback_preserves_recovery_sources():
 
     assert preservation in restore_function
     assert "localStorage.removeItem(key)" in restore_function
+
+
+def test_archive_import_exposes_rollback_failure_instead_of_reporting_success():
+    process = ARCHIVE[ARCHIVE.index("async function processArchiveData"):ARCHIVE.index("async function clearPlanHelperData")]
+    rollback_failure = process[process.index("} catch (error) {", process.index("notifyWorkspaceChanged('archive')")):]
+
+    assert "await restoreArchiveRuntimeSnapshot(runtimeSnapshot)" in rollback_failure
+    assert "settings.archive.importRollbackFailed" in rollback_failure
+    assert "settings.archive.importRolledBack" in rollback_failure
+    assert rollback_failure.count("throw new Error") >= 2
