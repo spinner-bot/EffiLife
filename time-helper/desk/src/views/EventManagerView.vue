@@ -206,7 +206,8 @@ async function handleCheckinFromInbox(entry: InboxEntry) {
   if (!entry.checkinPlanName || !entry.checkinDate) return
 
   // 执行补打卡
-  const result = await CheckinSystem.checkinForDate(entry.checkinDate, entry.checkinPlanName, 100)
+  try {
+    const result = await CheckinSystem.checkinForDate(entry.checkinDate, entry.checkinPlanName, 100)
 
   if (result !== null) {
     // 打卡成功，显示成功提示
@@ -214,7 +215,11 @@ async function handleCheckinFromInbox(entry: InboxEntry) {
 
     // 删除这个收件箱条目
     EventSystem.removeCheckinReminder(entry.id)
-  } else {
+    } else {
+      notifyToast(t('settings.events.checkinFailed'), 'error')
+    }
+  } catch (error) {
+    console.error('Failed to complete inbox check-in:', error)
     notifyToast(t('settings.events.checkinFailed'), 'error')
   }
 }

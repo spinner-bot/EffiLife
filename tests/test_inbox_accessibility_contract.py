@@ -35,3 +35,12 @@ def test_event_warning_rule_editor_is_keyboard_reachable():
     assert 'role="button"' in source
     assert 'tabindex="0"' in source
     assert '@keydown="activateWarningRule' in source
+
+
+def test_event_manager_checkin_action_has_an_error_boundary():
+    source = (ROOT / "time-helper" / "desk" / "src" / "views" / "EventManagerView.vue").read_text(encoding="utf-8")
+    block = source.split("async function handleCheckinFromInbox", 1)[1].split("function formatTriggerTime", 1)[0]
+    assert "try {" in block
+    assert "CheckinSystem.checkinForDate" in block
+    assert "Failed to complete inbox check-in:" in block
+    assert "t('settings.events.checkinFailed')" in block
