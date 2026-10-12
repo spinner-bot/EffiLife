@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
@@ -77,6 +77,8 @@ const isEditing = ref(false)
 const editingIndex = ref(-1)
 const editingRecordId = ref<string | null>(null)
 const showRecordForm = ref(false)
+const recordModal = ref<HTMLElement | null>(null)
+const recordReturnTarget = ref<HTMLElement | null>(null)
 const isSavingRecord = ref(false)
 
 const formMode = ref<'time' | 'duration'>('time')
@@ -106,9 +108,11 @@ function resetRecordForm() {
 }
 
 function openAddForm() {
+  recordReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   resetRecordForm()
   formTag.value = availableTags.value[0] || ''
   showRecordForm.value = true
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
 
 function openEditForm(index: number) {
@@ -124,7 +128,39 @@ function openEditForm(index: number) {
   isEditing.value = true
   editingIndex.value = index
   editingRecordId.value = record.id || null
+  recordReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   showRecordForm.value = true
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
+}
+
+function closeRecordForm() {
+  if (isSavingRecord.value) return
+  showRecordForm.value = false
+  const target = recordReturnTarget.value
+  recordReturnTarget.value = null
+  if (target?.isConnected) target.focus()
+}
+
+function onRecordModalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeRecordForm()
+    return
+  }
+  if (event.key !== 'Tab' || !recordModal.value) return
+  const focusable = Array.from(recordModal.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 function checkConflict(start: string, end: string, tag: string, excludeIndex = -1): string | null {
@@ -223,7 +259,7 @@ async function saveRecordInternal() {
     : editingIndex.value
   if (isEditing.value && resolvedEditingIndex < 0) {
     notifyToast(t('legacyPlan.recordMissing'), 'error')
-    showRecordForm.value = false
+    closeRecordForm()
     resetRecordForm()
     return
   }
@@ -278,7 +314,7 @@ async function saveRecordInternal() {
     }
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
-  showRecordForm.value = false
+  closeRecordForm()
   resetRecordForm()
 }
 
@@ -988,11 +1024,11 @@ onUnmounted(() => {
 
     <!-- 记录表单弹窗 -->
     <Transition name="modal">
-      <div v-if="showRecordForm" class="pv-modal-overlay" @click.self="showRecordForm = false">
-        <div class="pv-modal">
+      <div v-if="showRecordForm" class="pv-modal-overlay" @click.self="closeRecordForm">
+        <div ref="recordModal" class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-record-modal-title" @keydown="onRecordModalKeydown">
           <div class="pv-modal-header">
-            <h3>{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
-            <button type="button" class="pv-modal-close" @click="showRecordForm = false" :aria-label="t('common.cancel')" :title="t('common.cancel')">
+            <h3 id="legacy-record-modal-title">{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
+            <button type="button" class="pv-modal-close" @click="closeRecordForm" :aria-label="t('common.cancel')" :title="t('common.cancel')">
               <X :size="18" />
             </button>
           </div>
@@ -1084,7 +1120,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="pv-modal-footer">
-            <button type="button" class="pv-secondary-btn" @click="showRecordForm = false">{{ t('legacyPlan.cancel') }}</button>
+            <button type="button" class="pv-secondary-btn" @click="closeRecordForm">{{ t('legacyPlan.cancel') }}</button>
             <button type="button" class="pv-primary-btn" :disabled="isSavingRecord" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
               <span>{{ isSavingRecord ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
