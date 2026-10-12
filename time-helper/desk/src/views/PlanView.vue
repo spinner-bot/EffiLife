@@ -1028,7 +1028,7 @@ onUnmounted(() => {
         <div ref="recordModal" class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="legacy-record-modal-title" @keydown="onRecordModalKeydown">
           <div class="pv-modal-header">
             <h3 id="legacy-record-modal-title">{{ isEditing ? t('legacyPlan.recordEdit') : t('legacyPlan.recordAdd') }}</h3>
-            <button type="button" class="pv-modal-close" @click="closeRecordForm()" :aria-label="t('common.cancel')" :title="t('common.cancel')">
+            <button type="button" class="pv-modal-close" :disabled="isSavingRecord" @click="closeRecordForm()" :aria-label="t('common.cancel')" :title="t('common.cancel')">
               <X :size="18" />
             </button>
           </div>
@@ -1120,7 +1120,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="pv-modal-footer">
-            <button type="button" class="pv-secondary-btn" @click="closeRecordForm()">{{ t('legacyPlan.cancel') }}</button>
+            <button type="button" class="pv-secondary-btn" :disabled="isSavingRecord" @click="closeRecordForm()">{{ t('legacyPlan.cancel') }}</button>
             <button type="button" class="pv-primary-btn" :disabled="isSavingRecord" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
               <span>{{ isSavingRecord ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
