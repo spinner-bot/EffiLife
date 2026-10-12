@@ -147,19 +147,19 @@ function handleBackdropClick(e: MouseEvent) {
   }
 }
 
-const recurrenceOptions: { value: RecurrenceType; label: string }[] = [
+const recurrenceOptions = computed<{ value: RecurrenceType; label: string }[]>(() => [
   { value: 'none', label: t('noRepeat') },
   { value: 'daily', label: t('daily') },
   { value: 'weekly', label: t('weekly') },
   { value: 'monthly', label: t('monthly') },
-]
+])
 
-const warningDayOptions = [
+const warningDayOptions = computed(() => [
   { value: 0, label: t('sameDay') },
   { value: 1, label: t('daysBefore', { count: 1 }) },
   { value: 3, label: t('daysBefore', { count: 3 }) },
   { value: 7, label: t('weekBefore') },
-]
+])
 </script>
 
 <template>

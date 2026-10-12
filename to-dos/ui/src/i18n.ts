@@ -51,6 +51,19 @@ const messages = {
 type MessageKey = keyof typeof messages['zh-CN']
 const locale = ref<LegacyLocale>(readLocale())
 
+function syncLocaleFromStorage() {
+  const next = readLocale()
+  if (next !== locale.value) locale.value = next
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === STORAGE_KEY) syncLocaleFromStorage()
+  })
+  window.addEventListener('effilife:locale-changed', syncLocaleFromStorage)
+  window.addEventListener('effilife:workspace-changed', syncLocaleFromStorage)
+}
+
 function readLocale(): LegacyLocale {
   if (typeof window === 'undefined') return 'zh-CN'
   const stored = window.localStorage.getItem(STORAGE_KEY)
@@ -65,7 +78,10 @@ export function useLegacyI18n() {
   }
   const setLocale = (next: LegacyLocale) => {
     locale.value = next
-    if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, next)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, next)
+      window.dispatchEvent(new CustomEvent('effilife:locale-changed'))
+    }
   }
   return { locale: computed(() => locale.value), t, setLocale }
 }

@@ -24,12 +24,12 @@ const emit = defineEmits<{
 const store = useTodosStore()
 const { t } = useLegacyI18n()
 
-const frequencyOptions = [
+const frequencyOptions = computed(() => [
   { value: 0, label: t('manual') },
   { value: 1000, label: t('seconds', { count: 1 }) },
   { value: 5000, label: t('seconds', { count: 5 }) },
   { value: 30000, label: t('seconds', { count: 30 }) },
-]
+])
 
 const expandCountOptions = [
   { value: 3, label: '3' },

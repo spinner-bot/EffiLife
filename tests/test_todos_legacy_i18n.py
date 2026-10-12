@@ -77,6 +77,17 @@ def test_legacy_default_category_is_localized_only_at_display_boundary():
     assert "translateLegacyCategoryName(category.value.id, category.value.name)" in item
 
 
+def test_legacy_i18n_options_react_to_shared_locale_changes():
+    i18n = (UI / "i18n.ts").read_text(encoding="utf-8")
+    settings = (UI / "components" / "SettingsPanel.vue").read_text(encoding="utf-8")
+    form = (UI / "components" / "TodoForm.vue").read_text(encoding="utf-8")
+    assert "effilife:locale-changed" in i18n
+    assert "effilife:workspace-changed" in i18n
+    assert "const frequencyOptions = computed(() =>" in settings
+    assert "const recurrenceOptions = computed<" in form
+    assert "const warningDayOptions = computed(() =>" in form
+
+
 def test_legacy_import_result_uses_locale_aware_message_and_boolean_state():
     store = (UI / "stores" / "todos.ts").read_text(encoding="utf-8")
     workspace = (UI / "views" / "TodosView.vue").read_text(encoding="utf-8")
