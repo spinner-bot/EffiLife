@@ -167,9 +167,13 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
     if path.stat().st_size > MAX_BUNDLE_BYTES:
         raise ValueError("Bundle exceeds the maximum supported file size")
     with zipfile.ZipFile(path, "r") as bundle:
-        if len(bundle.infolist()) > MAX_ARCHIVE_ENTRIES:
+        entries = bundle.infolist()
+        if len(entries) > MAX_ARCHIVE_ENTRIES:
             raise ValueError("Bundle contains too many archive entries")
-        if MANIFEST_NAME not in bundle.namelist():
+        entry_names = [entry.filename for entry in entries]
+        if len(entry_names) != len(set(entry_names)):
+            raise ValueError("Bundle contains duplicate archive entries")
+        if MANIFEST_NAME not in entry_names:
             raise ValueError("Bundle manifest is missing")
         try:
             manifest = json.loads(bundle.read(MANIFEST_NAME).decode("utf-8"))
@@ -192,7 +196,7 @@ def inspect_bundle(bundle_path: str | os.PathLike[str]) -> dict:
             if safe_name in normalized_names:
                 raise ValueError("Bundle datasets declaration contains duplicates")
             normalized_names.append(safe_name)
-            if f"{DATA_PREFIX}{safe_name}.json" not in bundle.namelist():
+            if f"{DATA_PREFIX}{safe_name}.json" not in entry_names:
                 raise ValueError(f"Dataset file is missing: {safe_name}")
             info = bundle.getinfo(f"{DATA_PREFIX}{safe_name}.json")
             if info.file_size > MAX_DATASET_BYTES:

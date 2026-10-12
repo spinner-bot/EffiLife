@@ -335,6 +335,21 @@ def test_bundle_rejects_missing_manifest(tmp_path):
         inspect_bundle(bundle)
 
 
+def test_bundle_rejects_duplicate_archive_entries(tmp_path):
+    bundle = tmp_path / "duplicate-entry.efl"
+    with zipfile.ZipFile(bundle, "w") as archive:
+        archive.writestr("manifest.json", json.dumps({
+            "format": "effilife.bundle",
+            "format_version": "1.0.0",
+            "datasets": ["app"],
+        }))
+        archive.writestr("data/app.json", "{}")
+        archive.writestr("data/app.json", '{"ambiguous": true}')
+
+    with pytest.raises(ValueError, match="duplicate archive entries"):
+        inspect_bundle(bundle)
+
+
 def test_bundle_rejects_oversized_dataset_before_json_import(tmp_path):
     from common.data_exchange import MAX_DATASET_BYTES
 
