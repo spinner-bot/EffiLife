@@ -22,4 +22,5 @@ def test_unified_plan_workspace_preserves_identity_and_todo_link_on_edit():
     assert "const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined" in source
     assert "const resolvedEditingIndex = isEditing.value && editingRecordId.value" in source
     assert "id: originalRecord?.id" in source
-    assert "todo_id: originalRecord?.todo_id" in source
+    assert "selectedTodoId.value = record.todo_id || ''" in source
+    assert "todo_id: selectedTodoId.value || undefined" in source

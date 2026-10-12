@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
@@ -17,6 +17,8 @@ import EmptyState from '@/components/EmptyState.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { useI18n } from '@/i18n'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
+import { TodoService, type UnifiedTodo } from '@/services/todoService'
+import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { currentRecordDefaults } from '@/services/recordDefaults'
@@ -31,6 +33,24 @@ const records = computed(() => appStore.todayRecords)
 const todayPlan = computed(() => appStore.todayPlan)
 const plans = computed(() => appStore.plans)
 const scheduleRules = computed(() => appStore.scheduleRules)
+const todos = ref<UnifiedTodo[]>([])
+const todoOptionsUnavailable = ref(false)
+const todoOptions = computed(() => {
+  const selected = todos.value.find((todo) => todo.id === selectedTodoId.value)
+  const active = todos.value.filter((todo) => !['archived', 'cancelled'].includes(todo.status))
+  return selected && !active.some((todo) => todo.id === selected.id) ? [selected, ...active] : active
+})
+let stopWorkspaceListener: (() => void) | null = null
+
+async function loadTodoOptions(): Promise<void> {
+  try {
+    todos.value = await TodoService.list()
+    todoOptionsUnavailable.value = false
+  } catch {
+    todos.value = []
+    todoOptionsUnavailable.value = true
+  }
+}
 
 function recordKey(record: TimeRecord, index: number): string {
   return record.id || `${record.date}-${record.start}-${record.end}-${record.tag}-${index}`
@@ -66,6 +86,7 @@ const formDurationRef = ref<'start' | 'end'>('start')
 const formDurationTime = ref({ h: '09', m: '00' })
 const formContent = ref('')
 const formTag = ref('')
+const selectedTodoId = ref('')
 
 function resetRecordForm() {
   const defaults = currentRecordDefaults()
@@ -77,6 +98,7 @@ function resetRecordForm() {
   formDurationTime.value = defaults.reference
   formContent.value = ''
   formTag.value = availableTags.value[0] || ''
+  selectedTodoId.value = ''
   isEditing.value = false
   editingIndex.value = -1
   editingRecordId.value = null
@@ -97,6 +119,7 @@ function openEditForm(index: number) {
   formEnd.value = { h: eh, m: em }
   formContent.value = record.content
   formTag.value = record.tag
+  selectedTodoId.value = record.todo_id || ''
   isEditing.value = true
   editingIndex.value = index
   editingRecordId.value = record.id || null
@@ -198,7 +221,7 @@ async function saveRecord() {
   const originalRecord = isEditing.value ? records.value[resolvedEditingIndex] : undefined
   const record: TimeRecord = {
     id: originalRecord?.id,
-    todo_id: originalRecord?.todo_id,
+    todo_id: selectedTodoId.value || undefined,
     date: getTodayDate(), start, end, duration,
     content: formContent.value.trim(), tag: formTag.value
   }
@@ -208,6 +231,39 @@ async function saveRecord() {
   } else {
     await appStore.addRecord(record)
   }
+  let todoLinkFailed = false
+  if (originalRecord?.todo_id && originalRecord.todo_id !== record.todo_id) {
+    try {
+      await unlinkTodoFromTimeRecord({ ...record, todo_id: originalRecord.todo_id })
+    } catch (error) {
+      todoLinkFailed = true
+      console.warn('Failed to unlink previous todo record reference', error)
+    }
+  }
+  if (record.todo_id) {
+    try {
+      const todo = todos.value.find((item) => item.id === record.todo_id)
+      const recordId = record.id as string
+      const alreadyLinkedToSameTodo = originalRecord?.todo_id === record.todo_id
+      const recordMinutes = Math.max(1, Math.round(record.duration * 60))
+      if (todo && alreadyLinkedToSameTodo) {
+        const hasRecordLink = todo.related_time_record_ids?.includes(recordId) || false
+        const updated = hasRecordLink
+          ? (originalRecord && Math.round(originalRecord.duration * 60) !== recordMinutes
+            ? await TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))
+            : todo)
+          : await TodoService.trackTime(todo.id, recordMinutes, recordId)
+        todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
+      } else if (todo && !alreadyLinkedToSameTodo) {
+        const updated = await TodoService.trackTime(todo.id, recordMinutes, recordId)
+        todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
+      }
+    } catch (error) {
+      todoLinkFailed = true
+      console.warn('Failed to link saved record to todo', error)
+    }
+  }
+  notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
   showRecordForm.value = false
   resetRecordForm()
 }
@@ -458,6 +514,15 @@ function validatePlanField(field: 'planName', value: string) {
 
 onMounted(() => {
   formTag.value = availableTags.value[0] || ''
+  void loadTodoOptions()
+  stopWorkspaceListener = onWorkspaceChanged((source) => {
+    if (source === 'todos' || source === 'archive') void loadTodoOptions()
+  })
+})
+
+onUnmounted(() => {
+  stopWorkspaceListener?.()
+  stopWorkspaceListener = null
 })
 </script>
 
@@ -953,6 +1018,18 @@ onMounted(() => {
                 <option v-for="tag in availableTags" :key="tag" :value="tag">{{ tag }}</option>
               </select>
               <p v-if="recordFormErrors.tag" class="pv-field-error">{{ recordFormErrors.tag }}</p>
+            </div>
+
+            <div class="pv-form-group">
+              <label>{{ t('records.linkTodo') }}</label>
+              <select v-model="selectedTodoId" class="pv-select" :disabled="todoOptionsUnavailable">
+                <option value="">{{ t('records.noLinkedTodo') }}</option>
+                <option v-for="todo in todoOptions" :key="todo.id" :value="todo.id">{{ todo.title }}</option>
+              </select>
+              <p v-if="todoOptionsUnavailable" class="pv-field-error" role="status" aria-live="polite">
+                {{ t('records.todoOptionsUnavailable') }}
+                <button type="button" class="pv-inline-action" @click="loadTodoOptions">{{ t('records.retryTodoOptions') }}</button>
+              </p>
             </div>
           </div>
           <div class="pv-modal-footer">
@@ -1670,6 +1747,15 @@ onMounted(() => {
   color: var(--color-error);
   margin: var(--spacing-xs) 0 0 0;
   animation: fieldErrorIn 0.2s ease-out;
+}
+.pv-inline-action {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--color-primary);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
 }
 
 @keyframes fieldErrorIn {
