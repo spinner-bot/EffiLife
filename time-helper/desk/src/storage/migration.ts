@@ -1,6 +1,6 @@
 // 数据迁移模块 - 从 localStorage 迁移到 IndexedDB
 
-import { get, set, isEmpty } from './indexedDB'
+import { get, set, isEmpty, openDB } from './indexedDB'
 import { STORE_NAMES } from './indexedDB'
 import { createBackup } from './backup'
 
@@ -199,6 +199,21 @@ export async function runMigration(): Promise<{
 
   const migrated: string[] = []
   const errors: string[] = []
+
+  // The regular get/set helpers intentionally fall back to localStorage for
+  // runtime resilience. Migration must not use that fallback to claim success:
+  // if IndexedDB is unavailable, reading the source mirror could be mistaken
+  // for a completed migration and permanently set the completion marker.
+  try {
+    await openDB()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return {
+      success: false,
+      migrated: [],
+      errors: [`indexeddb: ${message}`],
+    }
+  }
 
   // 先创建备份
   try {

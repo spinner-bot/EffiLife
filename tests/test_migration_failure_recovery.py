@@ -30,6 +30,14 @@ def test_migration_does_not_write_any_dataset_when_pre_migration_backup_fails():
     assert migration.index("errors: [failure]") < migration.index("const migrations:")
 
 
+def test_migration_requires_native_indexeddb_before_using_fallback_aware_helpers():
+    source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
+    assert "import { get, set, isEmpty, openDB } from './indexedDB'" in source
+    migration = source.split("export async function runMigration", 1)[1]
+    assert "await openDB()" in migration
+    assert "errors: [`indexeddb: ${message}`]" in migration
+
+
 def test_local_storage_integrity_ignores_backup_and_runtime_metadata_keys():
     source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
     assert "function isWorkspaceDataStorageKey(key: string): boolean" in source
