@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Bell, BellRing, CalendarClock, Clock, Inbox, Check, Trash2, Trophy } from 'lucide-vue-next'
+import { ArrowLeft, Bell, BellRing, CalendarClock, Clock, Inbox, Check, Trash2, Trophy, X } from 'lucide-vue-next'
 import { EventSystem } from '@/audio'
 import { CheckinSystem } from '@/data'
 import type { EventType, WarningRule, InboxEntry } from '@/audio'
@@ -117,6 +117,8 @@ function setFilter(filter: InboxFilter) {
 
 // 预警规则编辑
 const showRuleForm = ref(false)
+const ruleModal = ref<HTMLElement | null>(null)
+const ruleReturnTarget = ref<HTMLElement | null>(null)
 const editingRuleId = ref<string | null>(null)
 const newRule = ref({ hour: 12, minute: 0, threshold: 50, enabled: true })
 
@@ -249,15 +251,47 @@ function getEventStyle(type: EventType): string {
 
 // ========= 预警规则管理 =========
 function startAddRule() {
+  ruleReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   editingRuleId.value = null
   newRule.value = { hour: 12, minute: 0, threshold: 50, enabled: true }
   showRuleForm.value = true
+  void nextTick(() => ruleModal.value?.querySelector<HTMLElement>('input, button')?.focus())
 }
 
 function startEditRule(rule: WarningRule) {
+  ruleReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   editingRuleId.value = rule.id
   newRule.value = { hour: rule.hour, minute: rule.minute, threshold: rule.threshold, enabled: rule.enabled }
   showRuleForm.value = true
+  void nextTick(() => ruleModal.value?.querySelector<HTMLElement>('input, button')?.focus())
+}
+
+function restoreRuleFocus() {
+  const target = ruleReturnTarget.value
+  ruleReturnTarget.value = null
+  if (target?.isConnected) target.focus()
+}
+
+function onRuleModalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelRule()
+    return
+  }
+  if (event.key !== 'Tab' || !ruleModal.value) return
+  const focusable = Array.from(ruleModal.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ))
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 function activateWarningRule(event: KeyboardEvent, rule: WarningRule) {
@@ -290,11 +324,13 @@ function saveRule() {
   }
   eventSettings.value = EventSystem.getSettings()
   showRuleForm.value = false
+  restoreRuleFocus()
 }
 
 function cancelRule() {
   showRuleForm.value = false
   editingRuleId.value = null
+  restoreRuleFocus()
 }
 
 async function deleteRule(id: string) {
@@ -571,8 +607,13 @@ function testWarning(rule: WarningRule) {
 
         <!-- 规则编辑弹窗 -->
         <div v-if="showRuleForm" class="modal-overlay" @click.self="cancelRule">
-          <div class="modal">
-            <h3>{{ editingRuleId ? t('settings.events.editRule') : t('settings.events.addRule') }}</h3>
+          <div ref="ruleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="event-rule-modal-title" @keydown="onRuleModalKeydown">
+            <div class="modal-header">
+              <h3 id="event-rule-modal-title">{{ editingRuleId ? t('settings.events.editRule') : t('settings.events.addRule') }}</h3>
+              <button type="button" class="modal-close" :aria-label="t('settings.close')" @click="cancelRule">
+                <X :size="18" />
+              </button>
+            </div>
 
             <div class="form-row">
               <label>{{ t('settings.events.triggerTime') }}</label>
@@ -1201,6 +1242,32 @@ function testWarning(rule: WarningRule) {
   width: 90%;
   max-width: 420px;
   animation: slideUp var(--transition-normal);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.modal-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.modal-close:hover, .modal-close:focus-visible {
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  outline: 0;
 }
 
 .modal h3 {
