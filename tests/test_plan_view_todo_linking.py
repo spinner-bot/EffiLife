@@ -14,6 +14,7 @@ def test_primary_time_entry_exposes_unified_todo_linking():
 
 
 def test_primary_time_entry_keeps_todo_time_totals_in_sync_when_saved():
+    assert "id: originalRecord?.id || `TR-" in VIEW
     assert "todo_id: selectedTodoId.value || undefined" in VIEW
     assert "TodoService.trackTime(todo.id, recordMinutes, recordId)" in VIEW
     assert "TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))" in VIEW
