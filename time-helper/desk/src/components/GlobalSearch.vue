@@ -306,7 +306,7 @@ watch(() => props.open, async (open) => {
         <button class="search-close" type="button" :aria-label="t('search.close')" @click="close"><X :size="17" /></button>
       </header>
       <label class="search-input-label" for="global-search-input">{{ t('search.inputLabel') }}</label>
-      <input id="global-search-input" ref="input" v-model="query" class="search-input" type="search" role="combobox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" @keydown="handleSearchKeydown" />
+      <input id="global-search-input" ref="input" v-model="query" class="search-input" type="search" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" :aria-expanded="filteredResults.length > 0" aria-controls="global-search-results" :aria-activedescendant="filteredResults.length ? resultDomId(filteredResults[selectedIndex]) : undefined" :placeholder="t('search.placeholder')" @keydown="handleSearchKeydown" />
       <div class="search-filters" role="group" :aria-label="t('search.filterLabel')">
         <button v-for="filter in (['all', 'th', 'ph', 'td'] as SearchFilter[])" :key="filter" type="button" class="search-filter" :class="{ selected: searchFilter === filter }" :aria-pressed="searchFilter === filter" @click="searchFilter = filter; selectedIndex = 0">
           {{ t(`search.filter.${filter}`) }}
