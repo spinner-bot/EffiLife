@@ -10,8 +10,10 @@ import {
   Plus, Search, Moon, Sun, Monitor, Download, Upload,
   CheckSquare, X, Trash2, CheckCircle, Settings,
 } from 'lucide-vue-next'
+import { useLegacyI18n } from '@/i18n'
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 const showForm = ref(false)
 const searchQuery = ref('')
@@ -126,9 +128,9 @@ const darkModeIcon = computed(() => {
 })
 
 const darkModeLabel = computed(() => {
-  if (store.darkMode === 'dark') return '深色'
-  if (store.darkMode === 'light') return '浅色'
-  return '自动'
+  if (store.darkMode === 'dark') return t('dark')
+  if (store.darkMode === 'light') return t('light')
+  return t('auto')
 })
 
 // 数据导出
@@ -208,7 +210,7 @@ onUnmounted(() => {
             type="text"
             v-model="searchQuery"
             @input="handleSearch"
-            placeholder="搜索待办... (按 / 聚焦)"
+            :placeholder="t('searchPlaceholder')"
             class="search-input"
           />
         </div>
@@ -219,7 +221,7 @@ onUnmounted(() => {
             type="button"
             class="icon-btn"
             @click="cycleDarkMode"
-            :title="`主题: ${darkModeLabel} (Ctrl+D)`"
+            :title="`${darkModeLabel} (Ctrl+D)`"
           >
             <component :is="darkModeIcon" :size="18" />
           </button>
@@ -229,7 +231,7 @@ onUnmounted(() => {
             type="button"
             class="icon-btn"
             @click="showSettings = !showSettings"
-            title="设置 (Ctrl+,)"
+            :title="`${t('settings')} (Ctrl+,)`"
           >
             <Settings :size="18" />
           </button>
@@ -239,7 +241,7 @@ onUnmounted(() => {
             type="button"
             class="icon-btn"
             @click="handleExport"
-            title="导出 JSON (Ctrl+E)"
+            :title="`${t('exportJson')} (Ctrl+E)`"
           >
             <Download :size="18" />
           </button>
@@ -249,7 +251,7 @@ onUnmounted(() => {
             type="button"
             class="icon-btn"
             @click="showImportModal = true"
-            title="导入 JSON (Ctrl+I)"
+            :title="`${t('importJson')} (Ctrl+I)`"
           >
             <Upload :size="18" />
           </button>
@@ -257,7 +259,7 @@ onUnmounted(() => {
           <!-- 新建按钮 -->
           <button type="button" class="add-btn" @click="openAddForm">
             <Plus :size="18" />
-            <span>新建待办</span>
+            <span>{{ t('newTodo') }}</span>
             <kbd>N</kbd>
           </button>
         </div>
@@ -268,20 +270,20 @@ onUnmounted(() => {
         <div v-if="hasSelection" class="batch-bar">
           <div class="batch-info">
             <CheckSquare :size="16" />
-            <span>已选择 <strong>{{ store.selectedIds.size }}</strong> 项</span>
+            <span>{{ t('selected') }} <strong>{{ store.selectedIds.size }}</strong> {{ t('items') }}</span>
           </div>
           <div class="batch-actions">
             <button type="button" class="batch-btn" @click="handleBatchComplete">
               <CheckCircle :size="14" />
-              完成
+              {{ t('completeAction') }}
             </button>
             <button type="button" class="batch-btn danger" @click="handleBatchDelete">
               <Trash2 :size="14" />
-              删除
+              {{ t('deleteAction') }}
             </button>
             <button type="button" class="batch-btn" @click="store.clearSelection">
               <X :size="14" />
-              取消
+              {{ t('cancel') }}
             </button>
           </div>
         </div>
@@ -306,23 +308,23 @@ onUnmounted(() => {
       <div v-if="showImportModal" class="import-backdrop" @click.self="showImportModal = false">
         <div class="import-modal">
           <header class="import-header">
-            <h3>导入数据</h3>
+            <h3>{{ t('importData') }}</h3>
             <button type="button" class="close-btn" @click="showImportModal = false">
               <X :size="18" />
             </button>
           </header>
           <div class="import-body">
-            <p class="import-desc">粘贴 JSON 数据或选择文件导入</p>
+            <p class="import-desc">{{ t('importDescription') }}</p>
             <textarea
               v-model="importText"
               class="import-textarea"
-              placeholder='粘贴 JSON 数据（格式: {"todos": [...], "categories": [...]}）...'
+              :placeholder="t('pasteJson')"
               rows="8"
             ></textarea>
             <div class="import-file">
               <label class="file-label">
                 <Upload :size="14" />
-                选择文件
+                {{ t('chooseFile') }}
                 <input type="file" accept=".json" @change="handleFileImport" class="file-input" />
               </label>
             </div>
@@ -331,9 +333,9 @@ onUnmounted(() => {
             </p>
           </div>
           <footer class="import-footer">
-            <button type="button" class="btn-secondary" @click="showImportModal = false">取消</button>
+            <button type="button" class="btn-secondary" @click="showImportModal = false">{{ t('cancel') }}</button>
             <button type="button" class="btn-primary" @click="handleImport" :disabled="!importText.trim()">
-              导入
+              {{ t('importAction') }}
             </button>
           </footer>
         </div>

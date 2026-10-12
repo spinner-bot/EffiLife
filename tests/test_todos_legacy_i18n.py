@@ -21,3 +21,10 @@ def test_legacy_filter_and_sidebar_use_shared_translations():
     assert "t('todoTitle')" in sidebar
     assert "t('completionRate')" in sidebar
 
+
+def test_legacy_workspace_controls_use_shared_translations():
+    workspace = (UI / "views" / "TodosView.vue").read_text(encoding="utf-8")
+    assert "useLegacyI18n" in workspace
+    for key in ("searchPlaceholder", "newTodo", "importData", "exportJson", "completeAction"):
+        assert f"t('{key}')" in workspace
+
