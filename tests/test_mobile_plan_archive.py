@@ -6,6 +6,14 @@ GATEWAY = (ROOT / "time-helper/desk/src/services/planGateway.ts").read_text(enco
 I18N = (ROOT / "time-helper/desk/src/i18n/index.ts").read_text(encoding="utf-8")
 
 
+def test_mobile_plan_snapshot_mutations_serialize_the_complete_read_modify_write_cycle():
+    assert "let mobilePlanWriteQueue: Promise<unknown> = Promise.resolve()" in GATEWAY
+    assert "function enqueueMobilePlanWrite<T>(operation: () => Promise<T>): Promise<T>" in GATEWAY
+    assert "return enqueueMobilePlanWrite(async () =>" in GATEWAY
+    assert GATEWAY.count("return enqueueMobilePlanWrite(async () =>") >= 2
+    assert "await enqueueMobilePlanWrite(async () =>" in GATEWAY
+
+
 def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "async function getMobileRawArchives()" in GATEWAY
     assert "if (getPlanRuntime() === 'mobile-unavailable')" in GATEWAY

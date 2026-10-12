@@ -285,13 +285,26 @@ async function saveMobileRawPlans(plans: RawPlan[]): Promise<void> {
   notifyWorkspaceChanged('plans')
 }
 
+// Mobile PH uses the same read-modify-write snapshot model as the desktop
+// sidecar API. Serialize the complete mutation, including its initial read,
+// so rapid edits or archive operations cannot overwrite a newer snapshot.
+let mobilePlanWriteQueue: Promise<unknown> = Promise.resolve()
+
+function enqueueMobilePlanWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const current = mobilePlanWriteQueue.catch(() => undefined).then(operation)
+  mobilePlanWriteQueue = current
+  return current
+}
+
 async function mutateMobilePlan(planId: string, mutate: (plan: RawPlan) => void): Promise<RawPlan> {
-  const plans = cloneMobilePlans(await getMobileRawPlans())
-  const plan = findMobilePlan(plans, planId)
-  if (!plan) throw new Error(translate('plans.mobileSnapshotMissing'))
-  mutate(plan)
-  await saveMobileRawPlans(plans)
-  return plan
+  return enqueueMobilePlanWrite(async () => {
+    const plans = cloneMobilePlans(await getMobileRawPlans())
+    const plan = findMobilePlan(plans, planId)
+    if (!plan) throw new Error(translate('plans.mobileSnapshotMissing'))
+    mutate(plan)
+    await saveMobileRawPlans(plans)
+    return plan
+  })
 }
 
 function mobileTaskLocation(plan: RawPlan, taskId: string): { section: RawSection; task: Record<string, unknown> } | undefined {
@@ -548,23 +561,25 @@ export async function createEventPlan(
   sections: InitialPlanSection[] = [],
 ): Promise<PlanSummary> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    const plans = cloneMobilePlans(await getMobileRawPlans())
-    const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
-    const main = sections
-      .filter((section) => section.name.trim())
-      .map((section) => ({
-        name: section.name.trim(),
-        info: section.info.trim(),
-        plan: [null, ...section.tasks
-          .filter((task) => task.content.trim())
-          .map((task) => ({ is_active: true, content: task.content.trim(), t_m: Math.max(0, Number(task.time_minutes) || 0) / 6 }))],
-        group: {},
-      }))
-    const plan: RawPlan = { head: { index: nextId, name, date }, main, log: [] }
-    plans.push(plan)
-    await saveMobileRawPlans(plans)
-    planDataSource.value = 'mobile'
-    return toMobilePlanSummary(plan, plans.length - 1)
+    return enqueueMobilePlanWrite(async () => {
+      const plans = cloneMobilePlans(await getMobileRawPlans())
+      const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+      const main = sections
+        .filter((section) => section.name.trim())
+        .map((section) => ({
+          name: section.name.trim(),
+          info: section.info.trim(),
+          plan: [null, ...section.tasks
+            .filter((task) => task.content.trim())
+            .map((task) => ({ is_active: true, content: task.content.trim(), t_m: Math.max(0, Number(task.time_minutes) || 0) / 6 }))],
+          group: {},
+        }))
+      const plan: RawPlan = { head: { index: nextId, name, date }, main, log: [] }
+      plans.push(plan)
+      await saveMobileRawPlans(plans)
+      planDataSource.value = 'mobile'
+      return toMobilePlanSummary(plan, plans.length - 1)
+    })
   }
   const result = await request<PlanSummary>('/api/plans', {
     method: 'POST',
@@ -634,26 +649,28 @@ export async function updateEventPlan(planId: string, name: string, date: [numbe
 
 export async function archivePlan(planId: string): Promise<void> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    const plans = cloneMobilePlans(await getMobileRawPlans())
-    const index = plans.findIndex((plan, fallbackIndex) => String(plan.head?.index ?? fallbackIndex) === String(planId))
-    if (index < 0) throw new Error(translate('plans.mobileSnapshotMissing'))
-    const [plan] = plans.splice(index, 1)
-    const archivedPlanId = String(plan.head?.index ?? planId)
-    const linkedTodos = (await TodoService.list())
-      .filter((todo) => todo.related_plan_id === archivedPlanId)
-      .map((todo) => ({ id: todo.id, task_id: todo.related_plan_task_id }))
-    const archives = await getMobileRawArchives()
-    const timestamp = new Date()
-    const stamp = `${timestamp.getTime()}${String(timestamp.getMilliseconds()).padStart(3, '0')}`
-    archives.push({
-      file: `plan_${String(plan.head?.index ?? planId)}_${stamp}.json`,
-      payload: { archived_at: timestamp.toISOString(), plan, linked_todos: linkedTodos },
+    await enqueueMobilePlanWrite(async () => {
+      const plans = cloneMobilePlans(await getMobileRawPlans())
+      const index = plans.findIndex((plan, fallbackIndex) => String(plan.head?.index ?? fallbackIndex) === String(planId))
+      if (index < 0) throw new Error(translate('plans.mobileSnapshotMissing'))
+      const [plan] = plans.splice(index, 1)
+      const archivedPlanId = String(plan.head?.index ?? planId)
+      const linkedTodos = (await TodoService.list())
+        .filter((todo) => todo.related_plan_id === archivedPlanId)
+        .map((todo) => ({ id: todo.id, task_id: todo.related_plan_task_id }))
+      const archives = await getMobileRawArchives()
+      const timestamp = new Date()
+      const stamp = `${timestamp.getTime()}${String(timestamp.getMilliseconds()).padStart(3, '0')}`
+      archives.push({
+        file: `plan_${String(plan.head?.index ?? planId)}_${stamp}.json`,
+        payload: { archived_at: timestamp.toISOString(), plan, linked_todos: linkedTodos },
+      })
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)
+      planDataSource.value = 'mobile'
+      notifyWorkspaceChanged('plans')
     })
-    const { set, STORE_NAMES } = await import('@/storage')
-    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
-    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)
-    planDataSource.value = 'mobile'
-    notifyWorkspaceChanged('plans')
     return
   }
   const linkedTodos = (await TodoService.list())
@@ -668,38 +685,40 @@ export async function archivePlan(planId: string): Promise<void> {
 
 export async function restorePlanArchive(file: string): Promise<string | undefined> {
   if (getPlanRuntime() === 'mobile-unavailable') {
-    const archives = await getMobileRawArchives()
-    const archive = archives.find((candidate) => candidate.file === file)
-    const sourcePlan = archive?.payload?.plan
-    if (!sourcePlan) throw new Error(translate('plans.mobileSnapshotMissing'))
-    const plans = cloneMobilePlans(await getMobileRawPlans())
-    const sourceId = Number(sourcePlan.head?.index)
-    const sourceIdIsFree = Number.isInteger(sourceId) && sourceId > 0
-      && !plans.some((plan, index) => Number(plan.head?.index ?? index) === sourceId)
-    const nextId = sourceIdIsFree
-      ? sourceId
-      : plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
-    const restored = JSON.parse(JSON.stringify(sourcePlan)) as RawPlan
-    restored.head = { ...(restored.head || {}), index: nextId }
-    plans.push(restored)
-    const { set, STORE_NAMES } = await import('@/storage')
-    await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
-    if (nextId !== sourceId && Array.isArray(archive.payload?.linked_todos)) {
-      const todoIds = new Set(
-        archive.payload.linked_todos
-          .map((link) => link?.id)
-          .filter((id): id is string => typeof id === 'string' && Boolean(id)),
-      )
-      const todos = await TodoService.list()
-      for (const todo of todos) {
-        if (todoIds.has(todo.id) && todo.related_plan_id === String(sourceId)) {
-          await TodoService.update(todo.id, { related_plan_id: String(nextId) })
+    return enqueueMobilePlanWrite(async () => {
+      const archives = await getMobileRawArchives()
+      const archive = archives.find((candidate) => candidate.file === file)
+      const sourcePlan = archive?.payload?.plan
+      if (!sourcePlan) throw new Error(translate('plans.mobileSnapshotMissing'))
+      const plans = cloneMobilePlans(await getMobileRawPlans())
+      const sourceId = Number(sourcePlan.head?.index)
+      const sourceIdIsFree = Number.isInteger(sourceId) && sourceId > 0
+        && !plans.some((plan, index) => Number(plan.head?.index ?? index) === sourceId)
+      const nextId = sourceIdIsFree
+        ? sourceId
+        : plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+      const restored = JSON.parse(JSON.stringify(sourcePlan)) as RawPlan
+      restored.head = { ...(restored.head || {}), index: nextId }
+      plans.push(restored)
+      const { set, STORE_NAMES } = await import('@/storage')
+      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+      if (nextId !== sourceId && Array.isArray(archive.payload?.linked_todos)) {
+        const todoIds = new Set(
+          archive.payload.linked_todos
+            .map((link) => link?.id)
+            .filter((id): id is string => typeof id === 'string' && Boolean(id)),
+        )
+        const todos = await TodoService.list()
+        for (const todo of todos) {
+          if (todoIds.has(todo.id) && todo.related_plan_id === String(sourceId)) {
+            await TodoService.update(todo.id, { related_plan_id: String(nextId) })
+          }
         }
       }
-    }
-    planDataSource.value = 'mobile'
-    notifyWorkspaceChanged('plans')
-    return String(nextId)
+      planDataSource.value = 'mobile'
+      notifyWorkspaceChanged('plans')
+      return String(nextId)
+    })
   }
   const restored = await request<PlanSummary & {
     restored_from_id?: number | string
