@@ -45,6 +45,8 @@ const runtimeReady = ref(false)
 const startupError = ref(false)
 const startupErrorMessage = ref('')
 const startupRetryButton = ref<HTMLButtonElement | null>(null)
+const runtimeErrorMessage = ref('')
+const runtimeErrorSource = ref('')
 const showGlobalSearch = ref(false)
 const mainContent = ref<HTMLElement | null>(null)
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
@@ -125,6 +127,18 @@ function onGlobalKeydown(event: KeyboardEvent) {
 
 function retryStartup() {
   window.location.reload()
+}
+
+function onRuntimeError(event: Event) {
+  const detail = (event as CustomEvent<{ message?: string; source?: string }>).detail
+  if (runtimeErrorMessage.value) return
+  runtimeErrorMessage.value = detail?.message || t('app.runtimeErrorDescription')
+  runtimeErrorSource.value = detail?.source || ''
+}
+
+function dismissRuntimeError() {
+  runtimeErrorMessage.value = ''
+  runtimeErrorSource.value = ''
 }
 
 function refreshWhenVisible() {
@@ -225,6 +239,7 @@ function onCheckinClose() {
 }
 
 onMounted(async () => {
+  window.addEventListener('effilife:runtime-error', onRuntimeError)
   window.addEventListener('keydown', onGlobalKeydown)
   document.addEventListener('visibilitychange', refreshWhenVisible)
   window.addEventListener('online', updateOnlineStatus)
@@ -341,6 +356,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('effilife:runtime-error', onRuntimeError)
   window.removeEventListener('keydown', onGlobalKeydown)
   document.removeEventListener('visibilitychange', refreshWhenVisible)
   window.removeEventListener('online', updateOnlineStatus)
@@ -381,6 +397,17 @@ watch(() => appStore.todayStat, () => {
     <template v-if="runtimeReady">
     <div class="app-content">
       <a class="skip-link" href="#main-content">{{ t('app.skipToContent') }}</a>
+      <div v-if="runtimeErrorMessage" class="app-runtime-error" role="alert" aria-live="assertive">
+        <strong>{{ t('app.runtimeErrorTitle') }}</strong>
+        <span>{{ t('app.runtimeErrorDescription') }}</span>
+        <small v-if="runtimeErrorSource || runtimeErrorMessage" class="app-runtime-error-detail">
+          {{ runtimeErrorSource ? `${runtimeErrorSource}: ` : '' }}{{ runtimeErrorMessage }}
+        </small>
+        <div class="app-runtime-error-actions">
+          <button type="button" @click="retryStartup">{{ t('app.retryStartup') }}</button>
+          <button type="button" class="secondary" @click="dismissRuntimeError">{{ t('app.dismissRuntimeError') }}</button>
+        </div>
+      </div>
       <div v-if="!isOnline" class="offline-status" role="status" aria-live="polite">
         {{ t('app.offlineStatus') }}
       </div>
@@ -518,6 +545,13 @@ watch(() => appStore.todayStat, () => {
 }
 .skip-link:focus { transform: translateY(0); outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .offline-status { position: fixed; z-index: 11; top: 70px; left: 50%; width: min(560px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-warning, #c98924) 55%, var(--color-border)); border-radius: 10px; padding: 7px 12px; color: var(--color-text-secondary); background: color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-warning, #c98924)); box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 12%)); font-size: 12px; text-align: center; }
+.app-runtime-error { position: fixed; z-index: 20; top: 76px; left: 50%; display: grid; gap: 6px; width: min(620px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-danger, #bd4b5d) 55%, var(--color-border)); border-radius: 12px; padding: 12px 14px; color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--theme-box-shadow, 0 10px 30px rgb(0 0 0 / 18%)); font-size: 12px; }
+.app-runtime-error > span { color: var(--color-text-secondary); }
+.app-runtime-error-detail { overflow-wrap: anywhere; color: var(--color-text-tertiary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; line-height: 1.4; }
+.app-runtime-error-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.app-runtime-error-actions button { border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 10px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
+.app-runtime-error-actions button.secondary { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
+.app-runtime-error-actions button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
 .app-startup { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; align-content: center; gap: 12px; color: var(--color-text-secondary); font-size: 13px; transition: opacity .2s ease, transform .2s ease; }
 .app-startup-error { padding: 24px; text-align: center; }
