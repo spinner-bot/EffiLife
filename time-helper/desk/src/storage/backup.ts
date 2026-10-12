@@ -271,13 +271,14 @@ export function getBackupModules(): string[] {
     const key = localStorage.key(i)
     if (key && key.startsWith(prefix)) {
       try {
-        const backup = JSON.parse(localStorage.getItem(key) || '{}') as Partial<BackupData>
-        if (typeof backup.module === 'string' && backup.module) {
+        const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
+        if (backup && typeof backup.module === 'string' && backup.module) {
           modules.add(backup.module)
           continue
         }
       } catch {
-        // Fall back to the key shape for legacy or malformed entries.
+        // A malformed record must not create an empty recovery module.
+        continue
       }
       const rest = key.slice(prefix.length)
       const timestampSeparator = rest.lastIndexOf('_')

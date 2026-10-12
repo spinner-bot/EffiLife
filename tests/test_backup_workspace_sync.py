@@ -28,4 +28,9 @@ def test_backup_readers_validate_record_shape_before_exposing_recovery_entries()
     assert "typeof candidate.module !== 'string'" in SOURCE
     assert "Number.isNaN(new Date(candidate.timestamp).getTime())" in SOURCE
     assert "if (!('data' in candidate)) return null" in SOURCE
-    assert SOURCE.count("parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))") == 2
+    assert SOURCE.count("parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))") == 3
+
+
+def test_backup_module_discovery_does_not_expose_malformed_json_as_an_empty_module():
+    assert "// A malformed record must not create an empty recovery module." in SOURCE
+    assert "continue\n      }\n      const rest = key.slice(prefix.length)" in SOURCE
