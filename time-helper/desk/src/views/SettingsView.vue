@@ -666,11 +666,10 @@ async function onLegacyTodoSelected(event: Event) {
   input.value = ''
   if (!file) return
   archiveBusy.value = true
-  if (!await requestConfirm(t('settings.archive.legacyTodoImportConfirm'), { tone: 'danger' })) {
-    archiveBusy.value = false
-    return
-  }
   try {
+    if (!await requestConfirm(t('settings.archive.legacyTodoImportConfirm'), { tone: 'danger' })) {
+      return
+    }
     const result = await importLegacyTodoPayload(await file.text())
     notifyToast(t('settings.archive.legacyTodoImportSuccess', { ...result }), 'success')
     if (await requestConfirm(t('settings.archive.reloadNow'))) {

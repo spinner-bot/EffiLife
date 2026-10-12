@@ -34,6 +34,13 @@ def test_legacy_todo_import_waits_for_reload_confirmation_after_success():
     assert "if (await requestConfirm(t('settings.archive.reloadNow')))" in import_block
 
 
+def test_legacy_todo_import_releases_busy_state_when_confirmation_throws():
+    import_block = SETTINGS.split("async function onLegacyTodoSelected", 1)[1].split("const backupsList", 1)[0]
+    assert import_block.index("try {") < import_block.index("requestConfirm(t('settings.archive.legacyTodoImportConfirm')")
+    assert "finally {" in import_block
+    assert "archiveBusy.value = false" in import_block
+
+
 def test_archive_controls_announce_busy_state_and_refresh_stats_on_entry():
     assert 'class="archive-actions" :aria-busy="archiveBusy"' in SETTINGS
     assert 'role="status" aria-live="polite"' in SETTINGS
