@@ -26,7 +26,7 @@ function backupTypeLabel(module: string): string {
 <template>
   <section class="recovery-panel" @keydown.esc="$emit('back')">
     <header class="recovery-header">
-      <button class="recovery-back" type="button" :aria-label="t('settings.back')" @click="$emit('back')"><ArrowLeft :size="18" /></button>
+      <button class="recovery-back" type="button" :disabled="busy" :aria-label="t('settings.back')" @click="$emit('back')"><ArrowLeft :size="18" /></button>
       <div><p class="recovery-eyebrow">{{ t('settings.restore.eyebrow') }}</p><h2>{{ t('settings.restore.title') }}</h2></div>
     </header>
 
@@ -56,7 +56,7 @@ function backupTypeLabel(module: string): string {
       <p v-else class="recovery-muted">{{ t('settings.restore.noBackups') }}</p>
     </section>
 
-    <button class="recovery-close" type="button" @click="$emit('back')">{{ t('settings.back') }}</button>
+    <button class="recovery-close" type="button" :disabled="busy" @click="$emit('back')">{{ t('settings.back') }}</button>
   </section>
 </template>
 
