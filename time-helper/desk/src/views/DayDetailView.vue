@@ -172,14 +172,10 @@ async function deleteRecord(index: number) {
       notifyToast(t('dayDetail.recordMissing'), 'error')
       return
     }
+    // Clean the TD reverse reference first. A failed cleanup aborts the
+    // deletion and preserves the historical record for a safe retry.
+    await unlinkTodoFromTimeRecord(record)
     await DataService.deleteRecord(resolvedIndex, dateStr.value)
-    try {
-      await unlinkTodoFromTimeRecord(record)
-    } catch (error) {
-      // The historical record deletion is authoritative; reverse-link repair
-      // remains recoverable through workspace hydration.
-      console.warn('Failed to clean deleted record link', error)
-    }
     await loadData()
     notifyWorkspaceChanged('records')
     notifyToast(t('dayDetail.deleted'), 'success')

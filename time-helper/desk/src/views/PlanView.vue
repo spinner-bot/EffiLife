@@ -329,8 +329,16 @@ async function deleteRecord(index: number) {
     notifyToast(t('legacyPlan.recordMissing'), 'error')
     return
   }
-  await appStore.deleteRecord(resolvedIndex)
-  try { await unlinkTodoFromTimeRecord(record) } catch (error) { console.warn('Failed to clean deleted record link', error) }
+  try {
+    // Keep the linked TH record until its TD reverse reference is cleaned.
+    // This makes a failed cross-module write recoverable instead of silently
+    // creating a dangling reference.
+    await unlinkTodoFromTimeRecord(record)
+    await appStore.deleteRecord(resolvedIndex)
+  } catch (error) {
+    console.error('Failed to delete time record from plan workspace:', error)
+    notifyToast(t('legacyPlan.operationFailed'), 'error')
+  }
 }
 
 // ============ Management 相关状态 ============

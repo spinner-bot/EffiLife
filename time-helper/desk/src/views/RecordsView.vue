@@ -444,14 +444,11 @@ async function deleteRecord(index: number) {
       notifyToast(t('records.validation.recordMissing'), 'error')
       return
     }
+    // Remove the TD reverse reference before deleting the TH record. If the
+    // cross-module cleanup fails, keep the record so the user can retry and
+    // never leave a dangling TD -> TH reference behind.
+    await unlinkTodoFromTimeRecord(record)
     await appStore.deleteRecord(resolvedIndex)
-    try {
-      await unlinkTodoFromTimeRecord(record)
-    } catch (error) {
-      // The record deletion is authoritative; reverse-link repair can be
-      // retried during workspace hydration without blocking the user action.
-      console.warn('Failed to clean deleted record link', error)
-    }
     notifyToast(t('records.deleted'), 'success')
   } catch (error) {
     console.error('Failed to delete time record:', error)

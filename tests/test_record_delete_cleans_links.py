@@ -19,6 +19,8 @@ def test_record_delete_paths_clean_linked_todo_references():
         assert "const requestedRecord = records.value[index]" in source
         assert "const resolvedIndex = requestedRecord?.id" in source
         assert "await unlinkTodoFromTimeRecord(record)" in source
+        assert source.index("await unlinkTodoFromTimeRecord(record)") < source.index("await appStore.deleteRecord(resolvedIndex)")
+        assert "Failed to clean deleted record link" not in source
 
 
 def test_deleted_todo_unlinks_time_records_without_deleting_history():
@@ -53,6 +55,8 @@ def test_day_detail_delete_cleans_linked_todo_reference():
     assert "const requestedRecord = records.value[index]" in source
     assert "const resolvedIndex = requestedRecord?.id" in source
     assert "await unlinkTodoFromTimeRecord(record)" in source
+    assert source.index("await unlinkTodoFromTimeRecord(record)") < source.index("await DataService.deleteRecord(resolvedIndex, dateStr.value)")
+    assert "Failed to clean deleted record link" not in source
     assert "import { notifyWorkspaceChanged } from '@/services/workspaceEvents'" in source
     assert "notifyWorkspaceChanged('records')" in source
 
