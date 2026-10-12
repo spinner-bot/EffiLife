@@ -16,3 +16,8 @@ def test_current_time_defaults_clamp_the_default_end_at_midnight():
     assert "const availableMinutes = Math.max(1, 24 * 60 - startMinutes)" in VIEW
     assert "end: formatInputClock(startMinutes + defaultDuration)" in VIEW
     assert "Math.min(24 * 60, Math.trunc(totalMinutes))" in VIEW
+
+
+def test_linked_todo_entry_prefills_record_content_without_removing_editability():
+    assert "const linkedTodo = todos.value.find((todo) => todo.id === todoId)" in VIEW
+    assert "if (!formContent.value.trim()) formContent.value = linkedTodo.title" in VIEW

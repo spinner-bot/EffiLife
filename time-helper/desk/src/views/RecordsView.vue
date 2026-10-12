@@ -70,9 +70,11 @@ function isLinkedTodoUnavailable(todoId: string): boolean {
 
 function preselectLinkedTodo(): void {
   const todoId = linkedTodoFromQuery.value
-  if (!todoId || !todos.value.some((todo) => todo.id === todoId)) return
+  const linkedTodo = todos.value.find((todo) => todo.id === todoId)
+  if (!linkedTodo) return
   openAddForm()
-  selectedTodoId.value = linkedTodoFromQuery.value
+  selectedTodoId.value = linkedTodo.id
+  if (!formContent.value.trim()) formContent.value = linkedTodo.title
 }
 
 // 获取当前计划的标签列表
