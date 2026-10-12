@@ -20,3 +20,12 @@ def test_raw_stores_have_a_local_storage_fallback_and_cleanup_path():
     assert "removeFallbackEntries(storeName)" in source
     assert "RAW_STORAGE_PREFIX}${storeName}_" in source
     assert "localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)" in source
+
+
+def test_generic_read_fallback_treats_corrupted_local_storage_as_missing_data():
+    source = STORAGE.read_text(encoding="utf-8")
+    get_block = source.split("export async function get", 1)[1].split("// 通用 SET", 1)[0]
+    assert "if (!stored) return null" in get_block
+    assert "try {\n      return JSON.parse(stored) as T" in get_block
+    assert "localStorage fallback is corrupted" in get_block
+    assert "return null" in get_block

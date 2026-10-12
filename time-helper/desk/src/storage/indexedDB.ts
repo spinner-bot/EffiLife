@@ -150,7 +150,13 @@ export async function get<T>(storeName: string, key: string): Promise<T | null> 
     console.warn(`IndexedDB get failed for ${storeName}/${key}, falling back to localStorage:`, error)
     // 降级到 localStorage
     const stored = localStorage.getItem(`${STORAGE_PREFIX}${storeName}_${key}`)
-    return stored ? JSON.parse(stored) : null
+    if (!stored) return null
+    try {
+      return JSON.parse(stored) as T
+    } catch (fallbackError) {
+      console.warn(`localStorage fallback is corrupted for ${storeName}/${key}:`, fallbackError)
+      return null
+    }
   }
 }
 
