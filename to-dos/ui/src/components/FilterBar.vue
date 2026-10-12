@@ -4,31 +4,33 @@ import { useTodosStore } from '@/stores/todos'
 import { X, ArrowUpDown, Tag, Filter } from 'lucide-vue-next'
 import type { Priority, TodoStatus, SortOption } from '@/types'
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/types'
+import { useLegacyI18n } from '@/i18n'
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 const priorityOptions: { value: Priority; label: string }[] = [
-  { value: 'urgent-important', label: '紧急且重要' },
-  { value: 'important', label: '重要' },
-  { value: 'urgent', label: '紧急' },
-  { value: 'normal', label: '普通' },
+  { value: 'urgent-important', label: t('urgentImportant') },
+  { value: 'important', label: t('important') },
+  { value: 'urgent', label: t('urgent') },
+  { value: 'normal', label: t('normal') },
 ]
 
 const statusOptions: { value: TodoStatus; label: string }[] = [
-  { value: 'pending', label: '待处理' },
-  { value: 'in-progress', label: '进行中' },
-  { value: 'completed', label: '已完成' },
-  { value: 'cancelled', label: '已取消' },
+  { value: 'pending', label: t('pending') },
+  { value: 'in-progress', label: t('inProgress') },
+  { value: 'completed', label: t('completed') },
+  { value: 'cancelled', label: t('cancelled') },
 ]
 
 const sortOptions: { value: SortOption; label: string }[] = [
-  { value: 'score_desc', label: '⚡ 优先排位分' },
-  { value: 'created_desc', label: '最新创建' },
-  { value: 'created_asc', label: '最早创建' },
-  { value: 'deadline_asc', label: '截止日期 ↑' },
-  { value: 'deadline_desc', label: '截止日期 ↓' },
-  { value: 'priority_desc', label: '优先级' },
-  { value: 'custom', label: '自定义' },
+  { value: 'score_desc', label: t('score') },
+  { value: 'created_desc', label: t('newest') },
+  { value: 'created_asc', label: t('oldest') },
+  { value: 'deadline_asc', label: t('deadlineAsc') },
+  { value: 'deadline_desc', label: t('deadlineDesc') },
+  { value: 'priority_desc', label: t('priority') },
+  { value: 'custom', label: t('custom') },
 ]
 
 function togglePriority(p: Priority) {
@@ -70,7 +72,7 @@ const activeFilterCount = computed(() => {
 // 当前排序标签
 const currentSortLabel = computed(() => {
   const opt = sortOptions.find(o => o.value === store.sortBy)
-  return opt?.label || '排序'
+  return opt?.label || t('sort')
 })
 </script>
 
@@ -81,7 +83,7 @@ const currentSortLabel = computed(() => {
       <div class="filter-group" v-if="hasFilters">
         <span class="filter-label">
           <Filter :size="12" />
-          筛选
+          {{ t('filter') }}
         </span>
 
         <!-- 优先级筛选 -->
@@ -116,7 +118,7 @@ const currentSortLabel = computed(() => {
       <div class="filter-group tags-filter" v-if="store.allTags.length > 0">
         <span class="filter-label">
           <Tag :size="12" />
-          标签
+          {{ t('tags') }}
         </span>
         <button
           type="button"
@@ -156,7 +158,7 @@ const currentSortLabel = computed(() => {
       <!-- 清除筛选 -->
           <button v-if="hasFilters" type="button" class="clear-btn" @click="clearAll">
         <X :size="14" />
-        清除{{ activeFilterCount }}
+        {{ t('clear', { count: activeFilterCount }) }}
       </button>
     </div>
   </div>

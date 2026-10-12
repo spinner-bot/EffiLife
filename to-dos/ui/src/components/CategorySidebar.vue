@@ -6,6 +6,7 @@
 
 import { computed, ref } from 'vue'
 import { useTodosStore } from '@/stores/todos'
+import { useLegacyI18n } from '@/i18n'
 import {
   ListTodo, Calendar, AlertTriangle, Circle, Briefcase,
   BookOpen, Home, Heart, BarChart3, TrendingUp, ChevronDown,
@@ -15,6 +16,7 @@ import type { LucideIcon } from 'lucide-vue-next'
 import { calcCategoryScores, formatScoreDisplay } from '@/utils/priority'
 
 const store = useTodosStore()
+const { t } = useLegacyI18n()
 
 // 折叠状态
 const collapsedGroups = ref<Set<string>>(new Set())
@@ -115,7 +117,7 @@ const sidebarItems = computed((): SidebarItem[] => {
   return [
     {
       id: null,
-      label: '全部',
+      label: t('all'),
       count: store.stats.total,
       icon: ListTodo,
       color: '#6366f1',
@@ -123,7 +125,7 @@ const sidebarItems = computed((): SidebarItem[] => {
     },
     {
       id: '__today',
-      label: '今日',
+      label: t('today'),
       count: store.todayTodos.length,
       icon: Calendar,
       color: '#3b82f6',
@@ -131,7 +133,7 @@ const sidebarItems = computed((): SidebarItem[] => {
     },
     {
       id: '__overdue',
-      label: '逾期',
+      label: t('overdue'),
       count: store.overdueTodos.length,
       icon: AlertTriangle,
       color: '#ef4444',
@@ -159,7 +161,7 @@ function isActive(id: string | null): boolean {
 <template>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h1 class="logo">待办事项</h1>
+      <h1 class="logo">{{ t('todoTitle') }}</h1>
       <span class="version-tag">v0.5.0</span>
     </div>
 
@@ -188,7 +190,7 @@ function isActive(id: string | null): boolean {
 
       <!-- v0.5.0: 按分数排序的分类列表 -->
       <div class="nav-section category-section">
-        <div class="section-label">分类</div>
+        <div class="section-label">{{ t('categories') }}</div>
 
         <!-- 展开的分类（前 X 名） -->
         <div
@@ -222,7 +224,7 @@ function isActive(id: string | null): boolean {
               class="collapse-icon"
               :class="{ rotated: !isGroupCollapsed('collapsed') }"
             />
-            <span>其他 {{ collapsedCategories.length }} 个分类</span>
+            <span>{{ t('otherCategories', { count: collapsedCategories.length }) }}</span>
           </button>
           <div v-if="!isGroupCollapsed('collapsed')" class="collapse-content">
             <div
@@ -255,7 +257,7 @@ function isActive(id: string | null): boolean {
               class="collapse-icon"
               :class="{ rotated: !isGroupCollapsed('empty') }"
             />
-            <span>空闲 {{ emptyCategories.length }} 个</span>
+            <span>{{ t('emptyCategories', { count: emptyCategories.length }) }}</span>
           </button>
           <div v-if="!isGroupCollapsed('empty')" class="collapse-content">
             <div
@@ -281,7 +283,7 @@ function isActive(id: string | null): boolean {
       <div class="stats-card">
         <div class="stats-header">
           <BarChart3 :size="14" class="stats-icon" />
-          <span class="stats-label">完成率</span>
+          <span class="stats-label">{{ t('completionRate') }}</span>
           <span class="stats-value">{{ stats.completion_rate }}%</span>
         </div>
         <div class="progress-bar">
@@ -291,23 +293,23 @@ function isActive(id: string | null): boolean {
           ></div>
         </div>
         <div class="stats-detail">
-          <span>{{ stats.completed }} 已完成</span>
-          <span>{{ stats.total }} 总计</span>
+          <span>{{ stats.completed }} {{ t('completed') }}</span>
+          <span>{{ stats.total }} {{ t('total') }}</span>
         </div>
 
         <!-- 迷你指标 -->
         <div class="mini-stats">
           <div class="mini-stat">
             <span class="mini-value">{{ stats.pending }}</span>
-            <span class="mini-label">待处理</span>
+            <span class="mini-label">{{ t('pending') }}</span>
           </div>
           <div class="mini-stat">
             <span class="mini-value">{{ stats.in_progress }}</span>
-            <span class="mini-label">进行中</span>
+            <span class="mini-label">{{ t('inProgress') }}</span>
           </div>
           <div class="mini-stat" :class="{ warning: stats.overdue > 0 }">
             <span class="mini-value">{{ stats.overdue }}</span>
-            <span class="mini-label">逾期</span>
+            <span class="mini-label">{{ t('overdue') }}</span>
           </div>
         </div>
       </div>
@@ -315,13 +317,13 @@ function isActive(id: string | null): boolean {
       <!-- 快捷键提示 -->
       <div class="shortcuts-card">
         <div class="shortcut-hint">
-          <kbd>N</kbd> 新建
+          <kbd>N</kbd> {{ t('new') }}
         </div>
         <div class="shortcut-hint">
-          <kbd>/</kbd> 搜索
+          <kbd>/</kbd> {{ t('search') }}
         </div>
         <div class="shortcut-hint">
-          <kbd>↑↓</kbd> 导航
+          <kbd>↑↓</kbd> {{ t('navigate') }}
         </div>
       </div>
     </nav>
