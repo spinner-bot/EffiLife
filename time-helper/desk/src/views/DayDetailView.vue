@@ -53,6 +53,7 @@ function planTypeLabel(value?: string): string {
 // 计划选择弹窗
 const showPlanSelector = ref(false)
 const deletingRecord = ref(false)
+const changingPlan = ref(false)
 
 // 加载数据
 async function loadData() {
@@ -190,11 +191,14 @@ async function deleteRecord(index: number) {
 
 // 切换日计划 - 打开选择弹窗
 function openPlanSelector() {
+  if (changingPlan.value) return
   showPlanSelector.value = true
 }
 
 // 选择新计划
 async function selectPlan(planName: string) {
+  if (changingPlan.value) return
+  changingPlan.value = true
   try {
     await DataService.saveDayPlan(planName, dateStr.value)
     showPlanSelector.value = false
@@ -204,6 +208,8 @@ async function selectPlan(planName: string) {
   } catch (error) {
     console.error('Failed to change historical day plan:', error)
     notifyToast(error instanceof Error ? error.message : t('dayDetail.planChangeFailed'), 'error')
+  } finally {
+    changingPlan.value = false
   }
 }
 
@@ -244,7 +250,7 @@ onUnmounted(() => {
       <section class="info-card">
         <div class="info-header">
           <h2>{{ t('dayDetail.plan') }}</h2>
-          <button type="button" class="change-btn" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
+          <button type="button" class="change-btn" :disabled="changingPlan" @click="openPlanSelector">{{ t('dayDetail.switch') }}</button>
         </div>
         <p v-if="planUnavailable" class="plan-unavailable" role="status" aria-live="polite">{{ t('dayDetail.planUnavailable') }}</p>
         <p v-else class="plan-name">{{ dayPlanName }}（{{ planTypeLabel(dayPlanType) }}）</p>
@@ -308,11 +314,11 @@ onUnmounted(() => {
     <!-- 计划选择弹窗 -->
     <Teleport to="body">
       <Transition name="modal">
-        <div v-if="showPlanSelector" class="modal-overlay" @click.self="showPlanSelector = false">
+        <div v-if="showPlanSelector" class="modal-overlay" @click.self="!changingPlan && (showPlanSelector = false)">
           <div class="modal">
             <div class="modal-header">
               <h3>{{ t('dayDetail.switchPlan') }}</h3>
-              <button type="button" class="close-btn" :aria-label="t('dayDetail.close')" @click="showPlanSelector = false">
+              <button type="button" class="close-btn" :aria-label="t('dayDetail.close')" :disabled="changingPlan" @click="showPlanSelector = false">
                 <X :size="20" />
               </button>
             </div>
@@ -324,6 +330,7 @@ onUnmounted(() => {
                 :key="name"
                 class="plan-option"
                 :class="{ active: name === dayPlanName }"
+                :disabled="changingPlan"
                 @click="selectPlan(name as string)"
               >
                 <div class="plan-info">
@@ -333,7 +340,7 @@ onUnmounted(() => {
                 <Check v-if="name === dayPlanName" :size="18" class="check-icon" />
               </button>
             </div>
-            <button type="button" class="btn secondary full" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
+            <button type="button" class="btn secondary full" :disabled="changingPlan" @click="showPlanSelector = false">{{ t('settings.cancel') }}</button>
           </div>
         </div>
       </Transition>
