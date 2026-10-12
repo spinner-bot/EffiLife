@@ -471,17 +471,26 @@ async function deletePlan(name: string) {
   }
   const fallbackPlan = remainingNames[0]
   delete newPlans[name]
-  await appStore.savePlans(newPlans)
-  const nextRules = scheduleRules.value.map((rule) =>
-    rule.plan_name === name ? { ...rule, plan_name: fallbackPlan } : rule,
-  )
-  await appStore.saveScheduleRules(nextRules)
-  const manualPlans = await DataService.loadManualPlans()
-  const cleanedManualPlans = Object.fromEntries(
-    Object.entries(manualPlans).filter(([, planName]) => planName !== name),
-  )
-  await DataService.saveManualPlans(cleanedManualPlans)
-  await appStore.refreshTodayData()
+  const previousPlans = JSON.parse(JSON.stringify(plans.value)) as Plans
+  const previousRules = scheduleRules.value.map((rule) => ({ ...rule }))
+  const previousManualPlans = await DataService.loadManualPlans()
+  try {
+    await appStore.savePlans(newPlans)
+    const nextRules = scheduleRules.value.map((rule) =>
+      rule.plan_name === name ? { ...rule, plan_name: fallbackPlan } : rule,
+    )
+    await appStore.saveScheduleRules(nextRules)
+    const cleanedManualPlans = Object.fromEntries(
+      Object.entries(previousManualPlans).filter(([, planName]) => planName !== name),
+    )
+    await DataService.saveManualPlans(cleanedManualPlans)
+    await appStore.refreshTodayData()
+  } catch (error) {
+    try { await appStore.savePlans(previousPlans) } catch (rollbackError) { console.warn('Failed to roll back deleted plan data:', rollbackError) }
+    try { await appStore.saveScheduleRules(previousRules) } catch (rollbackError) { console.warn('Failed to roll back deleted plan rules:', rollbackError) }
+    try { await DataService.saveManualPlans(previousManualPlans) } catch (rollbackError) { console.warn('Failed to roll back deleted manual plans:', rollbackError) }
+    throw error
+  }
 }
 
 // 日程规则
