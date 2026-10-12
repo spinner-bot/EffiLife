@@ -19,6 +19,7 @@ import { useI18n } from '@/i18n'
 import { unlinkTodoFromTimeRecord } from '@/services/workspaceSync'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
+import { currentRecordDefaults } from '@/services/recordDefaults'
 
 const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 const router = useRouter()
@@ -67,12 +68,13 @@ const formContent = ref('')
 const formTag = ref('')
 
 function resetRecordForm() {
+  const defaults = currentRecordDefaults()
   formMode.value = 'time'
-  formStart.value = { h: '09', m: '00' }
-  formEnd.value = { h: '10', m: '00' }
-  formDuration.value = { h: '1', m: '0' }
+  formStart.value = defaults.start
+  formEnd.value = defaults.end
+  formDuration.value = defaults.duration
   formDurationRef.value = 'start'
-  formDurationTime.value = { h: '09', m: '00' }
+  formDurationTime.value = defaults.reference
   formContent.value = ''
   formTag.value = availableTags.value[0] || ''
   isEditing.value = false
