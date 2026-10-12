@@ -90,6 +90,7 @@ const editingIndex = ref(-1)
 const editingRecordId = ref<string | null>(null)
 const showForm = ref(false)
 const isSaving = ref(false)
+const deletingRecord = ref(false)
 const recordModal = ref<HTMLElement | null>(null)
 const recordReturnFocus = ref<HTMLElement | null>(null)
 const historyDate = ref(getTodayDate())
@@ -411,17 +412,19 @@ async function saveRecordInternal() {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!(await requestConfirm(t('records.deleteConfirm'), { tone: 'danger' }))) return
-  const requestedRecord = records.value[index]
-  const resolvedIndex = requestedRecord?.id
-    ? records.value.findIndex((item) => item.id === requestedRecord.id)
-    : index
-  const record = resolvedIndex >= 0 ? records.value[resolvedIndex] : undefined
-  if (!record || resolvedIndex < 0) {
-    notifyToast(t('records.validation.recordMissing'), 'error')
-    return
-  }
+  if (deletingRecord.value) return
+  deletingRecord.value = true
   try {
+    if (!(await requestConfirm(t('records.deleteConfirm'), { tone: 'danger' }))) return
+    const requestedRecord = records.value[index]
+    const resolvedIndex = requestedRecord?.id
+      ? records.value.findIndex((item) => item.id === requestedRecord.id)
+      : index
+    const record = resolvedIndex >= 0 ? records.value[resolvedIndex] : undefined
+    if (!record || resolvedIndex < 0) {
+      notifyToast(t('records.validation.recordMissing'), 'error')
+      return
+    }
     await appStore.deleteRecord(resolvedIndex)
     try {
       await unlinkTodoFromTimeRecord(record)
@@ -434,6 +437,8 @@ async function deleteRecord(index: number) {
   } catch (error) {
     console.error('Failed to delete time record:', error)
     notifyToast(error instanceof Error ? error.message : t('records.deleteFailed'), 'error')
+  } finally {
+    deletingRecord.value = false
   }
 }
 
@@ -516,7 +521,7 @@ onUnmounted(() => {
             <button type="button" class="icon-btn" :aria-label="t('records.edit')" @click="openEditForm(index)" :title="t('records.edit')">
               <Pencil :size="14" />
             </button>
-            <button type="button" class="icon-btn danger" :aria-label="t('records.delete')" @click="deleteRecord(index)" :title="t('records.delete')">
+          <button type="button" class="icon-btn danger" :aria-label="t('records.delete')" :disabled="deletingRecord" @click="deleteRecord(index)" :title="t('records.delete')">
               <Trash2 :size="14" />
             </button>
           </div>

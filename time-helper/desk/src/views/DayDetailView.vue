@@ -52,6 +52,7 @@ function planTypeLabel(value?: string): string {
 
 // 计划选择弹窗
 const showPlanSelector = ref(false)
+const deletingRecord = ref(false)
 
 // 加载数据
 async function loadData() {
@@ -155,17 +156,19 @@ const stopWorkspaceListener = onWorkspaceChanged((source) => {
 
 // 删除记录
 async function deleteRecord(index: number) {
-  if (!(await requestConfirm(t('dayDetail.deleteConfirm'), { tone: 'danger' }))) return
-  const requestedRecord = records.value[index]
-  const resolvedIndex = requestedRecord?.id
-    ? records.value.findIndex((item) => item.id === requestedRecord.id)
-    : index
-  const record = resolvedIndex >= 0 ? records.value[resolvedIndex] : undefined
-  if (!record || resolvedIndex < 0) {
-    notifyToast(t('dayDetail.recordMissing'), 'error')
-    return
-  }
+  if (deletingRecord.value) return
+  deletingRecord.value = true
   try {
+    if (!(await requestConfirm(t('dayDetail.deleteConfirm'), { tone: 'danger' }))) return
+    const requestedRecord = records.value[index]
+    const resolvedIndex = requestedRecord?.id
+      ? records.value.findIndex((item) => item.id === requestedRecord.id)
+      : index
+    const record = resolvedIndex >= 0 ? records.value[resolvedIndex] : undefined
+    if (!record || resolvedIndex < 0) {
+      notifyToast(t('dayDetail.recordMissing'), 'error')
+      return
+    }
     await DataService.deleteRecord(resolvedIndex, dateStr.value)
     try {
       await unlinkTodoFromTimeRecord(record)
@@ -180,6 +183,8 @@ async function deleteRecord(index: number) {
   } catch (error) {
     console.error('Failed to delete historical time record:', error)
     notifyToast(error instanceof Error ? error.message : t('dayDetail.deleteFailed'), 'error')
+  } finally {
+    deletingRecord.value = false
   }
 }
 
@@ -289,7 +294,7 @@ onUnmounted(() => {
             </div>
             <div class="record-content">{{ record.content }}</div>
             <button v-if="record.todo_id" type="button" class="record-linked-label" :class="{ unavailable: isLinkedTodoUnavailable(record.todo_id) }" :disabled="isLinkedTodoUnavailable(record.todo_id)" @click="openLinkedTodo(record.todo_id)">{{ isLinkedTodoUnavailable(record.todo_id) ? t('dayDetail.todoUnavailable') : t('dayDetail.openLinkedTodo') }}</button>
-            <button type="button" class="delete-btn" :aria-label="t('dayDetail.delete')" @click="deleteRecord(index)">
+            <button type="button" class="delete-btn" :aria-label="t('dayDetail.delete')" :disabled="deletingRecord" @click="deleteRecord(index)">
               <Trash2 :size="14" />
             </button>
           </div>
