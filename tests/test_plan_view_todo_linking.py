@@ -25,3 +25,11 @@ def test_primary_time_entry_refreshes_todo_options_after_workspace_changes():
     assert "onWorkspaceChanged" in VIEW
     assert "source === 'todos' || source === 'archive'" in VIEW
     assert "onUnmounted" in VIEW
+
+
+def test_primary_time_entry_prevents_duplicate_saves_and_surfaces_storage_failures():
+    assert "const isSavingRecord = ref(false)" in VIEW
+    assert "if (isSavingRecord.value) return" in VIEW
+    assert "await saveRecordInternal()" in VIEW
+    assert "t('legacyPlan.saveFailed')" in VIEW
+    assert ':disabled="isSavingRecord"' in VIEW

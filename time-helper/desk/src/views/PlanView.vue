@@ -77,6 +77,7 @@ const isEditing = ref(false)
 const editingIndex = ref(-1)
 const editingRecordId = ref<string | null>(null)
 const showRecordForm = ref(false)
+const isSavingRecord = ref(false)
 
 const formMode = ref<'time' | 'duration'>('time')
 const formStart = ref({ h: '09', m: '00' })
@@ -146,6 +147,19 @@ function checkConflict(start: string, end: string, tag: string, excludeIndex = -
 }
 
 async function saveRecord() {
+  if (isSavingRecord.value) return
+  isSavingRecord.value = true
+  try {
+    await saveRecordInternal()
+  } catch (error) {
+    console.error('Failed to save time record:', error)
+    notifyToast(t('legacyPlan.saveFailed'), 'error')
+  } finally {
+    isSavingRecord.value = false
+  }
+}
+
+async function saveRecordInternal() {
   // 使用表单验证
   const valid = recordValidation.validate({
     content: formContent.value,
@@ -1034,9 +1048,9 @@ onUnmounted(() => {
           </div>
           <div class="pv-modal-footer">
             <button type="button" class="pv-secondary-btn" @click="showRecordForm = false">{{ t('legacyPlan.cancel') }}</button>
-            <button type="button" class="pv-primary-btn" @click="AudioManager.playSound('click'); saveRecord()">
+            <button type="button" class="pv-primary-btn" :disabled="isSavingRecord" @click="AudioManager.playSound('click'); saveRecord()">
               <Check :size="14" />
-              <span>{{ t('legacyPlan.save') }}</span>
+              <span>{{ isSavingRecord ? t('legacyPlan.saving') : t('legacyPlan.save') }}</span>
             </button>
           </div>
         </div>
