@@ -405,14 +405,17 @@ async function saveRecordInternal() {
       const todo = todos.value.find((item) => item.id === record.todo_id)
       const recordId = record.id as string
       const alreadyLinkedToSameTodo = originalRecord?.todo_id === record.todo_id
-      if (todo && alreadyLinkedToSameTodo && !todo.related_time_record_ids?.includes(recordId)) {
-        const updated = await TodoService.update(todo.id, {
-          related_time_record_ids: [...(todo.related_time_record_ids || []), recordId],
-        })
+      const recordMinutes = Math.max(1, Math.round(record.duration * 60))
+      if (todo && alreadyLinkedToSameTodo) {
+        const hasRecordLink = todo.related_time_record_ids?.includes(recordId) || false
+        const updated = hasRecordLink
+          ? (originalRecord && Math.round(originalRecord.duration * 60) !== recordMinutes
+            ? await TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))
+            : todo)
+          : await TodoService.trackTime(todo.id, recordMinutes, recordId)
         todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
       } else if (todo && !alreadyLinkedToSameTodo) {
-        const minutes = Math.max(1, Math.round(record.duration * 60))
-        const updated = await TodoService.trackTime(todo.id, minutes, recordId)
+        const updated = await TodoService.trackTime(todo.id, recordMinutes, recordId)
         todos.value = todos.value.map((item) => item.id === updated.id ? updated : item)
       }
     } catch (error) {

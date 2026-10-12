@@ -26,3 +26,8 @@ def test_tracking_same_record_batch_is_idempotent_for_time_spent():
 def test_startup_record_link_repair_removes_duplicate_ids():
     sync = (ROOT / "time-helper/desk/src/services/workspaceSync.ts").read_text(encoding="utf-8")
     assert "const validLinks = [...new Set(links.filter((id) => recordIds.has(id)))]" in sync
+
+
+def test_editing_a_linked_record_can_adjust_the_todo_time_aggregate():
+    assert "async adjustTrackedTime(id: string, deltaMinutes: number)" in SERVICE
+    assert "time_spent: Math.max(0, Number(current.time_spent || 0) + deltaMinutes)" in SERVICE

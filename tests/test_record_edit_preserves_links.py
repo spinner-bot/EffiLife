@@ -13,6 +13,8 @@ def test_records_view_preserves_identity_and_todo_link_on_edit():
     assert "id: originalRecord?.id || `TR-" in source
     assert "todo_id: selectedTodoId.value || undefined" in source
     assert "selectedTodoId.value = record.todo_id || ''" in source
+    assert "TodoService.adjustTrackedTime(todo.id, recordMinutes - Math.max(1, Math.round(originalRecord.duration * 60)))" in source
+    assert "const recordMinutes = Math.max(1, Math.round(record.duration * 60))" in source
 
 
 def test_unified_plan_workspace_preserves_identity_and_todo_link_on_edit():

@@ -453,6 +453,19 @@ export const TodoService = {
       related_time_record_ids: relatedTimeRecordIds,
     })
   },
+
+  /** Adjust the aggregate for an existing linked time record after editing it. */
+  async adjustTrackedTime(id: string, deltaMinutes: number): Promise<UnifiedTodo> {
+    const todos = await this.list()
+    const current = todos.find((todo) => todo.id === id)
+    if (!current) throw new Error(translate('tasks.error.taskMissing'))
+    if (!Number.isInteger(deltaMinutes) || deltaMinutes === 0 || Math.abs(deltaMinutes) > 1440) {
+      throw new Error(translate('tasks.error.invalidMinutes'))
+    }
+    return this.update(id, {
+      time_spent: Math.max(0, Number(current.time_spent || 0) + deltaMinutes),
+    })
+  },
 }
 
 /** Import a to-dos JSON export without replacing current unified data. */
