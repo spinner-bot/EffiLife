@@ -12,7 +12,11 @@ def test_core_date_helpers_use_local_calendar_components():
     assert "date.getDate()" in DATA_SERVICE
     assert "now.toISOString().split('T')[0]" not in DATA_SERVICE
     assert "export function parseLocalDate" in DATA_SERVICE
-    assert "new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))" in DATA_SERVICE
+    assert "const parsed = new Date(year, month - 1, day)" in DATA_SERVICE
+    assert "parsed.getFullYear() !== year" in DATA_SERVICE
+    assert "parsed.getMonth() !== month - 1" in DATA_SERVICE
+    assert "parsed.getDate() !== day" in DATA_SERVICE
+    assert "return new Date(Number.NaN)" in DATA_SERVICE
 
 
 def test_public_date_api_reuses_local_date_helpers():

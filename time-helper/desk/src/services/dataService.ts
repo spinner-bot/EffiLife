@@ -259,7 +259,18 @@ export function formatDate(date: Date): string {
 export function parseLocalDate(dateStr: string): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
   if (!match) return new Date(dateStr)
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(year, month - 1, day)
+  // Date normalizes out-of-range values (for example 2026-02-31). A
+  // calendar-only value must never silently move to a different day.
+  if (
+    parsed.getFullYear() !== year
+    || parsed.getMonth() !== month - 1
+    || parsed.getDate() !== day
+  ) return new Date(Number.NaN)
+  return parsed
 }
 
 /** Parse a stored date while preserving calendar-only values in local time. */
