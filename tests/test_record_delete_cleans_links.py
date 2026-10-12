@@ -38,6 +38,14 @@ def test_data_service_delete_paths_clean_todo_reverse_links_at_storage_boundary(
     assert "related_time_record_ids.filter((id) => id !== recordId)" in data
 
 
+def test_data_service_update_cleans_previous_reverse_link_when_record_relation_changes():
+    data = (ROOT / "time-helper/desk/src/services/dataService.ts").read_text(encoding="utf-8")
+    update = data.split("async updateRecord(index: number, record: TimeRecord", 1)[1].split("// 鏃ヨ鍒", 1)[0]
+    assert "const previousRecord = records[index]" in update
+    assert "previousRecord.id !== record.id || previousRecord.todo_id !== record.todo_id" in update
+    assert "await unlinkRecordFromTodoReverseLinks(previousRecord.id)" in update
+
+
 def test_day_detail_delete_cleans_linked_todo_reference():
     source = (ROOT / "time-helper" / "desk" / "src" / "views" / "DayDetailView.vue").read_text(encoding="utf-8")
 
