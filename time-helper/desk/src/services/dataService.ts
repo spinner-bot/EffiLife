@@ -364,19 +364,29 @@ function enqueueRecordWrite(day: string, operation: () => Promise<void>): Promis
 /** Keep TD reverse references valid when TH records are removed directly. */
 async function unlinkRecordFromTodoReverseLinks(recordId: string): Promise<void> {
   if (!recordId) return
+  const todos = await getRawAll<TodoRecordLinkSnapshot>(STORE_NAMES.TODOS)
+  const linkedTodos = todos.filter((todo) => todo?.id && todo.related_time_record_ids?.includes(recordId))
+  const updatedTodos: TodoRecordLinkSnapshot[] = []
   try {
-    const todos = await getRawAll<TodoRecordLinkSnapshot>(STORE_NAMES.TODOS)
-    for (const todo of todos) {
-      if (!todo?.id || !todo.related_time_record_ids?.includes(recordId)) continue
+    for (const todo of linkedTodos) {
       await putRaw(STORE_NAMES.TODOS, {
         ...todo,
-        related_time_record_ids: todo.related_time_record_ids.filter((id) => id !== recordId),
+        related_time_record_ids: todo.related_time_record_ids?.filter((id) => id !== recordId),
       })
+      updatedTodos.push(todo)
     }
   } catch (error) {
-    // Record deletion remains authoritative; a reverse-link cleanup failure is
-    // recoverable by the normal workspace repair pass.
-    console.warn('Failed to clean deleted time record todo links:', error)
+    // Restore any TD entries already changed in this pass. The caller also
+    // restores the TH record, so a direct storage-level delete is all-or-
+    // recoverably-nothing rather than a silent partial mutation.
+    for (const todo of updatedTodos) {
+      try {
+        await putRaw(STORE_NAMES.TODOS, todo)
+      } catch (rollbackError) {
+        console.error('Failed to roll back deleted time record todo link:', rollbackError)
+      }
+    }
+    throw error
   }
 }
 
@@ -540,11 +550,18 @@ export const DataService = {
       const records = await this.loadRecords(targetDay)
       if (index >= 0 && index < records.length) {
         const removedRecord = records[index]
-        records.splice(index, 1)
-        await idbSet(STORE_NAMES.RECORDS, targetDay, records)
-        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, records)
-        triggerBackup('records', { date: targetDay, records })
-        await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')
+        const previousRecords = records.slice()
+        const nextRecords = records.slice()
+        nextRecords.splice(index, 1)
+        await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
+        try {
+          await unlinkRecordFromTodoReverseLinks(removedRecord.id || '')
+        } catch (error) {
+          await idbSet(STORE_NAMES.RECORDS, targetDay, previousRecords)
+          throw error
+        }
+        writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
+        triggerBackup('records', { date: targetDay, records: nextRecords })
       }
     })
   },
@@ -556,10 +573,16 @@ export const DataService = {
       const removed = records.find((record) => record.id === id)
       const nextRecords = records.filter((record) => record.id !== id)
       if (nextRecords.length === records.length) return
+      const previousRecords = records.slice()
       await idbSet(STORE_NAMES.RECORDS, targetDay, nextRecords)
+      try {
+        await unlinkRecordFromTodoReverseLinks(removed?.id || id)
+      } catch (error) {
+        await idbSet(STORE_NAMES.RECORDS, targetDay, previousRecords)
+        throw error
+      }
       writeLegacyMirror(STORAGE_PREFIX + 'records_' + targetDay, nextRecords)
       triggerBackup('records', { date: targetDay, records: nextRecords })
-      await unlinkRecordFromTodoReverseLinks(removed?.id || id)
     })
   },
 
