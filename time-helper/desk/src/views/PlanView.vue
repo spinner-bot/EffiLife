@@ -338,6 +338,7 @@ type ManageView = 'overview' | 'plans' | 'editPlan' | 'rules' | 'editRule' | 'te
 const manageView = ref<ManageView>('overview')
 
 const editingPlanName = ref('')
+const editingOriginalPlanName = ref('')
 const editingPlanType = ref<'切分制' | '分配制'>('切分制')
 const editingPlanBgTag = ref('')
 const editingPlanColor = ref([128, 128, 128])
@@ -355,6 +356,7 @@ const editingPlanItems = ref<DraftPlanItem[]>([createDraftPlanItem(), createDraf
 function openPlanList() { manageView.value = 'plans' }
 function openCreatePlan() {
   editingPlanName.value = ''
+  editingOriginalPlanName.value = ''
   editingPlanType.value = '切分制'
   editingPlanBgTag.value = ''
   editingPlanColor.value = [128, 128, 128]
@@ -365,6 +367,7 @@ function openEditPlan(name: string) {
   const plan = plans.value[name]
   if (!plan) return
   editingPlanName.value = name
+  editingOriginalPlanName.value = name
   editingPlanType.value = plan.plan_type
   editingPlanBgTag.value = plan.bg_tag
   editingPlanColor.value = [...plan.color]
@@ -413,7 +416,13 @@ async function savePlanInternal() {
     }
   if (!editingPlanBgTag.value) { notifyToast(t('legacyPlan.backgroundRequired'), 'error'); return }
   }
+  const originalName = editingOriginalPlanName.value.trim()
+  if (originalName && originalName !== name && Object.prototype.hasOwnProperty.call(plans.value, name)) {
+    notifyToast(t('legacyPlan.planNameExists'), 'error')
+    return
+  }
   const newPlans = { ...plans.value }
+  if (originalName && originalName !== name) delete newPlans[originalName]
   newPlans[name] = {
     plan_type: editingPlanType.value,
     items,
@@ -421,6 +430,19 @@ async function savePlanInternal() {
     color: editingPlanColor.value
   }
   await appStore.savePlans(newPlans)
+  if (originalName && originalName !== name) {
+    const nextRules = scheduleRules.value.map((rule) =>
+      rule.plan_name === originalName ? { ...rule, plan_name: name } : rule,
+    )
+    await appStore.saveScheduleRules(nextRules)
+    const manualPlans = await DataService.loadManualPlans()
+    const renamedManualPlans = Object.fromEntries(
+      Object.entries(manualPlans).map(([date, planName]) => [date, planName === originalName ? name : planName]),
+    )
+    await DataService.saveManualPlans(renamedManualPlans)
+    await appStore.refreshTodayData()
+  }
+  editingOriginalPlanName.value = name
   manageView.value = 'plans'
 }
 async function deletePlan(name: string) {
