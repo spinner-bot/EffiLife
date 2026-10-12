@@ -73,6 +73,21 @@ def test_android_report_rejects_configured_but_missing_sdk_directory(monkeypatch
     assert f"Android SDK directory: {missing_sdk}" in report["missing"]
 
 
+def test_android_report_rejects_missing_compile_sdk_platform(monkeypatch, tmp_path):
+    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    sdk = tmp_path / "android-sdk"
+    (sdk / "platforms").mkdir(parents=True)
+    monkeypatch.setenv("ANDROID_HOME", str(sdk))
+    project = tmp_path / "time-helper/desk/src-tauri/gen/android/app"
+    project.mkdir(parents=True)
+    (project / "build.gradle.kts").write_text("android { compileSdk = 36 }", encoding="utf-8")
+
+    report = MODULE.build_report("android", tmp_path)
+
+    assert report["ready"] is False
+    assert f"Android platform: {sdk / 'platforms' / 'android-36'}" in report["missing"]
+
+
 def test_ios_report_uses_tauri_apple_project_directory(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda _name: "/bin/tool")
     project = tmp_path / "time-helper/desk/src-tauri/gen/apple"

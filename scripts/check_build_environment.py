@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -69,6 +70,27 @@ def node_tool_path(name: str) -> str | None:
     return executable_path(name)
 
 
+def required_android_components(sdk_root: Path, mobile_project: Path | None) -> list[str]:
+    """Return missing SDK components declared by the generated Android project."""
+    if mobile_project is None:
+        return []
+    gradle_file = mobile_project / "app" / "build.gradle.kts"
+    if not gradle_file.is_file():
+        return []
+    try:
+        source = gradle_file.read_text(encoding="utf-8")
+    except OSError:
+        return [f"Android project configuration: {gradle_file}"]
+
+    missing: list[str] = []
+    compile_sdk = re.search(r"compileSdk\s*=\s*(\d+)", source)
+    if compile_sdk:
+        platform = sdk_root / "platforms" / f"android-{compile_sdk.group(1)}"
+        if not platform.is_dir():
+            missing.append(f"Android platform: {platform}")
+    return missing
+
+
 def build_report(target: str, root: Path | None = None) -> dict[str, object]:
     requirements = TARGET_REQUIREMENTS[target]
     tools = {
@@ -93,6 +115,8 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         mobile_project = (root or ROOT) / MOBILE_PROJECTS[target]
         if not mobile_project.is_dir():
             missing.append(f"Tauri {target} project (run tauri {target} init)")
+        elif target == "android" and resolved_sdk:
+            missing.extend(required_android_components(Path(resolved_sdk), mobile_project))
     return {
         "target": target,
         "ready": not missing,
