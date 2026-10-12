@@ -11,6 +11,48 @@ from modules.plan import Plan  # noqa: E402
 
 def test_soft_delete_compacts_display_ids_without_rewriting_internal_slots_or_nested_groups():
     Plan.registry.clear()
+    created = api.create_plan(
+        name="Raw slot contract",
+        date_tuple=(2026, 10, 13),
+        sections=[{
+            "name": "Section A",
+            "tasks": [
+                {"content": "A1", "time_minutes": 10},
+                {"content": "A2", "time_minutes": 20},
+                {"content": "A3", "time_minutes": 30},
+            ],
+        }],
+    )
+    assert created.success
+    plan_id = created.data["id"]
+    plan = Plan.registry[plan_id]
+
+    assert api.add_group(plan_id, 0, "Outer", start_index=1, end_index=3).success
+    assert api.add_group(plan_id, 0, "Inner", start_index=1, end_index=2).success
+    assert api.add_log(
+        plan_id, day=1, task_id="A2", time_input=(9, 30), content="historical A2"
+    ).success
+
+    assert api.delete_task(plan_id, "A2").success
+
+    projected = api.get_plan_full(plan_id)
+    assert projected.success
+    tasks = projected.data["sections"][0]["tasks"]
+    assert [(task["display_id"], task["internal_id"], task["content"]) for task in tasks] == [
+        ("A1", "A1", "A1"),
+        ("A2", "A3", "A3"),
+    ]
+    assert set(projected.data["sections"][0]["groups"]) == {"1_3", "1_2"}
+    assert projected.data["logs"][0]["plan"] == "A2"
+
+    raw_tasks = plan.plan["main"][0]["plan"]
+    assert len(raw_tasks) == 4
+    assert raw_tasks[1]["is_active"] is True
+    assert raw_tasks[2]["is_active"] is False
+    assert raw_tasks[3]["is_active"] is True
+    assert raw_tasks[2]["content"] == "A2"
+    assert plan.plan["log"][0]["plan"] == "A2"
+    Plan.registry.clear()
 
 
 def test_new_log_resolves_display_id_to_stable_internal_id_after_soft_delete():
