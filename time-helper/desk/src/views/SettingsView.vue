@@ -31,6 +31,7 @@ const isDev = isDevVersion
 
 // 加载状态（用于骨架屏）
 const isLoading = ref(true)
+const settingsDestructiveBusy = ref(false)
 
 // ============ 引导功能 ============
 function startGuide() {
@@ -500,6 +501,7 @@ async function refreshDataStats() {
 }
 
 async function handleReset(type: ResetType) {
+  if (settingsDestructiveBusy.value) return
   const messages: Record<ResetType, string> = {
     all: t('settings.reset.confirmAll'),
     records: t('settings.reset.confirmRecords'),
@@ -508,8 +510,15 @@ async function handleReset(type: ResetType) {
     settings: t('settings.reset.confirmSettings'),
   }
 
-  if (!await requestConfirm(messages[type], { tone: 'danger' })) return
-  await resetData(type)
+  settingsDestructiveBusy.value = true
+  try {
+    if (!await requestConfirm(messages[type], { tone: 'danger' })) return
+    await resetData(type)
+  } catch (error) {
+    notifyToast(t('settings.reset.failed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+  } finally {
+    settingsDestructiveBusy.value = false
+  }
 }
 
 // ============ 存档管理 ============
@@ -696,11 +705,12 @@ async function loadDataStatus() {
 }
 
 async function handleRestoreBackup(backup: BackupData) {
-  if (!await requestConfirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString(locale.value)}${t('settings.restore.confirmSuffix')}`, { tone: 'danger' })) {
-    return
-  }
-
+  if (settingsDestructiveBusy.value) return
+  settingsDestructiveBusy.value = true
   try {
+    if (!await requestConfirm(`${t('settings.restore.confirmPrefix')}${new Date(backup.timestamp).toLocaleString(locale.value)}${t('settings.restore.confirmSuffix')}`, { tone: 'danger' })) {
+      return
+    }
     const result = await restoreFromSpecificBackup(backup)
     if (result.success) {
       await refreshAfterArchiveImport()
@@ -713,6 +723,8 @@ async function handleRestoreBackup(backup: BackupData) {
     }
   } catch (e) {
     notifyToast(t('settings.restore.failed') + (e as Error).message, 'error')
+  } finally {
+    settingsDestructiveBusy.value = false
   }
 }
 
@@ -1194,7 +1206,7 @@ onUnmounted(() => {
 
       <!-- 数据恢复 -->
       <template v-else-if="currentView === 'restore'">
-        <RecoveryPanel :data-status="dataStatus" :backups="backupsList" @back="goBack" @restore="handleRestoreBackup" @emergency-export="handleEmergencyExport" />
+        <RecoveryPanel :data-status="dataStatus" :backups="backupsList" :busy="settingsDestructiveBusy" @back="goBack" @restore="handleRestoreBackup" @emergency-export="handleEmergencyExport" />
       </template>
 
       <!-- 恢复 -->
@@ -1207,15 +1219,15 @@ onUnmounted(() => {
 
         <div class="reset-section">
           <h3>{{ t('settings.reset.dataClearTitle') }}</h3>
-          <button type="button" class="btn danger full" @click="handleReset('all')">{{ t('settings.reset.all') }}</button>
-          <button type="button" class="btn secondary full" @click="handleReset('records')">{{ t('settings.reset.records') }}</button>
-          <button type="button" class="btn secondary full" @click="handleReset('plans')">{{ t('settings.reset.plans') }}</button>
+          <button type="button" class="btn danger full" :disabled="settingsDestructiveBusy" @click="handleReset('all')">{{ t('settings.reset.all') }}</button>
+          <button type="button" class="btn secondary full" :disabled="settingsDestructiveBusy" @click="handleReset('records')">{{ t('settings.reset.records') }}</button>
+          <button type="button" class="btn secondary full" :disabled="settingsDestructiveBusy" @click="handleReset('plans')">{{ t('settings.reset.plans') }}</button>
         </div>
 
         <div class="reset-section">
           <h3>{{ t('settings.reset.settingsTitle') }}</h3>
-          <button type="button" class="btn secondary full" @click="handleReset('config')">{{ t('settings.reset.config') }}</button>
-          <button type="button" class="btn secondary full" @click="handleReset('settings')">{{ t('settings.reset.audioEvents') }}</button>
+          <button type="button" class="btn secondary full" :disabled="settingsDestructiveBusy" @click="handleReset('config')">{{ t('settings.reset.config') }}</button>
+          <button type="button" class="btn secondary full" :disabled="settingsDestructiveBusy" @click="handleReset('settings')">{{ t('settings.reset.audioEvents') }}</button>
         </div>
 
         <button type="button" class="btn secondary full" @click="goBack">{{ t('settings.back') }}</button>

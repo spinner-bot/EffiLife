@@ -3,7 +3,7 @@ import { ArrowLeft, Download, RotateCcw } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import type { BackupData, DataStatus } from '@/storage'
 
-defineProps<{ dataStatus: DataStatus | null; backups: BackupData[] }>()
+defineProps<{ dataStatus: DataStatus | null; backups: BackupData[]; busy?: boolean }>()
 defineEmits<{ back: []; restore: [backup: BackupData]; emergencyExport: [] }>()
 const { t, locale } = useI18n()
 
@@ -42,7 +42,7 @@ function backupTypeLabel(module: string): string {
 
     <section class="recovery-card">
       <div class="recovery-card-heading"><div><h3>{{ t('settings.restore.emergencyTitle') }}</h3><p>{{ t('settings.restore.emergencyDescription') }}</p></div></div>
-      <button class="recovery-action" type="button" @click="$emit('emergencyExport')"><Download :size="16" /> {{ t('settings.restore.emergencyAction') }}</button>
+      <button class="recovery-action" type="button" :disabled="busy" @click="$emit('emergencyExport')"><Download :size="16" /> {{ t('settings.restore.emergencyAction') }}</button>
     </section>
 
     <section class="recovery-card">
@@ -50,7 +50,7 @@ function backupTypeLabel(module: string): string {
       <div v-if="backups.length" class="backup-list">
         <div v-for="backup in backups" :key="`${backup.module}_${backup.timestamp}`" class="backup-row">
           <div><strong>{{ backupTypeLabel(backup.module) }}</strong><span>{{ new Date(backup.timestamp).toLocaleString(locale) }}</span></div>
-          <button class="recovery-action secondary" type="button" @click="$emit('restore', backup)"><RotateCcw :size="15" /> {{ t('settings.restore.action') }}</button>
+          <button class="recovery-action secondary" type="button" :disabled="busy" @click="$emit('restore', backup)"><RotateCcw :size="15" /> {{ t('settings.restore.action') }}</button>
         </div>
       </div>
       <p v-else class="recovery-muted">{{ t('settings.restore.noBackups') }}</p>
