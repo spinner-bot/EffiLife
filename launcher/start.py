@@ -167,12 +167,14 @@ def native_toolchain_status():
     """Report optional native-build tools without changing launcher readiness."""
     sdk_dir = android_sdk_dir()
     adb = find_android_adb()
+    sdk_exists = bool(sdk_dir and sdk_dir.is_dir())
     return {
         "android": {
             "adb": adb,
             "sdk_root": str(sdk_dir) if sdk_dir else None,
             "sdk_configured": sdk_dir is not None,
-            "ready": bool(adb and sdk_dir),
+            "sdk_exists": sdk_exists,
+            "ready": bool(adb and sdk_exists),
         },
         "ios": {
             "xcodebuild": shutil.which("xcodebuild") or shutil.which("xcodebuild.exe"),
