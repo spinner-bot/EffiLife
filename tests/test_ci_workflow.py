@@ -25,10 +25,13 @@ def test_general_ci_covers_full_python_suite_and_desktop_build():
 
 def test_general_ci_audits_compatibility_ui_dependencies_before_build():
     source = WORKFLOW.read_text(encoding="utf-8")
-    audit_index = source.index("npm audit --audit-level=high")
+    audit_command = "npm audit --audit-level=high --package-lock-only"
+    audit_index = source.index(audit_command)
     build_index = source.index("python scripts/build_todos_ui.py")
     assert "name: Audit compatibility UI dependencies" in source
-    assert "working-directory: to-dos/ui" in source[audit_index - 180:audit_index]
+    audit_step = source[source.rfind("      - name:", 0, audit_index):source.find("      - name:", audit_index)]
+    assert "working-directory: to-dos/ui" in audit_step
+    assert "--package-lock-only" in source[audit_index:audit_index + len(audit_command)]
     assert audit_index < build_index
 
 

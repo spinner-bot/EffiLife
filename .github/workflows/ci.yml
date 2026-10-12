@@ -70,7 +70,10 @@ jobs:
 
       - name: Audit compatibility UI dependencies
         working-directory: to-dos/ui
-        run: npm audit --audit-level=high
+        # Audit the committed lockfile instead of npm's installed-tree
+        # endpoint. This is deterministic in CI and avoids registry 400s
+        # caused by platform-specific optional packages in node_modules.
+        run: npm audit --audit-level=high --package-lock-only
 
       - name: Build compatibility UI
         run: python scripts/build_todos_ui.py
