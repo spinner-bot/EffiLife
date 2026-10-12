@@ -217,9 +217,17 @@ export const useAppStore = defineStore('app', () => {
   // 切换今日计划
   async function changeTodayPlan(planName: string) {
     const today = getTodayDate()
-    await DataService.saveDayPlan(planName, today)
-    await refreshTodayData()
-    notifyWorkspaceChanged('plans')
+    const previousPlan = todayPlan.value
+    try {
+      await DataService.saveDayPlan(planName, today)
+      await refreshTodayData()
+      notifyWorkspaceChanged('plans')
+    } catch (error) {
+      // Keep every caller consistent when persistence or the follow-up read
+      // fails: a failed switch must not leave the shell showing a phantom plan.
+      todayPlan.value = previousPlan
+      throw error
+    }
   }
 
   return {
