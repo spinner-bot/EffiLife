@@ -50,6 +50,16 @@ export function getBuildInfo(): string {
 // 版本历史（手动维护）
 export const VERSION_HISTORY = [
   {
+    version: '1.7.0',
+    date: '2026-10-12',
+    changes: [
+      '统一个人工作台：在同一应用壳中并置 TH 时间、PH 整体计划与 TD 独立待办',
+      '新增统一 .efl 存档：支持三模块数据导入、导出、完整性校验与失败回滚',
+      '计划中心保留嵌套分组、软删除编号和历史执行记录，并支持与待办、时间记录建立关联',
+      '完善桌面启动器、主题持久化、多语言基础和 Android 移动端本地计划快照能力',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-09-20',
     changes: [
@@ -205,6 +215,12 @@ export const VERSION_HISTORY = [
 // original Chinese history for compatibility and provide a parallel English
 // catalog with the same release/bullet shape for the settings view.
 const VERSION_HISTORY_EN: Record<string, string[]> = {
+  '1.7.0': [
+    'Introduced the unified personal workspace: TH time, PH whole plans, and independent TD todos now coexist in one application shell',
+    'Added the unified .efl archive with three-module import/export, integrity checks, and failure rollback',
+    'Preserved nested plan groups, soft-delete numbering, and historical execution records while linking plans with todos and time records',
+    'Improved the desktop launcher, durable theme persistence, i18n foundation, and Android local plan snapshots',
+  ],
   '1.5.0': [
     'Added four flagship quality themes: Nordic Polar Night, Japanese Garden, Victorian Study, and Underwater Temple',
     'Each theme includes layered Canvas effects, a dedicated particle system, and ambient lighting',

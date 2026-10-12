@@ -19,3 +19,10 @@ def test_build_info_formats_release_timestamp_as_a_localized_date():
 
 def test_build_info_uses_catalog_labels_for_build_mode():
     assert "translate('version.build.development')" in VERSION
+
+
+def test_current_release_history_describes_unified_workspace_in_both_locales():
+    assert "version: '1.7.0'" in VERSION
+    assert "'1.7.0': [" in VERSION
+    assert '统一个人工作台' in VERSION
+    assert 'unified personal workspace' in VERSION
