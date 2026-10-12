@@ -261,9 +261,19 @@ export function getBackupModules(): string[] {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     if (key && key.startsWith(prefix)) {
+      try {
+        const backup = JSON.parse(localStorage.getItem(key) || '{}') as Partial<BackupData>
+        if (typeof backup.module === 'string' && backup.module) {
+          modules.add(backup.module)
+          continue
+        }
+      } catch {
+        // Fall back to the key shape for legacy or malformed entries.
+      }
       const rest = key.slice(prefix.length)
-      const moduleName = rest.split('_')[0]
-      modules.add(moduleName)
+      const timestampSeparator = rest.lastIndexOf('_')
+      const moduleName = timestampSeparator > 0 ? rest.slice(0, timestampSeparator) : rest
+      if (moduleName) modules.add(moduleName)
     }
   }
 
