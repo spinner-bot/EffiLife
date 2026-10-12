@@ -23,6 +23,7 @@ def test_build_environment_reports_missing_required_tools(monkeypatch):
 
 def test_android_report_requires_sdk_root_in_addition_to_tool_binaries(monkeypatch):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 17)
     monkeypatch.setattr(MODULE, "CUSTOM_ANDROID_SDK_DIR", Path("F:/missing-effilife-android-sdk"))
     monkeypatch.delenv("ANDROID_HOME", raising=False)
     monkeypatch.delenv("ANDROID_SDK_ROOT", raising=False)
@@ -35,6 +36,7 @@ def test_android_report_requires_sdk_root_in_addition_to_tool_binaries(monkeypat
 
 def test_android_report_exposes_missing_generated_tauri_project(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 17)
     monkeypatch.setenv("ANDROID_HOME", str(tmp_path / "android-sdk"))
     monkeypatch.setattr(MODULE, "ROOT", tmp_path)
 
@@ -47,6 +49,7 @@ def test_android_report_exposes_missing_generated_tauri_project(monkeypatch, tmp
 
 def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 17)
     sdk = tmp_path / "android-sdk"
     sdk.mkdir()
     monkeypatch.setenv("ANDROID_HOME", str(sdk))
@@ -62,6 +65,7 @@ def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monk
 
 def test_android_report_rejects_configured_but_missing_sdk_directory(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 17)
     missing_sdk = tmp_path / "android-sdk"
     monkeypatch.setenv("ANDROID_HOME", str(missing_sdk))
     project = tmp_path / "time-helper/desk/src-tauri/gen/android"
@@ -75,6 +79,7 @@ def test_android_report_rejects_configured_but_missing_sdk_directory(monkeypatch
 
 def test_android_report_rejects_missing_compile_sdk_platform(monkeypatch, tmp_path):
     monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 17)
     sdk = tmp_path / "android-sdk"
     (sdk / "platforms").mkdir(parents=True)
     monkeypatch.setenv("ANDROID_HOME", str(sdk))
@@ -86,6 +91,21 @@ def test_android_report_rejects_missing_compile_sdk_platform(monkeypatch, tmp_pa
 
     assert report["ready"] is False
     assert f"Android platform: {sdk / 'platforms' / 'android-36'}" in report["missing"]
+
+
+def test_android_report_rejects_java_before_version_17(monkeypatch, tmp_path):
+    monkeypatch.setattr(MODULE, "executable_path", lambda name: f"/bin/{name}")
+    monkeypatch.setattr(MODULE, "java_major_version", lambda _path: 11)
+    sdk = tmp_path / "android-sdk"
+    (sdk / "platforms" / "android-36").mkdir(parents=True)
+    monkeypatch.setenv("ANDROID_HOME", str(sdk))
+    project = tmp_path / "time-helper/desk/src-tauri/gen/android"
+    project.mkdir(parents=True)
+
+    report = MODULE.build_report("android", tmp_path)
+
+    assert report["ready"] is False
+    assert "Java 17+ (detected: 11)" in report["missing"]
 
 
 def test_ios_report_uses_tauri_apple_project_directory(monkeypatch, tmp_path):

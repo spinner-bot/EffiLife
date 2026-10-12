@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 
@@ -70,6 +71,31 @@ def node_tool_path(name: str) -> str | None:
     return executable_path(name)
 
 
+def java_major_version(java_path: str | None) -> int | None:
+    """Read the Java major version without requiring a shell-specific command."""
+    if not java_path:
+        return None
+    try:
+        result = subprocess.run(
+            [java_path, "-version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    version_match = re.search(r'version\s+"([^" ]+)"', f"{result.stdout}\n{result.stderr}")
+    if not version_match:
+        return None
+    parts = version_match.group(1).split(".")
+    try:
+        first = int(parts[0])
+        return int(parts[1]) if first == 1 and len(parts) > 1 else first
+    except (ValueError, IndexError):
+        return None
+
+
 def required_android_components(sdk_root: Path, mobile_project: Path | None) -> list[str]:
     """Return missing SDK components declared by the generated Android project."""
     if mobile_project is None:
@@ -97,6 +123,7 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         name: node_tool_path(name) if name in {"node", "npm"} else executable_path(name)
         for name in requirements
     }
+    detected_java_major = java_major_version(tools.get("java")) if target == "android" else None
     configured_sdk = os.environ.get("ANDROID_HOME", "").strip() or os.environ.get("ANDROID_SDK_ROOT", "").strip()
     managed_sdk = CUSTOM_ANDROID_SDK_DIR if os.name == "nt" and CUSTOM_ANDROID_SDK_DIR.is_dir() else None
     resolved_sdk = configured_sdk or (str(managed_sdk) if managed_sdk else None)
@@ -106,6 +133,9 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
     }
     missing = [name for name, path in tools.items() if not path]
     if target == "android":
+        if tools.get("java") and (detected_java_major is None or detected_java_major < 17):
+            detected = "unknown" if detected_java_major is None else str(detected_java_major)
+            missing.append(f"Java 17+ (detected: {detected})")
         if not resolved_sdk:
             missing.append("ANDROID_HOME or ANDROID_SDK_ROOT")
         elif not Path(resolved_sdk).is_dir():
@@ -121,6 +151,7 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         "target": target,
         "ready": not missing,
         "tools": tools,
+        "java_major": detected_java_major,
         "sdk_roots": sdk_roots,
         "mobile_project": str(mobile_project) if mobile_project else None,
         "mobile_project_exists": mobile_project.is_dir() if mobile_project else None,
