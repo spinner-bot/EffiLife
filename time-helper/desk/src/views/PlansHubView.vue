@@ -167,7 +167,8 @@ function sectionDisplayLetter(index: number): string {
 function formatPlanDate(date?: [number, number, number]): string {
   if (!date) return ''
   const [year, month, day] = date
-  const value = new Date(year, month - 1, day)
+  const value = parseLocalDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`)
+  if (Number.isNaN(value.getTime())) return ''
   return new Intl.DateTimeFormat(locale.value, {
     year: 'numeric',
     month: '2-digit',

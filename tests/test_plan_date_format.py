@@ -15,6 +15,8 @@ def test_plan_date_inputs_default_to_today_and_display_two_digit_day():
     assert "year: 'numeric'" in format_block
     assert "month: '2-digit'" in format_block
     assert "day: '2-digit'" in format_block
+    assert "parseLocalDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`)" in format_block
+    assert "if (Number.isNaN(value.getTime())) return ''" in format_block
 
 
 def test_plan_date_editor_uses_native_calendar_date_inputs():
