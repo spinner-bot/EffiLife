@@ -283,14 +283,21 @@ let migrationPromise: Promise<void> | null = null
 // 确保迁移已执行
 async function ensureMigration(): Promise<void> {
   if (!migrationPromise) {
-    migrationPromise = runMigration().then((result) => {
-      if (result.migrated.length > 0) {
-        console.log(`Data migrated: ${result.migrated.join(', ')}`)
-      }
-      if (result.errors.length > 0) {
-        console.error(`Migration errors: ${result.errors.join(', ')}`)
-      }
-    })
+    migrationPromise = runMigration()
+      .then((result) => {
+        if (result.migrated.length > 0) {
+          console.log(`Data migrated: ${result.migrated.join(', ')}`)
+        }
+        if (!result.success) {
+          throw new Error(`Data migration failed: ${result.errors.join('; ')}`)
+        }
+      })
+      .catch((error) => {
+        // A later startup retry must be able to re-run only the unfinished
+        // migrations instead of reusing the rejected promise forever.
+        migrationPromise = null
+        throw error
+      })
   }
   return migrationPromise
 }
