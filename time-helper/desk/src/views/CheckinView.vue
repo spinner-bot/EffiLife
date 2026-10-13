@@ -368,6 +368,28 @@ const last7Days = computed(() => {
   gap: var(--spacing-xl);
 }
 
+/* 桌面端使用横向工作区；移动端保留上到下的阅读顺序。 */
+@media (min-width: 900px) {
+  .checkin-view { padding-left: 32px; padding-right: 32px; }
+  .checkin-view > .header {
+    width: min(1080px, calc(100vw - 64px));
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .main-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+    align-items: start;
+    max-width: 1080px;
+    gap: var(--spacing-xl);
+  }
+  .status-section { grid-column: 1; grid-row: 1; }
+  .stats-grid { grid-column: 2; grid-row: 1; }
+  .week-visualizer { grid-column: 1; grid-row: 2; }
+  .history-section { grid-column: 2; grid-row: 2; }
+  .heatmap-section { grid-column: 1 / -1; grid-row: 3; }
+}
+
 /* 打卡状态卡片 */
 .status-card {
   background: linear-gradient(145deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
