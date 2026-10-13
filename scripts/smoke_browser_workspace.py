@@ -30,6 +30,7 @@ class SmokeResult:
     ph_plan_flow_verified: bool
     mobile_ph_plan_flow_verified: bool
     td_task_flow_verified: bool
+    td_task_mutation_flow_verified: bool
     home_td_completion_feedback_verified: bool
     mobile_td_task_flow_verified: bool
     mobile_td_quick_capture_verified: bool
@@ -104,6 +105,7 @@ def run_smoke(
         ph_plan_flow_verified = False
         mobile_ph_plan_flow_verified = False
         td_task_flow_verified = False
+        td_task_mutation_flow_verified = False
         home_td_completion_feedback_verified = False
         mobile_td_task_flow_verified = False
         mobile_td_quick_capture_verified = False
@@ -321,13 +323,32 @@ def run_smoke(
             page.locator("form.task-create button.task-add").click(timeout=5000)
             task_item = page.locator("article.task-item").filter(has_text="Smoke quick todo")
             task_item.wait_for(state="visible", timeout=5000)
-            task_item.locator("button.task-check").click(timeout=5000)
+            task_item.locator("button.task-edit").click(timeout=5000)
+            editing_task_item = page.locator("article.task-item").first
+            editing_task_item.locator("input.task-edit-input").first.fill("Smoke quick todo edited")
+            editing_task_item.locator("button.task-edit-save").click(timeout=5000)
+            page.locator(".toast-success").first.wait_for(state="visible", timeout=3000)
+            edited_task_item = page.locator("article.task-item").filter(has_text="Smoke quick todo edited")
+            edited_task_item.wait_for(state="visible", timeout=5000)
+            edited_task_item.locator("button.task-check").click(timeout=5000)
             page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            delete_input = page.locator("#new-task-title")
+            delete_input.fill("Smoke delete todo")
+            page.locator("form.task-create button.task-add").click(timeout=5000)
+            delete_item = page.locator("article.task-item").filter(has_text="Smoke delete todo")
+            delete_item.wait_for(state="visible", timeout=5000)
+            delete_item.locator("button.task-delete").click(timeout=5000)
+            delete_confirm = page.locator('[role="alertdialog"]')
+            delete_confirm.wait_for(state="visible", timeout=5000)
+            delete_confirm.locator(".confirm-submit").click(timeout=5000)
+            page.locator(".toast-success").first.wait_for(state="visible", timeout=3000)
+            delete_item.wait_for(state="hidden", timeout=5000)
             page.locator("#tasks-tab-completed").click(timeout=5000)
             page.wait_for_timeout(400)
             if page.locator("article.task-item.completed").filter(has_text="Smoke quick todo").count() != 1:
                 raise RuntimeError("TD complete flow did not retain the completed quick todo")
             td_task_flow_verified = True
+            td_task_mutation_flow_verified = True
 
             # The dashboard is the highest-frequency TD entry point. Verify
             # its inline capture and completion feedback separately from the
@@ -752,6 +773,7 @@ def run_smoke(
         ph_plan_flow_verified=ph_plan_flow_verified,
         mobile_ph_plan_flow_verified=mobile_ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
+        td_task_mutation_flow_verified=td_task_mutation_flow_verified,
         home_td_completion_feedback_verified=home_td_completion_feedback_verified,
         mobile_td_task_flow_verified=mobile_td_task_flow_verified,
         mobile_td_quick_capture_verified=mobile_td_quick_capture_verified,
