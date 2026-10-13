@@ -53,6 +53,7 @@ class SmokeResult:
     startup_recovery_verified: bool
     mobile_startup_recovery_verified: bool
     archive_invalid_recovery_verified: bool
+    archive_write_failure_recovery_verified: bool
     global_search_flow_verified: bool
     mobile_search_flow_verified: bool
 
@@ -73,6 +74,7 @@ def run_smoke(
     mobile_onboarding_flow: bool = False,
     startup_recovery_flow: bool = False,
     archive_invalid_flow: bool = False,
+    archive_write_failure_flow: bool = False,
     global_search_flow: bool = False,
     mobile_search_flow: bool = False,
 ) -> SmokeResult:
@@ -126,6 +128,7 @@ def run_smoke(
         startup_recovery_verified = False
         mobile_startup_recovery_verified = False
         archive_invalid_recovery_verified = False
+        archive_write_failure_recovery_verified = False
         global_search_flow_verified = False
         mobile_search_flow_verified = False
 
@@ -825,6 +828,39 @@ def run_smoke(
                 raise RuntimeError("invalid archive import left archive actions disabled")
             archive_invalid_recovery_verified = True
 
+        if archive_write_failure_flow:
+            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
+            with page.expect_download(timeout=15000) as download_info:
+                page.locator(".archive-actions button").first.click(timeout=5000)
+            archive_path = download_info.value.path()
+            if not archive_path:
+                raise RuntimeError("archive failure flow could not prepare a rollback archive")
+            page.evaluate(
+                """
+                (() => {
+                    const originalPut = IDBObjectStore.prototype.put;
+                    let failed = false;
+                    IDBObjectStore.prototype.put = function (...args) {
+                        if (!failed) {
+                            failed = true;
+                            throw new Error('injected archive import write failure');
+                        }
+                        return originalPut.apply(this, args);
+                    };
+                })()
+                """
+            )
+            page.locator('input[type="file"]').first.set_input_files(archive_path)
+            import_confirm = page.locator('[role="alertdialog"]')
+            import_confirm.wait_for(state="visible", timeout=5000)
+            import_confirm.locator(".confirm-submit").click(timeout=5000)
+            page.locator(".toast-error").wait_for(state="visible", timeout=10000)
+            page.locator(".archive-actions button").first.wait_for(state="visible", timeout=3000)
+            if not page.locator(".archive-actions button").first.is_enabled():
+                raise RuntimeError("archive write failure left archive actions disabled")
+            archive_write_failure_recovery_verified = True
+
         browser.close()
 
     return SmokeResult(
@@ -862,6 +898,7 @@ def run_smoke(
         startup_recovery_verified=startup_recovery_verified,
         mobile_startup_recovery_verified=mobile_startup_recovery_verified,
         archive_invalid_recovery_verified=archive_invalid_recovery_verified,
+        archive_write_failure_recovery_verified=archive_write_failure_recovery_verified,
         global_search_flow_verified=global_search_flow_verified,
         mobile_search_flow_verified=mobile_search_flow_verified,
     )
@@ -932,6 +969,11 @@ def main() -> int:
         help="verify malformed .efl import reports an error and releases the archive UI",
     )
     parser.add_argument(
+        "--archive-write-failure-flow",
+        action="store_true",
+        help="inject one archive import write failure and verify the recovery UI remains usable",
+    )
+    parser.add_argument(
         "--global-search-flow",
         action="store_true",
         help="verify unified TD search and deep-link navigation from the workspace shell",
@@ -958,6 +1000,7 @@ def main() -> int:
             mobile_onboarding_flow=args.mobile_onboarding_flow,
             startup_recovery_flow=args.startup_recovery_flow,
             archive_invalid_flow=args.archive_invalid_flow,
+            archive_write_failure_flow=args.archive_write_failure_flow,
             global_search_flow=args.global_search_flow,
             mobile_search_flow=args.mobile_search_flow,
         )
