@@ -511,7 +511,10 @@ async function createPlan() {
     const createdId = created.id
     selectedPlan.value = await getPlanFull(createdId)
     await refreshLinkedTodoTaskIds()
-    closeCreatePlan()
+    // Creation is still marked busy while the response is being committed;
+    // force-close the modal now that the plan has been loaded successfully so
+    // the newly opened detail view is not left behind an invisible backdrop.
+    closeCreatePlan(true)
     planName.value = ''
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })

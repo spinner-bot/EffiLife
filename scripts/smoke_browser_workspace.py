@@ -27,6 +27,7 @@ class SmokeResult:
     theme_exit_confirmed: bool
     theme_persistence_verified: bool
     locale_persistence_verified: bool
+    ph_plan_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
@@ -39,6 +40,7 @@ def run_smoke(
     headless: bool = True,
     inject_write_failure: bool = False,
     archive_roundtrip: bool = False,
+    ph_plan_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -55,6 +57,7 @@ def run_smoke(
         context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
         page = context.new_page()
         rendered_routes: list[str] = []
+        ph_plan_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -90,6 +93,43 @@ def run_smoke(
             if page.locator("#app").count() != 1 or not page.locator("#app").inner_text().strip():
                 raise RuntimeError(f"route did not render an app shell: {route}")
             rendered_routes.append(route)
+
+        if ph_plan_flow:
+            # This opt-in path requires a running Plan Helper endpoint. It is
+            # kept separate from the browser-only smoke so CI can choose the
+            # appropriate service boundary explicitly.
+            page.goto(f"{base_url.rstrip('/')}/plans", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(1200)
+            plan_startup_alert = page.locator('[role="alertdialog"]')
+            if plan_startup_alert.count():
+                plan_startup_alert.locator(".confirm-cancel").click(timeout=5000)
+            create_button = page.locator(".plan-entry-actions button.plans-primary")
+            if create_button.count() != 1:
+                raise RuntimeError("PH plan flow did not expose the new-plan entry")
+            create_button.click(timeout=5000)
+            create_modal = page.locator(".create-modal")
+            create_modal.wait_for(state="visible", timeout=5000)
+            create_inputs = create_modal.locator("input")
+            if create_inputs.count() < 5:
+                raise RuntimeError("PH create dialog did not expose plan, section and task fields")
+            create_inputs.nth(0).fill("Smoke whole plan")
+            create_inputs.nth(2).fill("Smoke section")
+            create_inputs.nth(4).fill("Smoke plan task")
+            create_modal.locator("button.plans-primary").click(timeout=5000)
+            page.wait_for_timeout(1000)
+            if create_modal.is_visible():
+                raise RuntimeError(f"PH create dialog remained open after submit: {create_modal.inner_text()[:500]}")
+            if page.locator(".plan-detail-layout").count() != 1 or page.get_by_text("Smoke plan task", exact=True).count() != 1:
+                raise RuntimeError("PH create flow did not produce a plan with content")
+            page.locator(".detail-actions button.plans-secondary").first.click(timeout=5000)
+            meta_editor = page.locator(".meta-editor")
+            meta_editor.wait_for(state="visible", timeout=5000)
+            meta_editor.locator("input").first.fill("Smoke whole plan edited")
+            meta_editor.locator("button.plans-primary").click(timeout=5000)
+            page.wait_for_timeout(700)
+            if page.locator(".plans-header h1").get_by_text("Smoke whole plan edited", exact=True).count() != 1:
+                raise RuntimeError("PH edit flow did not persist plan metadata")
+            ph_plan_flow_verified = True
 
         mobile_page = context.new_page()
         mobile_page.set_viewport_size({"width": 390, "height": 844})
@@ -243,6 +283,7 @@ def run_smoke(
         theme_exit_confirmed=not inject_write_failure,
         theme_persistence_verified=theme_persistence_verified,
         locale_persistence_verified=locale_persistence_verified,
+        ph_plan_flow_verified=ph_plan_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,
@@ -264,6 +305,11 @@ def main() -> int:
         action="store_true",
         help="export and re-import a browser .efl archive through the file picker",
     )
+    parser.add_argument(
+        "--ph-plan-flow",
+        action="store_true",
+        help="verify PH create-with-content and edit flow; requires a running Plan Helper service",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -271,6 +317,7 @@ def main() -> int:
             headless=not args.headed,
             inject_write_failure=args.inject_write_failure,
             archive_roundtrip=args.archive_roundtrip,
+            ph_plan_flow=args.ph_plan_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
