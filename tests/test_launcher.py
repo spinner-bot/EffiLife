@@ -684,6 +684,29 @@ def test_posix_shutdown_targets_the_owned_process_group(monkeypatch):
     assert signals == [(4242, launcher.signal.SIGTERM)]
 
 
+def test_windows_shutdown_targets_children_after_npm_shim_exits(monkeypatch):
+    if launcher.os.name != "nt":
+        return
+    calls = []
+
+    class ExitedShim:
+        pid = 4243
+
+        def poll(self):
+            return 0
+
+        def wait(self, timeout=None):
+            return 0
+
+    monkeypatch.setattr(
+        launcher.subprocess,
+        "run",
+        lambda command, **kwargs: calls.append((command, kwargs)) or type("Result", (), {"returncode": 0})(),
+    )
+    launcher.terminate_process(ExitedShim())
+    assert calls[0][0] == ["taskkill", "/PID", "4243", "/T", "/F"]
+
+
 def test_posix_launcher_uses_the_same_unified_entrypoint():
     script = (Path(launcher.BASE_DIR) / "launcher" / "start.sh").read_text(encoding="utf-8")
     assert 'PYTHON_BIN="python3"' in script

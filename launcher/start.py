@@ -1287,20 +1287,20 @@ def local_port_is_occupied(url):
 
 def terminate_process(process):
     """Stop a process started by the launcher without affecting external services."""
-    if process.poll() is None:
-        # npm.cmd is a shim: terminating only its PID can leave the spawned
-        # node/vite process listening on port 1420.  The PID is launcher-owned,
-        # so taskkill's /T scope is limited to that process tree.
-        if os.name == "nt" and getattr(process, "pid", None):
-            result = subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-            if result.returncode != 0 and process.poll() is None:
-                process.terminate()
-        else:
+    # npm.cmd is a shim: the shim can exit while its spawned node/vite child
+    # remains alive. Always target the launcher-owned process tree on Windows,
+    # even when poll() already reports that the shim exited.
+    if os.name == "nt" and getattr(process, "pid", None):
+        result = subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        if result.returncode != 0 and process.poll() is None:
+            process.terminate()
+    elif process.poll() is None:
+        if os.name != "nt":
             try:
                 # POSIX children are launched in a new session, so terminate
                 # the complete Vite/Python process group instead of leaving a
@@ -1308,6 +1308,7 @@ def terminate_process(process):
                 os.killpg(process.pid, signal.SIGTERM)
             except (AttributeError, OSError):
                 process.terminate()
+    if process.poll() is None:
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
