@@ -44,6 +44,13 @@ def main() -> int:
         metavar=("MANIFEST", "DIRECTORY", "TARGET"),
         help="verify an existing release manifest against its directory and target (repeatable)",
     )
+    parser.add_argument(
+        "--verify-upgrade",
+        nargs=4,
+        action="append",
+        metavar=("PREVIOUS", "CURRENT", "TARGET", "DATA_DIR"),
+        help="run the isolated Windows installer upgrade smoke test (repeatable)",
+    )
     args = parser.parse_args()
 
     steps: list[dict[str, object]] = []
@@ -85,6 +92,24 @@ def main() -> int:
                 target,
             ],
         ))
+    for previous, current, target, data_dir in args.verify_upgrade or []:
+        steps.append(run_step(
+            f"Windows installer upgrade verification ({target})",
+            [
+                sys.executable,
+                "scripts/smoke_windows_upgrade.py",
+                "--previous-installer",
+                previous,
+                "--installer",
+                current,
+                "--target",
+                target,
+                "--version-file",
+                "time-helper/VERSION",
+                "--data-dir",
+                data_dir,
+            ],
+        ))
 
     failed = [step for step in steps if step["returncode"] != 0]
     summary = {
@@ -96,6 +121,7 @@ def main() -> int:
             "build": args.skip_build,
             "artifact_verification": not bool(args.verify_artifact),
             "manifest_verification": not bool(args.verify_manifest),
+            "upgrade_verification": not bool(args.verify_upgrade),
         },
     }
     print("\n" + json.dumps(summary, ensure_ascii=True, indent=2))

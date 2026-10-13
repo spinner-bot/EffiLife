@@ -14,6 +14,8 @@ def test_release_candidate_script_keeps_platform_and_build_gates_explicit():
     assert '"scripts/verify_release_artifacts.py"' in SCRIPT
     assert '"--verify-manifest"' in SCRIPT
     assert '"scripts/verify_release_manifest.py"' in SCRIPT
+    assert '"--verify-upgrade"' in SCRIPT
+    assert '"scripts/smoke_windows_upgrade.py"' in SCRIPT
     assert '"-m", "pytest", "-q"' in SCRIPT
 
 
