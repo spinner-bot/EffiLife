@@ -503,7 +503,7 @@ function testWarning(rule: WarningRule) {
                 <Check :size="14" />
                 <span>{{ t('settings.events.checkin') }}</span>
               </button>
-              <button type="button" class="delete-btn" @click.stop="deleteEntry(entry.id)" :title="t('settings.events.delete')">
+              <button type="button" class="delete-btn" :aria-label="t('settings.events.delete')" @click.stop="deleteEntry(entry.id)" :title="t('settings.events.delete')">
                 <Trash2 :size="14" />
               </button>
             </div>
@@ -548,7 +548,7 @@ function testWarning(rule: WarningRule) {
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="eventSettings.enabled[event.type]" @change="toggleEvent(event.type)" />
                 </label>
-                <button type="button" class="test-btn" @click="testEvent(event.type)" :title="t('settings.events.test')">
+                <button type="button" class="test-btn" :aria-label="t('settings.events.test')" @click="testEvent(event.type)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
               </div>
@@ -597,10 +597,10 @@ function testWarning(rule: WarningRule) {
                 <label class="toggle-inline">
                   <input type="checkbox" :checked="rule.enabled" @change="toggleRule(rule)" />
                 </label>
-                <button type="button" class="test-btn" @click="testWarning(rule)" :title="t('settings.events.test')">
+                <button type="button" class="test-btn" :aria-label="t('settings.events.test')" @click="testWarning(rule)" :title="t('settings.events.test')">
                   <Bell :size="14" />
                 </button>
-                <button type="button" class="test-btn danger" @click="deleteRule(rule.id)" :title="t('settings.events.delete')">
+                <button type="button" class="test-btn danger" :aria-label="t('settings.events.delete')" @click="deleteRule(rule.id)" :title="t('settings.events.delete')">
                   <Trash2 :size="14" />
                 </button>
               </div>

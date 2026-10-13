@@ -1274,7 +1274,7 @@ onUnmounted(() => {
             <div class="email-row">
               <Mail :size="20" class="email-icon" />
               <span class="email-address">{{ FEEDBACK_EMAIL }}</span>
-              <button type="button" class="copy-btn" @click="copyEmail" :title="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')">
+              <button type="button" class="copy-btn" :aria-label="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')" @click="copyEmail" :title="copySuccess ? t('settings.feedback.copied') : t('settings.feedback.copyEmail')">
                 <Copy :size="16" />
                 <span v-if="copySuccess">{{ t('settings.feedback.copied') }}</span>
               </button>
