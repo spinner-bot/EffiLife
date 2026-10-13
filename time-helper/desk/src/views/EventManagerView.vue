@@ -11,7 +11,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const eventSettings = ref(EventSystem.getSettings())
 const checkingInEntryId = ref<string | null>(null)
@@ -232,11 +232,14 @@ async function handleCheckinFromInbox(entry: InboxEntry) {
 
 function formatTriggerTime(entry: InboxEntry): string {
   const d = new Date(entry.triggeredAt)
-  const month = (d.getMonth() + 1).toString().padStart(2, '0')
-  const day = d.getDate().toString().padStart(2, '0')
-  const hour = d.getHours().toString().padStart(2, '0')
-  const minute = d.getMinutes().toString().padStart(2, '0')
-  return `${month}-${day} ${hour}:${minute}`
+  if (Number.isNaN(d.getTime())) return entry.triggeredAt
+  return new Intl.DateTimeFormat(locale.value, {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d)
 }
 
 function getEventStyle(type: EventType): string {
