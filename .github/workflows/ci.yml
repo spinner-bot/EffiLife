@@ -67,6 +67,17 @@ jobs:
           fi
           exit "$test_status"
 
+      - name: Report first pytest failure
+        if: ${{ failure() }}
+        run: |
+          if [ -f pytest-failure.log ]; then
+            first_failure=$(grep -m1 -E '^FAILED|^E ' pytest-failure.log || tail -n 1 pytest-failure.log)
+            first_failure=${first_failure//'%'/'%25'}
+            first_failure=${first_failure//$'\n'/'%0A'}
+            first_failure=${first_failure//$'\r'/'%0D'}
+            echo "::error title=pytest first failure::$first_failure"
+          fi
+
       - name: Run unified cross-module integration suite
         run: python scripts/run_integration.py test
 

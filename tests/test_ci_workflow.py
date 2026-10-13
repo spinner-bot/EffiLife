@@ -53,6 +53,8 @@ def test_general_ci_exposes_first_pytest_failure_in_check_annotation():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "failure_tail=$(tail -n 40 pytest-failure.log" in source
     assert "::error file=pytest-failure.log,line=1,title=pytest failure::" in source
+    assert "name: Report first pytest failure" in source
+    assert "first_failure=$(grep -m1 -E '^FAILED|^E ' pytest-failure.log" in source
 
 
 def test_general_ci_uses_pinned_current_action_majors_and_cancellation():
