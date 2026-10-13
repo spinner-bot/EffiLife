@@ -752,10 +752,22 @@ export async function restorePlanArchive(file: string): Promise<string | undefin
   if (restored?.id && restored.restored_from_id !== undefined && String(restored.id) !== String(restored.restored_from_id)) {
     const todoIds = new Set((restored.linked_todos || []).map((link) => link.id).filter((id): id is string => Boolean(id)))
     const todos = await TodoService.list()
-    for (const todo of todos) {
-      if (todoIds.has(todo.id) && todo.related_plan_id === String(restored.restored_from_id)) {
+    const linkedTodos = todos.filter((todo) => todoIds.has(todo.id) && todo.related_plan_id === String(restored.restored_from_id))
+    const updatedTodoIds: string[] = []
+    try {
+      for (const todo of linkedTodos) {
         await TodoService.update(todo.id, { related_plan_id: String(restored.id) })
+        updatedTodoIds.push(todo.id)
       }
+    } catch (error) {
+      for (const todoId of updatedTodoIds) {
+        try {
+          await TodoService.update(todoId, { related_plan_id: String(restored.restored_from_id) })
+        } catch (rollbackError) {
+          console.error('Failed to roll back restored plan todo link:', rollbackError)
+        }
+      }
+      throw error
     }
   }
   return restored?.id ? String(restored.id) : undefined

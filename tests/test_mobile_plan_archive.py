@@ -53,6 +53,7 @@ def test_mobile_plan_archive_and_restore_roll_back_partial_snapshot_or_link_writ
     assert "Failed to roll back mobile restored plan todo link" in GATEWAY
     assert "Failed to roll back mobile restored plan:" in GATEWAY
     assert "const updatedTodoIds: string[] = []" in GATEWAY
+    assert "Failed to roll back restored plan todo link" in GATEWAY
 
 
 def test_mobile_archive_copy_is_localized_as_snapshot_capability():
