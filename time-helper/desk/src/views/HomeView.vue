@@ -513,18 +513,24 @@ const overallDashOffset = computed(() => {
   return circleCircumference * (1 - p / 100)
 })
 
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') void refreshWorkspaceSummaries()
+}
+
 onMounted(() => {
   void refreshWorkspaceSummaries()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // Keep the dashboard summaries fresh even when no workspace event is emitted.
   refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
   if (refreshTimer) clearInterval(refreshTimer)
   if (workspaceRefreshTimer !== null) clearTimeout(workspaceRefreshTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   stopWorkspaceListener()
 })
 </script>

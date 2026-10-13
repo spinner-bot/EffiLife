@@ -14,3 +14,11 @@ def test_home_refreshes_workspace_summaries_periodically():
 def test_home_clears_periodic_summary_refresh_on_unmount():
     source = HOME.read_text(encoding="utf-8")
     assert "if (refreshTimer) clearInterval(refreshTimer)" in source
+
+
+def test_home_refreshes_when_returning_to_the_foreground():
+    source = HOME.read_text(encoding="utf-8")
+    assert "function handleVisibilityChange()" in source
+    assert "if (document.visibilityState === 'visible') void refreshWorkspaceSummaries()" in source
+    assert "document.addEventListener('visibilitychange', handleVisibilityChange)" in source
+    assert "document.removeEventListener('visibilitychange', handleVisibilityChange)" in source
