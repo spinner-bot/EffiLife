@@ -1107,7 +1107,9 @@ onUnmounted(() => {
 
         <div class="form-actions">
           <button type="button" class="btn secondary" @click="goBack">{{ t('settings.back') }}</button>
-          <span class="theme-preview-status" role="status" aria-live="polite">{{ t('settings.theme.previewStatus') }}</span>
+          <span class="theme-preview-status" :class="{ dirty: themeDirty }" role="status" aria-live="polite">
+            {{ themeDirty ? t('settings.theme.previewStatusDirty') : t('settings.theme.previewStatusClean') }}
+          </span>
         </div>
       </template>
 
@@ -1715,6 +1717,11 @@ h2 {
   align-self: center;
   color: var(--color-text-tertiary);
   font-size: 0.8rem;
+}
+
+.theme-preview-status.dirty {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .btn {
