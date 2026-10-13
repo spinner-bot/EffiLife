@@ -15,6 +15,13 @@ def test_home_periodic_statistics_refresh_has_error_boundary():
     assert "Failed to refresh home time summary:" in HOME
 
 
+def test_home_starts_local_clock_before_optional_workspace_refresh_finishes():
+    mounted = HOME.split("onMounted(() =>", 1)[1].split("onUnmounted", 1)[0]
+    assert "void refreshWorkspaceSummaries()" in mounted
+    assert "updateTime()" in mounted
+    assert mounted.index("void refreshWorkspaceSummaries()") < mounted.index("updateTime()")
+
+
 def test_home_cross_window_summary_refresh_has_error_boundary():
     refresh_block = HOME.split("workspaceRefreshTimer = window.setTimeout(async () =>", 1)[1].split("}, 80)", 1)[0]
     assert "await refreshWorkspaceSummaries()" in refresh_block

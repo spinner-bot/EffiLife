@@ -513,8 +513,8 @@ const overallDashOffset = computed(() => {
   return circleCircumference * (1 - p / 100)
 })
 
-onMounted(async () => {
-  await refreshWorkspaceSummaries()
+onMounted(() => {
+  void refreshWorkspaceSummaries()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计

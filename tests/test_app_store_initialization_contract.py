@@ -15,5 +15,6 @@ def test_app_store_reuses_initialization_and_allows_retry_after_failure():
 
 
 def test_home_does_not_initialize_the_shared_store_again():
-    mounted = HOME[HOME.index("onMounted(async () => {"):HOME.index("onUnmounted(() => {")]
+    mounted_start = "onMounted(() => {" if "onMounted(() => {" in HOME else "onMounted(async () => {"
+    mounted = HOME[HOME.index(mounted_start):HOME.index("onUnmounted(() => {")]
     assert "appStore.init()" not in mounted
