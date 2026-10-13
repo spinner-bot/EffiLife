@@ -38,6 +38,7 @@ class SmokeResult:
     ph_td_link_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
+    mobile_archive_share_verified: bool
     mobile_navigation: bool
     confirm_keyboard_accessible: bool
 
@@ -53,6 +54,7 @@ def run_smoke(
     td_task_flow: bool = False,
     td_focus_flow: bool = False,
     th_record_flow: bool = False,
+    mobile_archive_share_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -78,6 +80,7 @@ def run_smoke(
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
+        mobile_archive_share_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -280,6 +283,13 @@ def run_smoke(
             viewport={"width": 390, "height": 844},
         )
         mobile_context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        if mobile_archive_share_flow:
+            mobile_context.add_init_script("""
+                Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+                Object.defineProperty(navigator, 'share', { configurable: true, value: async (data) => {
+                    window.__efflifeSharedArchive = data?.files?.[0]?.name || '';
+                }});
+            """)
         mobile_page = mobile_context.new_page()
         mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
         mobile_page.wait_for_timeout(1200)
@@ -326,6 +336,28 @@ def run_smoke(
             if mobile_page.locator(".plans-header h1").get_by_text("Mobile smoke plan edited", exact=True).count() != 1:
                 raise RuntimeError("mobile PH local snapshot did not persist plan metadata edit")
             mobile_ph_plan_flow_verified = True
+        if mobile_archive_share_flow:
+            mobile_page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
+            mobile_page.wait_for_timeout(900)
+            mobile_recovery_confirm = mobile_page.locator(".confirm-backdrop")
+            if mobile_recovery_confirm.count() and mobile_recovery_confirm.first.is_visible():
+                mobile_recovery_confirm.locator(".confirm-cancel").click(timeout=5000)
+            settings_items = mobile_page.locator("button.settings-item")
+            archive_item = None
+            for index in range(settings_items.count()):
+                label = settings_items.nth(index).inner_text().lower()
+                if "存档" in label or "archive" in label:
+                    archive_item = settings_items.nth(index)
+                    break
+            if archive_item is None:
+                raise RuntimeError("mobile settings did not expose the archive entry")
+            archive_item.click(timeout=5000)
+            mobile_page.locator(".archive-actions button.btn.primary").first.click(timeout=5000)
+            mobile_page.wait_for_timeout(1200)
+            shared_name = mobile_page.evaluate("window.__efflifeSharedArchive || ''")
+            if not isinstance(shared_name, str) or not shared_name.endswith(".efl"):
+                raise RuntimeError("mobile archive export did not enter the system share path")
+            mobile_archive_share_verified = True
         mobile_page.close()
         mobile_context.close()
 
@@ -475,6 +507,7 @@ def run_smoke(
         ph_td_link_flow_verified=ph_td_link_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
+        mobile_archive_share_verified=mobile_archive_share_verified,
         mobile_navigation=True,
         confirm_keyboard_accessible=True,
     )
@@ -519,6 +552,11 @@ def main() -> int:
         action="store_true",
         help="verify TH time-record creation and reload persistence in isolated browser storage",
     )
+    parser.add_argument(
+        "--mobile-archive-share-flow",
+        action="store_true",
+        help="verify mobile .efl export enters the share-file path",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -531,6 +569,7 @@ def main() -> int:
             td_task_flow=args.td_task_flow,
             td_focus_flow=args.td_focus_flow,
             th_record_flow=args.th_record_flow,
+            mobile_archive_share_flow=args.mobile_archive_share_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
