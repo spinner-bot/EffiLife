@@ -165,6 +165,16 @@ def test_windows_release_workflow_runs_isolated_installer_lifecycle_smoke():
     assert "--version-file time-helper/VERSION" in workflow
 
 
+def test_release_workflow_exposes_optional_windows_upgrade_validation():
+    workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
+
+    assert "previous_installer_url:" in workflow
+    assert "Download previous installer for upgrade validation" in workflow
+    assert "scripts/smoke_windows_upgrade.py" in workflow
+    assert "effilife-installer-upgrade-smoke" in workflow
+    assert "effilife-upgrade-data" in workflow
+
+
 def test_release_workflow_publishes_checksums_and_manifests_with_installers():
     workflow = (ROOT / ".github" / "workflows" / "tauri-desktop-release.yml").read_text(encoding="utf-8")
     assert "scripts/generate_release_manifest.py" in workflow

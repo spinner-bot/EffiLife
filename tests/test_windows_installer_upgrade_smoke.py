@@ -21,3 +21,10 @@ def test_windows_upgrade_smoke_verifies_current_files_and_cleanup():
     assert "Upgrade installation is incomplete" in SCRIPT
     assert "Upgraded installation directory was not removed" in SCRIPT
     assert "INSTALLER_VERSION_PATTERN" in SCRIPT
+
+
+def test_windows_upgrade_smoke_can_verify_an_isolated_data_probe():
+    assert '"--data-dir"' in SCRIPT
+    assert "_prepare_data_probe" in SCRIPT
+    assert "User data probe changed or disappeared" in SCRIPT
+    assert "preserved" in SCRIPT

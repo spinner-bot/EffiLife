@@ -2,6 +2,11 @@ name: EffiLife desktop release
 
 on:
   workflow_dispatch:
+    inputs:
+      previous_installer_url:
+        description: 'Optional URL of the previous Windows NSIS installer for upgrade validation'
+        required: false
+        type: string
   push:
     tags:
       - 'v*'
@@ -166,6 +171,27 @@ jobs:
           if ($null -eq $installer) { throw 'Installer smoke test found no Windows installer' }
           $target = Join-Path $env:RUNNER_TEMP 'effilife-installer-smoke'
           python scripts/smoke_windows_installer.py --installer $installer.FullName --target $target --version-file time-helper/VERSION
+
+      - name: Download previous installer for upgrade validation
+        if: matrix.target == 'windows-nsis' && inputs.previous_installer_url != ''
+        shell: pwsh
+        env:
+          PREVIOUS_INSTALLER_URL: ${{ inputs.previous_installer_url }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PREVIOUS_INSTALLER_URL)) {
+            throw 'Upgrade validation was requested without a previous installer URL'
+          }
+          Invoke-WebRequest -Uri $env:PREVIOUS_INSTALLER_URL -OutFile (Join-Path $env:RUNNER_TEMP 'effilife-previous-installer.exe')
+
+      - name: Smoke test Windows installer upgrade
+        if: matrix.target == 'windows-nsis' && inputs.previous_installer_url != ''
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -LiteralPath 'time-helper/desk/src-tauri/target/release/bundle/nsis' -Filter '*.exe' -File | Select-Object -First 1
+          if ($null -eq $installer) { throw 'Upgrade smoke test found no current Windows installer' }
+          $target = Join-Path $env:RUNNER_TEMP 'effilife-installer-upgrade-smoke'
+          $data = Join-Path $env:RUNNER_TEMP 'effilife-upgrade-data'
+          python scripts/smoke_windows_upgrade.py --previous-installer (Join-Path $env:RUNNER_TEMP 'effilife-previous-installer.exe') --installer $installer.FullName --target $target --version-file time-helper/VERSION --data-dir $data
 
       - name: Verify packaged installer
         run: >-
