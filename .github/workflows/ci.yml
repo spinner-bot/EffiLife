@@ -51,6 +51,17 @@ jobs:
         run: |
           set -o pipefail
           python -m pytest -q --maxfail=1 -ra 2>&1 | tee pytest-failure.log
+          test_status=${PIPESTATUS[0]}
+          if [ "$test_status" -ne 0 ]; then
+            {
+              echo '### pytest failure (first failing case)'
+              echo '```text'
+              tail -n 120 pytest-failure.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=pytest failure::The full first-failure output is included in the job summary and artifact."
+          fi
+          exit "$test_status"
 
       - name: Run unified cross-module integration suite
         run: python scripts/run_integration.py test
