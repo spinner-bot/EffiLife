@@ -20,6 +20,8 @@ ROUTES = ("/time", "/plans", "/tasks", "/records", "/settings")
 @dataclass
 class SmokeResult:
     routes: list[str]
+    workspace_module_separation: bool
+    desktop_dashboard_layout: bool
     theme_cards: int
     theme_save_buttons: int
     theme_exit_confirmed: bool
@@ -51,6 +53,34 @@ def run_smoke(
         context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
         page = context.new_page()
         rendered_routes: list[str] = []
+
+        # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
+        # independently discoverable, while the desktop home remains a
+        # horizontally structured command center rather than a mobile-only
+        # stack. Verify the shell and dashboard contract in a real browser.
+        page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+        page.wait_for_timeout(1200)
+        home_startup_alert = page.locator('[role="alertdialog"]')
+        if home_startup_alert.count():
+            home_startup_alert.locator(".confirm-cancel").click(timeout=5000)
+        desktop_nav = page.locator(".desktop-nav-links")
+        if not desktop_nav.is_visible():
+            raise RuntimeError("desktop navigation is not visible at the default viewport")
+        desktop_nav_links = desktop_nav.locator(".global-nav-link")
+        if desktop_nav_links.count() < 6:
+            raise RuntimeError("desktop navigation does not expose the full workspace")
+        nav_hrefs = [desktop_nav_links.nth(index).get_attribute("href") for index in range(desktop_nav_links.count())]
+        if "/plans" not in nav_hrefs or "/tasks" not in nav_hrefs or "/plans" == "/tasks":
+            raise RuntimeError("PH and TD do not have distinct desktop navigation entries")
+        if page.locator('.workflow-summary-item').count() != 3:
+            raise RuntimeError("dashboard does not expose separate TH, PH and TD summary entries")
+        summary_codes = page.locator('.workflow-summary-icon small')
+        if [summary_codes.nth(index).inner_text() for index in range(summary_codes.count())] != ["TH", "PH", "TD"]:
+            raise RuntimeError("dashboard module summary order or labels are incorrect")
+        if page.locator('.overview-grid').count() != 1:
+            raise RuntimeError("desktop dashboard is missing its multi-column overview region")
+        workspace_module_separation = True
+        desktop_dashboard_layout = True
 
         for route in ROUTES:
             page.goto(f"{base_url.rstrip('/')}{route}", wait_until="domcontentloaded", timeout=15000)
@@ -172,6 +202,8 @@ def run_smoke(
 
     return SmokeResult(
         routes=rendered_routes,
+        workspace_module_separation=workspace_module_separation,
+        desktop_dashboard_layout=desktop_dashboard_layout,
         theme_cards=theme_card_count,
         theme_save_buttons=theme_save_button_count,
         theme_exit_confirmed=not inject_write_failure,
