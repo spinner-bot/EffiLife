@@ -1418,7 +1418,8 @@ onUnmounted(() => {
 
 .today-todos-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
 .today-todos-eyebrow { margin: 0 0 4px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.today-todos-link { display: inline-flex; align-items: center; gap: 4px; padding: 5px 0; color: var(--color-primary); font-size: 12px; }
+.today-todos-link { display: inline-flex; align-items: center; gap: 4px; border: 0; padding: 5px 0; color: var(--color-primary); background: transparent; cursor: pointer; font: inherit; font-size: 12px; text-align: left; }
+.today-todos-link:hover, .today-todos-link:focus-visible { color: var(--color-text-primary); outline: 0; }
 .today-todo-capture { display: flex; align-items: end; gap: 8px; margin-top: var(--spacing-md); }
 .today-todo-capture label { flex: 0 0 auto; color: var(--color-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
 .today-todo-capture input { min-width: 0; flex: 1; border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 10px; color: var(--color-text-primary); background: var(--color-bg); font: inherit; font-size: 12px; }
