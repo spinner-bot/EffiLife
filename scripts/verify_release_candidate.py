@@ -37,6 +37,13 @@ def main() -> int:
         metavar=("DIRECTORY", "EXTENSION"),
         help="verify an existing packaged artifact directory and extension (repeatable)",
     )
+    parser.add_argument(
+        "--verify-manifest",
+        nargs=3,
+        action="append",
+        metavar=("MANIFEST", "DIRECTORY", "TARGET"),
+        help="verify an existing release manifest against its directory and target (repeatable)",
+    )
     args = parser.parse_args()
 
     steps: list[dict[str, object]] = []
@@ -62,6 +69,22 @@ def main() -> int:
                 "time-helper/VERSION",
             ],
         ))
+    for manifest, directory, target in args.verify_manifest or []:
+        steps.append(run_step(
+            f"Release manifest verification ({target})",
+            [
+                sys.executable,
+                "scripts/verify_release_manifest.py",
+                "--manifest",
+                manifest,
+                "--directory",
+                directory,
+                "--version-file",
+                "time-helper/VERSION",
+                "--target",
+                target,
+            ],
+        ))
 
     failed = [step for step in steps if step["returncode"] != 0]
     summary = {
@@ -71,6 +94,8 @@ def main() -> int:
             "tests": args.skip_tests,
             "compatibility_build": args.skip_compatibility_build,
             "build": args.skip_build,
+            "artifact_verification": not bool(args.verify_artifact),
+            "manifest_verification": not bool(args.verify_manifest),
         },
     }
     print("\n" + json.dumps(summary, ensure_ascii=True, indent=2))

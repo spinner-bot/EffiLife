@@ -38,7 +38,7 @@
 
 - `launcher/start.bat`、`launcher/start.sh` 和 `python launcher/start.py` 仅用于开发、测试、迁移与回归；正式版本应使用 Tauri 安装包。
 - 发布前可执行 `python launcher/start.py --release-check`，该命令只读检查版本、sidecar、发布矩阵和安装包校验链路；若要把当前机器的 Cargo、Android SDK、Xcode 等工具链缺失也作为阻塞条件，使用 `--release-check-strict`。
-- 本地发布候选可执行 `python scripts/verify_release_candidate.py`，统一运行 Python 全量回归、桌面/移动发布配置检查、to-dos 兼容 UI 构建和统一前端生产构建；它不会启动服务、安装程序、签名或修改用户数据。可用 `--skip-compatibility-build` 跳过兼容 UI 构建；对已生成的安装包可追加 `--verify-artifact <目录> <扩展名>`（可重复）执行版本与非空产物校验。
+- 本地发布候选可执行 `python scripts/verify_release_candidate.py`，统一运行 Python 全量回归、桌面/移动发布配置检查、to-dos 兼容 UI 构建和统一前端生产构建；它不会启动服务、安装程序、签名或修改用户数据。可用 `--skip-compatibility-build` 跳过兼容 UI 构建；对已生成的安装包可追加 `--verify-artifact <目录> <扩展名>`，对机器可读清单可追加 `--verify-manifest <清单> <目录> <target>`（均可重复）执行产物校验。
 - 当前桌面发布矩阵包含 Windows NSIS、Linux DEB、Linux AppImage 与 macOS DMG。
 - 桌面正式包由 Tauri 托管 Plan Helper sidecar；移动端不依赖 Python localhost 服务，使用本地计划快照能力。
 
