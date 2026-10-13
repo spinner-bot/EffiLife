@@ -17,7 +17,7 @@ import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
-import { FocusSessionService } from '@/services/focusSessionService'
+import { FocusSessionService, type FocusSession } from '@/services/focusSessionService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -50,6 +50,8 @@ type FocusPlanTask = { planId: string; planName: string; task: PlanTaskSummary }
 const focusPlanTasks = ref<FocusPlanTask[]>([])
 const completingPlanTaskId = ref<string | null>(null)
 const focusingPlanTaskId = ref<string | null>(null)
+const activeFocusSession = ref<FocusSession | null>(FocusSessionService.get())
+let stopFocusSessionListener: (() => void) | null = null
 const mobilePlanRuntime = isMobilePlanRuntime()
 
 function openDailyPlan() {
@@ -227,6 +229,19 @@ function openTodoFocus(todo: UnifiedTodo) {
     return
   }
   void router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
+}
+
+function openActiveFocus(): void {
+  const session = activeFocusSession.value
+  if (!session) return
+  void router.push({ path: '/tasks', query: { todo: session.todoId } })
+}
+
+function formatFocusStartedAt(timestamp: number): string {
+  return new Date(timestamp).toLocaleTimeString(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 async function refreshEventPlanSummary() {
@@ -515,6 +530,9 @@ const overallDashOffset = computed(() => {
 
 onMounted(() => {
   void refreshWorkspaceSummaries()
+  stopFocusSessionListener = FocusSessionService.onChange(() => {
+    activeFocusSession.value = FocusSessionService.get()
+  })
   updateTime()
   timer = window.setInterval(updateTime, 1000)
   // 每分钟刷新一次统计
@@ -526,6 +544,7 @@ onUnmounted(() => {
   if (refreshTimer) clearInterval(refreshTimer)
   if (workspaceRefreshTimer !== null) clearTimeout(workspaceRefreshTimer)
   stopWorkspaceListener()
+  stopFocusSessionListener?.()
 })
 </script>
 
@@ -627,6 +646,17 @@ onUnmounted(() => {
             <span class="red-dot"></span>
           </button>
         </div>
+      </section>
+
+      <section v-if="activeFocusSession" class="active-focus-banner theme-card" aria-live="polite">
+        <div class="active-focus-copy">
+          <span class="active-focus-kicker"><Clock3 :size="14" /> {{ t('home.activeFocus') }}</span>
+          <strong>{{ activeFocusSession.todoTitle }}</strong>
+          <small>{{ t('home.activeFocusStarted', { time: formatFocusStartedAt(activeFocusSession.startedAt) }) }}</small>
+        </div>
+        <button type="button" class="active-focus-action" @click="openActiveFocus">
+          <Play :size="14" /> {{ t('home.resumeFocus') }}
+        </button>
       </section>
 
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
@@ -1255,6 +1285,24 @@ onUnmounted(() => {
   font-family: var(--font-mono);
 }
 
+.active-focus-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin: 0 auto var(--spacing-lg);
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-secondary));
+}
+
+.active-focus-copy { display: grid; min-width: 0; gap: 3px; }
+.active-focus-kicker { display: inline-flex; align-items: center; gap: 5px; color: var(--color-primary); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.active-focus-copy strong { overflow: hidden; color: var(--color-text-primary); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.active-focus-copy small { color: var(--color-text-secondary); font-size: 11px; }
+.active-focus-action { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid var(--color-primary); border-radius: var(--radius-md); color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font-size: 12px; font-weight: 600; }
+.active-focus-action:hover, .active-focus-action:focus-visible { filter: brightness(1.06); outline: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent); outline-offset: 2px; }
+
 .flame-icon {
   color: #ff8c00;
   animation: flameFlicker 1.5s ease-in-out infinite;
@@ -1446,6 +1494,8 @@ onUnmounted(() => {
 .today-todos-more { margin: 3px 0 0 29px; color: var(--color-text-tertiary); font-size: 11px; }
 
 @media (max-width: 760px) {
+  .active-focus-banner { align-items: stretch; flex-direction: column; }
+  .active-focus-action { justify-content: center; width: 100%; }
   .overview-grid { grid-template-columns: 1fr; }
   .event-overview-card { min-height: 180px; }
   .today-todos-header { align-items: center; }
