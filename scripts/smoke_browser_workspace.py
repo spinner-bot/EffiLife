@@ -48,6 +48,7 @@ class SmokeResult:
     mobile_onboarding_flow_verified: bool
     startup_recovery_verified: bool
     mobile_startup_recovery_verified: bool
+    archive_invalid_recovery_verified: bool
 
 
 def run_smoke(
@@ -65,6 +66,7 @@ def run_smoke(
     onboarding_flow: bool = False,
     mobile_onboarding_flow: bool = False,
     startup_recovery_flow: bool = False,
+    archive_invalid_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -111,6 +113,7 @@ def run_smoke(
         mobile_onboarding_flow_verified = False
         startup_recovery_verified = False
         mobile_startup_recovery_verified = False
+        archive_invalid_recovery_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -645,6 +648,24 @@ def run_smoke(
             if page.locator(".toast-success").count() == 0:
                 raise RuntimeError("archive roundtrip did not report success")
 
+        if archive_invalid_flow:
+            # A malformed archive must leave the browser picker usable. This
+            # is a real recovery path, not merely a parser unit test: select
+            # invalid bytes, observe the user-facing error, then verify the
+            # archive actions are enabled again for a subsequent attempt.
+            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
+            page.locator('input[type="file"]').first.set_input_files({
+                "name": "invalid.efl",
+                "mimeType": "application/zip",
+                "buffer": b"not a valid EffiLife archive",
+            })
+            page.locator(".toast-error").wait_for(state="visible", timeout=5000)
+            page.locator(".archive-actions button").first.wait_for(state="visible", timeout=3000)
+            if not page.locator(".archive-actions button").first.is_enabled():
+                raise RuntimeError("invalid archive import left archive actions disabled")
+            archive_invalid_recovery_verified = True
+
         browser.close()
 
     return SmokeResult(
@@ -677,6 +698,7 @@ def run_smoke(
         mobile_onboarding_flow_verified=mobile_onboarding_flow_verified,
         startup_recovery_verified=startup_recovery_verified,
         mobile_startup_recovery_verified=mobile_startup_recovery_verified,
+        archive_invalid_recovery_verified=archive_invalid_recovery_verified,
     )
 
 
@@ -739,6 +761,11 @@ def main() -> int:
         action="store_true",
         help="inject one startup storage failure and verify the visible retry recovery path",
     )
+    parser.add_argument(
+        "--archive-invalid-flow",
+        action="store_true",
+        help="verify malformed .efl import reports an error and releases the archive UI",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -755,6 +782,7 @@ def main() -> int:
             onboarding_flow=args.onboarding_flow,
             mobile_onboarding_flow=args.mobile_onboarding_flow,
             startup_recovery_flow=args.startup_recovery_flow,
+            archive_invalid_flow=args.archive_invalid_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))

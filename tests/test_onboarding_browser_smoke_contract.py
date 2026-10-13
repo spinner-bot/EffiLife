@@ -17,6 +17,9 @@ def test_browser_smoke_exposes_real_onboarding_flow():
     assert "injected startup storage failure" in SCRIPT
     assert "mobile_startup_recovery_verified" in SCRIPT
     assert "injected mobile startup storage failure" in SCRIPT
+    assert "archive_invalid_recovery_verified" in SCRIPT
+    assert "--archive-invalid-flow" in SCRIPT
+    assert "invalid.efl" in SCRIPT
     assert "efflife_guide_completed" in SCRIPT
     assert '.guide-tooltip' in SCRIPT
     assert '[data-guide="plans"]' in SCRIPT
