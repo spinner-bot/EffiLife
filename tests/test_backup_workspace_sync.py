@@ -36,6 +36,8 @@ def test_backup_readers_hide_empty_historical_migration_checkpoints():
     assert "backup.module !== 'pre_migration_full'" in SOURCE
     assert "EMPTY_MIGRATION_METADATA_KEYS" in SOURCE
     assert "backup && isRestorableBackup(backup)" in SOURCE
+    assert "if (backup) {" in SOURCE
+    assert "          continue" in SOURCE
 
 
 def test_backup_module_discovery_does_not_expose_malformed_json_as_an_empty_module():

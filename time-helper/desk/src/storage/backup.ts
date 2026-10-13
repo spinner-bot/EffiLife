@@ -335,8 +335,10 @@ export function getBackupModules(): string[] {
     if (key && key.startsWith(prefix)) {
       try {
         const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
-        if (backup && isRestorableBackup(backup) && typeof backup.module === 'string' && backup.module) {
-          modules.add(backup.module)
+        if (backup) {
+          if (isRestorableBackup(backup) && typeof backup.module === 'string' && backup.module) {
+            modules.add(backup.module)
+          }
           continue
         }
       } catch {
