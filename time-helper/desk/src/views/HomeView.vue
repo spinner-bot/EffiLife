@@ -46,6 +46,7 @@ const eventPlanState = ref<PlanGatewayState>('idle')
 type FocusPlanTask = { planId: string; planName: string; task: PlanTaskSummary }
 const focusPlanTasks = ref<FocusPlanTask[]>([])
 const completingPlanTaskId = ref<string | null>(null)
+const focusingPlanTaskId = ref<string | null>(null)
 const mobilePlanRuntime = isMobilePlanRuntime()
 
 function openDailyPlan() {
@@ -58,6 +59,35 @@ function openEventPlan(plan: PlanSummary) {
 
 function openFocusPlan(item: FocusPlanTask) {
   router.push({ path: '/plans', query: { plan: item.planId, task: item.task.internal_id } })
+}
+
+async function startFocusPlan(item: FocusPlanTask): Promise<void> {
+  if (focusingPlanTaskId.value || item.task.finish) return
+  const activeSession = FocusSessionService.get()
+  if (activeSession) {
+    notifyToast(t('home.focusAlreadyActive'), 'info')
+    await router.push({ path: '/tasks', query: { todo: activeSession.todoId } })
+    return
+  }
+  focusingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
+  try {
+    const existing = (await TodoService.list()).find((todo) => (
+      todo.related_plan_id === String(item.planId) && todo.related_plan_task_id === item.task.internal_id
+    ))
+    const todo = existing || await TodoService.create({
+      title: item.task.content,
+      description: item.planName,
+      related_plan_id: String(item.planId),
+      related_plan_task_id: item.task.internal_id,
+      estimated_time: item.task.time_minutes,
+      time_estimate: item.task.time_minutes,
+    })
+    await router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
+  } catch (error) {
+    notifyToast(error instanceof Error ? error.message : t('plans.todoCreateFailed'), 'error')
+  } finally {
+    focusingPlanTaskId.value = null
+  }
 }
 
 async function refreshTodoSummary() {
@@ -732,6 +762,9 @@ onUnmounted(() => {
                 <span class="focus-plan-task"><strong>{{ item.task.display_id }}</strong><span>{{ item.task.content }}</span></span>
                 <span class="focus-plan-meta">{{ item.planName }} · {{ item.task.time_minutes }} {{ t('plans.minutesShort') }}</span>
               </button>
+              <button type="button" class="focus-plan-focus" :disabled="focusingPlanTaskId === `${item.planId}:${item.task.internal_id}`" :aria-label="t('home.startPlanFocus')" :title="t('home.startPlanFocus')" @click.stop="startFocusPlan(item)">
+                <Play :size="13" />
+              </button>
             </article>
           </div>
         </section>
@@ -1318,11 +1351,14 @@ onUnmounted(() => {
 .focus-plan-card { margin-top: var(--spacing-md); padding: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-secondary); }
 .focus-plan-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
 .focus-plan-list { display: grid; gap: 6px; margin-top: var(--spacing-md); }
-.focus-plan-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
+.focus-plan-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg); }
 .focus-plan-row:hover { border-color: var(--color-primary); }
 .focus-plan-complete { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-primary); background: transparent; cursor: pointer; }
 .focus-plan-complete:hover, .focus-plan-complete:focus-visible { color: var(--color-button-text); background: var(--color-primary); outline: 0; }
 .focus-plan-complete:disabled { cursor: wait; opacity: .7; }
+.focus-plan-focus { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
+.focus-plan-focus:hover, .focus-plan-focus:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
+.focus-plan-focus:disabled { cursor: wait; opacity: .7; }
 .focus-plan-main { display: grid; min-width: 0; gap: 3px; border: 0; padding: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; }
 .focus-plan-task { display: flex; min-width: 0; gap: 8px; color: var(--color-text-primary); font-size: 13px; }
 .focus-plan-task strong { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
@@ -1379,6 +1415,7 @@ onUnmounted(() => {
   .today-todo-focus, .today-todo-record { width: 40px; height: 40px; }
   .focus-plan-header { align-items: center; }
   .focus-plan-complete { width: 32px; height: 32px; }
+  .focus-plan-focus { width: 40px; height: 40px; }
 }
 
 /* 平板横向工作台：保留桌面层级，避免 761–899px 被窄单列容器浪费。 */

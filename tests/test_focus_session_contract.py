@@ -39,3 +39,12 @@ def test_home_todo_can_enter_the_unified_focus_session():
     assert "FocusSessionService.get()" in home
     assert "query: { todo: todo.id, focus: 'start' }" in home
     assert 'class="today-todo-focus"' in home
+
+
+def test_home_plan_task_can_enter_the_unified_focus_session_without_merging_domains():
+    home = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
+    assert "function startFocusPlan" in home
+    assert "related_plan_id: String(item.planId)" in home
+    assert "related_plan_task_id: item.task.internal_id" in home
+    assert "query: { todo: todo.id, focus: 'start' }" in home
+    assert 'class="focus-plan-focus"' in home
