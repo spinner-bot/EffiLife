@@ -21,6 +21,8 @@ def test_windows_upgrade_smoke_verifies_current_files_and_cleanup():
     assert "Upgrade installation is incomplete" in SCRIPT
     assert "Upgraded installation directory was not removed" in SCRIPT
     assert "INSTALLER_VERSION_PATTERN" in SCRIPT
+    assert "Previous installer filename does not match EffiLife NSIS convention" in SCRIPT
+    assert "Previous installer must be a different EffiLife version" in SCRIPT
 
 
 def test_windows_upgrade_smoke_can_verify_an_isolated_data_probe():

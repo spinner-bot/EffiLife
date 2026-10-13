@@ -102,6 +102,18 @@ def run_upgrade(
     installer = _resolve_installer(installer)
     target = _ensure_safe_target(target)
     expected_version = version_file.expanduser().resolve().read_text(encoding="utf-8").strip()
+    previous_match = INSTALLER_VERSION_PATTERN.match(previous.name)
+    if previous_match is None:
+        raise ValueError(
+            "Previous installer filename does not match EffiLife NSIS convention: "
+            f"{previous.name}"
+        )
+    previous_version = previous_match.group("version")
+    if previous_version == expected_version:
+        raise ValueError(
+            "Previous installer must be a different EffiLife version for upgrade validation: "
+            f"{previous.name}"
+        )
     match = INSTALLER_VERSION_PATTERN.match(installer.name)
     if match is None or match.group("version") != expected_version:
         raise ValueError(f"Current installer version does not match {expected_version}: {installer.name}")
@@ -134,6 +146,7 @@ def run_upgrade(
     return {
         "ok": True,
         "previous_installer": str(previous),
+        "previous_version": previous_version,
         "installer": str(installer),
         "target": str(target),
         "target_version": expected_version,
