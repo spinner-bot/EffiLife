@@ -100,7 +100,10 @@ def run_smoke(
             raise RuntimeError("dashboard module summary order or labels are incorrect")
         if page.locator('.overview-grid').count() != 1:
             raise RuntimeError("desktop dashboard is missing its multi-column overview region")
-        page.keyboard.press("Control+Shift+t")
+        # Chromium reserves Control+Shift+T for reopening a closed tab. Use
+        # the browser-safe application fallback while keeping the native
+        # desktop shortcut covered by the app-shell contract tests.
+        page.keyboard.press("Alt+Shift+t")
         page.wait_for_timeout(700)
         if "/time" not in page.url or page.locator(".pv-modal").count() != 1:
             raise RuntimeError("TH keyboard shortcut did not open the time-record form")
