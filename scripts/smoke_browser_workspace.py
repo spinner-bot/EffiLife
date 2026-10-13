@@ -30,6 +30,7 @@ class SmokeResult:
     ph_plan_flow_verified: bool
     td_task_flow_verified: bool
     td_focus_flow_verified: bool
+    td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
     th_quick_capture_verified: bool
     th_quick_capture_shortcut_verified: bool
@@ -69,6 +70,7 @@ def run_smoke(
         ph_plan_flow_verified = False
         td_task_flow_verified = False
         td_focus_flow_verified = False
+        td_cross_window_focus_verified = False
         th_record_flow_verified = False
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
@@ -229,8 +231,14 @@ def run_smoke(
             home_todo.wait_for(state="visible", timeout=5000)
             home_todo.locator("button.today-todo-focus").click(timeout=5000)
             page.locator(".active-focus-bar").wait_for(state="visible", timeout=5000)
-            page.locator(".active-focus-stop").click(timeout=5000)
+            cross_window_page = context.new_page()
+            cross_window_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            cross_window_page.locator(".active-focus-bar").wait_for(state="visible", timeout=7000)
+            cross_window_page.locator(".active-focus-stop").click(timeout=5000)
             page.locator(".active-focus-bar").wait_for(state="hidden", timeout=10000)
+            cross_window_page.locator(".active-focus-bar").wait_for(state="hidden", timeout=10000)
+            cross_window_page.close()
+            td_cross_window_focus_verified = True
             if "/tasks" not in page.url:
                 raise RuntimeError("active focus stop did not return to TD")
             td_focus_flow_verified = True
@@ -411,6 +419,7 @@ def run_smoke(
         ph_plan_flow_verified=ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
         td_focus_flow_verified=td_focus_flow_verified,
+        td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
         th_quick_capture_verified=th_quick_capture_verified,
         th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
