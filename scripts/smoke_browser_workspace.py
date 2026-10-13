@@ -300,6 +300,7 @@ def run_smoke(
             content_input = record_modal.locator("input.pv-text-input").first
             content_input.fill("Smoke time record")
             record_modal.locator(".pv-modal-footer .pv-primary-btn").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
             record_card = page.locator(".pv-record-card").filter(has_text="Smoke time record")
             record_card.wait_for(state="visible", timeout=5000)
             page.reload(wait_until="domcontentloaded", timeout=15000)

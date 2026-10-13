@@ -38,3 +38,10 @@ def test_task_center_creation_exposes_bilingual_success_feedback():
     assert "notifyToast(t('tasks.createdOne'), 'success')" in view
     assert catalog.count("'tasks.createdOne':") == 2
 
+
+def test_th_browser_smoke_requires_success_feedback_after_recording():
+    script = SCRIPT.split('content_input.fill("Smoke time record")', 1)[1].split(
+        'record_card = page.locator', 1
+    )[0]
+    assert 'page.locator(".toast-success").wait_for(state="visible", timeout=3000)' in script
+
