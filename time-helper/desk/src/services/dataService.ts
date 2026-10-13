@@ -31,7 +31,10 @@ export const DEFAULT_CONFIG: Config = {
   use_24h: true,
   show_ampm: false,
   theme: {
-    type: 'forest',
+    // New users start with a legible system-adaptive surface. Rich TH themes
+    // remain available in Settings, but decorative themes must be opt-in so
+    // particles and low-contrast backgrounds never become the first-run UX.
+    type: 'system',
     solid: {
       bg_window: '#f0f0f0',
       bg_button: '#e0e0e0',

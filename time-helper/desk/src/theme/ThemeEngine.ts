@@ -2549,7 +2549,9 @@ function drawFlower(ctx: CanvasRenderingContext2D, x: number, y: number, size: n
 export function getThemeStyle(theme: Theme | undefined): ThemeStyle {
   // 防护：如果 theme 未定义，返回默认主题
   if (!theme) {
-    theme = { type: 'forest' }
+    // Keep the engine safe before storage hydration without defaulting to a
+    // decorative theme that may reduce first-run readability.
+    theme = { type: 'system' }
   }
 
   // 检查高级主题预设
