@@ -31,6 +31,7 @@ class SmokeResult:
     mobile_ph_plan_flow_verified: bool
     td_task_flow_verified: bool
     home_td_completion_feedback_verified: bool
+    mobile_td_task_flow_verified: bool
     td_focus_flow_verified: bool
     td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
@@ -76,6 +77,7 @@ def run_smoke(
         mobile_ph_plan_flow_verified = False
         td_task_flow_verified = False
         home_td_completion_feedback_verified = False
+        mobile_td_task_flow_verified = False
         td_focus_flow_verified = False
         td_cross_window_focus_verified = False
         th_record_flow_verified = False
@@ -331,6 +333,18 @@ def run_smoke(
             raise RuntimeError("mobile quick capture is not visible above bottom navigation")
         if not mobile_page.locator(".home-time-action").is_visible():
             raise RuntimeError("mobile dashboard does not expose the TH quick record action")
+        if td_task_flow:
+            mobile_capture = mobile_page.locator("#home-quick-todo-input")
+            mobile_capture.wait_for(state="visible", timeout=5000)
+            mobile_capture.fill("Smoke mobile quick todo")
+            mobile_page.locator("form.today-todo-capture button[type='submit']").click(timeout=5000)
+            mobile_page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            mobile_todo = mobile_page.locator(".today-todo-row").filter(has_text="Smoke mobile quick todo")
+            mobile_todo.wait_for(state="visible", timeout=5000)
+            mobile_todo.locator("button.today-todo-complete").click(timeout=5000)
+            mobile_page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            mobile_todo.wait_for(state="hidden", timeout=5000)
+            mobile_td_task_flow_verified = True
         if mobile_ph_plan_flow:
             mobile_page.goto(f"{base_url.rstrip('/')}/plans", wait_until="domcontentloaded", timeout=15000)
             mobile_page.wait_for_timeout(1000)
@@ -525,6 +539,7 @@ def run_smoke(
         mobile_ph_plan_flow_verified=mobile_ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
         home_td_completion_feedback_verified=home_td_completion_feedback_verified,
+        mobile_td_task_flow_verified=mobile_td_task_flow_verified,
         td_focus_flow_verified=td_focus_flow_verified,
         td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
