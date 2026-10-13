@@ -32,7 +32,8 @@ THEME_KEYS = (
     "glowIntensity",
     "presetLabel",
     "chooseColor",
-    "previewStatus",
+    "previewStatusClean",
+    "previewStatusDirty",
 )
 
 

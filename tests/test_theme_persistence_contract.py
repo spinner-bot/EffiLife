@@ -65,11 +65,10 @@ def test_theme_save_rehydrates_runtime_from_the_durable_theme():
 
 def test_theme_preview_status_explains_confirmed_exit_save_in_both_locales():
     source = I18N.read_text(encoding="utf-8")
-    assert source.count("'settings.theme.previewStatus'") == 2
     assert source.count("'settings.theme.previewStatusClean'") == 2
     assert source.count("'settings.theme.previewStatusDirty'") == 2
-    assert "退出时确认后保存" in source
-    assert "saved after confirming exit" in source
+    assert "有待保存的主题修改，退出时确认保存" in source
+    assert "Theme changes are pending; confirm on exit to save" in source
     assert "是否保存主题修改并退出主题设置？" in source
     assert "Save theme changes and exit theme settings?" in source
 
