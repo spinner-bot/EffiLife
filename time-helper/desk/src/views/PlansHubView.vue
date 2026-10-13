@@ -523,6 +523,8 @@ async function createPlan() {
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    await nextTick()
+    createNameInput.value?.focus()
   } finally {
     isLoading.value = false
   }

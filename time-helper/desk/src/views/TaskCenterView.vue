@@ -309,6 +309,8 @@ async function addTodo() {
     notifyToast(t('tasks.createdOne'), 'success')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
+    await nextTick()
+    newTaskInput.value?.focus()
   } finally {
     creatingTodo.value = false
   }
