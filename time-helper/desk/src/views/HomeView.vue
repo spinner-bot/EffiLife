@@ -517,7 +517,7 @@ onMounted(() => {
   void refreshWorkspaceSummaries()
   updateTime()
   timer = window.setInterval(updateTime, 1000)
-  // 每分钟刷新一次统计
+  // Keep the dashboard summaries fresh even when no workspace event is emitted.
   refreshTimer = window.setInterval(() => { void refreshWorkspaceSummaries() }, 60000)
 })
 
