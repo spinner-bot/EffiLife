@@ -64,7 +64,7 @@ def validate(root: Path) -> list[str]:
         errors.append("release workflow has no fail-closed Windows signing step")
     if "vars.EFFILIFE_FORMAL_RELEASE_ENABLED == 'true'" not in workflow:
         errors.append("release workflow does not gate public publication on formal signing readiness")
-    if "actions/download-artifact@v4" not in workflow or "gh release create" not in workflow:
+    if "actions/download-artifact@v7" not in workflow or "gh release create" not in workflow:
         errors.append("release workflow has no tagged GitHub Release publication step")
     if "needs:" not in workflow or "compatibility" not in workflow or "build" not in workflow:
         errors.append("release publication does not wait for compatibility and desktop builds")

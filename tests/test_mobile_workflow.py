@@ -41,7 +41,7 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "python scripts/check_build_environment.py --target android" in workflow
     assert "npm run mobile:android:build" in workflow
-    assert "actions/upload-artifact@v4" in workflow
+    assert "actions/upload-artifact@v6" in workflow
     assert "gen/android/app/build/outputs/apk/**/*.apk" in workflow
     assert "python scripts/verify_mobile_artifacts.py" in workflow
     assert "--target android" in workflow

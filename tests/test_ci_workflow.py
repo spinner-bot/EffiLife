@@ -45,7 +45,7 @@ def test_general_ci_collects_launcher_diagnostics_after_failures():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "if: ${{ failure() }}" in source
     assert "python launcher/start.py --diagnose > ci-launcher-diagnostics.json" in source
-    assert "actions/upload-artifact@v4" in source
+    assert "actions/upload-artifact@v6" in source
     assert "effilife-ci-diagnostics-${{ github.run_id }}" in source
 
 
