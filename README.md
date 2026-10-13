@@ -127,7 +127,7 @@ EffiLife/
 |------|--------|------|
 | `time-helper/python/` | Python 3 + Tkinter | 原生桌面版，单文件实现 |
 | `time-helper/desk/` | Vue 3 + Tauri (Rust) | 桌面版，支持主题、音频、动效系统 |
-| `time-helper/desk/` | Vue 3 + Tauri Mobile candidate | 复用统一前端的移动端适配链路（待 Android/iOS 真机验收） |
+| `time-helper/desk/` | Vue 3 + Tauri Mobile | 复用统一前端的移动端适配链路（Android 真机验收待完成；iOS 按当前范围暂缓） |
 
 **功能概览**
 
@@ -253,8 +253,8 @@ python scripts/run_integration.py dashboard
 | 模块 | 版本 | 说明 |
 |------|------|------|
 | time-helper | 1.7.0 | 时间记录与统一工作台 |
-| plan-helper | 0.3.0 | 计划制定与日程管理 |
-| to-dos | 0.4.0 | 任务清单与待办追踪 |
+| plan-helper | 0.5.1 | 计划制定与日程管理 |
+| to-dos | 0.5.0 | 任务清单与待办追踪 |
 | common | 1.0.0 | 跨模块集成层 |
 
 版本号格式：`主版本.次版本.修订号`
