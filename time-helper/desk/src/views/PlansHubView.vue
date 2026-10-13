@@ -1122,7 +1122,10 @@ onUnmounted(() => {
               <FolderPlus :size="34" />
               <strong>{{ t('plans.empty') }}</strong>
               <span>{{ t('plans.emptyHint') }}</span>
-              <button v-if="canEditPlan" type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+              <div v-if="canEditPlan" class="plans-empty-actions">
+                <button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button>
+                <button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button>
+              </div>
             </section>
             <section v-else-if="filteredPlans.length" class="event-plan-grid">
               <button v-for="plan in filteredPlans" :key="plan.id" type="button" class="event-plan-card theme-card" @click="openPlan(plan)">
@@ -1353,6 +1356,7 @@ onUnmounted(() => {
 .plan-progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width .25s ease; }
 .plans-empty { display: grid; place-items: center; gap: 10px; min-height: 230px; border: 1px dashed var(--color-border); border-radius: 17px; color: var(--color-text-tertiary); text-align: center; }
 .plans-empty strong { color: var(--color-text-secondary); }
+.plans-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
 .plans-search { display: grid; gap: 6px; margin-bottom: 14px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 650; }
 .plans-search input { width: 100%; box-sizing: border-box; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; color: var(--color-text-primary); background: var(--color-bg-secondary); font: inherit; font-weight: 400; outline: 0; }
 .plans-search input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-muted); }
