@@ -24,3 +24,16 @@ def test_mobile_td_browser_smoke_covers_inline_capture_and_completion_feedback()
     assert 'mobile_todo.locator("button.today-todo-complete").click(timeout=5000)' in SCRIPT
     assert 'mobile_td_task_flow_verified' in SCRIPT
 
+
+def test_mobile_quick_capture_fab_opens_the_td_workspace():
+    assert 'mobile_page.locator(".mobile-quick-capture").click(timeout=5000)' in SCRIPT
+    assert 'mobile_fab_input = mobile_page.locator("#new-task-title")' in SCRIPT
+    assert 'mobile_td_quick_capture_verified' in SCRIPT
+
+
+def test_task_center_creation_exposes_bilingual_success_feedback():
+    view = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")
+    catalog = (ROOT / "time-helper/desk/src/i18n/index.ts").read_text(encoding="utf-8")
+    assert "notifyToast(t('tasks.createdOne'), 'success')" in view
+    assert catalog.count("'tasks.createdOne':") == 2
+

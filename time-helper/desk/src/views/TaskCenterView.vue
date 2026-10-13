@@ -306,6 +306,7 @@ async function addTodo() {
     deadline.value = ''
     recurrence.value = 'none'
     category.value = 'default'
+    notifyToast(t('tasks.createdOne'), 'success')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
   } finally {

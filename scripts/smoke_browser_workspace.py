@@ -32,6 +32,7 @@ class SmokeResult:
     td_task_flow_verified: bool
     home_td_completion_feedback_verified: bool
     mobile_td_task_flow_verified: bool
+    mobile_td_quick_capture_verified: bool
     td_focus_flow_verified: bool
     td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
@@ -78,6 +79,7 @@ def run_smoke(
         td_task_flow_verified = False
         home_td_completion_feedback_verified = False
         mobile_td_task_flow_verified = False
+        mobile_td_quick_capture_verified = False
         td_focus_flow_verified = False
         td_cross_window_focus_verified = False
         th_record_flow_verified = False
@@ -334,6 +336,17 @@ def run_smoke(
         if not mobile_page.locator(".home-time-action").is_visible():
             raise RuntimeError("mobile dashboard does not expose the TH quick record action")
         if td_task_flow:
+            mobile_page.locator(".mobile-quick-capture").click(timeout=5000)
+            mobile_fab_input = mobile_page.locator("#new-task-title")
+            mobile_fab_input.wait_for(state="visible", timeout=5000)
+            mobile_fab_input.fill("Smoke mobile FAB todo")
+            mobile_page.locator("form.task-create button.task-add").click(timeout=5000)
+            mobile_fab_item = mobile_page.locator("article.task-item").filter(has_text="Smoke mobile FAB todo")
+            mobile_fab_item.wait_for(state="visible", timeout=5000)
+            mobile_page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            mobile_td_quick_capture_verified = True
+            mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            mobile_page.wait_for_timeout(700)
             mobile_capture = mobile_page.locator("#home-quick-todo-input")
             mobile_capture.wait_for(state="visible", timeout=5000)
             mobile_capture.fill("Smoke mobile quick todo")
@@ -540,6 +553,7 @@ def run_smoke(
         td_task_flow_verified=td_task_flow_verified,
         home_td_completion_feedback_verified=home_td_completion_feedback_verified,
         mobile_td_task_flow_verified=mobile_td_task_flow_verified,
+        mobile_td_quick_capture_verified=mobile_td_quick_capture_verified,
         td_focus_flow_verified=td_focus_flow_verified,
         td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
