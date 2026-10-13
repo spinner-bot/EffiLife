@@ -48,7 +48,9 @@ jobs:
         run: npm ci
 
       - name: Run full Python test suite
-        run: python -m pytest -q
+        run: |
+          set -o pipefail
+          python -m pytest -q --maxfail=1 -ra 2>&1 | tee pytest-failure.log
 
       - name: Run unified cross-module integration suite
         run: python scripts/run_integration.py test
@@ -87,5 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: effilife-ci-diagnostics-${{ github.run_id }}
-          path: ci-launcher-diagnostics.json
+          path: |
+            ci-launcher-diagnostics.json
+            pytest-failure.log
           if-no-files-found: warn
