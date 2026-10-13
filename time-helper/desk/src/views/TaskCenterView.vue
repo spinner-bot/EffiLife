@@ -18,6 +18,7 @@ import { getPriorityScore } from '@/services/priority'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
+import { FocusSessionService } from '@/services/focusSessionService'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -660,8 +661,8 @@ function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
 
-async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = new Date()) {
-  if (trackingTodoId.value) return
+async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = new Date()): Promise<boolean> {
+  if (trackingTodoId.value) return false
   trackingTodoId.value = todo.id
   try {
     const startDate = new Date(startedAt)
@@ -702,6 +703,7 @@ async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = n
       // so open time views refresh without requiring a route change.
       notifyWorkspaceChanged('records')
       notifyToast(t('tasks.timeRecorded', { minutes }), 'success')
+      return true
     } catch (error) {
       const rollbackErrors: unknown[] = []
       for (const record of recordRefs) {
@@ -716,6 +718,7 @@ async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = n
     }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')
+    return false
   } finally {
     trackingTodoId.value = null
   }
@@ -763,6 +766,7 @@ function startFocus(todo: UnifiedTodo) {
   focusTodoId.value = todo.id
   focusStartedAt.value = Date.now()
   focusElapsedSeconds.value = 0
+  FocusSessionService.start({ todoId: todo.id, todoTitle: todo.title, startedAt: focusStartedAt.value })
   focusTimer = window.setInterval(() => {
     if (focusStartedAt.value !== null) {
       focusElapsedSeconds.value = Math.floor((Date.now() - focusStartedAt.value) / 1000)
@@ -774,11 +778,38 @@ async function stopFocus(todo: UnifiedTodo) {
   if (focusTodoId.value !== todo.id || focusStartedAt.value === null) return
   const startedAt = new Date(focusStartedAt.value)
   const minutes = Math.max(1, Math.ceil((Date.now() - focusStartedAt.value) / 60000))
+  const saved = await persistTodoTime(todo, minutes, startedAt)
+  if (!saved) return
   clearFocusTimer()
   focusTodoId.value = null
   focusStartedAt.value = null
   focusElapsedSeconds.value = 0
-  await persistTodoTime(todo, minutes, startedAt)
+  FocusSessionService.clear()
+}
+
+function restoreFocusSession(): void {
+  const session = FocusSessionService.get()
+  if (!session) return
+  const todo = todos.value.find((item) => item.id === session.todoId)
+  if (!todo) {
+    FocusSessionService.clear()
+    return
+  }
+  focusTodoId.value = todo.id
+  focusStartedAt.value = session.startedAt
+  focusElapsedSeconds.value = Math.max(0, Math.floor((Date.now() - session.startedAt) / 1000))
+  focusTimer = window.setInterval(() => {
+    if (focusStartedAt.value !== null) focusElapsedSeconds.value = Math.max(0, Math.floor((Date.now() - focusStartedAt.value) / 1000))
+  }, 1000)
+}
+
+async function handleFocusRouteCommand(): Promise<void> {
+  if (route.query.focus !== 'stop' || !focusTodoId.value) return
+  const todo = todos.value.find((item) => item.id === focusTodoId.value)
+  if (todo) await stopFocus(todo)
+  const query = { ...route.query }
+  delete query.focus
+  await router.replace({ path: route.path, query })
 }
 
 async function addSubtask(todo: UnifiedTodo) {
@@ -893,6 +924,8 @@ onMounted(async () => {
   await loadCategories()
   loadTodoSettings()
   await revealSearchTarget()
+  restoreFocusSession()
+  await handleFocusRouteCommand()
   await focusQuickCapture()
 })
 
@@ -900,12 +933,9 @@ onUnmounted(() => {
   stopWorkspaceListener?.()
   stopWorkspaceListener = null
   if (focusTodoId.value) {
-    const activeFocusTodo = todos.value.find((todo) => todo.id === focusTodoId.value)
-    if (activeFocusTodo) {
-      void stopFocus(activeFocusTodo).catch((error) => {
-        console.warn('Failed to persist focus time during task-center cleanup:', error)
-      })
-    }
+    // The session belongs to the workspace shell now; route changes must not
+    // silently finish it. TaskCenter only owns the ticking interval.
+    clearFocusTimer()
   }
   if (priorityTimer !== null) window.clearInterval(priorityTimer)
   clearFocusTimer()
@@ -913,6 +943,10 @@ onUnmounted(() => {
 
 watch(() => route.query.todo, () => {
   if (todos.value.length > 0) void revealSearchTarget()
+})
+
+watch(() => route.query.focus, () => {
+  if (todos.value.length > 0) void handleFocusRouteCommand()
 })
 
 watch(() => route.query.compose, () => {

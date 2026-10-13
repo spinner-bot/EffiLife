@@ -30,10 +30,9 @@ def test_recorded_todo_time_confirms_cross_module_sync():
     assert catalog.count("'tasks.timeRecorded':") == 2
 
 
-def test_focus_timer_is_saved_when_task_center_unmounts():
+def test_focus_timer_is_not_silently_saved_when_task_center_unmounts():
     source = TASKS.read_text(encoding="utf-8")
     assert "onUnmounted(() => {" in source
-    assert "const activeFocusTodo = todos.value.find" in source
-    assert "if (activeFocusTodo)" in source
-    assert "void stopFocus(activeFocusTodo).catch((error) =>" in source
     assert "clearFocusTimer()" in source
+    assert "The session belongs to the workspace shell now" in source
+    assert "void stopFocus(activeFocusTodo).catch((error) =>" not in source

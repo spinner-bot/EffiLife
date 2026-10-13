@@ -29,6 +29,7 @@ class SmokeResult:
     locale_persistence_verified: bool
     ph_plan_flow_verified: bool
     td_task_flow_verified: bool
+    td_focus_flow_verified: bool
     th_record_flow_verified: bool
     th_quick_capture_verified: bool
     th_quick_capture_shortcut_verified: bool
@@ -47,6 +48,7 @@ def run_smoke(
     archive_roundtrip: bool = False,
     ph_plan_flow: bool = False,
     td_task_flow: bool = False,
+    td_focus_flow: bool = False,
     th_record_flow: bool = False,
 ) -> SmokeResult:
     try:
@@ -66,6 +68,7 @@ def run_smoke(
         rendered_routes: list[str] = []
         ph_plan_flow_verified = False
         td_task_flow_verified = False
+        td_focus_flow_verified = False
         th_record_flow_verified = False
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
@@ -203,6 +206,25 @@ def run_smoke(
             if page.locator("article.task-item.completed").filter(has_text="Smoke quick todo").count() != 1:
                 raise RuntimeError("TD complete flow did not retain the completed quick todo")
             td_task_flow_verified = True
+
+        if td_focus_flow:
+            page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            task_input = page.locator("#new-task-title")
+            task_input.fill("Smoke focus todo")
+            page.locator("form.task-create button.task-add").click(timeout=5000)
+            task_item = page.locator("article.task-item").filter(has_text="Smoke focus todo")
+            task_item.wait_for(state="visible", timeout=5000)
+            task_item.locator("button.task-details-toggle").click(timeout=5000)
+            task_item.locator(".focus-track-form button").click(timeout=5000)
+            page.locator(".active-focus-bar").wait_for(state="visible", timeout=5000)
+            page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            page.locator(".active-focus-bar").wait_for(state="visible", timeout=5000)
+            page.locator(".active-focus-stop").click(timeout=5000)
+            page.locator(".active-focus-bar").wait_for(state="hidden", timeout=10000)
+            if "/tasks" not in page.url:
+                raise RuntimeError("active focus stop did not return to TD")
+            td_focus_flow_verified = True
 
         if th_record_flow:
             # TH records stay in the unified local data store and are
@@ -379,6 +401,7 @@ def run_smoke(
         locale_persistence_verified=locale_persistence_verified,
         ph_plan_flow_verified=ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
+        td_focus_flow_verified=td_focus_flow_verified,
         th_record_flow_verified=th_record_flow_verified,
         th_quick_capture_verified=th_quick_capture_verified,
         th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
@@ -415,6 +438,11 @@ def main() -> int:
         help="verify TD quick-capture and completion flow in isolated browser storage",
     )
     parser.add_argument(
+        "--td-focus-flow",
+        action="store_true",
+        help="verify TD focus sessions survive route changes and stop through the shell",
+    )
+    parser.add_argument(
         "--th-record-flow",
         action="store_true",
         help="verify TH time-record creation and reload persistence in isolated browser storage",
@@ -428,6 +456,7 @@ def main() -> int:
             archive_roundtrip=args.archive_roundtrip,
             ph_plan_flow=args.ph_plan_flow,
             td_task_flow=args.td_task_flow,
+            td_focus_flow=args.td_focus_flow,
             th_record_flow=args.th_record_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure

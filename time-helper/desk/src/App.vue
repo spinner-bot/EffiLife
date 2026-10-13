@@ -8,6 +8,7 @@ import { AudioManager, EventSystem, EventPopup } from './audio'
 import { CheckinSystem, CheckinPopup } from './data'
 import { GuideManager, GuideOverlay } from './guide'
 import { TodoService } from './services/todoService'
+import { FocusSessionService, type FocusSession } from './services/focusSessionService'
 import { Home, ClipboardList, Clock3, History, ListTodo, Plus, Settings, Search } from 'lucide-vue-next'
 import { refreshLocaleFromStorage, useI18n } from '@/i18n'
 import GlobalSearch from './components/GlobalSearch.vue'
@@ -51,6 +52,10 @@ const runtimeErrorSource = ref('')
 const showGlobalSearch = ref(false)
 const mainContent = ref<HTMLElement | null>(null)
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+const activeFocusSession = ref<FocusSession | null>(null)
+const focusNow = ref(Date.now())
+let focusClock: number | null = null
+let stopFocusSessionListener: (() => void) | null = null
 let stopWorkspaceListener: (() => void) | null = null
 let legacyMigrationSummary: { migrated: number; categories: number; skipped: number } | null = null
 const searchShortcut = computed(() => {
@@ -162,6 +167,27 @@ function updateOnlineStatus() {
   if (!wasOnline && isOnline.value) notifyWorkspaceChanged('network')
 }
 
+const activeFocusElapsed = computed(() => {
+  const session = activeFocusSession.value
+  if (!session) return '00:00'
+  const seconds = Math.max(0, Math.floor((focusNow.value - session.startedAt) / 1000))
+  return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+})
+
+function refreshFocusSession() {
+  activeFocusSession.value = FocusSessionService.get()
+}
+
+function openActiveFocus() {
+  const session = activeFocusSession.value
+  if (session) void router.push({ path: '/tasks', query: { todo: session.todoId } })
+}
+
+function stopActiveFocus() {
+  const session = activeFocusSession.value
+  if (session) void router.push({ path: '/tasks', query: { todo: session.todoId, focus: 'stop' } })
+}
+
 // 应用主题到 CSS 变量
 function applyTheme() {
   const root = document.documentElement
@@ -251,6 +277,9 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', refreshWhenVisible)
   window.addEventListener('online', updateOnlineStatus)
   window.addEventListener('offline', updateOnlineStatus)
+  refreshFocusSession()
+  stopFocusSessionListener = FocusSessionService.onChange(refreshFocusSession)
+  focusClock = window.setInterval(() => { focusNow.value = Date.now() }, 1000)
   stopWorkspaceListener = onWorkspaceChanged((source, remote) => {
     if (!runtimeReady.value || !source || !['plans', 'records', 'settings', 'archive', 'network'].includes(source)) return
     if (source === 'settings') {
@@ -371,6 +400,9 @@ onBeforeUnmount(() => {
   stopSystemThemeMediaQuery()
   stopWorkspaceListener?.()
   stopWorkspaceListener = null
+  stopFocusSessionListener?.()
+  stopFocusSessionListener = null
+  if (focusClock !== null) window.clearInterval(focusClock)
 })
 
 watch(() => appStore.config, applyTheme, { deep: true })
@@ -417,6 +449,14 @@ watch(() => appStore.todayStat, () => {
       </div>
       <div v-if="!isOnline" class="offline-status" role="status" aria-live="polite">
         {{ t('app.offlineStatus') }}
+      </div>
+      <div v-if="activeFocusSession" class="active-focus-bar" role="status" aria-live="polite">
+        <button type="button" class="active-focus-main" @click="openActiveFocus">
+          <span class="active-focus-pulse" aria-hidden="true"></span>
+          <span class="active-focus-copy"><small>{{ t('app.activeFocus') }}</small><strong>{{ activeFocusSession.todoTitle }}</strong></span>
+          <span class="active-focus-elapsed">{{ activeFocusElapsed }}</span>
+        </button>
+        <button type="button" class="active-focus-stop" @click="stopActiveFocus">{{ t('app.stopFocus') }}</button>
       </div>
       <header class="global-nav theme-card" :aria-label="t('app.shellLabel')">
         <RouterLink class="global-brand" to="/" :aria-label="t('app.homeLink')">
@@ -555,6 +595,16 @@ watch(() => appStore.todayStat, () => {
 }
 .skip-link:focus { transform: translateY(0); outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .offline-status { position: fixed; z-index: 11; top: 70px; left: 50%; width: min(560px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-warning, #c98924) 55%, var(--color-border)); border-radius: 10px; padding: 7px 12px; color: var(--color-text-secondary); background: color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-warning, #c98924)); box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 12%)); font-size: 12px; text-align: center; }
+.active-focus-bar { position: fixed; z-index: 12; top: 72px; left: 50%; display: flex; align-items: center; gap: 8px; width: min(560px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border)); border-radius: 12px; padding: 6px 7px 6px 10px; background: color-mix(in srgb, var(--color-bg-elevated) 94%, var(--color-primary-muted)); box-shadow: var(--theme-box-shadow, 0 8px 24px rgb(0 0 0 / 12%)); }
+.active-focus-main { display: flex; align-items: center; flex: 1; min-width: 0; gap: 8px; border: 0; padding: 0; color: var(--color-text-primary); background: transparent; cursor: pointer; text-align: left; }
+.active-focus-main:hover .active-focus-copy strong { color: var(--color-primary); }
+.active-focus-pulse { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); box-shadow: 0 0 0 4px var(--color-primary-muted); }
+.active-focus-copy { display: grid; min-width: 0; gap: 1px; }
+.active-focus-copy small { color: var(--color-text-tertiary); font-size: 10px; }
+.active-focus-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.active-focus-elapsed { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 13px; font-variant-numeric: tabular-nums; }
+.active-focus-stop { flex: 0 0 auto; border: 1px solid var(--color-primary); border-radius: 8px; padding: 6px 9px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
+.active-focus-main:focus-visible, .active-focus-stop:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .app-runtime-error { position: fixed; z-index: 20; top: 76px; left: 50%; display: grid; gap: 6px; width: min(620px, calc(100% - 28px)); transform: translateX(-50%); border: 1px solid color-mix(in srgb, var(--color-danger, #bd4b5d) 55%, var(--color-border)); border-radius: 12px; padding: 12px 14px; color: var(--color-text-primary); background: var(--color-bg-elevated); box-shadow: var(--theme-box-shadow, 0 10px 30px rgb(0 0 0 / 18%)); font-size: 12px; }
 .app-runtime-error > span { color: var(--color-text-secondary); }
 .app-runtime-error-detail { overflow-wrap: anywhere; color: var(--color-text-tertiary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; line-height: 1.4; }
@@ -635,6 +685,16 @@ watch(() => appStore.todayStat, () => {
   .global-nav-links { flex-direction: column; align-items: stretch; gap: 5px; }
   .global-nav-link { min-height: 38px; padding: 9px 11px; }
   .global-search-trigger { width: 100%; margin-top: auto; margin-left: 0; justify-content: center; }
+}
+
+@media (min-width: 1200px) {
+  .active-focus-bar { top: auto; bottom: 24px; left: 24px; width: 212px; box-sizing: border-box; transform: none; }
+  .active-focus-main { flex-wrap: wrap; }
+  .active-focus-elapsed { margin-left: 16px; }
+}
+
+@media (max-width: 600px) {
+  .active-focus-bar { top: auto; right: 12px; bottom: 78px; left: 12px; width: auto; transform: none; }
 }
 
 /* Keep the desktop shell usable in a resized window before the wide-screen
