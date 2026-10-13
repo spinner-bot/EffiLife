@@ -637,6 +637,18 @@ def run_smoke(
             mobile_page.wait_for_timeout(900)
             if mobile_create_modal.is_visible() or mobile_page.get_by_text("Mobile smoke task", exact=True).count() != 1:
                 raise RuntimeError("mobile PH local snapshot did not persist a created plan with content")
+            mobile_task_row = mobile_page.locator(".event-task-row").filter(has_text="Mobile smoke task")
+            mobile_task_row.wait_for(state="visible", timeout=5000)
+            mobile_task_row.locator("button.task-edit").click(timeout=5000)
+            mobile_task_editor = mobile_page.locator(".task-editor")
+            mobile_task_editor.wait_for(state="visible", timeout=5000)
+            mobile_task_editor.locator("input").first.fill("Mobile smoke task edited with a deliberately long title")
+            mobile_task_editor.locator("button.plans-primary").click(timeout=5000)
+            mobile_page.wait_for_timeout(500)
+            if mobile_page.get_by_text("Mobile smoke task edited with a deliberately long title", exact=True).count() != 1:
+                raise RuntimeError("mobile PH task edit did not persist the edited content")
+            if not mobile_page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1 && document.body.scrollWidth <= window.innerWidth + 1"):
+                raise RuntimeError("mobile PH task edit introduced horizontal overflow")
             mobile_page.locator(".detail-actions button.plans-secondary").first.click(timeout=5000)
             mobile_meta_editor = mobile_page.locator(".meta-editor")
             mobile_meta_editor.wait_for(state="visible", timeout=5000)
