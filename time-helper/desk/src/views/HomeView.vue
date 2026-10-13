@@ -8,7 +8,7 @@ import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
-import { TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
+import { getOrCreatePlanTaskTodo, TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
 import { getPriorityScore } from '@/services/priority'
 import { completePlanTask, getPlanFull, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
@@ -71,14 +71,9 @@ async function startFocusPlan(item: FocusPlanTask): Promise<void> {
   }
   focusingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
   try {
-    const existing = (await TodoService.list()).find((todo) => (
-      todo.related_plan_id === String(item.planId) && todo.related_plan_task_id === item.task.internal_id
-    ))
-    const todo = existing || await TodoService.create({
+    const todo = await getOrCreatePlanTaskTodo(item.planId, item.task.internal_id, {
       title: item.task.content,
       description: item.planName,
-      related_plan_id: String(item.planId),
-      related_plan_task_id: item.task.internal_id,
       estimated_time: item.task.time_minutes,
       time_estimate: item.task.time_minutes,
     })

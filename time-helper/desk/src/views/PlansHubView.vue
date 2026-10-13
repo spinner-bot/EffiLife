@@ -38,7 +38,7 @@ import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
-import { TodoService } from '@/services/todoService'
+import { getOrCreatePlanTaskTodo, TodoService } from '@/services/todoService'
 import { FocusSessionService } from '@/services/focusSessionService'
 import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { dateSearchText } from '@/services/dateSearch'
@@ -880,14 +880,9 @@ async function startTaskFocus(task: { internal_id: string; content: string; time
   linkingTodoTaskId.value = task.internal_id
   try {
     const planId = String(selectedPlan.value.id)
-    const existing = (await TodoService.list()).find((todo) => (
-      todo.related_plan_id === planId && todo.related_plan_task_id === task.internal_id
-    ))
-    const todo = existing || await TodoService.create({
+    const todo = await getOrCreatePlanTaskTodo(planId, task.internal_id, {
       title: task.content,
       description: selectedPlan.value.name,
-      related_plan_id: planId,
-      related_plan_task_id: task.internal_id,
       estimated_time: task.time_minutes,
       time_estimate: task.time_minutes,
     })

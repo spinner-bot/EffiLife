@@ -44,7 +44,15 @@ def test_home_todo_can_enter_the_unified_focus_session():
 def test_home_plan_task_can_enter_the_unified_focus_session_without_merging_domains():
     home = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
     assert "function startFocusPlan" in home
-    assert "related_plan_id: String(item.planId)" in home
-    assert "related_plan_task_id: item.task.internal_id" in home
+    assert "getOrCreatePlanTaskTodo(item.planId, item.task.internal_id" in home
     assert "query: { todo: todo.id, focus: 'start' }" in home
     assert 'class="focus-plan-focus"' in home
+
+
+def test_plan_task_todo_bridge_serializes_relation_creation():
+    service = (DESK / "services" / "todoService.ts").read_text(encoding="utf-8")
+    assert "const linkedPlanTodoQueues" in service
+    assert "function enqueueLinkedPlanTodo" in service
+    assert "export function getOrCreatePlanTaskTodo" in service
+    assert "related_plan_id: relatedPlanId" in service
+    assert "related_plan_task_id: relatedTaskId" in service

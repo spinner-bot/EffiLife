@@ -33,7 +33,7 @@ def test_home_todo_completion_stays_in_the_todo_module():
     assert "completePlanTask" not in todo_completion
     assert "await TodoService.complete(todo.id)" in todo_completion
     focus_bridge = source[source.index("async function startFocusPlan"):source.index("async function refreshTodoSummary")]
-    assert "related_plan_id" in focus_bridge
+    assert "getOrCreatePlanTaskTodo(item.planId, item.task.internal_id" in focus_bridge
 
 
 def test_home_plan_focus_completion_stays_in_the_ph_gateway():

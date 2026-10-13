@@ -14,6 +14,7 @@ def test_plan_detail_links_todos_without_merging_module_entities():
     assert "function createLinkedTodos" in source
     assert "function createLinkedTodo" in source
     assert "function startTaskFocus" in source
+    assert "getOrCreatePlanTaskTodo" in source
     assert "FocusSessionService.get()" in source
     assert "query: { todo: todo.id, focus: 'start' }" in source
     assert "t('plans.focusAlreadyActive')" in source

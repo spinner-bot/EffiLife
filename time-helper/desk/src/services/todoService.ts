@@ -309,6 +309,7 @@ export const TodoSettingsService = {
 // quick edits, subtask changes, and time aggregation cannot overwrite a newer
 // snapshot from another workspace surface.
 const todoWriteQueues = new Map<string, Promise<unknown>>()
+const linkedPlanTodoQueues = new Map<string, Promise<unknown>>()
 
 function enqueueTodoWrite<T>(id: string, operation: () => Promise<T>): Promise<T> {
   const previous = todoWriteQueues.get(id) || Promise.resolve()
@@ -317,6 +318,16 @@ function enqueueTodoWrite<T>(id: string, operation: () => Promise<T>): Promise<T
     if (todoWriteQueues.get(id) === queued) todoWriteQueues.delete(id)
   })
   todoWriteQueues.set(id, queued)
+  return current
+}
+
+function enqueueLinkedPlanTodo<T>(key: string, operation: () => Promise<T>): Promise<T> {
+  const previous = linkedPlanTodoQueues.get(key) || Promise.resolve()
+  const current = previous.catch(() => undefined).then(operation)
+  const queued = current.finally(() => {
+    if (linkedPlanTodoQueues.get(key) === queued) linkedPlanTodoQueues.delete(key)
+  })
+  linkedPlanTodoQueues.set(key, queued)
   return current
 }
 
@@ -484,6 +495,31 @@ export const TodoService = {
       time_spent: Math.max(0, Number(current.time_spent || 0) + deltaMinutes),
     }))
   },
+}
+
+/**
+ * Reuse or create the single TD representation for one PH task.
+ * The complete read/check/create cycle is serialized by the stable relation
+ * key so two workspace surfaces cannot create duplicates in one runtime.
+ */
+export function getOrCreatePlanTaskTodo(
+  planId: string,
+  taskId: string,
+  input: Pick<UnifiedTodo, 'title'> & Partial<UnifiedTodo>,
+): Promise<UnifiedTodo> {
+  const relatedPlanId = String(planId)
+  const relatedTaskId = String(taskId)
+  return enqueueLinkedPlanTodo(`${relatedPlanId}:${relatedTaskId}`, async () => {
+    const existing = (await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)).find((todo) => (
+      todo.related_plan_id === relatedPlanId && todo.related_plan_task_id === relatedTaskId
+    ))
+    if (existing) return existing
+    return TodoService.create({
+      ...input,
+      related_plan_id: relatedPlanId,
+      related_plan_task_id: relatedTaskId,
+    })
+  })
 }
 
 /** Import a to-dos JSON export without replacing current unified data. */
