@@ -22,3 +22,10 @@ def test_guide_overlay_prefers_visible_target_when_desktop_and_mobile_nav_coexis
     assert "candidates.find(isVisibleTarget) || candidates[0] || null" in OVERLAY
     assert "targetElement = findVisibleTarget(step.target!)" in OVERLAY
     assert "const actionEl = findVisibleTarget(step.actionTarget)" in OVERLAY
+
+
+def test_guide_capture_allows_its_confirmation_dialog_to_receive_clicks():
+    confirm = Path("time-helper/desk/src/components/ConfirmHost.vue").read_text(encoding="utf-8")
+    assert "const confirmDialog = document.querySelector('.confirm-dialog')" in OVERLAY
+    assert "confirmDialog.contains(clickedTarget)" in OVERLAY
+    assert "z-index: 11010" in confirm

@@ -86,6 +86,14 @@ function onClickCapture(e: MouseEvent) {
     return
   }
 
+  // ConfirmHost is a higher-priority modal opened by the guide itself (for
+  // example, when the user asks to skip onboarding). Its buttons must not be
+  // blocked by the guide's document-level capture handler.
+  const confirmDialog = document.querySelector('.confirm-dialog')
+  if (confirmDialog && confirmDialog.contains(clickedTarget)) {
+    return
+  }
+
   // 检查是否点击了关闭按钮（允许）
   const closeBtn = document.querySelector('.guide-close')
   if (closeBtn && closeBtn.contains(clickedTarget)) {

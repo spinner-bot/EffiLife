@@ -55,7 +55,7 @@ function onDialogKeydown(event: KeyboardEvent) {
 </template>
 
 <style scoped>
-.confirm-backdrop { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 20px; background: rgba(8, 12, 24, .45); backdrop-filter: blur(8px); }
+.confirm-backdrop { position: fixed; inset: 0; z-index: 11010; display: grid; place-items: center; padding: 20px; background: rgba(8, 12, 24, .45); backdrop-filter: blur(8px); }
 .confirm-dialog { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; width: min(430px, 100%); border: 1px solid var(--color-border); border-radius: 17px; padding: 22px; box-shadow: var(--shadow-lg, 0 20px 60px rgba(0,0,0,.22)); }
 .confirm-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--color-primary); background: var(--color-primary-muted); }
 .confirm-danger .confirm-icon { color: var(--color-error); background: color-mix(in srgb, var(--color-error) 12%, var(--color-bg-secondary)); }
