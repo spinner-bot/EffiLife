@@ -22,3 +22,11 @@ def test_home_click_actions_have_explicit_non_submit_types():
     clickable_buttons = [line for line in source.splitlines() if '<button' in line and '@click' in line]
     assert clickable_buttons
     assert all('type="button"' in line for line in clickable_buttons)
+
+
+def test_home_checkin_reminder_is_an_actionable_keyboard_control():
+    source = HOME.read_text(encoding="utf-8")
+    reminder = source.split('class="checkin-reminder"', 1)[0]
+    assert '<button' in reminder[-220:]
+    assert "router.push('/checkin')" in source[source.index('class="checkin-reminder"'):source.index('</button>', source.index('class="checkin-reminder"'))]
+    assert ':aria-label="t(\'home.canCheckin\')"' in source

@@ -596,11 +596,17 @@ onUnmounted(() => {
             <Flame :size="18" class="flame-icon" />
             <span>{{ t('home.streak') }} <strong>{{ checkinStreak }}</strong> {{ t('home.days') }}</span>
           </div>
-          <div class="checkin-reminder" v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100">
+          <button
+            v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100"
+            type="button"
+            class="checkin-reminder"
+            :aria-label="t('home.canCheckin')"
+            @click="AudioManager.playSound('click'); router.push('/checkin')"
+          >
             <Bell :size="14" />
             <span>{{ t('home.canCheckin') }}</span>
             <span class="red-dot"></span>
-          </div>
+          </button>
         </div>
       </section>
 
@@ -1247,8 +1253,20 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: var(--color-error);
   cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
   animation: reminderPulse 2s ease-in-out infinite;
 }
+
+.checkin-reminder:hover, .checkin-reminder:focus-visible {
+  border-color: var(--color-error);
+  background: rgba(239, 68, 68, 0.16);
+  outline: 2px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.checkin-reminder:active { transform: scale(.98); }
 
 .red-dot {
   width: 6px;
