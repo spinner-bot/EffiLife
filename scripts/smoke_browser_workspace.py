@@ -23,9 +23,10 @@ class SmokeResult:
     theme_cards: int
     theme_save_buttons: int
     theme_exit_confirmed: bool
+    storage_write_failure_handled: bool
 
 
-def run_smoke(base_url: str, *, headless: bool = True) -> SmokeResult:
+def run_smoke(base_url: str, *, headless: bool = True, inject_write_failure: bool = False) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as error:  # pragma: no cover - exercised by the CLI environment
@@ -51,6 +52,10 @@ def run_smoke(base_url: str, *, headless: bool = True) -> SmokeResult:
 
         page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
         settings_items = page.locator("button.settings-item")
+        page.wait_for_timeout(1200)
+        startup_alert = page.locator('[role="alertdialog"]')
+        if startup_alert.count():
+            startup_alert.locator(".confirm-cancel").click(timeout=5000)
         try:
             settings_items.first.wait_for(state="visible", timeout=10000)
         except Exception as error:  # noqa: BLE001 - convert locator timeout to a smoke failure
@@ -80,6 +85,14 @@ def run_smoke(base_url: str, *, headless: bool = True) -> SmokeResult:
         if page.locator('button.theme-card[aria-pressed="true"]').count() != 1:
             raise RuntimeError("theme selection did not settle on exactly one active card")
 
+        if inject_write_failure:
+            # The application has already initialized IndexedDB. Fail only
+            # the next object-store write so this exercises the transaction
+            # error path rather than the database-open fallback path.
+            page.evaluate(
+                "void (IDBObjectStore.prototype.put = function () { throw new Error('injected indexeddb write failure') })"
+            )
+
         page.locator("button.back-btn").click(timeout=5000)
         page.wait_for_timeout(300)
         alert = page.locator('[role="alertdialog"]')
@@ -87,7 +100,12 @@ def run_smoke(base_url: str, *, headless: bool = True) -> SmokeResult:
             raise RuntimeError("leaving a dirty theme editor did not show an alert dialog")
         alert.locator(".confirm-submit").click(timeout=5000)
         page.wait_for_timeout(500)
-        if page.locator("button.settings-item").count() < 2:
+        if inject_write_failure:
+            if page.locator("button.theme-card").count() == 0:
+                raise RuntimeError("failed theme save incorrectly left the theme editor")
+            if page.locator(".toast-error").count() == 0:
+                raise RuntimeError("failed theme save did not expose an error toast")
+        elif page.locator("button.settings-item").count() < 2:
             raise RuntimeError("confirmed theme exit did not return to settings")
 
         browser.close()
@@ -96,7 +114,8 @@ def run_smoke(base_url: str, *, headless: bool = True) -> SmokeResult:
         routes=rendered_routes,
         theme_cards=theme_card_count,
         theme_save_buttons=theme_save_button_count,
-        theme_exit_confirmed=True,
+        theme_exit_confirmed=not inject_write_failure,
+        storage_write_failure_handled=inject_write_failure,
     )
 
 
@@ -104,9 +123,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:4173", help="running EffiLife web URL")
     parser.add_argument("--headed", action="store_true", help="show the browser window")
+    parser.add_argument(
+        "--inject-write-failure",
+        action="store_true",
+        help="fail the next IndexedDB object-store write and verify error recovery",
+    )
     args = parser.parse_args()
     try:
-        result = run_smoke(args.url, headless=not args.headed)
+        result = run_smoke(args.url, headless=not args.headed, inject_write_failure=args.inject_write_failure)
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
         return 1
