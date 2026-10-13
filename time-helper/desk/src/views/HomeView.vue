@@ -530,7 +530,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view" :aria-busy="!workspaceSummaryReady">
+  <div class="home-view" :aria-busy="workspaceRefreshing && (!timeSummaryReady || !todoSummaryReady)">
     <header class="header">
       <button
         type="button"

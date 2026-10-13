@@ -32,3 +32,7 @@ def test_home_th_rendering_is_not_blocked_by_other_module_loading():
     assert "const timeSummaryReady = ref(false)" in HOME
     assert "timeSummaryReady.value = true" in HOME
     assert 'v-else-if="!timeSummaryReady" class="stats-loading"' in HOME
+
+
+def test_home_accessibility_busy_state_does_not_wait_for_ph_when_th_and_td_are_ready():
+    assert ':aria-busy="workspaceRefreshing && (!timeSummaryReady || !todoSummaryReady)"' in HOME
