@@ -597,8 +597,8 @@ onUnmounted(() => {
             <span>{{ t('home.streak') }} <strong>{{ checkinStreak }}</strong> {{ t('home.days') }}</span>
           </div>
           <button
-            v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100"
             type="button"
+            v-if="!hasCheckedInToday && stat && stat.plan_exists && stat.progress >= 100"
             class="checkin-reminder"
             :aria-label="t('home.canCheckin')"
             @click="AudioManager.playSound('click'); router.push('/checkin')"
