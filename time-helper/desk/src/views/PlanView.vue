@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { AudioManager } from '@/audio'
 import {
@@ -24,6 +24,7 @@ import { requestConfirm } from '@/services/confirmService'
 import { currentRecordDefaults } from '@/services/recordDefaults'
 
 const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const { t, locale } = useI18n()
@@ -90,6 +91,7 @@ const formDurationTime = ref({ h: '09', m: '00' })
 const formContent = ref('')
 const formTag = ref('')
 const selectedTodoId = ref('')
+let consumedComposeQuery = false
 
 function resetRecordForm() {
   const defaults = currentRecordDefaults()
@@ -112,7 +114,14 @@ function openAddForm() {
   resetRecordForm()
   formTag.value = availableTags.value[0] || ''
   showRecordForm.value = true
-  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea, button')?.focus())
+}
+
+function consumeComposeQuery() {
+  if (props.embedded || consumedComposeQuery || route.query.compose !== '1') return
+  consumedComposeQuery = true
+  openAddForm()
+  void router.replace({ path: route.path, query: { ...route.query, compose: undefined } })
 }
 
 function openEditForm(index: number) {
@@ -130,7 +139,7 @@ function openEditForm(index: number) {
   editingRecordId.value = record.id || null
   recordReturnTarget.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   showRecordForm.value = true
-  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
+  void nextTick(() => recordModal.value?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea, button')?.focus())
 }
 
 function closeRecordForm(force = false) {
@@ -673,9 +682,14 @@ function validatePlanField(field: 'planName', value: string) {
 onMounted(() => {
   formTag.value = availableTags.value[0] || ''
   void loadTodoOptions()
+  void nextTick(consumeComposeQuery)
   stopWorkspaceListener = onWorkspaceChanged((source) => {
     if (source === 'todos' || source === 'archive') void loadTodoOptions()
   })
+})
+
+watch(() => route.query.compose, (compose) => {
+  if (compose === '1') consumeComposeQuery()
 })
 
 onUnmounted(() => {

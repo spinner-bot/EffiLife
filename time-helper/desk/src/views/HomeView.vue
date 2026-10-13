@@ -778,7 +778,11 @@ onUnmounted(() => {
         <EmptyState v-else :icon="ListTodo" :title="t('home.noTodos')" :description="t('home.createTodoHint')" :action-text="t('home.openTodoCenter')" action-route="/tasks" />
       </section>
 
-      <nav class="home-quick-actions" :aria-label="t('nav.checkin')">
+      <nav class="home-quick-actions" :aria-label="t('home.quickActions')">
+        <button class="home-checkin-action home-time-action" type="button" @click="AudioManager.playSound('click'); router.push('/time?compose=1')">
+          <Clock3 :size="18" />
+          <span>{{ t('home.quickRecordTime') }}</span>
+        </button>
         <button class="home-checkin-action" type="button" @click="AudioManager.playSound('click'); router.push('/checkin')">
           <CheckCircle :size="18" />
           <span>{{ t('nav.checkin') }}</span>
@@ -1554,6 +1558,8 @@ onUnmounted(() => {
 
 .home-quick-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-content: flex-start;
   width: 100%;
 }
@@ -1571,6 +1577,17 @@ onUnmounted(() => {
   font-size: 0.875rem;
   font-weight: 500;
   transition: all var(--transition-fast);
+}
+
+.home-time-action {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-muted);
+}
+
+.home-time-action:hover {
+  color: var(--color-button-text);
+  background: var(--color-primary);
 }
 
 .home-checkin-action:hover {

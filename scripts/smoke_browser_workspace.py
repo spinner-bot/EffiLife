@@ -30,6 +30,7 @@ class SmokeResult:
     ph_plan_flow_verified: bool
     td_task_flow_verified: bool
     th_record_flow_verified: bool
+    th_quick_capture_verified: bool
     ph_td_link_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
@@ -65,6 +66,7 @@ def run_smoke(
         ph_plan_flow_verified = False
         td_task_flow_verified = False
         th_record_flow_verified = False
+        th_quick_capture_verified = False
         ph_td_link_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
@@ -92,6 +94,24 @@ def run_smoke(
             raise RuntimeError("dashboard module summary order or labels are incorrect")
         if page.locator('.overview-grid').count() != 1:
             raise RuntimeError("desktop dashboard is missing its multi-column overview region")
+        quick_record = page.locator('.home-time-action')
+        if quick_record.count() != 1:
+            raise RuntimeError("dashboard does not expose the TH quick record action")
+        quick_record.click(timeout=5000)
+        page.wait_for_timeout(700)
+        if "/time" not in page.url or page.locator(".pv-modal").count() != 1:
+            raise RuntimeError("TH quick record action did not open the time-record form")
+        if "compose=1" in page.url:
+            raise RuntimeError("TH quick record deep link query was not consumed")
+        if not page.evaluate("Boolean(document.activeElement?.closest('.pv-modal'))"):
+            raise RuntimeError("TH quick record form did not receive focus")
+        page.keyboard.press("Escape")
+        page.locator(".pv-modal").wait_for(state="hidden", timeout=3000)
+        if page.locator(".pv-modal").is_visible():
+            raise RuntimeError("TH quick record form did not close with Escape")
+        th_quick_capture_verified = True
+        page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+        page.wait_for_timeout(300)
         workspace_module_separation = True
         desktop_dashboard_layout = True
 
@@ -207,6 +227,8 @@ def run_smoke(
             raise RuntimeError("mobile navigation does not expose all six workspace entries")
         if not mobile_page.locator(".mobile-quick-capture").is_visible():
             raise RuntimeError("mobile quick capture is not visible above bottom navigation")
+        if not mobile_page.locator(".home-time-action").is_visible():
+            raise RuntimeError("mobile dashboard does not expose the TH quick record action")
         mobile_page.close()
 
         page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
@@ -347,6 +369,7 @@ def run_smoke(
         ph_plan_flow_verified=ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
         th_record_flow_verified=th_record_flow_verified,
+        th_quick_capture_verified=th_quick_capture_verified,
         ph_td_link_flow_verified=ph_td_link_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
