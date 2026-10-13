@@ -47,3 +47,8 @@ common/data/events/
 common/data/backups/
 common/data/modules/
 to-dos/data/backups/
+
+# Plan Helper runtime data when its standalone server is started from the
+# repository root; these files are local user data, not source fixtures.
+/data/
+/plan/
