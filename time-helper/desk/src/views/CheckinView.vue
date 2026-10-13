@@ -176,6 +176,14 @@ const last7Days = computed(() => {
             >
               <span>{{ t('checkin.completeFirst') }}</span>
             </button>
+            <button
+              v-if="!canCheckinToday"
+              type="button"
+              class="checkin-plan-link"
+              @click="router.push('/time')"
+            >
+              {{ t('checkin.openTodayPlan') }}
+            </button>
           </div>
         </template>
 
@@ -441,6 +449,30 @@ const last7Days = computed(() => {
   cursor: not-allowed;
   font-size: 0.875rem;
 }
+
+.checkin-plan-link {
+  min-height: 44px;
+  margin-top: calc(var(--spacing-sm) * -1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--color-primary);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 650;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.checkin-plan-link:hover, .checkin-plan-link:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-muted);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.checkin-plan-link:active { transform: translateY(1px); }
 
 .btn-icon {
   font-size: 1.25rem;

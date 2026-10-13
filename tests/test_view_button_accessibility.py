@@ -17,3 +17,10 @@ def test_all_view_click_buttons_declare_non_submit_type():
         assert all('type="button"' in button for button in clickable_buttons), view.name
 
     assert checked > 0
+
+
+def test_checkin_not_ready_state_exposes_today_plan_action():
+    source = (DESK_SRC / "views" / "CheckinView.vue").read_text(encoding="utf-8")
+    assert "t('checkin.openTodayPlan')" in source
+    assert "router.push('/time')" in source
+    assert 'class="checkin-plan-link"' in source
