@@ -59,9 +59,9 @@ def test_home_time_summary_failure_has_an_explicit_retry_without_fake_empty_stat
 
 def test_home_workflow_summary_does_not_turn_unavailable_data_into_zero_values():
     assert "'is-unavailable': timeSummaryUnavailable" in HOME
-    assert "timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale)" in HOME
-    assert "eventPlanState === 'unavailable' ? '—'" in HOME
-    assert "todoSummaryUnavailable ? '—' : activeTodoCount" in HOME
+    assert "!timeSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale)" in HOME
+    assert "eventPlanState !== 'ready' ? '—'" in HOME
+    assert "!todoSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount" in HOME
 
 
 def test_home_unavailable_summary_cards_retry_in_place_before_navigating():

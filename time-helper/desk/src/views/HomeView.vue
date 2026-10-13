@@ -37,6 +37,7 @@ const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
 const todoSummaryReady = ref(false)
 const timeSummaryUnavailable = ref(false)
+const timeSummaryReady = ref(false)
 const workspaceSummaryReady = ref(false)
 const workspaceRefreshing = ref(false)
 const lastWorkspaceRefreshAt = ref<number | null>(null)
@@ -139,8 +140,10 @@ async function refreshTimeSummary(): Promise<void> {
   try {
     await appStore.refreshTodayData()
     timeSummaryUnavailable.value = false
+    timeSummaryReady.value = true
   } catch (error) {
     timeSummaryUnavailable.value = true
+    timeSummaryReady.value = true
     console.warn('Failed to refresh home time summary:', error)
   }
 }
@@ -627,19 +630,19 @@ onUnmounted(() => {
       </section>
 
       <section class="workflow-summary" :aria-label="t('home.workflowSummary')">
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="openWorkflowSummary('time')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': timeSummaryUnavailable, 'is-loading': !timeSummaryReady }" type="button" @click="openWorkflowSummary('time')">
           <span class="workflow-summary-icon"><Clock3 :size="17" /><small>TH</small></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : timeSummaryUnavailable ? t('home.timeUnavailable') : t('home.timeModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !timeSummaryReady || timeSummaryUnavailable ? '—' : hoursToHm(todayRecordHours, locale) }}</strong><small>{{ !timeSummaryReady ? t('home.summaryLoading') : timeSummaryUnavailable ? t('home.timeUnavailable') : t('home.timeModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable', 'is-loading': !workspaceSummaryReady }" type="button" @click="openWorkflowSummary('plans')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': eventPlanState === 'unavailable', 'is-loading': eventPlanState === 'loading' }" type="button" @click="openWorkflowSummary('plans')">
           <span class="workflow-summary-icon"><ClipboardList :size="17" /><small>PH</small></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || eventPlanState === 'unavailable' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : eventPlanState === 'unavailable' ? (mobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable')) : t('home.planModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ eventPlanState !== 'ready' ? '—' : `${eventPlanCompletedCount}/${eventPlanTaskCount}` }}</strong><small>{{ eventPlanState === 'loading' ? t('home.summaryLoading') : eventPlanState === 'unavailable' ? (mobilePlanRuntime ? t('home.eventPlansUnavailableMobile') : t('home.eventPlansUnavailable')) : t('home.planModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
-        <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable, 'is-loading': !workspaceSummaryReady }" type="button" @click="openWorkflowSummary('todos')">
+        <button class="workflow-summary-item" :class="{ 'is-unavailable': todoSummaryUnavailable, 'is-loading': !todoSummaryReady }" type="button" @click="openWorkflowSummary('todos')">
           <span class="workflow-summary-icon"><ListTodo :size="17" /><small>TD</small></span>
-          <span class="workflow-summary-copy"><strong>{{ !workspaceSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ !workspaceSummaryReady ? t('home.summaryLoading') : todoSummaryUnavailable ? t('home.todosUnavailable') : t('home.todoModuleSummary') }}</small></span>
+          <span class="workflow-summary-copy"><strong>{{ !todoSummaryReady || todoSummaryUnavailable ? '—' : activeTodoCount }}</strong><small>{{ !todoSummaryReady ? t('home.summaryLoading') : todoSummaryUnavailable ? t('home.todosUnavailable') : t('home.todoModuleSummary') }}</small></span>
           <ChevronRight :size="16" />
         </button>
       </section>
@@ -657,7 +660,7 @@ onUnmounted(() => {
             <span>{{ t('home.timeUnavailable') }}</span>
             <button type="button" @click="refreshTimeSummary">{{ t('home.retryTime') }}</button>
           </div>
-          <div v-else-if="!workspaceSummaryReady" class="stats-loading" role="status" aria-live="polite">
+          <div v-else-if="!timeSummaryReady" class="stats-loading" role="status" aria-live="polite">
             <span class="stats-loading-ring" aria-hidden="true"></span>
             <span>{{ t('home.summaryLoading') }}</span>
           </div>

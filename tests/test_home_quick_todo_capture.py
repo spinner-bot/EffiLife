@@ -26,3 +26,9 @@ def test_home_td_rendering_is_not_blocked_by_other_module_loading():
     assert "const todoSummaryReady = ref(false)" in HOME
     assert "todoSummaryReady.value = true" in HOME
     assert 'v-else-if="!todoSummaryReady" class="today-todos-loading"' in HOME
+
+
+def test_home_th_rendering_is_not_blocked_by_other_module_loading():
+    assert "const timeSummaryReady = ref(false)" in HOME
+    assert "timeSummaryReady.value = true" in HOME
+    assert 'v-else-if="!timeSummaryReady" class="stats-loading"' in HOME

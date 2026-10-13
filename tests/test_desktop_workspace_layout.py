@@ -28,7 +28,7 @@ def test_home_inbox_unread_animation_does_not_duplicate_parent_vertical_position
 def test_home_does_not_render_zero_values_before_workspace_summary_is_ready():
     assert "const workspaceSummaryReady = ref(false)" in HOME
     assert ":aria-busy=\"!workspaceSummaryReady\"" in HOME
-    assert "!workspaceSummaryReady || timeSummaryUnavailable" in HOME
+    assert "!timeSummaryReady || timeSummaryUnavailable" in HOME
     assert "class=\"stats-loading\"" in HOME
     assert "class=\"today-todos-loading\"" in HOME
 
