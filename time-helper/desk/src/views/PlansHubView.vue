@@ -443,6 +443,7 @@ async function createFromTemplate() {
       locale.value,
     )
     const createdId = selectedPlan.value.id
+    notifyToast(t('plans.created'), 'success')
     closeTemplatePicker()
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
@@ -510,6 +511,7 @@ async function createPlan() {
   try {
     const created = await createEventPlan(name, toDateTuple(planDate.value), sections)
     const createdId = created.id
+    notifyToast(t('plans.created'), 'success')
     selectedPlan.value = await getPlanFull(createdId)
     await refreshLinkedTodoTaskIds()
     // Creation is still marked busy while the response is being committed;

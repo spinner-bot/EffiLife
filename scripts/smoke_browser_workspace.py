@@ -183,6 +183,7 @@ def run_smoke(
             create_inputs.nth(2).fill("Smoke section")
             create_inputs.nth(4).fill("Smoke plan task")
             create_modal.locator("button.plans-primary").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
             page.wait_for_timeout(1000)
             if create_modal.is_visible():
                 raise RuntimeError(f"PH create dialog remained open after submit: {create_modal.inner_text()[:500]}")
