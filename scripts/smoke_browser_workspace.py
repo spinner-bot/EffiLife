@@ -28,6 +28,7 @@ class SmokeResult:
     theme_persistence_verified: bool
     locale_persistence_verified: bool
     ph_plan_flow_verified: bool
+    mobile_ph_plan_flow_verified: bool
     td_task_flow_verified: bool
     td_focus_flow_verified: bool
     td_cross_window_focus_verified: bool
@@ -48,6 +49,7 @@ def run_smoke(
     inject_write_failure: bool = False,
     archive_roundtrip: bool = False,
     ph_plan_flow: bool = False,
+    mobile_ph_plan_flow: bool = False,
     td_task_flow: bool = False,
     td_focus_flow: bool = False,
     th_record_flow: bool = False,
@@ -68,6 +70,7 @@ def run_smoke(
         page = context.new_page()
         rendered_routes: list[str] = []
         ph_plan_flow_verified = False
+        mobile_ph_plan_flow_verified = False
         td_task_flow_verified = False
         td_focus_flow_verified = False
         td_cross_window_focus_verified = False
@@ -272,8 +275,12 @@ def run_smoke(
                 raise RuntimeError("TH time record was not durable after reload")
             th_record_flow_verified = True
 
-        mobile_page = context.new_page()
-        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        mobile_context = browser.new_context(
+            user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/128.0.0.0 Mobile Safari/537.36",
+            viewport={"width": 390, "height": 844},
+        )
+        mobile_context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        mobile_page = mobile_context.new_page()
         mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
         mobile_page.wait_for_timeout(1200)
         mobile_startup_alert = mobile_page.locator('[role="alertdialog"]')
@@ -289,7 +296,38 @@ def run_smoke(
             raise RuntimeError("mobile quick capture is not visible above bottom navigation")
         if not mobile_page.locator(".home-time-action").is_visible():
             raise RuntimeError("mobile dashboard does not expose the TH quick record action")
+        if mobile_ph_plan_flow:
+            mobile_page.goto(f"{base_url.rstrip('/')}/plans", wait_until="domcontentloaded", timeout=15000)
+            mobile_page.wait_for_timeout(1000)
+            mobile_plan_alert = mobile_page.locator('[role="alertdialog"]')
+            if mobile_plan_alert.count() and mobile_plan_alert.first.is_visible():
+                mobile_plan_alert.first.locator(".confirm-cancel").click(timeout=5000)
+            mobile_create_button = mobile_page.locator(".plan-entry-actions button.plans-primary")
+            mobile_create_button.wait_for(state="visible", timeout=5000)
+            mobile_create_button.click(timeout=5000)
+            mobile_create_modal = mobile_page.locator(".create-modal")
+            mobile_create_modal.wait_for(state="visible", timeout=5000)
+            mobile_inputs = mobile_create_modal.locator("input")
+            if mobile_inputs.count() < 5:
+                raise RuntimeError("mobile PH create dialog did not expose plan, section and task fields")
+            mobile_inputs.nth(0).fill("Mobile smoke plan")
+            mobile_inputs.nth(2).fill("Mobile smoke section")
+            mobile_inputs.nth(4).fill("Mobile smoke task")
+            mobile_create_modal.locator("button.plans-primary").click(timeout=5000)
+            mobile_page.wait_for_timeout(900)
+            if mobile_create_modal.is_visible() or mobile_page.get_by_text("Mobile smoke task", exact=True).count() != 1:
+                raise RuntimeError("mobile PH local snapshot did not persist a created plan with content")
+            mobile_page.locator(".detail-actions button.plans-secondary").first.click(timeout=5000)
+            mobile_meta_editor = mobile_page.locator(".meta-editor")
+            mobile_meta_editor.wait_for(state="visible", timeout=5000)
+            mobile_meta_editor.locator("input").first.fill("Mobile smoke plan edited")
+            mobile_meta_editor.locator("button.plans-primary").click(timeout=5000)
+            mobile_page.wait_for_timeout(500)
+            if mobile_page.locator(".plans-header h1").get_by_text("Mobile smoke plan edited", exact=True).count() != 1:
+                raise RuntimeError("mobile PH local snapshot did not persist plan metadata edit")
+            mobile_ph_plan_flow_verified = True
         mobile_page.close()
+        mobile_context.close()
 
         page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
         settings_items = page.locator("button.settings-item")
@@ -427,6 +465,7 @@ def run_smoke(
         theme_persistence_verified=theme_persistence_verified,
         locale_persistence_verified=locale_persistence_verified,
         ph_plan_flow_verified=ph_plan_flow_verified,
+        mobile_ph_plan_flow_verified=mobile_ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
         td_focus_flow_verified=td_focus_flow_verified,
         td_cross_window_focus_verified=td_cross_window_focus_verified,
@@ -461,6 +500,11 @@ def main() -> int:
         help="verify PH create-with-content and edit flow; requires a running Plan Helper service",
     )
     parser.add_argument(
+        "--mobile-ph-plan-flow",
+        action="store_true",
+        help="verify mobile-user-agent PH local snapshot create and edit flow",
+    )
+    parser.add_argument(
         "--td-task-flow",
         action="store_true",
         help="verify TD quick-capture and completion flow in isolated browser storage",
@@ -483,6 +527,7 @@ def main() -> int:
             inject_write_failure=args.inject_write_failure,
             archive_roundtrip=args.archive_roundtrip,
             ph_plan_flow=args.ph_plan_flow,
+            mobile_ph_plan_flow=args.mobile_ph_plan_flow,
             td_task_flow=args.td_task_flow,
             td_focus_flow=args.td_focus_flow,
             th_record_flow=args.th_record_flow,
