@@ -217,6 +217,7 @@ def run_smoke(
             task_item = page.locator("article.task-item").filter(has_text="Smoke quick todo")
             task_item.wait_for(state="visible", timeout=5000)
             task_item.locator("button.task-check").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
             page.locator("#tasks-tab-completed").click(timeout=5000)
             page.wait_for_timeout(400)
             if page.locator("article.task-item.completed").filter(has_text="Smoke quick todo").count() != 1:
