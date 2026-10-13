@@ -71,8 +71,10 @@ def test_release_signing_status_detects_android_and_windows_prerequisites(monkey
     sdk = tmp_path / "android-sdk"
     build_tools = sdk / "build-tools" / "35.0.0"
     build_tools.mkdir(parents=True)
-    (build_tools / "apksigner.bat").write_text("", encoding="utf-8")
-    (build_tools / "zipalign.exe").write_text("", encoding="utf-8")
+    signer_name = "apksigner.bat" if launcher.os.name == "nt" else "apksigner"
+    aligner_name = "zipalign.exe" if launcher.os.name == "nt" else "zipalign"
+    (build_tools / signer_name).write_text("", encoding="utf-8")
+    (build_tools / aligner_name).write_text("", encoding="utf-8")
     profile = tmp_path / "profile"
     (profile / ".android").mkdir(parents=True)
     (profile / ".android" / "debug.keystore").write_bytes(b"test")
@@ -90,8 +92,8 @@ def test_release_signing_status_detects_android_and_windows_prerequisites(monkey
 
     assert status["android"]["ready"] is True
     assert status["android"]["formal_ready"] is True
-    assert status["android"]["apksigner"].endswith("apksigner.bat")
-    assert status["android"]["zipalign"].endswith("zipalign.exe")
+    assert status["android"]["apksigner"].endswith(signer_name)
+    assert status["android"]["zipalign"].endswith(aligner_name)
     assert status["windows"]["signtool"] == "C:/Windows Kits/signtool.exe"
     assert status["windows"]["formal_ready"] is True
 
