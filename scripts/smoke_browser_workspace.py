@@ -46,6 +46,7 @@ class SmokeResult:
     confirm_keyboard_accessible: bool
     onboarding_flow_verified: bool
     mobile_onboarding_flow_verified: bool
+    startup_recovery_verified: bool
 
 
 def run_smoke(
@@ -62,6 +63,7 @@ def run_smoke(
     mobile_archive_share_flow: bool = False,
     onboarding_flow: bool = False,
     mobile_onboarding_flow: bool = False,
+    startup_recovery_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -78,6 +80,17 @@ def run_smoke(
         # experience before continuing with the rest of the shell checks.
         if not onboarding_flow:
             context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        if startup_recovery_flow:
+            context.add_init_script(
+                """
+                if (!sessionStorage.getItem('efflife_startup_failure_injected')) {
+                    sessionStorage.setItem('efflife_startup_failure_injected', 'true');
+                    IDBFactory.prototype.open = function () {
+                        throw new Error('injected startup storage failure');
+                    };
+                }
+                """
+            )
         page = context.new_page()
         rendered_routes: list[str] = []
         ph_plan_flow_verified = False
@@ -95,13 +108,25 @@ def run_smoke(
         mobile_archive_share_verified = False
         onboarding_flow_verified = False
         mobile_onboarding_flow_verified = False
+        startup_recovery_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
         # horizontally structured command center rather than a mobile-only
         # stack. Verify the shell and dashboard contract in a real browser.
         page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
-        page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
+        if startup_recovery_flow:
+            startup_error_panel = page.locator(".app-startup-error")
+            startup_error_panel.wait_for(state="visible", timeout=10000)
+            retry_button = page.locator(".app-startup-retry")
+            retry_button.wait_for(state="visible", timeout=5000)
+            if page.evaluate("document.activeElement?.classList.contains('app-startup-retry')") is not True:
+                raise RuntimeError("startup failure did not focus the recovery action")
+            retry_button.click(timeout=5000)
+            page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
+            startup_recovery_verified = True
+        else:
+            page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
         page.wait_for_timeout(300)
         if onboarding_flow:
             onboarding_tooltip = page.locator(".guide-tooltip")
@@ -629,6 +654,7 @@ def run_smoke(
         confirm_keyboard_accessible=True,
         onboarding_flow_verified=onboarding_flow_verified,
         mobile_onboarding_flow_verified=mobile_onboarding_flow_verified,
+        startup_recovery_verified=startup_recovery_verified,
     )
 
 
@@ -686,6 +712,11 @@ def main() -> int:
         action="store_true",
         help="verify the real first-run onboarding flow at the mobile viewport",
     )
+    parser.add_argument(
+        "--startup-recovery-flow",
+        action="store_true",
+        help="inject one startup storage failure and verify the visible retry recovery path",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -701,6 +732,7 @@ def main() -> int:
             mobile_archive_share_flow=args.mobile_archive_share_flow,
             onboarding_flow=args.onboarding_flow,
             mobile_onboarding_flow=args.mobile_onboarding_flow,
+            startup_recovery_flow=args.startup_recovery_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
