@@ -70,7 +70,11 @@ function planTypeLabel(value?: string): string {
 
 const availableTags = computed(() => {
   const plan = plans.value[todayPlan.value.name]
-  return plan?.items.map(item => item.name) || []
+  const planTags = plan?.items.map(item => item.name).filter(Boolean) || []
+  // TH must remain usable before the user creates a daily plan. Keep the
+  // record independent from PH/day-plan setup with one localized fallback;
+  // once a plan has items, its categories remain the source of truth.
+  return planTags.length > 0 ? planTags : [t('legacyPlan.uncategorized')]
 })
 
 // 记录编辑状态

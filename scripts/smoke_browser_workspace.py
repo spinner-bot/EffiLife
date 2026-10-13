@@ -251,6 +251,16 @@ def run_smoke(
             page.locator("button.pv-add-btn").click(timeout=5000)
             record_modal = page.locator(".pv-modal")
             record_modal.wait_for(state="visible", timeout=5000)
+            # The focus flow may have just created a real TH record for the
+            # current time. Use a deterministic free early-minute window so
+            # this independent TH assertion does not manufacture a conflict
+            # with the cross-module focus acceptance that ran before it.
+            time_inputs = record_modal.locator("input.pv-num-input")
+            if time_inputs.count() >= 4:
+                time_inputs.nth(0).fill("00")
+                time_inputs.nth(1).fill("00")
+                time_inputs.nth(2).fill("00")
+                time_inputs.nth(3).fill("01")
             content_input = record_modal.locator("input.pv-text-input").first
             content_input.fill("Smoke time record")
             record_modal.locator(".pv-modal-footer .pv-primary-btn").click(timeout=5000)
