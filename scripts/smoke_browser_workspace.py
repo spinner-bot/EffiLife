@@ -26,6 +26,7 @@ class SmokeResult:
     theme_save_buttons: int
     theme_exit_confirmed: bool
     theme_persistence_verified: bool
+    locale_persistence_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
@@ -119,6 +120,24 @@ def run_smoke(
             raise RuntimeError("settings main view did not render its entries") from error
         if settings_items.count() < 2:
             raise RuntimeError("settings main view did not expose the theme entry")
+        locale_select = page.locator(".locale-switcher select")
+        if locale_select.count() != 1:
+            raise RuntimeError("settings main view did not expose the language selector")
+        original_locale = locale_select.input_value()
+        locale_select.select_option("en-US")
+        page.wait_for_timeout(200)
+        if page.locator("html").get_attribute("lang") != "en-US":
+            raise RuntimeError("language selector did not update the document locale")
+        page.reload(wait_until="domcontentloaded", timeout=15000)
+        page.wait_for_timeout(1200)
+        reload_startup_alert = page.locator('[role="alertdialog"]')
+        if reload_startup_alert.count():
+            reload_startup_alert.locator(".confirm-cancel").click(timeout=5000)
+        if page.locator(".locale-switcher select").input_value() != "en-US":
+            raise RuntimeError("language selection was not durable after reload")
+        locale_persistence_verified = True
+        page.locator(".locale-switcher select").select_option(original_locale)
+        page.wait_for_timeout(150)
         settings_items.nth(1).click(timeout=5000)
         page.wait_for_timeout(300)
 
@@ -223,6 +242,7 @@ def run_smoke(
         theme_save_buttons=theme_save_button_count,
         theme_exit_confirmed=not inject_write_failure,
         theme_persistence_verified=theme_persistence_verified,
+        locale_persistence_verified=locale_persistence_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,
