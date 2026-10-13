@@ -24,9 +24,16 @@ class SmokeResult:
     theme_save_buttons: int
     theme_exit_confirmed: bool
     storage_write_failure_handled: bool
+    archive_roundtrip: bool
 
 
-def run_smoke(base_url: str, *, headless: bool = True, inject_write_failure: bool = False) -> SmokeResult:
+def run_smoke(
+    base_url: str,
+    *,
+    headless: bool = True,
+    inject_write_failure: bool = False,
+    archive_roundtrip: bool = False,
+) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as error:  # pragma: no cover - exercised by the CLI environment
@@ -108,6 +115,30 @@ def run_smoke(base_url: str, *, headless: bool = True, inject_write_failure: boo
         elif page.locator("button.settings-item").count() < 2:
             raise RuntimeError("confirmed theme exit did not return to settings")
 
+        if archive_roundtrip:
+            # Export and import the same archive through the browser file
+            # picker. This exercises the actual .efl delivery path without
+            # introducing synthetic archive data into the user's workspace.
+            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            page.locator(".archive-actions button").first.wait_for(state="visible", timeout=10000)
+            with page.expect_download(timeout=15000) as download_info:
+                page.locator(".archive-actions button").nth(0).click(timeout=5000)
+            archive_path = download_info.value.path()
+            if not archive_path:
+                raise RuntimeError("browser archive export did not provide a file path")
+            page.locator('input[type="file"]').first.set_input_files(archive_path)
+            page.wait_for_timeout(800)
+            import_confirm = page.locator('[role="alertdialog"]')
+            if import_confirm.count() != 1:
+                raise RuntimeError("archive import did not show its preview confirmation")
+            import_confirm.locator(".confirm-submit").click(timeout=5000)
+            page.wait_for_timeout(1200)
+            reload_confirm = page.locator('[role="alertdialog"]')
+            if reload_confirm.count():
+                reload_confirm.locator(".confirm-cancel").click(timeout=5000)
+            if page.locator(".toast-success").count() == 0:
+                raise RuntimeError("archive roundtrip did not report success")
+
         browser.close()
 
     return SmokeResult(
@@ -116,6 +147,7 @@ def run_smoke(base_url: str, *, headless: bool = True, inject_write_failure: boo
         theme_save_buttons=theme_save_button_count,
         theme_exit_confirmed=not inject_write_failure,
         storage_write_failure_handled=inject_write_failure,
+        archive_roundtrip=archive_roundtrip,
     )
 
 
@@ -128,9 +160,19 @@ def main() -> int:
         action="store_true",
         help="fail the next IndexedDB object-store write and verify error recovery",
     )
+    parser.add_argument(
+        "--archive-roundtrip",
+        action="store_true",
+        help="export and re-import a browser .efl archive through the file picker",
+    )
     args = parser.parse_args()
     try:
-        result = run_smoke(args.url, headless=not args.headed, inject_write_failure=args.inject_write_failure)
+        result = run_smoke(
+            args.url,
+            headless=not args.headed,
+            inject_write_failure=args.inject_write_failure,
+            archive_roundtrip=args.archive_roundtrip,
+        )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
         return 1
