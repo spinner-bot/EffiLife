@@ -475,6 +475,7 @@ async function completeTodo(todo: UnifiedTodo) {
     const updated = await completeTodoWithPlan(todo)
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
+    notifyToast(t('tasks.completedOne'), 'success')
   } catch (error) {
     errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : error instanceof Error ? error.message : t('tasks.error.update')
   } finally {

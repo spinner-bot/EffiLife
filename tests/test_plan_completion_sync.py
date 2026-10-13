@@ -39,3 +39,11 @@ def test_td_projection_failure_has_a_distinct_recoverable_error_path():
     assert "error instanceof PlanTodoSyncError" in HOME
     assert "error instanceof PlanTodoSyncError" in (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 
+
+def test_single_todo_completion_has_success_feedback():
+    tasks = (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+    catalog = (DESK / "i18n" / "index.ts").read_text(encoding="utf-8")
+    completion = tasks[tasks.index("async function completeTodo"):tasks.index("function startEdit")]
+    assert "notifyToast(t('tasks.completedOne'), 'success')" in completion
+    assert catalog.count("'tasks.completedOne':") == 2
+
