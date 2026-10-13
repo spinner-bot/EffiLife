@@ -81,7 +81,11 @@ function preselectLinkedTodo(): void {
 // 获取当前计划的标签列表
 const availableTags = computed(() => {
   const plan = plans.value[todayPlan.value.name]
-  return plan?.items.map(item => item.name) || []
+  const planTags = plan?.items.map(item => item.name).filter(Boolean) || []
+  // Records remain a first-class TH workflow even before a daily plan exists.
+  // Use the same localized fallback as the time workspace until plan items
+  // become available, without changing the plan-backed category behavior.
+  return planTags.length > 0 ? planTags : [t('legacyPlan.uncategorized')]
 })
 
 // 编辑状态
