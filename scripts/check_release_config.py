@@ -30,6 +30,11 @@ def validate(root: Path) -> list[str]:
         errors.append("Tauri config does not declare the Plan Helper sidecar")
     if "nsis" not in tauri.get("bundle", {}).get("targets", []):
         errors.append("Tauri config does not include the Windows NSIS target")
+    nsis = tauri.get("bundle", {}).get("windows", {}).get("nsis", {})
+    if nsis.get("installMode") != "currentUser":
+        errors.append("Windows NSIS installer must explicitly use currentUser install mode")
+    if nsis.get("displayLanguageSelector") is not False:
+        errors.append("Windows NSIS installer language selector must be explicitly disabled")
     for icon in tauri.get("bundle", {}).get("icon", []):
         if not (root / "time-helper" / "desk" / "src-tauri" / icon).exists():
             errors.append(f"Tauri bundle icon is missing: {icon}")
