@@ -31,6 +31,7 @@ class SmokeResult:
     td_task_flow_verified: bool
     th_record_flow_verified: bool
     th_quick_capture_verified: bool
+    th_quick_capture_shortcut_verified: bool
     ph_td_link_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
@@ -67,6 +68,7 @@ def run_smoke(
         td_task_flow_verified = False
         th_record_flow_verified = False
         th_quick_capture_verified = False
+        th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
@@ -94,6 +96,15 @@ def run_smoke(
             raise RuntimeError("dashboard module summary order or labels are incorrect")
         if page.locator('.overview-grid').count() != 1:
             raise RuntimeError("desktop dashboard is missing its multi-column overview region")
+        page.keyboard.press("Control+Shift+t")
+        page.wait_for_timeout(700)
+        if "/time" not in page.url or page.locator(".pv-modal").count() != 1:
+            raise RuntimeError("TH keyboard shortcut did not open the time-record form")
+        page.keyboard.press("Escape")
+        page.locator(".pv-modal").wait_for(state="hidden", timeout=3000)
+        th_quick_capture_shortcut_verified = True
+        page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+        page.wait_for_timeout(300)
         quick_record = page.locator('.home-time-action')
         if quick_record.count() != 1:
             raise RuntimeError("dashboard does not expose the TH quick record action")
@@ -370,6 +381,7 @@ def run_smoke(
         td_task_flow_verified=td_task_flow_verified,
         th_record_flow_verified=th_record_flow_verified,
         th_quick_capture_verified=th_quick_capture_verified,
+        th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
         ph_td_link_flow_verified=ph_td_link_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,

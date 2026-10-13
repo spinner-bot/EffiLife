@@ -28,6 +28,7 @@ def test_global_shell_exposes_td_quick_capture_without_owning_todo_mutations():
     assert "event.ctrlKey || event.metaKey" in APP
     assert "event.shiftKey && event.key.toLowerCase() === 'a'" in APP
     assert 'aria-keyshortcuts="Control+Shift+A Meta+Shift+A"' in APP
+    assert 'aria-keyshortcuts="Alt+3 Control+Shift+T Meta+Shift+T"' in APP
     tasks = (ROOT / "time-helper/desk/src/views/TaskCenterView.vue").read_text(encoding="utf-8")
     assert 'ref="newTaskInput"' in tasks
     assert "route.query.compose" in tasks

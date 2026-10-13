@@ -105,6 +105,10 @@ function onGlobalKeydown(event: KeyboardEvent) {
     if (isEditableTarget(event.target)) return
     event.preventDefault()
     void router.push('/tasks?compose=1')
+  } else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 't') {
+    if (isEditableTarget(event.target)) return
+    event.preventDefault()
+    void router.push('/time?compose=1')
   } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
     if (isEditableTarget(event.target)) return
     event.preventDefault()
@@ -426,7 +430,7 @@ watch(() => appStore.todayStat, () => {
           <RouterLink class="global-nav-link" data-guide="plans" to="/plans" :title="t('plans.moduleDescription')" :class="{ active: route.path.startsWith('/plans') || route.path === '/plan' }" :aria-current="route.path.startsWith('/plans') || route.path === '/plan' ? 'page' : undefined" aria-keyshortcuts="Alt+2">
             <ClipboardList :size="16" /> <span class="global-nav-module-code" aria-hidden="true">PH</span><span>{{ t('nav.plans') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 2</kbd>
           </RouterLink>
-          <RouterLink class="global-nav-link" data-guide="time" to="/time" :title="t('home.timeModuleSummary')" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined" aria-keyshortcuts="Alt+3">
+          <RouterLink class="global-nav-link" data-guide="time" to="/time" :title="t('home.timeModuleSummary')" :class="{ active: route.path.startsWith('/time') }" :aria-current="route.path.startsWith('/time') ? 'page' : undefined" aria-keyshortcuts="Alt+3 Control+Shift+T Meta+Shift+T">
             <Clock3 :size="16" /> <span class="global-nav-module-code" aria-hidden="true">TH</span><span>{{ t('nav.time') }}</span><kbd class="global-nav-shortcut" aria-hidden="true">Alt 3</kbd>
           </RouterLink>
           <RouterLink class="global-nav-link" data-guide="tasks" to="/tasks" :title="t('tasks.moduleDescription')" :class="{ active: route.path.startsWith('/tasks') }" :aria-current="route.path.startsWith('/tasks') ? 'page' : undefined" aria-keyshortcuts="Alt+4">
