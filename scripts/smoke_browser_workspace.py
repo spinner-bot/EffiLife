@@ -49,6 +49,7 @@ class SmokeResult:
     startup_recovery_verified: bool
     mobile_startup_recovery_verified: bool
     archive_invalid_recovery_verified: bool
+    global_search_flow_verified: bool
 
 
 def run_smoke(
@@ -67,6 +68,7 @@ def run_smoke(
     mobile_onboarding_flow: bool = False,
     startup_recovery_flow: bool = False,
     archive_invalid_flow: bool = False,
+    global_search_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -114,6 +116,7 @@ def run_smoke(
         startup_recovery_verified = False
         mobile_startup_recovery_verified = False
         archive_invalid_recovery_verified = False
+        global_search_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -219,6 +222,34 @@ def run_smoke(
             if page.locator("#app").count() != 1 or not page.locator("#app").inner_text().strip():
                 raise RuntimeError(f"route did not render an app shell: {route}")
             rendered_routes.append(route)
+
+        if global_search_flow:
+            page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            search_todo_input = page.locator("#new-task-title")
+            search_todo_input.wait_for(state="visible", timeout=5000)
+            search_todo_input.fill("Smoke global search todo")
+            page.locator("form.task-create button.task-add").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            page.locator("#global-search-trigger").click(timeout=5000)
+            search_input = page.locator("#global-search-input")
+            search_input.wait_for(state="visible", timeout=5000)
+            try:
+                page.wait_for_function("document.activeElement?.id === 'global-search-input'", timeout=5000)
+            except Exception as error:  # noqa: BLE001 - preserve a focused smoke failure
+                raise RuntimeError("global search did not focus its input") from error
+            if page.evaluate("document.activeElement?.id") != "global-search-input":
+                raise RuntimeError("global search did not focus its input")
+            search_input.fill("Smoke global search todo")
+            search_result = page.locator(".search-result").filter(has_text="Smoke global search todo")
+            search_result.wait_for(state="visible", timeout=5000)
+            search_input.press("Enter")
+            page.wait_for_timeout(700)
+            if "/tasks" not in page.url or page.locator("#global-search-dialog").count() != 0:
+                raise RuntimeError("global search result did not open the TD deep link")
+            global_search_flow_verified = True
 
         if ph_plan_flow:
             # This opt-in path requires a running Plan Helper endpoint. It is
@@ -699,6 +730,7 @@ def run_smoke(
         startup_recovery_verified=startup_recovery_verified,
         mobile_startup_recovery_verified=mobile_startup_recovery_verified,
         archive_invalid_recovery_verified=archive_invalid_recovery_verified,
+        global_search_flow_verified=global_search_flow_verified,
     )
 
 
@@ -766,6 +798,11 @@ def main() -> int:
         action="store_true",
         help="verify malformed .efl import reports an error and releases the archive UI",
     )
+    parser.add_argument(
+        "--global-search-flow",
+        action="store_true",
+        help="verify unified TD search and deep-link navigation from the workspace shell",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -783,6 +820,7 @@ def main() -> int:
             mobile_onboarding_flow=args.mobile_onboarding_flow,
             startup_recovery_flow=args.startup_recovery_flow,
             archive_invalid_flow=args.archive_invalid_flow,
+            global_search_flow=args.global_search_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
