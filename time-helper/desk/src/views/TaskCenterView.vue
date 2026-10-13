@@ -19,6 +19,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
 import { FocusSessionService } from '@/services/focusSessionService'
+import { completeTodoWithPlan } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -471,7 +472,7 @@ async function completeTodo(todo: UnifiedTodo) {
   if (todo.status === 'completed' || completingTodoId.value === todo.id) return
   completingTodoId.value = todo.id
   try {
-    const updated = await TodoService.complete(todo.id)
+    const updated = await completeTodoWithPlan(todo)
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
   } catch (error) {
@@ -581,7 +582,7 @@ async function bulkCompleteTodos() {
   try {
     for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
       if (todo.status === 'completed') continue
-      replaceTodo(await TodoService.complete(todo.id))
+      replaceTodo(await completeTodoWithPlan(todo))
       completed += 1
     }
     notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')

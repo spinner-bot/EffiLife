@@ -1,7 +1,21 @@
-import { TodoService } from './todoService'
+import { TodoService, type UnifiedTodo } from './todoService'
 import type { TimeRecord } from '@/types'
 import { getRawAll, set as idbSet, STORE_NAMES } from '@/storage'
-import { getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
+import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
+
+/**
+ * Complete a TD item and its PH projection in the documented order.
+ *
+ * PH must succeed before TD is changed. The two stores are not transactional;
+ * if the TD write fails after PH succeeds, the caller keeps the PH result and
+ * reports the recoverable projection error.
+ */
+export async function completeTodoWithPlan(todo: UnifiedTodo): Promise<UnifiedTodo> {
+  if (todo.related_plan_id && todo.related_plan_task_id) {
+    await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
+  }
+  return TodoService.complete(todo.id)
+}
 
 /**
  * Remove a stale plan-task reference while keeping the user's todo intact.

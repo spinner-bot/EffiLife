@@ -9,7 +9,7 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { getOrCreatePlanTaskTodo, TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
-import { completeLinkedPlanTodo } from '@/services/workspaceSync'
+import { completeLinkedPlanTodo, completeTodoWithPlan } from '@/services/workspaceSync'
 import { getPriorityScore } from '@/services/priority'
 import { completePlanTask, getPlanFull, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
@@ -146,7 +146,7 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   if (completingTodoId.value) return
   completingTodoId.value = todo.id
   try {
-    await TodoService.complete(todo.id)
+    await completeTodoWithPlan(todo)
     await refreshTodoSummary()
   } catch (error) {
     notifyToast(error instanceof Error ? error.message : t('tasks.error.update'), 'error')
