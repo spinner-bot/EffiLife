@@ -29,3 +29,4 @@ def test_guide_capture_allows_its_confirmation_dialog_to_receive_clicks():
     assert "const confirmDialog = document.querySelector('.confirm-dialog')" in OVERLAY
     assert "confirmDialog.contains(clickedTarget)" in OVERLAY
     assert "z-index: 11010" in confirm
+    assert "if (confirmDialog && e.target instanceof Node && confirmDialog.contains(e.target)) return" in OVERLAY

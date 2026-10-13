@@ -198,6 +198,10 @@ function getActionHint(): string {
 
 function handleKeydown(e: KeyboardEvent) {
   if (!isActive.value) return
+  // ConfirmHost owns keyboard events while its modal is open. In particular,
+  // do not let Escape bubble back into skipGuide and create another request.
+  const confirmDialog = document.querySelector('.confirm-dialog')
+  if (confirmDialog && e.target instanceof Node && confirmDialog.contains(e.target)) return
   if (!currentStep.value?.actionRequired && e.key === 'Enter') {
     GuideManager.nextStep()
   }
