@@ -44,6 +44,7 @@ const hasPromptedCheckin = ref(false)
 const runtimeReady = ref(false)
 const startupError = ref(false)
 const startupErrorMessage = ref('')
+const startupRetrying = ref(false)
 const startupRetryButton = ref<HTMLButtonElement | null>(null)
 const runtimeErrorMessage = ref('')
 const runtimeErrorSource = ref('')
@@ -126,6 +127,8 @@ function onGlobalKeydown(event: KeyboardEvent) {
 }
 
 function retryStartup() {
+  if (startupRetrying.value) return
+  startupRetrying.value = true
   window.location.reload()
 }
 
@@ -497,9 +500,12 @@ watch(() => appStore.todayStat, () => {
       <span class="app-startup-mark">!</span>
       <strong>{{ t('app.startupFailed') }}</strong>
       <span>{{ t('app.startupFailedDescription') }}</span>
-      <small v-if="startupErrorMessage" class="app-startup-detail">{{ t('app.startupFailedDetail', { detail: startupErrorMessage }) }}</small>
-      <button ref="startupRetryButton" class="app-startup-retry" type="button" @click="retryStartup">
-        {{ t('app.retryStartup') }}
+      <details v-if="startupErrorMessage" class="app-startup-diagnostics">
+        <summary>{{ t('app.showStartupDetails') }}</summary>
+        <small class="app-startup-detail">{{ t('app.startupFailedDetail', { detail: startupErrorMessage }) }}</small>
+      </details>
+      <button ref="startupRetryButton" class="app-startup-retry" type="button" :disabled="startupRetrying" :aria-busy="startupRetrying" @click="retryStartup">
+        {{ startupRetrying ? t('app.retryingStartup') : t('app.retryStartup') }}
       </button>
     </div>
     <div v-else class="app-startup" role="status" aria-live="polite">
@@ -557,8 +563,13 @@ watch(() => appStore.todayStat, () => {
 .app-startup-error { padding: 24px; text-align: center; }
 .app-startup-error strong { color: var(--color-text-primary); font-size: 16px; }
 .app-startup-error > span:not(.app-startup-mark) { max-width: 360px; }
+.app-startup-diagnostics { width: min(620px, calc(100vw - 48px)); color: var(--color-text-tertiary); text-align: left; }
+.app-startup-diagnostics summary { width: fit-content; cursor: pointer; color: var(--color-text-secondary); font-size: 11px; }
+.app-startup-diagnostics summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .app-startup-detail { max-width: min(620px, calc(100vw - 48px)); overflow-wrap: anywhere; color: var(--color-text-tertiary); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; line-height: 1.5; }
+.app-startup-diagnostics .app-startup-detail { display: block; margin-top: 8px; }
 .app-startup-retry { border: 1px solid var(--color-border); border-radius: 10px; padding: 8px 14px; color: var(--color-button-text); background: var(--color-primary); cursor: pointer; font: inherit; }
+.app-startup-retry:disabled { cursor: wait; opacity: .65; }
 .app-startup-retry:hover { filter: brightness(1.06); }
 .app-startup-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; color: var(--color-button-text); background: var(--color-primary); font-size: 18px; font-weight: 700; box-shadow: var(--theme-box-shadow, 0 8px 30px rgba(0,0,0,.08)); }
 

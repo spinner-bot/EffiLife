@@ -49,6 +49,18 @@ def test_startup_error_exposes_localized_diagnostic_detail():
     assert source.count("'app.startupFailedDetail'") == 4
 
 
+def test_startup_error_keeps_diagnostics_collapsed_and_retry_feedback_explicit():
+    app = APP.read_text(encoding="utf-8")
+    source = I18N.read_text(encoding="utf-8")
+    assert '<details v-if="startupErrorMessage" class="app-startup-diagnostics">' in app
+    assert "app.showStartupDetails" in app
+    assert ":disabled=\"startupRetrying\"" in app
+    assert ":aria-busy=\"startupRetrying\"" in app
+    assert "app.retryingStartup" in app
+    assert "'app.showStartupDetails':" in source
+    assert "'app.retryingStartup':" in source
+
+
 def test_startup_error_focuses_the_recovery_action():
     app = APP.read_text(encoding="utf-8")
     assert "const startupRetryButton = ref<HTMLButtonElement | null>(null)" in app
