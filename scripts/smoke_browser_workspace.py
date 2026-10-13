@@ -47,6 +47,7 @@ class SmokeResult:
     onboarding_flow_verified: bool
     mobile_onboarding_flow_verified: bool
     startup_recovery_verified: bool
+    mobile_startup_recovery_verified: bool
 
 
 def run_smoke(
@@ -109,6 +110,7 @@ def run_smoke(
         onboarding_flow_verified = False
         mobile_onboarding_flow_verified = False
         startup_recovery_verified = False
+        mobile_startup_recovery_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -372,6 +374,17 @@ def run_smoke(
         )
         if not mobile_onboarding_flow:
             mobile_context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        if startup_recovery_flow:
+            mobile_context.add_init_script(
+                """
+                if (!sessionStorage.getItem('efflife_mobile_startup_failure_injected')) {
+                    sessionStorage.setItem('efflife_mobile_startup_failure_injected', 'true');
+                    IDBFactory.prototype.open = function () {
+                        throw new Error('injected mobile startup storage failure');
+                    };
+                }
+                """
+            )
         if mobile_archive_share_flow:
             mobile_context.add_init_script("""
                 Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
@@ -382,6 +395,14 @@ def run_smoke(
         mobile_page = mobile_context.new_page()
         mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
         mobile_page.wait_for_timeout(1200)
+        if startup_recovery_flow:
+            mobile_startup_error_panel = mobile_page.locator(".app-startup-error")
+            mobile_startup_error_panel.wait_for(state="visible", timeout=10000)
+            mobile_retry_button = mobile_page.locator(".app-startup-retry")
+            mobile_retry_button.wait_for(state="visible", timeout=5000)
+            mobile_retry_button.click(timeout=5000)
+            mobile_page.locator(".mobile-bottom-nav").wait_for(state="visible", timeout=15000)
+            mobile_startup_recovery_verified = True
         if mobile_onboarding_flow:
             mobile_onboarding_tooltip = mobile_page.locator(".guide-tooltip")
             mobile_onboarding_tooltip.wait_for(state="visible", timeout=5000)
@@ -655,6 +676,7 @@ def run_smoke(
         onboarding_flow_verified=onboarding_flow_verified,
         mobile_onboarding_flow_verified=mobile_onboarding_flow_verified,
         startup_recovery_verified=startup_recovery_verified,
+        mobile_startup_recovery_verified=mobile_startup_recovery_verified,
     )
 
 
