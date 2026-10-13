@@ -341,7 +341,7 @@ def run_smoke(
             mobile_page.wait_for_timeout(900)
             mobile_recovery_confirm = mobile_page.locator(".confirm-backdrop")
             if mobile_recovery_confirm.count() and mobile_recovery_confirm.first.is_visible():
-                mobile_recovery_confirm.locator(".confirm-cancel").click(timeout=5000)
+                raise RuntimeError("fresh mobile runtime unexpectedly showed an empty-data recovery prompt")
             settings_items = mobile_page.locator("button.settings-item")
             archive_item = None
             for index in range(settings_items.count()):

@@ -30,6 +30,13 @@ def test_migration_does_not_write_any_dataset_when_pre_migration_backup_fails():
     assert migration.index("errors: [failure]") < migration.index("const migrations:")
 
 
+def test_fresh_migration_does_not_create_an_empty_recovery_checkpoint():
+    source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
+    backup_block = source.split("const backupData = collectLocalStorageData()", 1)[1].split("} catch (error)", 1)[0]
+    assert "Object.keys(backupData).some(isWorkspaceDataStorageKey)" in backup_block
+    assert "if (hasLegacyWorkspaceData)" in backup_block
+
+
 def test_migration_requires_native_indexeddb_before_using_fallback_aware_helpers():
     source = (ROOT / "time-helper/desk/src/storage/migration.ts").read_text(encoding="utf-8")
     assert "import { get, set, isEmpty, openDB } from './indexedDB'" in source

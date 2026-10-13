@@ -218,7 +218,13 @@ export async function runMigration(): Promise<{
   // 先创建备份
   try {
     const backupData = collectLocalStorageData()
-    await createBackup('pre_migration_full', backupData)
+    // A fresh install may contain only guide/locale/runtime metadata. Do not
+    // create an empty migration checkpoint: it would later be interpreted as
+    // recoverable user data and show a needless recovery prompt.
+    const hasLegacyWorkspaceData = Object.keys(backupData).some(isWorkspaceDataStorageKey)
+    if (hasLegacyWorkspaceData) {
+      await createBackup('pre_migration_full', backupData)
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     const failure = `pre_migration_full: ${message}`
