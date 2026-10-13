@@ -13,6 +13,10 @@ def test_plan_detail_links_todos_without_merging_module_entities():
     assert "related_plan_task_id" in source
     assert "function createLinkedTodos" in source
     assert "function createLinkedTodo" in source
+    assert "function startTaskFocus" in source
+    assert "FocusSessionService.get()" in source
+    assert "query: { todo: todo.id, focus: 'start' }" in source
+    assert "t('plans.focusAlreadyActive')" in source
     assert "t('plans.linkTodo')" in source
     assert "t('plans.todoAlreadyLinked')" in source
     assert "confirmPlanAction(t('plans.linkAllTodosConfirm'" in source
@@ -33,7 +37,7 @@ def test_plan_todo_linking_copy_exists_in_both_locales():
     zh_match = re.search(r"'zh-CN':\s*\{(?P<body>.*?)\n  \},\n  'en-US':", source, re.S)
     en_match = re.search(r"'en-US':\s*\{(?P<body>.*?)\n  \},\n}\n\nfunction readLocale", source, re.S)
     assert zh_match and en_match
-    for key in ("plans.linkTodo", "plans.linkAllTodos", "plans.linkAllTodosConfirm", "plans.linkedTodos", "plans.todosAllLinked", "plans.todosBulkCreated", "plans.todoCreateFailed"):
+    for key in ("plans.linkTodo", "plans.linkAllTodos", "plans.linkAllTodosConfirm", "plans.linkedTodos", "plans.todosAllLinked", "plans.todosBulkCreated", "plans.todoCreateFailed", "plans.startFocus", "plans.focusAlreadyActive"):
         assert zh_match.group('body').count(f"'{key}'") == 1
         assert en_match.group('body').count(f"'{key}'") == 1
 

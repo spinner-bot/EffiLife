@@ -84,6 +84,7 @@ def run_smoke(
         if home_startup_alert.count():
             home_startup_alert.locator(".confirm-cancel").click(timeout=5000)
         desktop_nav = page.locator(".desktop-nav-links")
+        desktop_nav.wait_for(state="visible", timeout=10000)
         if not desktop_nav.is_visible():
             raise RuntimeError("desktop navigation is not visible at the default viewport")
         desktop_nav_links = desktop_nav.locator(".global-nav-link")
@@ -107,6 +108,7 @@ def run_smoke(
         page.locator(".pv-modal").wait_for(state="hidden", timeout=3000)
         th_quick_capture_shortcut_verified = True
         page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+        page.locator(".desktop-nav-links").wait_for(state="visible", timeout=10000)
         page.wait_for_timeout(300)
         quick_record = page.locator('.home-time-action')
         if quick_record.count() != 1:

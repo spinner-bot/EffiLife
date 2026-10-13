@@ -804,9 +804,17 @@ function restoreFocusSession(): void {
 }
 
 async function handleFocusRouteCommand(): Promise<void> {
-  if (route.query.focus !== 'stop' || !focusTodoId.value) return
-  const todo = todos.value.find((item) => item.id === focusTodoId.value)
-  if (todo) await stopFocus(todo)
+  const command = String(route.query.focus || '')
+  if (command === 'start') {
+    const targetId = String(route.query.todo || '')
+    const target = todos.value.find((item) => item.id === targetId)
+    if (target && !focusTodoId.value && !target.status.match(/^(completed|archived|cancelled)$/)) startFocus(target)
+  } else if (command === 'stop' && focusTodoId.value) {
+    const todo = todos.value.find((item) => item.id === focusTodoId.value)
+    if (todo) await stopFocus(todo)
+  } else {
+    return
+  }
   const query = { ...route.query }
   delete query.focus
   await router.replace({ path: route.path, query })

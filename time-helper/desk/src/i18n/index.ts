@@ -1404,6 +1404,8 @@ const catalogs: Record<string, Record<string, string>> = {
     'plans.recordedTimeValue': '已投入 {minutes} 分钟',
     'plans.todoUnavailable': '关联待办暂时无法读取',
     'plans.todoCreateFailed': '加入待办失败',
+    'plans.startFocus': '开始专注',
+    'plans.focusAlreadyActive': '已有其他任务正在专注，已打开当前专注任务',
   },
   'en-US': {
     'api.error.loadConfig': 'Failed to load configuration',
@@ -2790,6 +2792,8 @@ const catalogs: Record<string, Record<string, string>> = {
     'plans.recordedTimeValue': '{minutes} min invested',
     'plans.todoUnavailable': 'The linked task is temporarily unavailable',
     'plans.todoCreateFailed': 'Unable to add the task',
+    'plans.startFocus': 'Start focus',
+    'plans.focusAlreadyActive': 'Another task is already in focus; opened the active task',
   },
 }
 

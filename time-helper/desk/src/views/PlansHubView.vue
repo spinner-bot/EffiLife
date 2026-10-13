@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, Pencil, Play, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
 import {
@@ -39,6 +39,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { TodoService } from '@/services/todoService'
+import { FocusSessionService } from '@/services/focusSessionService'
 import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { dateSearchText } from '@/services/dateSearch'
 import { parseLocalDate } from '@/services/dataService'
@@ -868,6 +869,38 @@ async function createLinkedTodo(task: { internal_id: string; content: string; ti
   }
 }
 
+async function startTaskFocus(task: { internal_id: string; content: string; time_minutes: number; finish?: unknown }): Promise<void> {
+  if (isLoading.value || linkingTodoTaskId.value || !selectedPlan.value || !canEditPlan.value || task.finish) return
+  const activeSession = FocusSessionService.get()
+  if (activeSession) {
+    notifyToast(t('plans.focusAlreadyActive'), 'info')
+    await router.push({ path: '/tasks', query: { todo: activeSession.todoId } })
+    return
+  }
+  linkingTodoTaskId.value = task.internal_id
+  try {
+    const planId = String(selectedPlan.value.id)
+    const existing = (await TodoService.list()).find((todo) => (
+      todo.related_plan_id === planId && todo.related_plan_task_id === task.internal_id
+    ))
+    const todo = existing || await TodoService.create({
+      title: task.content,
+      description: selectedPlan.value.name,
+      related_plan_id: planId,
+      related_plan_task_id: task.internal_id,
+      estimated_time: task.time_minutes,
+      time_estimate: task.time_minutes,
+    })
+    await refreshLinkedTodoTaskIds()
+    await router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    notifyToast(t('plans.todoCreateFailed'), 'error')
+  } finally {
+    linkingTodoTaskId.value = null
+  }
+}
+
 async function createLinkedTodos(): Promise<void> {
   if (isLoading.value || !selectedPlan.value || !canEditPlan.value) return
   if (!unlinkedActiveTaskCount.value) return
@@ -1220,6 +1253,7 @@ onUnmounted(() => {
             <small>{{ task.time_minutes }} {{ t('plans.minutesShort') }}</small>
             <div v-if="canEditPlan" class="event-task-actions">
               <button v-if="!task.finish && !linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log" :disabled="isLoading || linkingTodoTaskId === task.internal_id" :aria-label="t('plans.linkTodo')" @click="createLinkedTodo(task)"><Plus :size="13" /> {{ t('plans.linkTodo') }}</button>
+              <button v-if="!task.finish" type="button" class="task-log task-focus-action" :disabled="isLoading || linkingTodoTaskId === task.internal_id" :aria-label="t('plans.startFocus')" @click="startTaskFocus(task)"><Play :size="13" /> {{ t('plans.startFocus') }}</button>
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
               <button v-if="linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log task-record-time" :disabled="isLoading || recordingTodoTaskId === task.internal_id" :aria-label="t('plans.recordTodoTime')" @click="recordLinkedTodoTime(task.internal_id)"><Clock3 :size="13" /> {{ t('plans.recordTodoTime') }}</button>
               <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>

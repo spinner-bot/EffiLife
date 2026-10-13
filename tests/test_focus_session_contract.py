@@ -22,7 +22,7 @@ def test_task_center_restores_and_clears_session_only_after_successful_recording
     assert "const saved = await persistTodoTime(todo, minutes, startedAt)" in TASKS
     assert "if (!saved) return" in TASKS
     assert "FocusSessionService.clear()" in TASKS
-    assert "route.query.focus !== 'stop'" in TASKS
+    assert "command === 'start'" in TASKS
 
 
 def test_shell_exposes_active_focus_on_desktop_and_mobile_routes():

@@ -33,7 +33,7 @@ def test_manual_mobile_build_syncs_each_platform_job_before_npm_ci():
 def test_ci_runs_the_real_unified_cross_module_integration_suite():
     workflow = _workflow("ci.yml")
     assert "python scripts/run_integration.py test" in workflow
-    assert workflow.index("python scripts/run_integration.py test") > workflow.index("run: python -m pytest -q")
+    assert workflow.index("python scripts/run_integration.py test") > workflow.index("python -m pytest -q")
 
 
 def test_desktop_release_runs_the_real_unified_cross_module_integration_suite():
