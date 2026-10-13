@@ -362,6 +362,15 @@ const tooltipStyle = computed(() => ({
   backdrop-filter: blur(8px);
 }
 
+/* The mobile shell reserves the bottom edge for its touch navigation. Keep
+   onboarding copy above that safe area so highlighted targets remain usable. */
+@media (max-width: 680px) {
+  .guide-tooltip {
+    bottom: calc(86px + env(safe-area-inset-bottom)) !important;
+    width: min(320px, calc(100vw - 24px));
+  }
+}
+
 .tooltip-header {
   display: flex;
   align-items: center;

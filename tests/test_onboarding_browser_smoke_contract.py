@@ -10,9 +10,12 @@ OVERLAY = (Path(__file__).parents[1] / "time-helper" / "desk" / "src" / "guide" 
 def test_browser_smoke_exposes_real_onboarding_flow():
     assert "onboarding_flow_verified" in SCRIPT
     assert "--onboarding-flow" in SCRIPT
+    assert "mobile_onboarding_flow_verified" in SCRIPT
+    assert "--mobile-onboarding-flow" in SCRIPT
     assert "efflife_guide_completed" in SCRIPT
     assert '.guide-tooltip' in SCRIPT
     assert '[data-guide="plans"]' in SCRIPT
+    assert '.mobile-bottom-nav [data-guide="plans"]' in SCRIPT
 
 
 def test_onboarding_backdrop_does_not_swallow_highlighted_navigation_clicks():

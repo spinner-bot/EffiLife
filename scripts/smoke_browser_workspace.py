@@ -45,6 +45,7 @@ class SmokeResult:
     mobile_navigation: bool
     confirm_keyboard_accessible: bool
     onboarding_flow_verified: bool
+    mobile_onboarding_flow_verified: bool
 
 
 def run_smoke(
@@ -60,6 +61,7 @@ def run_smoke(
     th_record_flow: bool = False,
     mobile_archive_share_flow: bool = False,
     onboarding_flow: bool = False,
+    mobile_onboarding_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -92,6 +94,7 @@ def run_smoke(
         ph_td_link_flow_verified = False
         mobile_archive_share_verified = False
         onboarding_flow_verified = False
+        mobile_onboarding_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -342,7 +345,8 @@ def run_smoke(
             user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/128.0.0.0 Mobile Safari/537.36",
             viewport={"width": 390, "height": 844},
         )
-        mobile_context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        if not mobile_onboarding_flow:
+            mobile_context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
         if mobile_archive_share_flow:
             mobile_context.add_init_script("""
                 Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
@@ -353,6 +357,31 @@ def run_smoke(
         mobile_page = mobile_context.new_page()
         mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
         mobile_page.wait_for_timeout(1200)
+        if mobile_onboarding_flow:
+            mobile_onboarding_tooltip = mobile_page.locator(".guide-tooltip")
+            mobile_onboarding_tooltip.wait_for(state="visible", timeout=5000)
+            if mobile_page.locator(".progress-badge").inner_text() != "1/6":
+                raise RuntimeError("mobile first-run onboarding did not start at step 1/6")
+            mobile_onboarding_tooltip.locator(".next-btn").click(timeout=5000)
+            mobile_plans_target = mobile_page.locator('.mobile-bottom-nav [data-guide="plans"]')
+            mobile_plans_box = mobile_plans_target.bounding_box()
+            if not mobile_plans_box:
+                raise RuntimeError("mobile onboarding PH target has no visible bounds")
+            mobile_page.mouse.click(
+                mobile_plans_box["x"] + mobile_plans_box["width"] / 2,
+                mobile_plans_box["y"] + mobile_plans_box["height"] / 2,
+            )
+            mobile_page.wait_for_timeout(1200)
+            if "/plans" not in mobile_page.url or not mobile_onboarding_tooltip.is_visible():
+                raise RuntimeError("mobile first-run onboarding did not follow the PH navigation action")
+            mobile_onboarding_tooltip.locator(".guide-close").click(timeout=5000)
+            mobile_skip_confirm = mobile_page.locator('[role="alertdialog"]')
+            mobile_skip_confirm.wait_for(state="visible", timeout=5000)
+            mobile_skip_confirm.locator(".confirm-submit").click(timeout=5000)
+            mobile_onboarding_tooltip.wait_for(state="hidden", timeout=5000)
+            mobile_onboarding_flow_verified = True
+            mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            mobile_page.wait_for_timeout(700)
         mobile_startup_alert = mobile_page.locator('[role="alertdialog"]')
         if mobile_startup_alert.count():
             mobile_startup_alert.locator(".confirm-cancel").click(timeout=5000)
@@ -599,6 +628,7 @@ def run_smoke(
         mobile_navigation=True,
         confirm_keyboard_accessible=True,
         onboarding_flow_verified=onboarding_flow_verified,
+        mobile_onboarding_flow_verified=mobile_onboarding_flow_verified,
     )
 
 
@@ -651,6 +681,11 @@ def main() -> int:
         action="store_true",
         help="verify the real first-run onboarding flow before workspace smoke checks",
     )
+    parser.add_argument(
+        "--mobile-onboarding-flow",
+        action="store_true",
+        help="verify the real first-run onboarding flow at the mobile viewport",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -665,6 +700,7 @@ def main() -> int:
             th_record_flow=args.th_record_flow,
             mobile_archive_share_flow=args.mobile_archive_share_flow,
             onboarding_flow=args.onboarding_flow,
+            mobile_onboarding_flow=args.mobile_onboarding_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
