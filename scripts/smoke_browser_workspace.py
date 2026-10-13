@@ -26,6 +26,7 @@ class SmokeResult:
     theme_save_buttons: int
     theme_exit_confirmed: bool
     theme_persistence_verified: bool
+    theme_matrix_visual_verified: bool
     locale_persistence_verified: bool
     ph_plan_flow_verified: bool
     mobile_ph_plan_flow_verified: bool
@@ -77,6 +78,7 @@ def run_smoke(
     archive_write_failure_flow: bool = False,
     global_search_flow: bool = False,
     mobile_search_flow: bool = False,
+    theme_matrix_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -724,10 +726,21 @@ def run_smoke(
         theme_card_count = cards.count()
         theme_save_button_count = save_buttons.count()
         theme_persistence_verified = False
+        theme_matrix_visual_verified = False
         if theme_card_count < 2:
             raise RuntimeError("theme view exposes fewer than two themes")
         if theme_save_button_count != 0:
             raise RuntimeError("theme view unexpectedly exposes a save button")
+
+        if theme_matrix_flow:
+            for index in range(theme_card_count):
+                cards.nth(index).click(timeout=5000)
+                page.wait_for_timeout(50)
+                if page.locator('button.theme-card[aria-pressed="true"]').count() != 1:
+                    raise RuntimeError(f"theme matrix selection did not settle at index {index}")
+                if not page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1 && document.body.scrollWidth <= window.innerWidth + 1"):
+                    raise RuntimeError(f"theme matrix introduced horizontal overflow at index {index}")
+            theme_matrix_visual_verified = True
 
         active_index = next(
             (index for index in range(theme_card_count) if cards.nth(index).get_attribute("aria-pressed") == "true"),
@@ -877,6 +890,7 @@ def run_smoke(
         theme_save_buttons=theme_save_button_count,
         theme_exit_confirmed=not inject_write_failure,
         theme_persistence_verified=theme_persistence_verified,
+        theme_matrix_visual_verified=theme_matrix_visual_verified,
         locale_persistence_verified=locale_persistence_verified,
         ph_plan_flow_verified=ph_plan_flow_verified,
         mobile_ph_plan_flow_verified=mobile_ph_plan_flow_verified,
@@ -989,6 +1003,11 @@ def main() -> int:
         action="store_true",
         help="verify unified TD search and deep-link navigation at the mobile viewport",
     )
+    parser.add_argument(
+        "--theme-matrix-flow",
+        action="store_true",
+        help="cycle through every registered theme and verify selection and layout stability",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -1009,6 +1028,7 @@ def main() -> int:
             archive_write_failure_flow=args.archive_write_failure_flow,
             global_search_flow=args.global_search_flow,
             mobile_search_flow=args.mobile_search_flow,
+            theme_matrix_flow=args.theme_matrix_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
