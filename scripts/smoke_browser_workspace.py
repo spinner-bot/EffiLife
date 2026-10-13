@@ -790,6 +790,8 @@ def run_smoke(
             # Export and import the same archive through the browser file
             # picker. This exercises the actual .efl delivery path without
             # introducing synthetic archive data into the user's workspace.
+            page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(500)
             page.locator("button.settings-item").nth(5).click(timeout=5000)
             page.locator(".archive-actions button").first.wait_for(state="visible", timeout=10000)
             with page.expect_download(timeout=15000) as download_info:
@@ -815,6 +817,8 @@ def run_smoke(
             # is a real recovery path, not merely a parser unit test: select
             # invalid bytes, observe the user-facing error, then verify the
             # archive actions are enabled again for a subsequent attempt.
+            page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(500)
             page.locator("button.settings-item").nth(5).click(timeout=5000)
             page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
             page.locator('input[type="file"]').first.set_input_files({
@@ -829,6 +833,8 @@ def run_smoke(
             archive_invalid_recovery_verified = True
 
         if archive_write_failure_flow:
+            page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(500)
             page.locator("button.settings-item").nth(5).click(timeout=5000)
             page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
             with page.expect_download(timeout=15000) as download_info:
