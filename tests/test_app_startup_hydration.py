@@ -44,9 +44,14 @@ def test_startup_error_exposes_localized_diagnostic_detail():
     app = APP.read_text(encoding="utf-8")
     source = I18N.read_text(encoding="utf-8")
     assert "const startupErrorMessage = ref('')" in app
-    assert "startupErrorMessage.value = error instanceof Error ? error.message : String(error)" in app
+    assert "startupErrorMessage.value = getUserFacingError(error, t('app.startupFailedDescription'))" in app
     assert "app.startupFailedDetail" in app
     assert source.count("'app.startupFailedDetail'") == 4
+
+
+def test_runtime_error_banner_uses_the_safe_user_facing_error_boundary():
+    app = APP.read_text(encoding="utf-8")
+    assert "runtimeErrorMessage.value = getUserFacingError(detail?.message, t('app.runtimeErrorDescription'))" in app
 
 
 def test_startup_error_keeps_diagnostics_collapsed_and_retry_feedback_explicit():

@@ -12,8 +12,11 @@ const TECHNICAL_ERROR_PATTERNS = [
 
 /** Keep implementation details out of the primary user-facing error channel. */
 export function getUserFacingError(error: unknown, fallback: string): string {
-  if (!(error instanceof Error)) return fallback
-  const message = error.message.trim()
+  const message = error instanceof Error
+    ? error.message.trim()
+    : typeof error === 'string'
+      ? error.trim()
+      : ''
   if (!message || message.length > 240 || TECHNICAL_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
     return fallback
   }

@@ -17,6 +17,7 @@ import ConfirmHost from './components/ConfirmHost.vue'
 import { notifyToast } from '@/services/toastService'
 import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from './services/workspaceEvents'
+import { getUserFacingError } from '@/services/userFacingError'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -148,7 +149,7 @@ function retryStartup() {
 function onRuntimeError(event: Event) {
   const detail = (event as CustomEvent<{ message?: string; source?: string }>).detail
   if (runtimeErrorMessage.value) return
-  runtimeErrorMessage.value = detail?.message || t('app.runtimeErrorDescription')
+  runtimeErrorMessage.value = getUserFacingError(detail?.message, t('app.runtimeErrorDescription'))
   runtimeErrorSource.value = detail?.source || ''
 }
 
@@ -328,7 +329,7 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Failed to initialize EffiLife workspace:', error)
-    startupErrorMessage.value = error instanceof Error ? error.message : String(error)
+    startupErrorMessage.value = getUserFacingError(error, t('app.startupFailedDescription'))
     startupError.value = true
     await nextTick()
     startupRetryButton.value?.focus()

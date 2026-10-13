@@ -15,6 +15,10 @@ def test_user_facing_error_hides_storage_and_runtime_details():
     assert "networkerror" in SOURCE
     assert "message.length > 240" in SOURCE
 
+def test_user_facing_error_accepts_safe_string_messages_but_hides_technical_strings():
+    assert "typeof error === 'string'" in SOURCE
+    assert "error.message.trim()" in SOURCE
+
 
 def test_plan_center_uses_safe_error_messages_for_primary_mutations():
     assert "getUserFacingError(error, t('plans.unavailable'))" in PLANS
