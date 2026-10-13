@@ -45,6 +45,16 @@ def test_mobile_gateway_lists_and_mutates_local_plan_archives():
     assert "restored.restored_from_id" in GATEWAY
 
 
+def test_mobile_plan_archive_and_restore_roll_back_partial_snapshot_or_link_writes():
+    assert "const previousPlans = cloneMobilePlans(plans)" in GATEWAY
+    assert "const previousArchives = JSON.parse(JSON.stringify(archives)) as RawArchive[]" in GATEWAY
+    assert "Failed to roll back mobile plan archive plans" in GATEWAY
+    assert "const updatedTodos = todos.filter" in GATEWAY
+    assert "Failed to roll back mobile restored plan todo link" in GATEWAY
+    assert "Failed to roll back mobile restored plan:" in GATEWAY
+    assert "const updatedTodoIds: string[] = []" in GATEWAY
+
+
 def test_mobile_archive_copy_is_localized_as_snapshot_capability():
     assert I18N.count("'settings.archive.mobilePlanDescription':") == 2
     assert "including active and archived plans" in I18N

@@ -656,12 +656,14 @@ export async function archivePlan(planId: string): Promise<void> {
       const plans = cloneMobilePlans(await getMobileRawPlans())
       const index = plans.findIndex((plan, fallbackIndex) => String(plan.head?.index ?? fallbackIndex) === String(planId))
       if (index < 0) throw new Error(translate('plans.mobileSnapshotMissing'))
+      const previousPlans = cloneMobilePlans(plans)
       const [plan] = plans.splice(index, 1)
       const archivedPlanId = String(plan.head?.index ?? planId)
       const linkedTodos = (await TodoService.list())
         .filter((todo) => todo.related_plan_id === archivedPlanId)
         .map((todo) => ({ id: todo.id, task_id: todo.related_plan_task_id }))
       const archives = await getMobileRawArchives()
+      const previousArchives = JSON.parse(JSON.stringify(archives)) as RawArchive[]
       const timestamp = new Date()
       const stamp = `${timestamp.getTime()}${String(timestamp.getMilliseconds()).padStart(3, '0')}`
       archives.push({
@@ -669,8 +671,14 @@ export async function archivePlan(planId: string): Promise<void> {
         payload: { archived_at: timestamp.toISOString(), plan, linked_todos: linkedTodos },
       })
       const { set, STORE_NAMES } = await import('@/storage')
-      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
-      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)
+      try {
+        await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+        await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', archives)
+      } catch (error) {
+        try { await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', previousPlans) } catch (rollbackError) { console.error('Failed to roll back mobile plan archive plans:', rollbackError) }
+        try { await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'archives', previousArchives) } catch (rollbackError) { console.error('Failed to roll back mobile plan archive list:', rollbackError) }
+        throw error
+      }
       planDataSource.value = 'mobile'
       notifyWorkspaceChanged('plans')
     })
@@ -694,6 +702,7 @@ export async function restorePlanArchive(file: string): Promise<string | undefin
       const sourcePlan = archive?.payload?.plan
       if (!sourcePlan) throw new Error(translate('plans.mobileSnapshotMissing'))
       const plans = cloneMobilePlans(await getMobileRawPlans())
+      const previousPlans = cloneMobilePlans(plans)
       const sourceId = Number(sourcePlan.head?.index)
       const sourceIdIsFree = Number.isInteger(sourceId) && sourceId > 0
         && !plans.some((plan, index) => Number(plan.head?.index ?? index) === sourceId)
@@ -704,19 +713,28 @@ export async function restorePlanArchive(file: string): Promise<string | undefin
       restored.head = { ...(restored.head || {}), index: nextId }
       plans.push(restored)
       const { set, STORE_NAMES } = await import('@/storage')
-      await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
-      if (nextId !== sourceId && Array.isArray(archive.payload?.linked_todos)) {
-        const todoIds = new Set(
-          archive.payload.linked_todos
-            .map((link) => link?.id)
-            .filter((id): id is string => typeof id === 'string' && Boolean(id)),
-        )
-        const todos = await TodoService.list()
-        for (const todo of todos) {
-          if (todoIds.has(todo.id) && todo.related_plan_id === String(sourceId)) {
+      const updatedTodoIds: string[] = []
+      try {
+        await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', plans)
+        if (nextId !== sourceId && Array.isArray(archive.payload?.linked_todos)) {
+          const todoIds = new Set(
+            archive.payload.linked_todos
+              .map((link) => link?.id)
+              .filter((id): id is string => typeof id === 'string' && Boolean(id)),
+          )
+          const todos = await TodoService.list()
+          const updatedTodos = todos.filter((todo) => todoIds.has(todo.id) && todo.related_plan_id === String(sourceId))
+          for (const todo of updatedTodos) {
             await TodoService.update(todo.id, { related_plan_id: String(nextId) })
+            updatedTodoIds.push(todo.id)
           }
         }
+      } catch (error) {
+        for (const todoId of updatedTodoIds) {
+          try { await TodoService.update(todoId, { related_plan_id: String(sourceId) }) } catch (rollbackError) { console.error('Failed to roll back mobile restored plan todo link:', rollbackError) }
+        }
+        try { await set(STORE_NAMES.PLAN_HELPER_SNAPSHOT, 'plans', previousPlans) } catch (rollbackError) { console.error('Failed to roll back mobile restored plan:', rollbackError) }
+        throw error
       }
       planDataSource.value = 'mobile'
       notifyWorkspaceChanged('plans')
