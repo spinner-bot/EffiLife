@@ -59,7 +59,11 @@ jobs:
               tail -n 120 pytest-failure.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error title=pytest failure::The full first-failure output is included in the job summary and artifact."
+            failure_tail=$(tail -n 40 pytest-failure.log | tr '\n' ' ' | tr '\r' ' ')
+            failure_tail=${failure_tail//'%'/'%25'}
+            failure_tail=${failure_tail//$'\n'/'%0A'}
+            failure_tail=${failure_tail//$'\r'/'%0D'}
+            echo "::error file=pytest-failure.log,line=1,title=pytest failure::$failure_tail"
           fi
           exit "$test_status"
 

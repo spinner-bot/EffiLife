@@ -49,6 +49,12 @@ def test_general_ci_collects_launcher_diagnostics_after_failures():
     assert "effilife-ci-diagnostics-${{ github.run_id }}" in source
 
 
+def test_general_ci_exposes_first_pytest_failure_in_check_annotation():
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "failure_tail=$(tail -n 40 pytest-failure.log" in source
+    assert "::error file=pytest-failure.log,line=1,title=pytest failure::" in source
+
+
 def test_general_ci_uses_pinned_current_action_majors_and_cancellation():
     source = WORKFLOW.read_text(encoding="utf-8")
     assert "actions/checkout@v5" in source
