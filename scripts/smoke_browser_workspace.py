@@ -26,6 +26,7 @@ class SmokeResult:
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
+    confirm_keyboard_accessible: bool
 
 
 def run_smoke(
@@ -123,6 +124,16 @@ def run_smoke(
         alert = page.locator('[role="alertdialog"]')
         if alert.count() != 1:
             raise RuntimeError("leaving a dirty theme editor did not show an alert dialog")
+        if not alert.get_attribute("aria-labelledby") or not alert.get_attribute("aria-describedby"):
+            raise RuntimeError("theme exit alert dialog is missing accessible name or description")
+        if page.evaluate("document.activeElement?.className") != "confirm-cancel":
+            raise RuntimeError("alert dialog did not move focus to its cancel action")
+        page.keyboard.press("Tab")
+        if page.evaluate("document.activeElement?.className") != "confirm-submit":
+            raise RuntimeError("alert dialog Tab order did not reach its confirm action")
+        page.keyboard.press("Shift+Tab")
+        if page.evaluate("document.activeElement?.className") != "confirm-cancel":
+            raise RuntimeError("alert dialog focus trap did not return to cancel action")
         alert.locator(".confirm-submit").click(timeout=5000)
         page.wait_for_timeout(500)
         if inject_write_failure:
@@ -167,6 +178,7 @@ def run_smoke(
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,
+        confirm_keyboard_accessible=True,
     )
 
 
