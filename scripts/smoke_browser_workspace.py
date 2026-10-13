@@ -25,6 +25,7 @@ class SmokeResult:
     theme_cards: int
     theme_save_buttons: int
     theme_exit_confirmed: bool
+    theme_persistence_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
@@ -125,6 +126,7 @@ def run_smoke(
         save_buttons = page.locator("button.btn.primary")
         theme_card_count = cards.count()
         theme_save_button_count = save_buttons.count()
+        theme_persistence_verified = False
         if theme_card_count < 2:
             raise RuntimeError("theme view exposes fewer than two themes")
         if theme_save_button_count != 0:
@@ -173,6 +175,19 @@ def run_smoke(
                 raise RuntimeError("failed theme save did not expose an error toast")
         elif page.locator("button.settings-item").count() < 2:
             raise RuntimeError("confirmed theme exit did not return to settings")
+        else:
+            # Re-enter the editor after the save and verify the durable
+            # selection is the same one that was confirmed. This catches the
+            # historical bug where the preview changed but reload restored
+            # the previous theme.
+            page.locator("button.settings-item").nth(1).click(timeout=5000)
+            page.wait_for_timeout(300)
+            persisted_active = page.locator('button.theme-card[aria-pressed="true"]')
+            if persisted_active.count() != 1 or cards.nth(0 if active_index != 0 else 1).get_attribute("aria-pressed") != "true":
+                raise RuntimeError("confirmed theme selection was not durable after re-entering the editor")
+            theme_persistence_verified = True
+            page.locator("button.back-btn").click(timeout=5000)
+            page.wait_for_timeout(200)
 
         if archive_roundtrip:
             # Export and import the same archive through the browser file
@@ -207,6 +222,7 @@ def run_smoke(
         theme_cards=theme_card_count,
         theme_save_buttons=theme_save_button_count,
         theme_exit_confirmed=not inject_write_failure,
+        theme_persistence_verified=theme_persistence_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,
