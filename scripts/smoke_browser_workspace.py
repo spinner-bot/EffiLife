@@ -120,6 +120,9 @@ def run_smoke(
             create_inputs = create_modal.locator("input")
             if create_inputs.count() < 5:
                 raise RuntimeError("PH create dialog did not expose plan, section and task fields")
+            expected_today = page.evaluate("(() => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` })()")
+            if create_inputs.nth(1).input_value() != expected_today:
+                raise RuntimeError("PH create dialog did not default its date to today")
             create_inputs.nth(0).fill("Smoke whole plan")
             create_inputs.nth(2).fill("Smoke section")
             create_inputs.nth(4).fill("Smoke plan task")
