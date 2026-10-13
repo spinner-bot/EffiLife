@@ -33,6 +33,17 @@ def test_onboarding_copy_is_localized_in_both_catalogs():
         assert re.search(rf"'{re.escape(key)}':", catalog), f"missing guide i18n key: {key}"
 
 
+def test_onboarding_explains_th_ph_td_boundaries():
+    catalog = I18N_SOURCE.read_text(encoding="utf-8")
+    assert "TH 时间记录、PH 整份主题计划、TD 单条待办" in catalog
+    assert "PH 计划中心" in catalog
+    assert "TD 待办中心" in catalog
+    assert "TH 时间工作台" in catalog
+    assert "three cooperating but distinct modules" in catalog
+    assert "each item is a complete themed plan" in catalog
+    assert "each item is one independently actionable todo" in catalog
+
+
 def test_current_help_copy_does_not_advertise_retired_calendar_view():
     settings = (ROOT / "time-helper" / "desk" / "src" / "views" / "SettingsView.vue").read_text(encoding="utf-8")
     catalog = I18N_SOURCE.read_text(encoding="utf-8")
