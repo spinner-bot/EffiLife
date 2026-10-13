@@ -42,7 +42,9 @@ def test_home_is_a_dashboard_not_a_cross_module_editor():
     assert "refreshEventPlanSummary" in HOME
     assert "refreshTodoSummary" in HOME
     assert "openTodoPlan" not in HOME
-    assert "todo.related_plan_id" not in HOME
+    focus_bridge = HOME[HOME.index("async function startFocusPlan"):HOME.index("async function refreshTodoSummary")]
+    assert "todo.related_plan_id" in focus_bridge
+    assert "completePlanTask" not in HOME[HOME.index("async function completeHomeTodo"):HOME.index("async function startFocusPlan")]
 
 
 def test_primary_routes_expose_three_independent_workspaces():
