@@ -19,6 +19,7 @@ import { getTodayDate, normalizeConfig } from '@/services/dataService'
 import type { Config } from '@/types'
 import { notifyWorkspaceChanged } from './workspaceEvents'
 import { MOTION_SETTINGS_STORAGE_KEY } from '@/motion/MotionManager'
+import { getUserFacingError } from '@/services/userFacingError'
 
 // 存档版本
 const ARCHIVE_VERSION = '2.2'
@@ -580,7 +581,7 @@ export async function importArchive(file: File): Promise<{ success: boolean; mes
 
     return await processArchiveData(zip)
   } catch (e) {
-    return { success: false, message: translate('settings.archive.importFailed', { detail: (e as Error).message }) }
+    return { success: false, message: translate('settings.archive.importFailed', { detail: getUserFacingError(e, translate('settings.archive.localStorageUnavailable')) }) }
   }
 }
 
@@ -620,7 +621,7 @@ export async function importArchiveWithDialog(confirmImport?: (preview: ArchiveP
 
     return await processArchiveData(zip)
   } catch (e) {
-    return { success: false, message: translate('settings.archive.importFailed', { detail: (e as Error).message }) }
+    return { success: false, message: translate('settings.archive.importFailed', { detail: getUserFacingError(e, translate('settings.archive.localStorageUnavailable')) }) }
   }
 }
 
@@ -1138,7 +1139,7 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         try {
           await savePlanHelperSnapshot()
         } catch (error) {
-          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
+          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: getUserFacingError(error, translate('settings.archive.localStorageUnavailable')) }))
         }
       } else {
         // Mobile has no live PH service to reconstruct an unavailable
@@ -1158,10 +1159,10 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         try {
           await savePlanHelperSnapshot()
         } catch (error) {
-          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.localStorageUnavailable') }))
+          warnings.push(translate('settings.archive.snapshotSaveFailed', { detail: getUserFacingError(error, translate('settings.archive.localStorageUnavailable')) }))
         }
       } catch (error) {
-        warnings.push(translate('settings.archive.planRestoreFailed', { detail: error instanceof Error ? error.message : translate('settings.archive.planServiceUnavailable') }))
+        warnings.push(translate('settings.archive.planRestoreFailed', { detail: getUserFacingError(error, translate('settings.archive.planServiceUnavailable')) }))
       }
     } else {
       // An unavailable PH export is an incomplete snapshot, not an explicit
@@ -1182,10 +1183,10 @@ async function processArchiveData(zip: JSZip): Promise<{ success: boolean; messa
         await restoreArchiveRuntimeSnapshot(runtimeSnapshot)
       } catch (rollbackError) {
         throw new Error(translate('settings.archive.importRollbackFailed', {
-          detail: `${error instanceof Error ? error.message : String(error)}; ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`,
+          detail: `${getUserFacingError(error, translate('settings.archive.localStorageUnavailable'))}; ${getUserFacingError(rollbackError, translate('settings.archive.localStorageUnavailable'))}`,
         }))
       }
-      throw new Error(translate('settings.archive.importRolledBack', { detail: error instanceof Error ? error.message : String(error) }))
+      throw new Error(translate('settings.archive.importRolledBack', { detail: getUserFacingError(error, translate('settings.archive.localStorageUnavailable')) }))
     }
 }
 
