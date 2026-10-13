@@ -6,7 +6,25 @@ export interface FocusSession {
 
 const STORAGE_KEY = 'effilife.focus-session.v1'
 const CHANGE_EVENT = 'effilife:focus-session-changed'
+const CHANNEL_NAME = 'effilife-focus-session'
+const INSTANCE_ID = typeof globalThis.crypto?.randomUUID === 'function'
+  ? globalThis.crypto.randomUUID()
+  : Math.random().toString(36).slice(2)
 let memorySession: FocusSession | null = null
+let channel: BroadcastChannel | null = null
+let subscriberCount = 0
+
+function getChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null
+  if (!channel) {
+    try {
+      channel = new BroadcastChannel(CHANNEL_NAME)
+    } catch {
+      return null
+    }
+  }
+  return channel
+}
 
 function isValidSession(value: unknown): value is FocusSession {
   if (!value || typeof value !== 'object') return false
@@ -38,7 +56,14 @@ function readStored(): FocusSession | null {
 }
 
 function emitChange(): void {
-  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(CHANGE_EVENT))
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT))
+  if (subscriberCount === 0) return
+  try {
+    getChannel()?.postMessage({ origin: INSTANCE_ID })
+  } catch {
+    // localStorage remains the compatibility transport for restricted WebViews.
+  }
 }
 
 export const FocusSessionService = {
@@ -75,11 +100,26 @@ export const FocusSessionService = {
       if (event.key === STORAGE_KEY) handler()
     }
     const onLocal = () => handler()
+    const focusChannel = getChannel()
+    const onBroadcast = (event: MessageEvent<{ origin?: string }>) => {
+      if (event.data?.origin !== INSTANCE_ID) handler()
+    }
     window.addEventListener('storage', onStorage)
     window.addEventListener(CHANGE_EVENT, onLocal)
+    focusChannel?.addEventListener('message', onBroadcast)
+    subscriberCount += 1
+    let active = true
     return () => {
+      if (!active) return
+      active = false
       window.removeEventListener('storage', onStorage)
       window.removeEventListener(CHANGE_EVENT, onLocal)
+      focusChannel?.removeEventListener('message', onBroadcast)
+      subscriberCount = Math.max(0, subscriberCount - 1)
+      if (subscriberCount === 0) {
+        channel?.close()
+        channel = null
+      }
     }
   },
 }

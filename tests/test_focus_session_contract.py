@@ -56,3 +56,11 @@ def test_plan_task_todo_bridge_serializes_relation_creation():
     assert "export function getOrCreatePlanTaskTodo" in service
     assert "related_plan_id: relatedPlanId" in service
     assert "related_plan_task_id: relatedTaskId" in service
+
+
+def test_focus_session_uses_broadcast_channel_with_storage_fallback():
+    service = (DESK / "services" / "focusSessionService.ts").read_text(encoding="utf-8")
+    assert "new BroadcastChannel(CHANNEL_NAME)" in service
+    assert "window.addEventListener('storage', onStorage)" in service
+    assert "focusChannel?.addEventListener('message', onBroadcast)" in service
+    assert "localStorage remains the compatibility transport" in service
