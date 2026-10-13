@@ -40,7 +40,7 @@ import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { getOrCreatePlanTaskTodo, TodoService } from '@/services/todoService'
 import { FocusSessionService } from '@/services/focusSessionService'
-import { unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { completeLinkedPlanTodo, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { dateSearchText } from '@/services/dateSearch'
 import { parseLocalDate } from '@/services/dataService'
 
@@ -773,6 +773,12 @@ async function completeTask(taskId: string) {
   errorMessage.value = ''
   try {
     await completePlanTask(planId, taskId)
+    try {
+      await completeLinkedPlanTodo(planId, taskId)
+    } catch (syncError) {
+      console.warn('Failed to complete linked todo:', syncError)
+      notifyToast(t('plans.todoSyncFailed'), 'error')
+    }
     selectedPlan.value = await getPlanFull(planId)
     await refreshLinkedTodoTaskIds()
     showPlanSaved()

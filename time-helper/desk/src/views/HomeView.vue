@@ -9,6 +9,7 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { getOrCreatePlanTaskTodo, TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
+import { completeLinkedPlanTodo } from '@/services/workspaceSync'
 import { getPriorityScore } from '@/services/priority'
 import { completePlanTask, getPlanFull, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
@@ -251,6 +252,12 @@ async function completeHomePlanTask(item: FocusPlanTask) {
   completingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
   try {
     await completePlanTask(item.planId, item.task.internal_id)
+    try {
+      await completeLinkedPlanTodo(item.planId, item.task.internal_id)
+    } catch (syncError) {
+      console.warn('Failed to complete linked todo:', syncError)
+      notifyToast(t('plans.todoSyncFailed'), 'error')
+    }
     await refreshEventPlanSummary()
     notifyToast(t('home.planTaskCompleted'), 'success')
   } catch (error) {

@@ -40,6 +40,27 @@ export async function unlinkTodosFromPlanTask(planId: string, planTaskId: string
   return linked.length
 }
 
+/**
+ * Project PH completion onto every exact TD relation.
+ *
+ * PH remains the source of truth for plan progress. The TD records are
+ * projections, so a failed projection must be reported to the caller rather
+ * than rolling back a successful PH mutation across storage boundaries.
+ */
+export async function completeLinkedPlanTodo(planId: string, planTaskId: string): Promise<number> {
+  const linked = (await TodoService.list()).filter((todo) => (
+    todo.related_plan_id === String(planId)
+    && todo.related_plan_task_id === String(planTaskId)
+    && todo.status !== 'completed'
+    && todo.status !== 'archived'
+    && todo.status !== 'cancelled'
+  ))
+  for (const todo of linked) {
+    await TodoService.complete(todo.id)
+  }
+  return linked.length
+}
+
 /** Remove a deleted time-record ID without changing the todo's historical total. */
 export async function unlinkTodoFromTimeRecord(record: TimeRecord): Promise<boolean> {
   if (!record.id || !record.todo_id) return false
