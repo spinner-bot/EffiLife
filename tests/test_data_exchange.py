@@ -344,7 +344,8 @@ def test_bundle_rejects_duplicate_archive_entries(tmp_path):
             "datasets": ["app"],
         }))
         archive.writestr("data/app.json", "{}")
-        archive.writestr("data/app.json", '{"ambiguous": true}')
+        with pytest.warns(UserWarning, match=r"Duplicate name: 'data/app\.json'"):
+            archive.writestr("data/app.json", '{"ambiguous": true}')
 
     with pytest.raises(ValueError, match="duplicate archive entries"):
         inspect_bundle(bundle)
