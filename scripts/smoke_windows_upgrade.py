@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -25,6 +26,14 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--installer", type=Path, required=True)
     parser.add_argument("--target", type=Path, required=True)
     parser.add_argument("--version-file", type=Path, required=True)
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        help=(
+            "Optional isolated EffiLife data directory. A probe is created before "
+            "the upgrade and must remain byte-identical after upgrade and uninstall."
+        ),
+    )
     parser.add_argument("--timeout", type=float, default=90.0)
     return parser
 
@@ -36,7 +45,57 @@ def _resolve_installer(path: Path) -> Path:
     return resolved
 
 
-def run_upgrade(previous: Path, installer: Path, target: Path, version_file: Path, timeout: float) -> dict[str, object]:
+def _prepare_data_probe(data_dir: Path | None) -> tuple[Path, bytes] | None:
+    """Create a deterministic user-data probe without touching existing data."""
+    if data_dir is None:
+        return None
+    resolved = data_dir.expanduser().resolve()
+    if resolved == resolved.anchor or len(resolved.parts) < 3:
+        raise ValueError("Refusing to use a filesystem root or broad data directory")
+    if resolved.exists():
+        raise FileExistsError(f"Upgrade smoke data directory already exists: {resolved}")
+    resolved.mkdir(parents=True)
+    probe = resolved / "upgrade-preservation-probe.json"
+    payload = json.dumps(
+        {
+            "purpose": "release-upgrade-preservation",
+            "sentinel": "EffiLife-data-must-survive-install-lifecycle",
+            "schema": 1,
+        },
+        ensure_ascii=False,
+        indent=2,
+    ).encode("utf-8")
+    probe.write_bytes(payload)
+    return probe, payload
+
+
+def _verify_data_probe(probe: tuple[Path, bytes] | None) -> dict[str, object] | None:
+    if probe is None:
+        return None
+    path, expected = probe
+    actual = path.read_bytes() if path.is_file() else None
+    if actual != expected:
+        expected_hash = hashlib.sha256(expected).hexdigest()
+        actual_hash = hashlib.sha256(actual).hexdigest() if actual is not None else None
+        raise RuntimeError(
+            "User data probe changed or disappeared during upgrade/uninstall: "
+            f"expected {expected_hash}, got {actual_hash}"
+        )
+    return {
+        "path": str(path),
+        "sha256": hashlib.sha256(actual).hexdigest(),
+        "preserved": True,
+    }
+
+
+def run_upgrade(
+    previous: Path,
+    installer: Path,
+    target: Path,
+    version_file: Path,
+    timeout: float,
+    data_dir: Path | None = None,
+) -> dict[str, object]:
     if os.name != "nt":
         raise RuntimeError("Windows installer upgrade smoke test requires Windows")
     previous = _resolve_installer(previous)
@@ -46,6 +105,8 @@ def run_upgrade(previous: Path, installer: Path, target: Path, version_file: Pat
     match = INSTALLER_VERSION_PATTERN.match(installer.name)
     if match is None or match.group("version") != expected_version:
         raise ValueError(f"Current installer version does not match {expected_version}: {installer.name}")
+
+    data_probe = _prepare_data_probe(data_dir)
 
     old_result = _run([str(previous), "/S", f"/D={target}"], timeout)
     if old_result.returncode != 0:
@@ -69,6 +130,7 @@ def run_upgrade(previous: Path, installer: Path, target: Path, version_file: Pat
         raise RuntimeError(f"Post-upgrade uninstaller failed with exit code {remove_result.returncode}: {remove_result.stderr.strip()}")
     if not removed:
         raise RuntimeError(f"Upgraded installation directory was not removed: {target}")
+    data_report = _verify_data_probe(data_probe)
     return {
         "ok": True,
         "previous_installer": str(previous),
@@ -77,13 +139,14 @@ def run_upgrade(previous: Path, installer: Path, target: Path, version_file: Pat
         "target_version": expected_version,
         "installed_files": installed_files,
         "removed": removed,
+        "data_probe": data_report,
     }
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        print(json.dumps(run_upgrade(args.previous_installer, args.installer, args.target, args.version_file, args.timeout), ensure_ascii=False, indent=2))
+        print(json.dumps(run_upgrade(args.previous_installer, args.installer, args.target, args.version_file, args.timeout, args.data_dir), ensure_ascii=False, indent=2))
     except (FileNotFoundError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"Windows installer upgrade smoke test failed: {error}", file=sys.stderr)
         return 1
