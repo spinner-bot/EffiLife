@@ -38,6 +38,7 @@ class SmokeResult:
     td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
     th_record_mutation_flow_verified: bool
+    th_record_link_flow_verified: bool
     th_quick_capture_verified: bool
     th_quick_capture_shortcut_verified: bool
     ph_td_link_flow_verified: bool
@@ -113,6 +114,7 @@ def run_smoke(
         td_cross_window_focus_verified = False
         th_record_flow_verified = False
         th_record_mutation_flow_verified = False
+        th_record_link_flow_verified = False
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
@@ -401,6 +403,36 @@ def run_smoke(
         if th_record_flow:
             # TH records stay in the unified local data store and are
             # independent from both PH plans and TD tasks.
+            page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            linked_todo_input = page.locator("#new-task-title")
+            linked_todo_input.wait_for(state="visible", timeout=5000)
+            linked_todo_input.fill("Smoke linked TD")
+            page.locator("form.task-create button.task-add").click(timeout=5000)
+            page.locator(".toast-success").first.wait_for(state="visible", timeout=3000)
+            page.goto(f"{base_url.rstrip('/')}/records", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            page.locator("button.add-btn").click(timeout=5000)
+            record_modal = page.locator(".modal")
+            record_modal.wait_for(state="visible", timeout=5000)
+            linked_time_inputs = record_modal.locator("input.time-input")
+            if linked_time_inputs.count() >= 4:
+                linked_time_inputs.nth(0).fill("00")
+                linked_time_inputs.nth(1).fill("02")
+                linked_time_inputs.nth(2).fill("00")
+                linked_time_inputs.nth(3).fill("03")
+            record_modal.locator("input.text-input").first.fill("Smoke linked record")
+            link_select = record_modal.locator("select.select-input").last
+            link_select.select_option(label="Smoke linked TD")
+            record_modal.locator(".modal-footer button[type='submit']").click(timeout=5000)
+            page.locator(".toast-success").first.wait_for(state="visible", timeout=3000)
+            linked_record = page.locator(".record-item").filter(has_text="Smoke linked record")
+            linked_record.wait_for(state="visible", timeout=5000)
+            page.goto(f"{base_url.rstrip('/')}/records", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            record_link = page.locator("button.record-todo-link").filter(has_text="Smoke linked TD")
+            record_link.wait_for(state="visible", timeout=5000)
+            th_record_link_flow_verified = True
             page.goto(f"{base_url.rstrip('/')}/time", wait_until="domcontentloaded", timeout=15000)
             page.wait_for_timeout(700)
             page.locator("button.pv-add-btn").click(timeout=5000)
@@ -781,6 +813,7 @@ def run_smoke(
         td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
         th_record_mutation_flow_verified=th_record_mutation_flow_verified,
+        th_record_link_flow_verified=th_record_link_flow_verified,
         th_quick_capture_verified=th_quick_capture_verified,
         th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
         ph_td_link_flow_verified=ph_td_link_flow_verified,
