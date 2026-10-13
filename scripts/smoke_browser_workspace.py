@@ -79,10 +79,11 @@ def run_smoke(
         # horizontally structured command center rather than a mobile-only
         # stack. Verify the shell and dashboard contract in a real browser.
         page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
-        page.wait_for_timeout(1200)
+        page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
+        page.wait_for_timeout(300)
         home_startup_alert = page.locator('[role="alertdialog"]')
-        if home_startup_alert.count():
-            home_startup_alert.locator(".confirm-cancel").click(timeout=5000)
+        if home_startup_alert.count() and home_startup_alert.first.is_visible():
+            home_startup_alert.first.locator(".confirm-cancel").click(timeout=5000)
         desktop_nav = page.locator(".desktop-nav-links")
         desktop_nav.wait_for(state="visible", timeout=10000)
         if not desktop_nav.is_visible():
@@ -100,6 +101,8 @@ def run_smoke(
             raise RuntimeError("dashboard module summary order or labels are incorrect")
         if page.locator('.overview-grid').count() != 1:
             raise RuntimeError("desktop dashboard is missing its multi-column overview region")
+        page.bring_to_front()
+        page.locator("body").click(position={"x": 8, "y": 8})
         # Chromium reserves Control+Shift+T for reopening a closed tab. Use
         # the browser-safe application fallback while keeping the native
         # desktop shortcut covered by the app-shell contract tests.
