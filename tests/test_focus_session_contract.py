@@ -31,3 +31,11 @@ def test_shell_exposes_active_focus_on_desktop_and_mobile_routes():
     assert "stopActiveFocus" in APP
     assert "path: '/tasks', query: { todo: session.todoId, focus: 'stop' }" in APP
     assert "@media (max-width: 600px)" in APP
+
+
+def test_home_todo_can_enter_the_unified_focus_session():
+    home = (DESK / "views" / "HomeView.vue").read_text(encoding="utf-8")
+    assert "function openTodoFocus" in home
+    assert "FocusSessionService.get()" in home
+    assert "query: { todo: todo.id, focus: 'start' }" in home
+    assert 'class="today-todo-focus"' in home

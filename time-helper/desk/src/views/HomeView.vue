@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, parseStoredDate } from '@/services/dataService'
-import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo, Plus, RefreshCw } from 'lucide-vue-next'
+import { ClipboardList, Clock3, Flame, Inbox, Bell, CheckCircle, Check, ChevronRight, X, Inbox as InboxIcon, ListTodo, Play, Plus, RefreshCw } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
@@ -16,6 +16,7 @@ import { getNotificationIcon } from '@/services/notificationIcons'
 import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
+import { FocusSessionService } from '@/services/focusSessionService'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -178,6 +179,16 @@ function formatTodoTime(todo: UnifiedTodo): string {
 
 function openTodoRecord(todo: UnifiedTodo) {
   router.push({ path: '/records', query: { todo: todo.id } })
+}
+
+function openTodoFocus(todo: UnifiedTodo) {
+  const activeSession = FocusSessionService.get()
+  if (activeSession && activeSession.todoId !== todo.id) {
+    notifyToast(t('home.focusAlreadyActive'), 'info')
+    void router.push({ path: '/tasks', query: { todo: activeSession.todoId } })
+    return
+  }
+  void router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
 }
 
 async function refreshEventPlanSummary() {
@@ -767,6 +778,9 @@ onUnmounted(() => {
                 </span>
               </span>
             </button>
+            <button class="today-todo-focus" type="button" :aria-label="t('home.startTodoFocus')" :title="t('home.startTodoFocus')" @click.stop="openTodoFocus(todo)">
+              <Play :size="13" />
+            </button>
             <button class="today-todo-record" type="button" :aria-label="t('home.recordTodoTime')" :title="t('home.recordTodoTime')" @click.stop="openTodoRecord(todo)">
               <Clock3 :size="14" />
             </button>
@@ -1336,7 +1350,7 @@ onUnmounted(() => {
 .today-todos-unavailable { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: var(--spacing-md); padding: 12px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: 10px; color: var(--color-text-secondary); background: var(--color-bg); font-size: 12px; }
 .today-todos-unavailable button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; }
 .today-todos-unavailable button:hover, .today-todos-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
-.today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
+.today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
 .today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-primary); background: transparent; cursor: pointer; transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-complete:hover, .today-todo-complete:focus-visible { color: var(--color-button-text); background: var(--color-primary); outline: 0; transform: scale(1.06); }
@@ -1348,8 +1362,8 @@ onUnmounted(() => {
 .today-todo-deadline, .today-todo-time { white-space: nowrap; }
 .today-todo-deadline.is-overdue { color: var(--color-error); font-weight: 700; }
 .today-todo-deadline.is-today { color: var(--color-primary); font-weight: 700; }
-.today-todo-record { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
-.today-todo-record:hover, .today-todo-record:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
+.today-todo-focus, .today-todo-record { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); cursor: pointer; }
+.today-todo-focus:hover, .today-todo-focus:focus-visible, .today-todo-record:hover, .today-todo-record:focus-visible { border-color: var(--color-primary); color: var(--color-primary); outline: 0; }
 .today-todos-more { margin: 3px 0 0 29px; color: var(--color-text-tertiary); font-size: 11px; }
 
 @media (max-width: 760px) {
@@ -1362,7 +1376,7 @@ onUnmounted(() => {
   .today-todo-deadline { display: none; }
   .today-todos-link { min-height: 40px; }
   .today-todo-complete { width: 32px; height: 32px; }
-  .today-todo-record { width: 40px; height: 40px; }
+  .today-todo-focus, .today-todo-record { width: 40px; height: 40px; }
   .focus-plan-header { align-items: center; }
   .focus-plan-complete { width: 32px; height: 32px; }
 }
