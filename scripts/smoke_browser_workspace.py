@@ -28,6 +28,7 @@ class SmokeResult:
     theme_persistence_verified: bool
     locale_persistence_verified: bool
     ph_plan_flow_verified: bool
+    td_task_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
@@ -41,6 +42,7 @@ def run_smoke(
     inject_write_failure: bool = False,
     archive_roundtrip: bool = False,
     ph_plan_flow: bool = False,
+    td_task_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -58,6 +60,7 @@ def run_smoke(
         page = context.new_page()
         rendered_routes: list[str] = []
         ph_plan_flow_verified = False
+        td_task_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -130,6 +133,25 @@ def run_smoke(
             if page.locator(".plans-header h1").get_by_text("Smoke whole plan edited", exact=True).count() != 1:
                 raise RuntimeError("PH edit flow did not persist plan metadata")
             ph_plan_flow_verified = True
+
+        if td_task_flow:
+            # TD uses the workspace's local data store and intentionally does
+            # not require Plan Helper. Keep this flow independent from PH so
+            # a single quick todo remains a first-class item.
+            page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            task_input = page.locator("#new-task-title")
+            task_input.wait_for(state="visible", timeout=5000)
+            task_input.fill("Smoke quick todo")
+            page.locator("form.task-create button.task-add").click(timeout=5000)
+            task_item = page.locator("article.task-item").filter(has_text="Smoke quick todo")
+            task_item.wait_for(state="visible", timeout=5000)
+            task_item.locator("button.task-check").click(timeout=5000)
+            page.locator("#tasks-tab-completed").click(timeout=5000)
+            page.wait_for_timeout(400)
+            if page.locator("article.task-item.completed").filter(has_text="Smoke quick todo").count() != 1:
+                raise RuntimeError("TD complete flow did not retain the completed quick todo")
+            td_task_flow_verified = True
 
         mobile_page = context.new_page()
         mobile_page.set_viewport_size({"width": 390, "height": 844})
@@ -284,6 +306,7 @@ def run_smoke(
         theme_persistence_verified=theme_persistence_verified,
         locale_persistence_verified=locale_persistence_verified,
         ph_plan_flow_verified=ph_plan_flow_verified,
+        td_task_flow_verified=td_task_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,
@@ -310,6 +333,11 @@ def main() -> int:
         action="store_true",
         help="verify PH create-with-content and edit flow; requires a running Plan Helper service",
     )
+    parser.add_argument(
+        "--td-task-flow",
+        action="store_true",
+        help="verify TD quick-capture and completion flow in isolated browser storage",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -318,6 +346,7 @@ def main() -> int:
             inject_write_failure=args.inject_write_failure,
             archive_roundtrip=args.archive_roundtrip,
             ph_plan_flow=args.ph_plan_flow,
+            td_task_flow=args.td_task_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
