@@ -32,3 +32,7 @@ temp/test/
 
 # Backup files (keep .gitkeep)
 data/backups/backup_*.json
+
+# Standalone server runtime state (keep .gitkeep fixtures)
+data/archives/*.json
+data/system/registry/*.json
