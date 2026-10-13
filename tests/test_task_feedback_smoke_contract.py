@@ -11,3 +11,10 @@ def test_td_browser_smoke_requires_success_feedback_after_completion():
     )[0]
     assert 'page.locator(".toast-success").wait_for(state="visible", timeout=3000)' in completion
 
+
+def test_home_td_browser_smoke_covers_inline_capture_and_completion_feedback():
+    assert 'home_capture = page.locator("#home-quick-todo-input")' in SCRIPT
+    assert 'home_todo.locator("button.today-todo-complete").click(timeout=5000)' in SCRIPT
+    assert 'home_todo.wait_for(state="hidden", timeout=5000)' in SCRIPT
+    assert "home_td_completion_feedback_verified" in SCRIPT
+

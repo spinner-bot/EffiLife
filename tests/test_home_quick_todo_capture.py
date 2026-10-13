@@ -20,3 +20,9 @@ def test_home_quick_todo_capture_has_bilingual_copy_and_narrow_layout():
     assert '<label for="home-quick-todo-input">{{ t(\'home.quickTodoLabel\') }}</label>' in HOME
     assert 'id="home-quick-todo-input"' in HOME
     assert ".today-todo-capture { flex-direction: column; align-items: stretch; }" in HOME
+
+
+def test_home_td_rendering_is_not_blocked_by_other_module_loading():
+    assert "const todoSummaryReady = ref(false)" in HOME
+    assert "todoSummaryReady.value = true" in HOME
+    assert 'v-else-if="!todoSummaryReady" class="today-todos-loading"' in HOME

@@ -35,6 +35,7 @@ let eventPlanSummaryRequestId = 0
 const activeTodoCount = ref(0)
 const todayTodos = ref<UnifiedTodo[]>([])
 const todoSummaryUnavailable = ref(false)
+const todoSummaryReady = ref(false)
 const timeSummaryUnavailable = ref(false)
 const workspaceSummaryReady = ref(false)
 const workspaceRefreshing = ref(false)
@@ -122,6 +123,7 @@ async function refreshTodoSummary() {
       })
       .slice(0, 3)
     todoSummaryUnavailable.value = false
+    todoSummaryReady.value = true
   } catch {
     if (requestId !== todoSummaryRequestId) return
     // 待办存储不可用时不阻断首页的计划和时间功能，但要明确告知用户，
@@ -129,6 +131,7 @@ async function refreshTodoSummary() {
     activeTodoCount.value = 0
     todayTodos.value = []
     todoSummaryUnavailable.value = true
+    todoSummaryReady.value = true
   }
 }
 
@@ -813,7 +816,7 @@ onUnmounted(() => {
           <span>{{ t('home.todosUnavailable') }}</span>
           <button type="button" @click="refreshTodoSummary">{{ t('home.retryTodos') }}</button>
         </div>
-        <div v-else-if="!workspaceSummaryReady" class="today-todos-loading" role="status" aria-live="polite">
+        <div v-else-if="!todoSummaryReady" class="today-todos-loading" role="status" aria-live="polite">
           <span class="today-todos-loading-bar" aria-hidden="true"></span>
           <span>{{ t('home.summaryLoading') }}</span>
         </div>

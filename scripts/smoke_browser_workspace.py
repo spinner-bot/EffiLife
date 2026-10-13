@@ -30,6 +30,7 @@ class SmokeResult:
     ph_plan_flow_verified: bool
     mobile_ph_plan_flow_verified: bool
     td_task_flow_verified: bool
+    home_td_completion_feedback_verified: bool
     td_focus_flow_verified: bool
     td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
@@ -74,6 +75,7 @@ def run_smoke(
         ph_plan_flow_verified = False
         mobile_ph_plan_flow_verified = False
         td_task_flow_verified = False
+        home_td_completion_feedback_verified = False
         td_focus_flow_verified = False
         td_cross_window_focus_verified = False
         th_record_flow_verified = False
@@ -223,6 +225,28 @@ def run_smoke(
             if page.locator("article.task-item.completed").filter(has_text="Smoke quick todo").count() != 1:
                 raise RuntimeError("TD complete flow did not retain the completed quick todo")
             td_task_flow_verified = True
+
+            # The dashboard is the highest-frequency TD entry point. Verify
+            # its inline capture and completion feedback separately from the
+            # task-center flow so a shell regression cannot hide behind a
+            # passing module-level test.
+            page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            home_capture = page.locator("#home-quick-todo-input")
+            home_capture.wait_for(state="visible", timeout=5000)
+            home_capture.fill("Smoke home quick todo")
+            page.locator("form.today-todo-capture button[type='submit']").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            home_todo = page.locator(".today-todo-row").filter(has_text="Smoke home quick todo")
+            try:
+                home_todo.wait_for(state="visible", timeout=5000)
+            except Exception as error:  # noqa: BLE001 - preserve dashboard evidence in smoke output
+                card_text = page.locator(".today-todos-card").inner_text()
+                raise RuntimeError(f"home quick todo was created but not rendered: {card_text!r}") from error
+            home_todo.locator("button.today-todo-complete").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            home_todo.wait_for(state="hidden", timeout=5000)
+            home_td_completion_feedback_verified = True
 
         if td_focus_flow:
             page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
@@ -500,6 +524,7 @@ def run_smoke(
         ph_plan_flow_verified=ph_plan_flow_verified,
         mobile_ph_plan_flow_verified=mobile_ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
+        home_td_completion_feedback_verified=home_td_completion_feedback_verified,
         td_focus_flow_verified=td_focus_flow_verified,
         td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
