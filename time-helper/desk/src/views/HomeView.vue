@@ -18,6 +18,7 @@ import { useI18n } from '@/i18n'
 import { notifyToast } from '@/services/toastService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { FocusSessionService } from '@/services/focusSessionService'
+import { getUserFacingError } from '@/services/userFacingError'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -82,7 +83,7 @@ async function startFocusPlan(item: FocusPlanTask): Promise<void> {
     })
     await router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
   } catch (error) {
-    notifyToast(error instanceof Error ? error.message : t('plans.todoCreateFailed'), 'error')
+    notifyToast(getUserFacingError(error, t('plans.todoCreateFailed')), 'error')
   } finally {
     focusingPlanTaskId.value = null
   }
@@ -160,7 +161,7 @@ async function completeHomeTodo(todo: UnifiedTodo) {
       await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
       notifyToast(t('plans.todoSyncFailed'), 'error')
     } else {
-      notifyToast(error instanceof Error ? error.message : t('tasks.error.update'), 'error')
+    notifyToast(getUserFacingError(error, t('tasks.error.update')), 'error')
     }
   } finally {
     completingTodoId.value = null
@@ -177,7 +178,7 @@ async function addQuickTodo() {
     await refreshTodoSummary()
     notifyToast(t('home.quickTodoAdded'), 'success')
   } catch (error) {
-    notifyToast(error instanceof Error ? error.message : t('tasks.error.create'), 'error')
+    notifyToast(getUserFacingError(error, t('tasks.error.create')), 'error')
   } finally {
     quickTodoSaving.value = false
   }
@@ -273,7 +274,7 @@ async function completeHomePlanTask(item: FocusPlanTask) {
     await refreshEventPlanSummary()
     notifyToast(t('home.planTaskCompleted'), 'success')
   } catch (error) {
-    notifyToast(error instanceof Error ? error.message : t('plans.unavailable'), 'error')
+    notifyToast(getUserFacingError(error, t('plans.unavailable')), 'error')
   } finally {
     completingPlanTaskId.value = null
   }

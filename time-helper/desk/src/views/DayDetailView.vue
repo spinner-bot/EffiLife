@@ -12,6 +12,7 @@ import { TodoService } from '@/services/todoService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyToast } from '@/services/toastService'
+import { getUserFacingError } from '@/services/userFacingError'
 
 const router = useRouter()
 const route = useRoute()
@@ -181,7 +182,7 @@ async function deleteRecord(index: number) {
     notifyToast(t('dayDetail.deleted'), 'success')
   } catch (error) {
     console.error('Failed to delete historical time record:', error)
-    notifyToast(error instanceof Error ? error.message : t('dayDetail.deleteFailed'), 'error')
+    notifyToast(getUserFacingError(error, t('dayDetail.deleteFailed')), 'error')
   } finally {
     deletingRecord.value = false
   }
@@ -237,7 +238,7 @@ async function selectPlan(planName: string) {
     notifyToast(t('dayDetail.planChanged'), 'success')
   } catch (error) {
     console.error('Failed to change historical day plan:', error)
-    notifyToast(error instanceof Error ? error.message : t('dayDetail.planChangeFailed'), 'error')
+    notifyToast(getUserFacingError(error, t('dayDetail.planChangeFailed')), 'error')
   } finally {
     changingPlan.value = false
   }

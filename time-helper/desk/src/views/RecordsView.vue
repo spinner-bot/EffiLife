@@ -12,6 +12,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { currentRecordDefaults } from '@/services/recordDefaults'
+import { getUserFacingError } from '@/services/userFacingError'
 
 const router = useRouter()
 const route = useRoute()
@@ -456,7 +457,7 @@ async function deleteRecord(index: number) {
     notifyToast(t('records.deleted'), 'success')
   } catch (error) {
     console.error('Failed to delete time record:', error)
-    notifyToast(error instanceof Error ? error.message : t('records.deleteFailed'), 'error')
+    notifyToast(getUserFacingError(error, t('records.deleteFailed')), 'error')
   } finally {
     deletingRecord.value = false
   }

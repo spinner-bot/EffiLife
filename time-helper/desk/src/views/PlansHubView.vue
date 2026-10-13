@@ -38,6 +38,7 @@ import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
 import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { onWorkspaceChanged } from '@/services/workspaceEvents'
+import { getUserFacingError } from '@/services/userFacingError'
 import { getOrCreatePlanTaskTodo, TodoService } from '@/services/todoService'
 import { FocusSessionService } from '@/services/focusSessionService'
 import { completeLinkedPlanTodo, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
@@ -325,7 +326,7 @@ async function archiveSelectedPlan() {
     view.value = 'events'
     await loadPlans()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -341,7 +342,7 @@ async function restoreArchive(archive: PlanArchiveSummary) {
     if (restoredId) await router.replace({ path: '/plans', query: { plan: restoredId } })
     await revealSearchTarget()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -448,7 +449,7 @@ async function createFromTemplate() {
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -465,7 +466,7 @@ async function openPlan(plan: PlanSummary) {
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { ...route.query, plan: String(plan.id) } })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -483,7 +484,7 @@ async function retryPlanService() {
       await loadPlans()
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -522,7 +523,7 @@ async function createPlan() {
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
     await nextTick()
     createNameInput.value?.focus()
   } finally {
@@ -542,7 +543,7 @@ async function savePlanMeta() {
     editingMeta.value = false
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -573,7 +574,7 @@ async function saveSection() {
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -606,7 +607,7 @@ async function deleteSection(section: PlanFull['sections'][number]) {
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.sectionUnavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.sectionUnavailable'))
   } finally {
     isLoading.value = false
   }
@@ -636,7 +637,7 @@ async function saveTask() {
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -653,7 +654,7 @@ async function saveLog() {
     selectedPlan.value = await getPlanFull(selectedPlan.value.id)
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.logUnavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.logUnavailable'))
   } finally {
     isLoading.value = false
   }
@@ -731,7 +732,7 @@ async function saveGroup() {
     cancelGroupEdit()
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.groupUnavailable'))
   } finally {
     isLoading.value = false
   }
@@ -747,7 +748,7 @@ async function deleteGroup(sectionIndex: number, groupKey: string) {
     cancelGroupEdit()
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.groupUnavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.groupUnavailable'))
   } finally {
     isLoading.value = false
   }
@@ -787,7 +788,7 @@ async function completeTask(taskId: string) {
     await refreshLinkedTodoTaskIds()
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }
@@ -872,7 +873,7 @@ async function createLinkedTodo(task: { internal_id: string; content: string; ti
     await refreshLinkedTodoTaskIds()
     notifyToast(t('plans.todoLinked'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    errorMessage.value = getUserFacingError(error, t('plans.todoCreateFailed'))
     notifyToast(t('plans.todoCreateFailed'), 'error')
   } finally {
     linkingTodoTaskId.value = null
@@ -899,7 +900,7 @@ async function startTaskFocus(task: { internal_id: string; content: string; time
     await refreshLinkedTodoTaskIds()
     await router.push({ path: '/tasks', query: { todo: todo.id, focus: 'start' } })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    errorMessage.value = getUserFacingError(error, t('plans.todoCreateFailed'))
     notifyToast(t('plans.todoCreateFailed'), 'error')
   } finally {
     linkingTodoTaskId.value = null
@@ -940,7 +941,7 @@ async function createLinkedTodos(): Promise<void> {
     await refreshLinkedTodoTaskIds()
     notifyToast(created ? t('plans.todosBulkCreated', { count: created }) : t('plans.todosAllLinked'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.todoCreateFailed')
+    errorMessage.value = getUserFacingError(error, t('plans.todoCreateFailed'))
     notifyToast(t('plans.todoCreateFailed'), 'error')
   } finally {
     isLoading.value = false
@@ -965,7 +966,7 @@ async function deleteTask(taskId: string) {
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('plans.unavailable')
+    errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
   } finally {
     isLoading.value = false
   }

@@ -24,6 +24,7 @@ import { AudioManager } from '@/audio/AudioManager'
 import { EventSystem } from '@/audio/EventSystem'
 import { CheckinSystem } from '@/data/CheckinSystem'
 import { MotionManager } from '@/motion'
+import { getUserFacingError } from '@/services/userFacingError'
 
 const appVersion = APP_VERSION
 const buildInfo = getBuildInfo()
@@ -520,7 +521,7 @@ async function handleReset(type: ResetType) {
     if (!await requestConfirm(messages[type], { tone: 'danger' })) return
     await resetData(type)
   } catch (error) {
-    notifyToast(t('settings.reset.failed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+    notifyToast(t('settings.reset.failed', { detail: getUserFacingError(error, t('settings.archive.localStorageUnavailable')) }), 'error')
   } finally {
     settingsDataOperationBusy.value = false
   }
@@ -559,7 +560,7 @@ async function handleExportArchive() {
       }
     }
   } catch (e) {
-    notifyToast(t('settings.archive.exportFailed') + (e as Error).message, 'error')
+    notifyToast(t('settings.archive.exportFailed') + getUserFacingError(e, t('settings.archive.localStorageUnavailable')), 'error')
   } finally {
     archiveBusy.value = false
   }
@@ -582,7 +583,7 @@ async function handleImportArchive() {
         notifyToast(result.message, 'error')
       }
     } catch (error) {
-      notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+      notifyToast(t('settings.archive.importFailed', { detail: getUserFacingError(error, t('settings.archive.localStorageUnavailable')) }), 'error')
     } finally {
       archiveBusy.value = false
     }
@@ -608,7 +609,7 @@ async function onFileSelected(event: Event) {
     try {
       preview = await previewArchive(file)
     } catch (error) {
-      notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+      notifyToast(t('settings.archive.importFailed', { detail: getUserFacingError(error, t('settings.archive.localStorageUnavailable')) }), 'error')
       return
     }
     if (!await requestConfirm(`${formatArchivePreview(preview)}\n\n${t('settings.archive.importConfirm')}`, { tone: 'danger' })) {
@@ -624,7 +625,7 @@ async function onFileSelected(event: Event) {
       }
     }
   } catch (error) {
-    notifyToast(t('settings.archive.importFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+    notifyToast(t('settings.archive.importFailed', { detail: getUserFacingError(error, t('settings.archive.localStorageUnavailable')) }), 'error')
   } finally {
     archiveBusy.value = false
   }
@@ -729,7 +730,7 @@ async function handleRestoreBackup(backup: BackupData) {
       notifyToast(result.message, 'error')
     }
   } catch (e) {
-    notifyToast(t('settings.restore.failed') + (e as Error).message, 'error')
+    notifyToast(t('settings.restore.failed') + getUserFacingError(e, t('settings.archive.localStorageUnavailable')), 'error')
   } finally {
     settingsDataOperationBusy.value = false
   }
@@ -745,7 +746,7 @@ async function handleDeleteBackup(backup: BackupData) {
     await loadDataStatus()
     notifyToast(t('settings.restore.deleted'), 'success')
   } catch (error) {
-    notifyToast(t('settings.restore.deleteFailed', { detail: error instanceof Error ? error.message : String(error) }), 'error')
+    notifyToast(t('settings.restore.deleteFailed', { detail: getUserFacingError(error, t('settings.archive.localStorageUnavailable')) }), 'error')
   } finally {
     settingsDataOperationBusy.value = false
   }
@@ -765,7 +766,7 @@ async function handleEmergencyExport() {
     URL.revokeObjectURL(url)
     notifyToast(t('settings.restore.emergencyDownloaded'), 'success')
   } catch (e) {
-    notifyToast(t('settings.archive.exportFailed') + (e as Error).message, 'error')
+    notifyToast(t('settings.archive.exportFailed') + getUserFacingError(e, t('settings.archive.localStorageUnavailable')), 'error')
   } finally {
     settingsDataOperationBusy.value = false
   }

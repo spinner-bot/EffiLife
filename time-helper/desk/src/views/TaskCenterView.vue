@@ -19,6 +19,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
 import { FocusSessionService } from '@/services/focusSessionService'
+import { getUserFacingError } from '@/services/userFacingError'
 import { completeTodoWithPlan, PlanTodoSyncError } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
@@ -247,7 +248,7 @@ async function loadTodoSettings() {
   } catch (error) {
     // Settings are recoverable workspace state; a read failure must not
     // become an unhandled rejection during task-center startup.
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.settings')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.settings'))
   }
 }
 
@@ -257,7 +258,7 @@ async function saveTodoSettings() {
     todoSettings.value = await TodoSettingsService.save(todoSettings.value)
     restartPriorityTimer()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.settings')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.settings'))
   } finally {
     settingsSaving.value = false
   }
@@ -271,7 +272,7 @@ async function loadTodos() {
     reconcileTodoSelection()
     dataUnavailable.value = false
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.load')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.load'))
     dataUnavailable.value = true
   } finally {
     isLoading.value = false
@@ -308,7 +309,7 @@ async function addTodo() {
     category.value = 'default'
     notifyToast(t('tasks.createdOne'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.create')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.create'))
     await nextTick()
     newTaskInput.value?.focus()
   } finally {
@@ -356,7 +357,7 @@ async function createCategory() {
     categoryAsciiIcon.value = ''
     categoryDifficulty.value = 5
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.category'))
   } finally {
     categoryMutationKey.value = null
   }
@@ -376,7 +377,7 @@ async function saveCategory(item: TodoCategory) {
     categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
     editingCategoryId.value = null
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.category'))
   } finally {
     categoryMutationKey.value = null
   }
@@ -397,7 +398,7 @@ async function removeCategory(item: TodoCategory) {
     if (categoryFilter.value === item.id) categoryFilter.value = ''
     if (category.value === item.id) category.value = 'default'
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.category'))
   } finally {
     categoryMutationKey.value = null
   }
@@ -410,7 +411,7 @@ async function toggleCategoryPinned(item: TodoCategory) {
     const updated = await TodoCategoryService.update(item.id, { pinned: !item.pinned })
     categories.value = categories.value.map((categoryItem) => categoryItem.id === updated.id ? updated : categoryItem)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.category')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.category'))
   } finally {
     categoryMutationKey.value = null
   }
@@ -480,7 +481,7 @@ async function completeTodo(todo: UnifiedTodo) {
     if (index >= 0) todos.value[index] = updated
     notifyToast(t('tasks.completedOne'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : getUserFacingError(error, t('tasks.error.update'))
   } finally {
     completingTodoId.value = null
   }
@@ -537,7 +538,7 @@ async function saveEdit(todo: UnifiedTodo) {
     if (index >= 0) todos.value[index] = updated
     cancelEdit()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.save')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.save'))
   } finally {
     isSaving.value = false
   }
@@ -554,7 +555,7 @@ async function removeTodo(todo: UnifiedTodo) {
     reconcileTodoSelection()
     notifyToast(t('tasks.deleted'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.delete'))
   }
 }
 
@@ -592,7 +593,7 @@ async function bulkCompleteTodos() {
     notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')
     clearTodoSelection()
   } catch (error) {
-    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : getUserFacingError(error, t('tasks.error.update'))
   } finally {
     bulkWorking.value = false
   }
@@ -611,7 +612,7 @@ async function bulkDeleteTodos() {
     clearTodoSelection()
     notifyToast(t('tasks.bulkDeleted', { count: deleted }), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.delete'))
   } finally {
     bulkWorking.value = false
   }
@@ -621,7 +622,7 @@ async function toggleTodoPinned(todo: UnifiedTodo) {
   try {
     replaceTodo(await TodoService.update(todo.id, { pinned: !todo.pinned }))
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
   }
 }
 
@@ -631,7 +632,7 @@ async function adjustTodoRank(todo: UnifiedTodo, delta: number) {
   try {
     replaceTodo(await TodoService.update(todo.id, { priority_rank: nextRank }))
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
   }
 }
 
@@ -722,7 +723,7 @@ async function persistTodoTime(todo: UnifiedTodo, minutes: number, startedAt = n
       throw error
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.trackTime')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.trackTime'))
     return false
   } finally {
     trackingTodoId.value = null
@@ -832,7 +833,7 @@ async function addSubtask(todo: UnifiedTodo) {
     replaceTodo(await TodoService.addSubtask(todo.id, subtaskTitle.value))
     subtaskTitle.value = ''
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
   } finally {
     subtaskSaving.value = false
   }
@@ -844,7 +845,7 @@ async function toggleSubtask(todo: UnifiedTodo, subtaskId: string) {
   try {
     replaceTodo(await TodoService.toggleSubtask(todo.id, subtaskId))
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
   } finally {
     subtaskSaving.value = false
   }
@@ -856,7 +857,7 @@ async function removeSubtask(todo: UnifiedTodo, subtaskId: string) {
   try {
     replaceTodo(await TodoService.removeSubtask(todo.id, subtaskId))
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.delete')
+    errorMessage.value = getUserFacingError(error, t('tasks.error.delete'))
   } finally {
     subtaskSaving.value = false
   }
