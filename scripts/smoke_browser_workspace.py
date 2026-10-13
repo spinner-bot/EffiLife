@@ -30,6 +30,7 @@ class SmokeResult:
     ph_plan_flow_verified: bool
     td_task_flow_verified: bool
     th_record_flow_verified: bool
+    ph_td_link_flow_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_navigation: bool
@@ -64,6 +65,7 @@ def run_smoke(
         ph_plan_flow_verified = False
         td_task_flow_verified = False
         th_record_flow_verified = False
+        ph_td_link_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -135,6 +137,18 @@ def run_smoke(
             page.wait_for_timeout(700)
             if page.locator(".plans-header h1").get_by_text("Smoke whole plan edited", exact=True).count() != 1:
                 raise RuntimeError("PH edit flow did not persist plan metadata")
+            page.locator(".plan-todo-action").click(timeout=5000)
+            link_confirm = page.locator('[role="alertdialog"]')
+            link_confirm.wait_for(state="visible", timeout=5000)
+            link_confirm.locator(".confirm-submit").click(timeout=5000)
+            page.wait_for_timeout(700)
+            page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(700)
+            linked_task = page.locator("article.task-item").filter(has_text="Smoke plan task")
+            linked_task.wait_for(state="visible", timeout=5000)
+            if linked_task.locator("button.task-plan-reference").count() != 1:
+                raise RuntimeError("PH-to-TD link was not visible in the task center")
+            ph_td_link_flow_verified = True
             ph_plan_flow_verified = True
 
         if td_task_flow:
@@ -330,6 +344,7 @@ def run_smoke(
         ph_plan_flow_verified=ph_plan_flow_verified,
         td_task_flow_verified=td_task_flow_verified,
         th_record_flow_verified=th_record_flow_verified,
+        ph_td_link_flow_verified=ph_td_link_flow_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_navigation=True,

@@ -172,7 +172,10 @@ class PlanHelperHandler(SimpleHTTPRequestHandler):
             resp = api.get_sections(plan_id)
         elif path.startswith("/api/plans/") and path.endswith("/tasks"):
             parts = path.split("/")
-            plan_id = parts[2]
+            # /api/plans/{plan_id}/tasks -> ['', 'api', 'plans', id, 'tasks']
+            # The previous index addressed the literal "plans" segment and
+            # made every task-list request fail with a 400 response.
+            plan_id = parts[3]
             resp = api.get_tasks(plan_id)
         elif path.startswith("/api/plans/") and path.endswith("/logs"):
             plan_id = path.split("/")[-2]
