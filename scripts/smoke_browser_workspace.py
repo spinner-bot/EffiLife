@@ -42,6 +42,7 @@ class SmokeResult:
     th_quick_capture_verified: bool
     th_quick_capture_shortcut_verified: bool
     ph_td_link_flow_verified: bool
+    ph_td_completion_sync_verified: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
     mobile_archive_share_verified: bool
@@ -118,6 +119,7 @@ def run_smoke(
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
+        ph_td_completion_sync_verified = False
         mobile_archive_share_verified = False
         onboarding_flow_verified = False
         mobile_onboarding_flow_verified = False
@@ -304,13 +306,33 @@ def run_smoke(
             link_confirm.wait_for(state="visible", timeout=5000)
             link_confirm.locator(".confirm-submit").click(timeout=5000)
             page.wait_for_timeout(700)
+            plan_detail_url = page.url
             page.goto(f"{base_url.rstrip('/')}/tasks", wait_until="domcontentloaded", timeout=15000)
             page.wait_for_timeout(700)
             linked_task = page.locator("article.task-item").filter(has_text="Smoke plan task")
             linked_task.wait_for(state="visible", timeout=5000)
             if linked_task.locator("button.task-plan-reference").count() != 1:
                 raise RuntimeError("PH-to-TD link was not visible in the task center")
+            linked_task.locator("button.task-check").click(timeout=5000)
+            try:
+                page.locator(".toast-success").first.wait_for(state="visible", timeout=5000)
+            except Exception as error:  # noqa: BLE001 - include the actual sync feedback in smoke output
+                visible_toasts = page.locator(".toast-message:visible")
+                toast_text = visible_toasts.all_inner_texts() if visible_toasts.count() else []
+                raise RuntimeError(f"PH-linked TD completion did not report success: {toast_text!r}") from error
+            page.locator("#tasks-tab-completed").click(timeout=5000)
+            linked_completed_task = page.locator("article.task-item.completed").filter(has_text="Smoke plan task")
+            linked_completed_task.wait_for(state="visible", timeout=5000)
+            if not linked_completed_task.locator("button.task-check").is_disabled():
+                raise RuntimeError("TD completion did not leave the linked task completed")
+            page.goto(plan_detail_url, wait_until="domcontentloaded", timeout=15000)
+            page.wait_for_timeout(1000)
+            synced_plan_task = page.locator("article.event-task-row").filter(has_text="Smoke plan task")
+            synced_plan_task.wait_for(state="visible", timeout=5000)
+            if synced_plan_task.count() != 1 or synced_plan_task.locator(".task-complete").is_enabled():
+                raise RuntimeError("TD completion did not project back to the linked PH task")
             ph_td_link_flow_verified = True
+            ph_td_completion_sync_verified = True
             ph_plan_flow_verified = True
 
         if td_task_flow:
@@ -817,6 +839,7 @@ def run_smoke(
         th_quick_capture_verified=th_quick_capture_verified,
         th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
         ph_td_link_flow_verified=ph_td_link_flow_verified,
+        ph_td_completion_sync_verified=ph_td_completion_sync_verified,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
         mobile_archive_share_verified=mobile_archive_share_verified,
