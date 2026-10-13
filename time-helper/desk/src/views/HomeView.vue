@@ -148,6 +148,7 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   try {
     await completeTodoWithPlan(todo)
     await refreshTodoSummary()
+    notifyToast(t('tasks.completedOne'), 'success')
   } catch (error) {
     if (error instanceof PlanTodoSyncError) {
       await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])

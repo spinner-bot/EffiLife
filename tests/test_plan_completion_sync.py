@@ -45,5 +45,7 @@ def test_single_todo_completion_has_success_feedback():
     catalog = (DESK / "i18n" / "index.ts").read_text(encoding="utf-8")
     completion = tasks[tasks.index("async function completeTodo"):tasks.index("function startEdit")]
     assert "notifyToast(t('tasks.completedOne'), 'success')" in completion
+    home = HOME[HOME.index("async function completeHomeTodo"):HOME.index("async function addQuickTodo")]
+    assert "notifyToast(t('tasks.completedOne'), 'success')" in home
     assert catalog.count("'tasks.completedOne':") == 2
 
