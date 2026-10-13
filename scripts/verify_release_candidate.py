@@ -30,6 +30,13 @@ def main() -> int:
     parser.add_argument("--skip-tests", action="store_true", help="skip the full Python regression suite")
     parser.add_argument("--skip-compatibility-build", action="store_true", help="skip the legacy to-dos compatibility UI build")
     parser.add_argument("--skip-build", action="store_true", help="skip the unified frontend production build")
+    parser.add_argument(
+        "--verify-artifact",
+        nargs=2,
+        action="append",
+        metavar=("DIRECTORY", "EXTENSION"),
+        help="verify an existing packaged artifact directory and extension (repeatable)",
+    )
     args = parser.parse_args()
 
     steps: list[dict[str, object]] = []
@@ -41,6 +48,20 @@ def main() -> int:
         steps.append(run_step("Compatibility UI production build", [sys.executable, "scripts/build_todos_ui.py"]))
     if not args.skip_build:
         steps.append(run_step("Unified frontend production build", [sys.executable, "scripts/build_frontend.py"]))
+    for directory, extension in args.verify_artifact or []:
+        steps.append(run_step(
+            f"Packaged artifact verification ({extension})",
+            [
+                sys.executable,
+                "scripts/verify_release_artifacts.py",
+                "--directory",
+                directory,
+                "--extension",
+                extension,
+                "--version-file",
+                "time-helper/VERSION",
+            ],
+        ))
 
     failed = [step for step in steps if step["returncode"] != 0]
     summary = {
