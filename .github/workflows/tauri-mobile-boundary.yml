@@ -20,6 +20,7 @@ jobs:
   contract:
     name: mobile frontend and configuration contract
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
