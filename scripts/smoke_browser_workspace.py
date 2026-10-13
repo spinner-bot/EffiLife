@@ -36,6 +36,7 @@ class SmokeResult:
     td_focus_flow_verified: bool
     td_cross_window_focus_verified: bool
     th_record_flow_verified: bool
+    th_record_mutation_flow_verified: bool
     th_quick_capture_verified: bool
     th_quick_capture_shortcut_verified: bool
     ph_td_link_flow_verified: bool
@@ -109,6 +110,7 @@ def run_smoke(
         td_focus_flow_verified = False
         td_cross_window_focus_verified = False
         th_record_flow_verified = False
+        th_record_mutation_flow_verified = False
         th_quick_capture_verified = False
         th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
@@ -403,7 +405,22 @@ def run_smoke(
             page.wait_for_timeout(700)
             if page.locator(".pv-record-card").filter(has_text="Smoke time record").count() != 1:
                 raise RuntimeError("TH time record was not durable after reload")
+            record_card.locator("button[aria-label]").first.click(timeout=5000)
+            edit_modal = page.locator(".pv-modal")
+            edit_modal.wait_for(state="visible", timeout=5000)
+            edit_modal.locator("input.pv-text-input").first.fill("Smoke time record edited")
+            edit_modal.locator(".pv-modal-footer .pv-primary-btn").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            edited_record = page.locator(".pv-record-card").filter(has_text="Smoke time record edited")
+            edited_record.wait_for(state="visible", timeout=5000)
+            edited_record.locator("button.pv-icon-btn.danger").click(timeout=5000)
+            delete_confirm = page.locator('[role="alertdialog"]')
+            delete_confirm.wait_for(state="visible", timeout=5000)
+            delete_confirm.locator(".confirm-submit").click(timeout=5000)
+            page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            edited_record.wait_for(state="hidden", timeout=5000)
             th_record_flow_verified = True
+            th_record_mutation_flow_verified = True
 
         mobile_context = browser.new_context(
             user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 Chrome/128.0.0.0 Mobile Safari/537.36",
@@ -741,6 +758,7 @@ def run_smoke(
         td_focus_flow_verified=td_focus_flow_verified,
         td_cross_window_focus_verified=td_cross_window_focus_verified,
         th_record_flow_verified=th_record_flow_verified,
+        th_record_mutation_flow_verified=th_record_mutation_flow_verified,
         th_quick_capture_verified=th_quick_capture_verified,
         th_quick_capture_shortcut_verified=th_quick_capture_shortcut_verified,
         ph_td_link_flow_verified=ph_td_link_flow_verified,
