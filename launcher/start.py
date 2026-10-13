@@ -58,13 +58,13 @@ def custom_node_dir() -> Path | None:
     configured = os.environ.get("EFFILIFE_NODE_DIR", "").strip()
     if configured:
         return Path(configured).expanduser()
-    return CUSTOM_NODE_DIR if os.name == "nt" else None
+    return CUSTOM_NODE_DIR if is_windows() else None
 
 
 def node_tool_filename(name: str) -> str:
     """Return the executable filename for the current platform."""
-    return f"{name}.cmd" if os.name == "nt" and name == "npm" else (
-        f"{name}.exe" if os.name == "nt" else name
+    return f"{name}.cmd" if is_windows() and name == "npm" else (
+        f"{name}.exe" if is_windows() else name
     )
 
 
@@ -106,7 +106,7 @@ def find_npm():
             return str(custom_npm)
 
     # Then check system PATH
-    if os.name == "nt":
+    if is_windows():
         for name in ["npm.cmd", "npm"]:
             path = shutil.which(name)
             if path:
@@ -124,7 +124,7 @@ def find_node():
     node_dir = custom_node_dir()
     if node_dir is not None:
         candidates.append(node_dir / node_tool_filename("node"))
-    if os.name == "nt":
+    if is_windows():
         system_node = shutil.which("node.exe") or shutil.which("node")
         if system_node:
             candidates.append(Path(system_node))
@@ -145,7 +145,7 @@ def find_rust_tool(name):
         managed = toolchain_dir / (f"{name}.exe" if is_windows() else name)
         if managed.is_file():
             return str(managed)
-    return shutil.which(name) or (shutil.which(f"{name}.exe") if os.name == "nt" else None)
+    return shutil.which(name) or (shutil.which(f"{name}.exe") if is_windows() else None)
 
 
 def android_sdk_dir() -> Path | None:
@@ -154,7 +154,7 @@ def android_sdk_dir() -> Path | None:
         configured = os.environ.get(key, "").strip()
         if configured:
             return Path(configured).expanduser()
-    if os.name == "nt" and CUSTOM_ANDROID_SDK_DIR.is_dir():
+    if is_windows() and CUSTOM_ANDROID_SDK_DIR.is_dir():
         return CUSTOM_ANDROID_SDK_DIR
     return None
 
@@ -162,7 +162,7 @@ def android_sdk_dir() -> Path | None:
 def find_android_adb():
     sdk_dir = android_sdk_dir()
     if sdk_dir is not None:
-        managed = sdk_dir / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb")
+        managed = sdk_dir / "platform-tools" / ("adb.exe" if is_windows() else "adb")
         if managed.is_file():
             return str(managed)
     return shutil.which("adb") or shutil.which("adb.exe")
@@ -183,7 +183,7 @@ def native_toolchain_status():
         },
         "ios": {
             "xcodebuild": shutil.which("xcodebuild") or shutil.which("xcodebuild.exe"),
-            "platform_supported": os.name != "nt",
+            "platform_supported": not is_windows(),
             "ready": bool(shutil.which("xcodebuild") or shutil.which("xcodebuild.exe")),
         },
     }
@@ -224,8 +224,8 @@ def release_signing_status():
             for candidate in sorted(build_tools.iterdir(), reverse=True):
                 if not candidate.is_dir():
                     continue
-                signer = candidate / ("apksigner.bat" if os.name == "nt" else "apksigner")
-                aligner = candidate / ("zipalign.exe" if os.name == "nt" else "zipalign")
+                signer = candidate / ("apksigner.bat" if is_windows() else "apksigner")
+                aligner = candidate / ("zipalign.exe" if is_windows() else "zipalign")
                 if apksigner is None and signer.is_file():
                     apksigner = str(signer)
                 if zipalign is None and aligner.is_file():
@@ -269,7 +269,7 @@ def node_environment():
 
 def process_group_options():
     """Keep launcher-owned child processes together for reliable shutdown."""
-    if os.name == "nt":
+    if is_windows():
         return {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
     # The bounded startup smoke check owns the launcher process group and must
     # be able to reap its companion services as one tree on POSIX. Normal
@@ -289,7 +289,7 @@ def dependencies_ready(cwd):
     """
     module_dir = Path(cwd) / "node_modules"
     bin_dir = module_dir / ".bin"
-    suffix = ".cmd" if os.name == "nt" else ""
+    suffix = ".cmd" if is_windows() else ""
     required = ["vite"]
     resolved_cwd = Path(cwd).resolve()
     if resolved_cwd.name == "desk" and resolved_cwd.parent.name == "time-helper":
@@ -385,7 +385,7 @@ def launcher_log_path():
     override = os.environ.get("EFFILIFE_LOG_DIR")
     if override:
         return Path(override) / "launcher.log"
-    if os.name == "nt":
+    if is_windows():
         root = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
     else:
         root = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
@@ -524,7 +524,7 @@ def time_helper_binary_paths(include_debug=True):
     Development mode may use a debug binary, while packaged mode must never
     silently launch one as if it were a release artifact.
     """
-    binary_names = ["efflife-desk.exe", "efflife-desk"] if os.name == "nt" else ["efflife-desk", "efflife-desk.exe"]
+    binary_names = ["efflife-desk.exe", "efflife-desk"] if is_windows() else ["efflife-desk", "efflife-desk.exe"]
     profiles = ("release", "debug") if include_debug else ("release",)
     return [
         BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / profile / name
@@ -536,7 +536,7 @@ def time_helper_binary_paths(include_debug=True):
 def installer_artifact_patterns():
     """Return the platform bundle locations produced by the release matrix."""
     bundle_root = BASE_DIR / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle"
-    if os.name == "nt":
+    if is_windows():
         return [bundle_root / "nsis" / "*.exe"]
     if sys.platform == "darwin":
         return [bundle_root / "dmg" / "*.dmg"]
@@ -1009,7 +1009,7 @@ def print_startup_failure_hint():
 
 
 def clear():
-    os.system("cls" if os.name == "nt" else "clear")
+    os.system("cls" if is_windows() else "clear")
 
 
 def _legacy_show_menu(modules):
@@ -1290,7 +1290,7 @@ def terminate_process(process):
     # npm.cmd is a shim: the shim can exit while its spawned node/vite child
     # remains alive. Always target the launcher-owned process tree on Windows,
     # even when poll() already reports that the shim exited.
-    if os.name == "nt" and getattr(process, "pid", None):
+    if is_windows() and getattr(process, "pid", None):
         result = subprocess.run(
             ["taskkill", "/PID", str(process.pid), "/T", "/F"],
             stdout=subprocess.DEVNULL,
@@ -1300,7 +1300,7 @@ def terminate_process(process):
         if result.returncode != 0 and process.poll() is None:
             process.terminate()
     elif process.poll() is None:
-        if os.name != "nt":
+        if not is_windows():
             try:
                 # POSIX children are launched in a new session, so terminate
                 # the complete Vite/Python process group instead of leaving a

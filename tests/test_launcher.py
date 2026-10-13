@@ -83,7 +83,7 @@ def test_launcher_ignores_blank_custom_node_directory(monkeypatch):
 
 
 def test_launcher_reads_custom_node_directory_on_posix(monkeypatch, tmp_path):
-    monkeypatch.setattr(launcher.os, "name", "posix")
+    monkeypatch.setattr(launcher, "is_windows", lambda: False)
     assert launcher.node_tool_filename("node") == "node"
     assert launcher.node_tool_filename("npm") == "npm"
 
@@ -222,7 +222,7 @@ def test_launcher_packaged_mode_prefers_native_tauri_binary(monkeypatch, tmp_pat
 
 def test_launcher_discovers_posix_style_tauri_binary(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
-    monkeypatch.setattr(launcher.os, "name", "posix")
+    monkeypatch.setattr(launcher, "is_windows", lambda: False)
     binary = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "efflife-desk"
     binary.parent.mkdir(parents=True)
     binary.write_bytes(b"placeholder")
@@ -995,7 +995,7 @@ def test_launcher_prefers_managed_rust_toolchain_when_path_has_no_tool(monkeypat
 
 def test_launcher_diagnostics_distinguish_binary_from_installer(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
     bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
     bundle.mkdir(parents=True)
     installer = bundle / "EffiLife-setup.exe"
@@ -1016,7 +1016,7 @@ def test_launcher_diagnostics_distinguish_binary_from_installer(monkeypatch, tmp
 
 def test_launcher_marks_old_version_installer_as_stale(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
     bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
     bundle.mkdir(parents=True)
     installer = bundle / "EffiLife_1.0.11_x64-setup.exe"
@@ -1033,7 +1033,7 @@ def test_launcher_marks_old_version_installer_as_stale(monkeypatch, tmp_path):
 
 def test_launcher_ignores_legacy_brand_installer_when_scanning_current_release(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
     bundle = tmp_path / "time-helper" / "desk" / "src-tauri" / "target" / "release" / "bundle" / "nsis"
     bundle.mkdir(parents=True)
     legacy = bundle / "浪兮效率时钟_1.0.11_x64-setup.exe"
@@ -1048,7 +1048,7 @@ def test_launcher_ignores_legacy_brand_installer_when_scanning_current_release(m
 
 def test_launcher_reports_missing_installer_without_blocking_workspace(monkeypatch, tmp_path):
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
 
     result = launcher.collect_diagnostics({})
 
@@ -1089,7 +1089,7 @@ def test_launcher_diagnostics_explain_blockers_and_release_hints(monkeypatch):
 
 
 def test_launcher_diagnostics_expose_platform_native_toolchain_hints(monkeypatch):
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
     monkeypatch.setattr(launcher, "find_node", lambda: "node.exe")
     monkeypatch.setattr(launcher, "find_npm", lambda: "npm.cmd")
     monkeypatch.setattr(launcher, "find_rust_tool", lambda _name: None)
