@@ -61,6 +61,16 @@ def test_android_report_is_ready_when_tools_sdk_and_generated_project_exist(monk
     assert report["ready"] is True
     assert report["mobile_project_exists"] is True
     assert report["missing"] == []
+    assert report["android_runtime"]["device_ready"] is False
+
+
+def test_connected_android_devices_only_reports_online_devices(monkeypatch):
+    class Result:
+        stdout = "List of devices attached\nonline-1\tdevice\noffline-1\toffline\n"
+
+    monkeypatch.setattr(MODULE.subprocess, "run", lambda *args, **kwargs: Result())
+
+    assert MODULE.connected_android_devices("adb") == ["online-1"]
 
 
 def test_android_report_rejects_configured_but_missing_sdk_directory(monkeypatch, tmp_path):

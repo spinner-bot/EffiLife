@@ -122,6 +122,28 @@ def required_android_components(sdk_root: Path, mobile_project: Path | None) -> 
     return missing
 
 
+def connected_android_devices(adb_path: str | None) -> list[str]:
+    """Return online Android device serials without making devices mandatory for builds."""
+    if not adb_path:
+        return []
+    try:
+        result = subprocess.run(
+            [adb_path, "devices"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    devices: list[str] = []
+    for line in result.stdout.splitlines()[1:]:
+        fields = line.split()
+        if len(fields) >= 2 and fields[1] == "device":
+            devices.append(fields[0])
+    return devices
+
+
 def build_report(target: str, root: Path | None = None) -> dict[str, object]:
     requirements = TARGET_REQUIREMENTS[target]
     tools = {
@@ -146,12 +168,25 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         elif not Path(resolved_sdk).is_dir():
             missing.append(f"Android SDK directory: {resolved_sdk}")
     mobile_project = None
+    android_runtime: dict[str, object] | None = None
     if target in MOBILE_PROJECTS:
         mobile_project = (root or ROOT) / MOBILE_PROJECTS[target]
         if not mobile_project.is_dir():
             missing.append(f"Tauri {target} project (run tauri {target} init)")
         elif target == "android" and resolved_sdk:
             missing.extend(required_android_components(Path(resolved_sdk), mobile_project))
+    if target == "android":
+        devices = connected_android_devices(tools.get("adb"))
+        emulator_path = None
+        if resolved_sdk:
+            candidate = Path(resolved_sdk) / "emulator" / ("emulator.exe" if os.name == "nt" else "emulator")
+            emulator_path = str(candidate) if candidate.is_file() else None
+        android_runtime = {
+            "connected_devices": devices,
+            "device_ready": bool(devices),
+            "emulator": emulator_path,
+            "emulator_available": emulator_path is not None,
+        }
     return {
         "target": target,
         "ready": not missing,
@@ -160,6 +195,7 @@ def build_report(target: str, root: Path | None = None) -> dict[str, object]:
         "sdk_roots": sdk_roots,
         "mobile_project": str(mobile_project) if mobile_project else None,
         "mobile_project_exists": mobile_project.is_dir() if mobile_project else None,
+        "android_runtime": android_runtime,
         "missing": missing,
     }
 
