@@ -44,6 +44,7 @@ class SmokeResult:
     mobile_archive_share_verified: bool
     mobile_navigation: bool
     confirm_keyboard_accessible: bool
+    onboarding_flow_verified: bool
 
 
 def run_smoke(
@@ -58,6 +59,7 @@ def run_smoke(
     td_focus_flow: bool = False,
     th_record_flow: bool = False,
     mobile_archive_share_flow: bool = False,
+    onboarding_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -69,9 +71,11 @@ def run_smoke(
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=headless)
         context = browser.new_context()
-        # First-run onboarding is outside this smoke test. Mark it complete so
-        # it cannot intercept the route and theme controls being verified.
-        context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
+        # Most smoke paths focus on workspace features and suppress onboarding;
+        # the opt-in onboarding path deliberately exercises the real first-run
+        # experience before continuing with the rest of the shell checks.
+        if not onboarding_flow:
+            context.add_init_script("localStorage.setItem('efflife_guide_completed', 'true')")
         page = context.new_page()
         rendered_routes: list[str] = []
         ph_plan_flow_verified = False
@@ -87,6 +91,7 @@ def run_smoke(
         th_quick_capture_shortcut_verified = False
         ph_td_link_flow_verified = False
         mobile_archive_share_verified = False
+        onboarding_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -95,6 +100,30 @@ def run_smoke(
         page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
         page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
         page.wait_for_timeout(300)
+        if onboarding_flow:
+            onboarding_tooltip = page.locator(".guide-tooltip")
+            onboarding_tooltip.wait_for(state="visible", timeout=5000)
+            if page.locator(".progress-badge").inner_text() != "1/6":
+                raise RuntimeError("first-run onboarding did not start at step 1/6")
+            onboarding_tooltip.locator(".next-btn").click(timeout=5000)
+            # The guide backdrop intentionally intercepts normal pointer
+            # events; force-click still dispatches the real target event and
+            # exercises the overlay's capture/allow-list logic.
+            page.locator('[data-guide="plans"]').first.click(timeout=5000, force=True)
+            page.wait_for_timeout(1200)
+            if "/plans" not in page.url or not onboarding_tooltip.is_visible():
+                raise RuntimeError(
+                    f"first-run onboarding did not follow the PH navigation action: url={page.url!r}, "
+                    f"progress={page.locator('.progress-badge').inner_text()!r}"
+                )
+            onboarding_tooltip.locator(".guide-close").click(timeout=5000)
+            skip_confirm = page.locator('[role="alertdialog"]')
+            skip_confirm.wait_for(state="visible", timeout=5000)
+            skip_confirm.locator(".confirm-submit").click(timeout=5000)
+            onboarding_tooltip.wait_for(state="hidden", timeout=5000)
+            onboarding_flow_verified = True
+            page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            page.locator(".overview-grid").wait_for(state="visible", timeout=10000)
         home_startup_alert = page.locator('[role="alertdialog"]')
         if home_startup_alert.count() and home_startup_alert.first.is_visible():
             home_startup_alert.first.locator(".confirm-cancel").click(timeout=5000)
@@ -569,6 +598,7 @@ def run_smoke(
         mobile_archive_share_verified=mobile_archive_share_verified,
         mobile_navigation=True,
         confirm_keyboard_accessible=True,
+        onboarding_flow_verified=onboarding_flow_verified,
     )
 
 
@@ -616,6 +646,11 @@ def main() -> int:
         action="store_true",
         help="verify mobile .efl export enters the share-file path",
     )
+    parser.add_argument(
+        "--onboarding-flow",
+        action="store_true",
+        help="verify the real first-run onboarding flow before workspace smoke checks",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -629,6 +664,7 @@ def main() -> int:
             td_focus_flow=args.td_focus_flow,
             th_record_flow=args.th_record_flow,
             mobile_archive_share_flow=args.mobile_archive_share_flow,
+            onboarding_flow=args.onboarding_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))

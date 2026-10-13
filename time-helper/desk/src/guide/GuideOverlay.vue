@@ -309,7 +309,11 @@ const tooltipStyle = computed(() => ({
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
+  /* Let the highlighted application target receive the real click. The
+     document-level capture handler still blocks clicks outside the target,
+     while pointer-events:auto here would make every action step advance the
+     guide without activating the underlying navigation control. */
+  pointer-events: none;
 }
 
 .guide-highlight {
