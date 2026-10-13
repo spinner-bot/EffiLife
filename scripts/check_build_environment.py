@@ -15,6 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 CUSTOM_RUST_TOOLCHAIN_DIR = Path("F:/dev-tools/rustup/toolchains/stable-x86_64-pc-windows-msvc/bin")
 CUSTOM_ANDROID_SDK_DIR = Path("F:/dev-tools/android-sdk")
 
+
+def is_windows() -> bool:
+    """Return the host-platform flag without mutating os.name in tests."""
+    return os.name == "nt"
+
 TARGET_REQUIREMENTS = {
     "desktop": ("node", "npm", "cargo", "rustc"),
     "android": ("node", "npm", "cargo", "rustc", "java", "adb"),
@@ -32,10 +37,10 @@ def executable_path(name: str) -> str | None:
     if name in {"cargo", "rustc"}:
         configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
         toolchain_dir = Path(configured).expanduser() if configured else (
-            CUSTOM_RUST_TOOLCHAIN_DIR if os.name == "nt" else None
+            CUSTOM_RUST_TOOLCHAIN_DIR if is_windows() else None
         )
         if toolchain_dir is not None:
-            candidate = toolchain_dir / (f"{name}.exe" if os.name == "nt" else name)
+            candidate = toolchain_dir / (f"{name}.exe" if is_windows() else name)
             if candidate.is_file():
                 return str(candidate)
     if name == "adb":

@@ -149,7 +149,7 @@ def test_managed_windows_toolchain_is_used_when_path_is_missing(monkeypatch, tmp
     toolchain.mkdir(parents=True)
     for name in ("cargo", "rustc"):
         (toolchain / f"{name}.exe").write_text(name, encoding="utf-8")
-    monkeypatch.setattr(MODULE.os, "name", "nt")
+    monkeypatch.setattr(MODULE, "is_windows", lambda: True)
     monkeypatch.setattr(MODULE, "CUSTOM_RUST_TOOLCHAIN_DIR", toolchain)
     monkeypatch.setattr(MODULE.shutil, "which", lambda _name: None)
 

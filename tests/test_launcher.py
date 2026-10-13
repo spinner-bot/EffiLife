@@ -962,7 +962,7 @@ def test_launcher_prefers_managed_rust_toolchain_when_path_has_no_tool(monkeypat
     toolchain.mkdir(parents=True)
     (toolchain / "cargo.exe").write_bytes(b"cargo")
     (toolchain / "rustc.exe").write_bytes(b"rustc")
-    monkeypatch.setattr(launcher.os, "name", "nt")
+    monkeypatch.setattr(launcher, "is_windows", lambda: True)
     monkeypatch.setattr(launcher, "CUSTOM_RUST_TOOLCHAIN_DIR", toolchain)
     monkeypatch.setattr(launcher.shutil, "which", lambda _name: None)
 

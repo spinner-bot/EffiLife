@@ -48,6 +48,11 @@ CUSTOM_RUST_TOOLCHAIN_DIR = Path("F:/dev-tools/rustup/toolchains/stable-x86_64-p
 CUSTOM_ANDROID_SDK_DIR = Path("F:/dev-tools/android-sdk")
 
 
+def is_windows() -> bool:
+    """Return the host-platform flag behind injectable toolchain checks."""
+    return os.name == "nt"
+
+
 def custom_node_dir() -> Path | None:
     """Return the configured Node directory using the current environment."""
     configured = os.environ.get("EFFILIFE_NODE_DIR", "").strip()
@@ -134,10 +139,10 @@ def find_rust_tool(name):
     """Find Rust, preferring an explicitly managed toolchain on every OS."""
     configured = os.environ.get("EFFILIFE_RUST_TOOLCHAIN_DIR", "").strip()
     toolchain_dir = Path(configured).expanduser() if configured else (
-        CUSTOM_RUST_TOOLCHAIN_DIR if os.name == "nt" else None
+        CUSTOM_RUST_TOOLCHAIN_DIR if is_windows() else None
     )
     if toolchain_dir is not None:
-        managed = toolchain_dir / (f"{name}.exe" if os.name == "nt" else name)
+        managed = toolchain_dir / (f"{name}.exe" if is_windows() else name)
         if managed.is_file():
             return str(managed)
     return shutil.which(name) or (shutil.which(f"{name}.exe") if os.name == "nt" else None)
