@@ -28,7 +28,14 @@ def test_plan_workspaces_keep_ph_success_when_td_projection_fails():
 def test_td_completion_uses_the_ph_first_coordinator():
     assert "export async function completeTodoWithPlan" in SYNC
     assert "await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)" in SYNC
-    assert "return TodoService.complete(todo.id)" in SYNC
+    assert "return await TodoService.complete(todo.id)" in SYNC
     assert "await completeTodoWithPlan(todo)" in HOME
     assert "await completeTodoWithPlan(todo)" in (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
+
+
+def test_td_projection_failure_has_a_distinct_recoverable_error_path():
+    assert "export class PlanTodoSyncError extends Error" in SYNC
+    assert "throw new PlanTodoSyncError(error)" in SYNC
+    assert "error instanceof PlanTodoSyncError" in HOME
+    assert "error instanceof PlanTodoSyncError" in (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 

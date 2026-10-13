@@ -3,6 +3,15 @@ import type { TimeRecord } from '@/types'
 import { getRawAll, set as idbSet, STORE_NAMES } from '@/storage'
 import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
 
+export class PlanTodoSyncError extends Error {
+  readonly phase = 'todo' as const
+
+  constructor(readonly cause: unknown) {
+    super('The linked todo could not be completed after the plan task was completed')
+    this.name = 'PlanTodoSyncError'
+  }
+}
+
 /**
  * Complete a TD item and its PH projection in the documented order.
  *
@@ -14,7 +23,14 @@ export async function completeTodoWithPlan(todo: UnifiedTodo): Promise<UnifiedTo
   if (todo.related_plan_id && todo.related_plan_task_id) {
     await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
   }
-  return TodoService.complete(todo.id)
+  try {
+    return await TodoService.complete(todo.id)
+  } catch (error) {
+    if (todo.related_plan_id && todo.related_plan_task_id) {
+      throw new PlanTodoSyncError(error)
+    }
+    throw error
+  }
 }
 
 /**

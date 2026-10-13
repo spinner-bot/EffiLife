@@ -19,7 +19,7 @@ import { notifyToast } from '@/services/toastService'
 import { requestConfirm } from '@/services/confirmService'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
 import { FocusSessionService } from '@/services/focusSessionService'
-import { completeTodoWithPlan } from '@/services/workspaceSync'
+import { completeTodoWithPlan, PlanTodoSyncError } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -476,7 +476,7 @@ async function completeTodo(todo: UnifiedTodo) {
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : error instanceof Error ? error.message : t('tasks.error.update')
   } finally {
     completingTodoId.value = null
   }
@@ -588,7 +588,7 @@ async function bulkCompleteTodos() {
     notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')
     clearTodoSelection()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('tasks.error.update')
+    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : error instanceof Error ? error.message : t('tasks.error.update')
   } finally {
     bulkWorking.value = false
   }
