@@ -706,22 +706,32 @@ onUnmounted(() => {
             <span class="home-module-heading"><span class="home-module-code">PH</span><span><span class="home-module-label">{{ t('home.planModuleSummary') }}</span><strong class="stats-title">{{ t('home.eventPlans') }}</strong></span></span><ChevronRight :size="18" />
           </button>
           <template v-if="eventPlanState === 'ready'">
-            <strong class="event-overview-count">{{ activeEventPlans.length }}</strong>
-            <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
-            <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.completedPlanCount', { count: completedEventPlanCount }) }}</span></div>
-            <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
-            <div v-if="eventPlanPreview.length" class="event-plan-preview" :aria-label="t('home.eventPlans')">
-              <button v-for="plan in eventPlanPreview" :key="plan.id" type="button" class="event-plan-preview-row" @click.stop="openEventPlan(plan)">
-                <div class="event-plan-preview-copy">
-                  <span class="event-plan-preview-name">{{ plan.name }}</span>
-                  <span class="event-plan-preview-count">{{ plan.completed_tasks }}/{{ plan.total_tasks }}</span>
-                </div>
-                <div class="event-plan-preview-track"><i :style="{ width: `${plan.progress_percentage}%` }" /></div>
-              </button>
-              <span v-if="eventPlanRemainingCount" class="event-plan-preview-more">{{ t('home.moreActivePlans', { count: eventPlanRemainingCount }) }}</span>
-            </div>
-            <span v-else-if="eventPlans.length" class="event-overview-muted">{{ t('home.allPlansComplete') }}</span>
-            <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
+            <EmptyState
+              v-if="eventPlans.length === 0"
+              :icon="ClipboardList"
+              :title="t('home.noPlanData')"
+              :description="t('home.createPlanForProgress')"
+              :action-text="t('home.goToManage')"
+              action-route="/plans"
+            />
+            <template v-else>
+              <strong class="event-overview-count">{{ activeEventPlans.length }}</strong>
+              <span class="event-overview-label">{{ t('home.eventPlanCount') }}</span>
+              <div class="event-overview-metrics"><span>{{ eventPlanCompletedCount }}/{{ eventPlanTaskCount }} {{ t('home.eventTasksDone') }}</span><span>{{ t('home.completedPlanCount', { count: completedEventPlanCount }) }}</span></div>
+              <div class="event-overview-progress"><span>{{ eventPlanProgress }}%</span><div class="event-overview-progress-track"><i :style="{ width: `${eventPlanProgress}%` }" /></div></div>
+              <div v-if="eventPlanPreview.length" class="event-plan-preview" :aria-label="t('home.eventPlans')">
+                <button v-for="plan in eventPlanPreview" :key="plan.id" type="button" class="event-plan-preview-row" @click.stop="openEventPlan(plan)">
+                  <div class="event-plan-preview-copy">
+                    <span class="event-plan-preview-name">{{ plan.name }}</span>
+                    <span class="event-plan-preview-count">{{ plan.completed_tasks }}/{{ plan.total_tasks }}</span>
+                  </div>
+                  <div class="event-plan-preview-track"><i :style="{ width: `${plan.progress_percentage}%` }" /></div>
+                </button>
+                <span v-if="eventPlanRemainingCount" class="event-plan-preview-more">{{ t('home.moreActivePlans', { count: eventPlanRemainingCount }) }}</span>
+              </div>
+              <span v-else class="event-overview-muted">{{ t('home.allPlansComplete') }}</span>
+              <span v-if="isEventPlanSnapshot" class="event-overview-snapshot">{{ eventPlanSnapshotLabel }}</span>
+            </template>
           </template>
           <span v-else-if="eventPlanState === 'loading'" class="event-overview-muted">{{ t('home.eventPlansLoading') }}</span>
           <div v-else class="event-overview-unavailable">
@@ -1339,6 +1349,7 @@ onUnmounted(() => {
 .event-overview-snapshot { margin-top: 7px; color: var(--color-warning, var(--color-text-tertiary)); font-size: 11px; }
 .event-overview-muted { margin-top: auto; padding-top: var(--spacing-xl); color: var(--color-text-tertiary); font-size: 13px; }
 .event-overview-unavailable { display: grid; align-content: start; gap: 12px; width: 100%; margin-top: auto; }
+.event-overview-card > .empty-state { margin-top: auto; }
 .event-overview-unavailable .event-overview-muted { margin-top: 0; padding-top: var(--spacing-xl); }
 .event-overview-retry { justify-self: start; border: 1px solid var(--color-border); border-radius: 9px; padding: 7px 10px; color: var(--color-primary); background: var(--color-primary-muted); cursor: pointer; font: inherit; font-size: 12px; }
 .event-overview-retry:hover { border-color: var(--color-border-hover); }
