@@ -339,6 +339,8 @@ def run_smoke(
             mobile_page.locator(".mobile-quick-capture").click(timeout=5000)
             mobile_fab_input = mobile_page.locator("#new-task-title")
             mobile_fab_input.wait_for(state="visible", timeout=5000)
+            if mobile_page.evaluate("document.activeElement?.id") != "new-task-title":
+                raise RuntimeError("mobile quick capture did not focus the TD title field")
             mobile_fab_input.fill("Smoke mobile FAB todo")
             mobile_page.locator("form.task-create button.task-add").click(timeout=5000)
             mobile_fab_item = mobile_page.locator("article.task-item").filter(has_text="Smoke mobile FAB todo")

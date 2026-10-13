@@ -29,6 +29,7 @@ def test_mobile_quick_capture_fab_opens_the_td_workspace():
     assert 'mobile_page.locator(".mobile-quick-capture").click(timeout=5000)' in SCRIPT
     assert 'mobile_fab_input = mobile_page.locator("#new-task-title")' in SCRIPT
     assert 'mobile_td_quick_capture_verified' in SCRIPT
+    assert 'document.activeElement?.id") != "new-task-title"' in SCRIPT
 
 
 def test_task_center_creation_exposes_bilingual_success_feedback():
