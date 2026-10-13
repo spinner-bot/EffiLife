@@ -25,6 +25,7 @@ class SmokeResult:
     theme_exit_confirmed: bool
     storage_write_failure_handled: bool
     archive_roundtrip: bool
+    mobile_navigation: bool
 
 
 def run_smoke(
@@ -56,6 +57,23 @@ def run_smoke(
             if page.locator("#app").count() != 1 or not page.locator("#app").inner_text().strip():
                 raise RuntimeError(f"route did not render an app shell: {route}")
             rendered_routes.append(route)
+
+        mobile_page = context.new_page()
+        mobile_page.set_viewport_size({"width": 390, "height": 844})
+        mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+        mobile_page.wait_for_timeout(1200)
+        mobile_startup_alert = mobile_page.locator('[role="alertdialog"]')
+        if mobile_startup_alert.count():
+            mobile_startup_alert.locator(".confirm-cancel").click(timeout=5000)
+        mobile_nav = mobile_page.locator(".mobile-bottom-nav")
+        mobile_nav.wait_for(state="visible", timeout=10000)
+        if mobile_page.locator(".desktop-nav-links").is_visible():
+            raise RuntimeError("desktop navigation remained visible at mobile viewport")
+        if mobile_page.locator(".mobile-bottom-nav-link").count() != 6:
+            raise RuntimeError("mobile navigation does not expose all six workspace entries")
+        if not mobile_page.locator(".mobile-quick-capture").is_visible():
+            raise RuntimeError("mobile quick capture is not visible above bottom navigation")
+        mobile_page.close()
 
         page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
         settings_items = page.locator("button.settings-item")
@@ -148,6 +166,7 @@ def run_smoke(
         theme_exit_confirmed=not inject_write_failure,
         storage_write_failure_handled=inject_write_failure,
         archive_roundtrip=archive_roundtrip,
+        mobile_navigation=True,
     )
 
 
