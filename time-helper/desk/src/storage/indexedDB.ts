@@ -170,60 +170,65 @@ export async function get<T>(storeName: string, key: string): Promise<T | null> 
 
 // 通用 SET 操作
 export async function set<T>(storeName: string, key: string, value: T): Promise<void> {
+  let db: IDBDatabase
   try {
-    const db = await openDB()
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const record: Record<string, unknown> = { key, value, updatedAt: Date.now() }
-      // Older stores use date/id as their keyPath while the generic API uses
-      // a logical key. Mirror that key into the active keyPath so one write
-      // works across all supported schema versions.
-      if (typeof store.keyPath === 'string' && !(store.keyPath in record)) {
-        record[store.keyPath] = key
-      }
-      const request = store.put(record)
-
-      request.onerror = () => reject(request.error)
-      // A successful request only means that the put was accepted by the
-      // transaction. The transaction can still be pending, so resolving here
-      // lets an immediate reload race the commit and read the previous value.
-      // Resolve after IndexedDB has durably committed the whole transaction.
-      transaction.oncomplete = () => {
-        localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
-        resolve()
-      }
-      transaction.onerror = () => reject(transaction.error)
-      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
-    })
+    db = await openDB()
   } catch (error) {
-    console.warn(`IndexedDB set failed for ${storeName}/${key}, falling back to localStorage:`, error)
-    // 降级到 localStorage
+    console.warn(`IndexedDB unavailable for ${storeName}/${key}, falling back to localStorage:`, error)
     localStorage.setItem(`${STORAGE_PREFIX}${storeName}_${key}`, JSON.stringify(value))
+    return
   }
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const record: Record<string, unknown> = { key, value, updatedAt: Date.now() }
+    // Older stores use date/id as their keyPath while the generic API uses
+    // a logical key. Mirror that key into the active keyPath so one write
+    // works across all supported schema versions.
+    if (typeof store.keyPath === 'string' && !(store.keyPath in record)) {
+      record[store.keyPath] = key
+    }
+    const request = store.put(record)
+
+    request.onerror = () => reject(request.error)
+    // A successful request only means that the put was accepted by the
+    // transaction. The transaction can still be pending, so resolving here
+    // lets an immediate reload race the commit and read the previous value.
+    // Resolve after IndexedDB has durably committed the whole transaction.
+    transaction.oncomplete = () => {
+      localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+      resolve()
+    }
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
+  })
 }
 
 // 通用 DELETE 操作
 export async function del(storeName: string, key: string): Promise<void> {
+  let db: IDBDatabase
   try {
-    const db = await openDB()
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const request = store.delete(key)
-
-      request.onerror = () => reject(request.error)
-      transaction.oncomplete = () => {
-        localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
-        resolve()
-      }
-      transaction.onerror = () => reject(transaction.error)
-      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
-    })
+    db = await openDB()
   } catch (error) {
-    console.warn(`IndexedDB delete failed for ${storeName}/${key}, falling back to localStorage:`, error)
+    console.warn(`IndexedDB unavailable for ${storeName}/${key}, falling back to localStorage:`, error)
+    localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+    return
   }
-  localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.delete(key)
+
+    request.onerror = () => reject(request.error)
+    transaction.oncomplete = () => {
+      localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${key}`)
+      resolve()
+    }
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
+  })
 }
 
 // 获取存储中的所有数据
@@ -313,42 +318,50 @@ export async function getRawAll<T>(storeName: string): Promise<T[]> {
 }
 
 export async function putRaw<T>(storeName: string, value: T): Promise<void> {
+  let db: IDBDatabase
   try {
-    const db = await openDB()
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const request = store.put(value)
-      request.onerror = () => reject(request.error)
-      // Request success only means the write was accepted by the transaction.
-      // Recovery/import callers may immediately read or write another store,
-      // so wait until the transaction has durably committed.
-      transaction.oncomplete = () => resolve()
-      transaction.onerror = () => reject(transaction.error)
-      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
-    })
+    db = await openDB()
   } catch (error) {
-    console.warn(`IndexedDB raw put failed for ${storeName}, falling back to localStorage:`, error)
+    console.warn(`IndexedDB unavailable for raw store ${storeName}, falling back to localStorage:`, error)
     const key = rawValueKey(value)
     localStorage.setItem(`${RAW_STORAGE_PREFIX}${storeName}_${key}`, JSON.stringify(value))
+    return
   }
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.put(value)
+    request.onerror = () => reject(request.error)
+    // Request success only means the write was accepted by the transaction.
+    // Recovery/import callers may immediately read or write another store,
+    // so wait until the transaction has durably committed.
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
+  })
 }
 
 export async function deleteRaw(storeName: string, key: IDBValidKey): Promise<void> {
+  let db: IDBDatabase
   try {
-    const db = await openDB()
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const request = store.delete(key)
-      request.onerror = () => reject(request.error)
-      transaction.oncomplete = () => resolve()
-      transaction.onerror = () => reject(transaction.error)
-      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
-    })
+    db = await openDB()
   } catch (error) {
-    console.warn(`IndexedDB raw delete failed for ${storeName}, falling back to localStorage:`, error)
+    console.warn(`IndexedDB unavailable for raw store ${storeName}, falling back to localStorage:`, error)
+    localStorage.removeItem(`${RAW_STORAGE_PREFIX}${storeName}_${String(key)}`)
+    localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${String(key)}`)
+    return
   }
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.delete(key)
+    request.onerror = () => reject(request.error)
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
+  })
   localStorage.removeItem(`${RAW_STORAGE_PREFIX}${storeName}_${String(key)}`)
   localStorage.removeItem(`${STORAGE_PREFIX}${storeName}_${String(key)}`)
 }
@@ -373,26 +386,28 @@ function removeFallbackEntries(storeName: string): void {
 
 // 清空存储
 export async function clear(storeName: string): Promise<void> {
+  let db: IDBDatabase
   try {
-    const db = await openDB()
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([storeName], 'readwrite')
-      const store = transaction.objectStore(storeName)
-      const request = store.clear()
-
-      request.onerror = () => reject(request.error)
-      transaction.oncomplete = () => {
-        removeFallbackEntries(storeName)
-        resolve()
-      }
-      transaction.onerror = () => reject(transaction.error)
-      transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
-    })
+    db = await openDB()
   } catch (error) {
-    console.warn(`IndexedDB clear failed for ${storeName}, falling back to localStorage:`, error)
-    // 降级到 localStorage
+    console.warn(`IndexedDB unavailable for ${storeName}, falling back to localStorage:`, error)
     removeFallbackEntries(storeName)
+    return
   }
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction([storeName], 'readwrite')
+    const store = transaction.objectStore(storeName)
+    const request = store.clear()
+
+    request.onerror = () => reject(request.error)
+    transaction.oncomplete = () => {
+      removeFallbackEntries(storeName)
+      resolve()
+    }
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error || new Error('IndexedDB transaction aborted'))
+  })
 }
 
 // 检查存储是否为空

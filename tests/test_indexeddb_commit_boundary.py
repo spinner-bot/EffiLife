@@ -33,7 +33,8 @@ def test_generic_delete_cleans_fallback_only_after_transaction_commit():
     assert "transaction.onerror" in block
     assert "transaction.onabort" in block
     assert "request.onsuccess" not in block
-    assert block.index("transaction.oncomplete") < block.index("localStorage.removeItem")
+    transaction_block = block[block.index("const transaction"):]
+    assert transaction_block.index("transaction.oncomplete") < transaction_block.index("localStorage.removeItem")
 
 
 def test_clear_waits_for_transaction_commit_before_removing_fallback_mirrors():
@@ -42,4 +43,29 @@ def test_clear_waits_for_transaction_commit_before_removing_fallback_mirrors():
     assert "transaction.oncomplete" in block
     assert "transaction.onerror" in block
     assert "transaction.onabort" in block
-    assert block.index("transaction.oncomplete") < block.index("removeFallbackEntries(storeName)")
+    transaction_block = block[block.index("const transaction"):]
+    assert transaction_block.index("transaction.oncomplete") < transaction_block.index("removeFallbackEntries(storeName)")
+
+
+def test_write_fallback_is_limited_to_database_open_failure():
+    source = STORAGE.read_text(encoding="utf-8")
+    for function_name in ("set", "del", "putRaw", "deleteRaw", "clear"):
+        block = source.split(f"export async function {function_name}", 1)[1]
+        block = block.split("export async function", 1)[0]
+        assert "db = await openDB()" in block
+        open_failure_boundary = block.index("db = await openDB()")
+        transaction_start = block.index("const transaction", open_failure_boundary)
+        fallback_text = block[open_failure_boundary:transaction_start]
+        assert "falling back to localStorage" in fallback_text
+        assert "catch" not in block[transaction_start:]
+
+
+def test_write_transaction_failures_are_not_reported_as_successful_fallback_writes():
+    source = STORAGE.read_text(encoding="utf-8")
+    for function_name in ("set", "del", "putRaw", "deleteRaw", "clear"):
+        block = source.split(f"export async function {function_name}", 1)[1]
+        block = block.split("export async function", 1)[0]
+        transaction_start = block.index("const transaction")
+        transaction_block = block[transaction_start:]
+        assert "transaction.onerror = () => reject" in transaction_block
+        assert "transaction.onabort = () => reject" in transaction_block

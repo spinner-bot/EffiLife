@@ -15,7 +15,7 @@ def test_raw_stores_have_a_local_storage_fallback_and_cleanup_path():
     source = STORAGE.read_text(encoding="utf-8")
     assert "const RAW_STORAGE_PREFIX = `${STORAGE_PREFIX}raw_`" in source
     assert "IndexedDB raw getAll failed" in source
-    assert "IndexedDB raw put failed" in source
+    assert "IndexedDB unavailable for raw store" in source
     assert "rawValueKey(value)" in source
     assert "removeFallbackEntries(storeName)" in source
     assert "RAW_STORAGE_PREFIX}${storeName}_" in source
