@@ -28,6 +28,7 @@ def run_step(name: str, command: list[str], *, cwd: Path = ROOT) -> dict[str, ob
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-tests", action="store_true", help="skip the full Python regression suite")
+    parser.add_argument("--skip-compatibility-build", action="store_true", help="skip the legacy to-dos compatibility UI build")
     parser.add_argument("--skip-build", action="store_true", help="skip the unified frontend production build")
     args = parser.parse_args()
 
@@ -36,11 +37,21 @@ def main() -> int:
         steps.append(run_step("Python regression", [sys.executable, "-m", "pytest", "-q"]))
     steps.append(run_step("Desktop release configuration", [sys.executable, "scripts/check_release_config.py"]))
     steps.append(run_step("Mobile release configuration", [sys.executable, "scripts/check_mobile_release_config.py"]))
+    if not args.skip_compatibility_build:
+        steps.append(run_step("Compatibility UI production build", [sys.executable, "scripts/build_todos_ui.py"]))
     if not args.skip_build:
         steps.append(run_step("Unified frontend production build", [sys.executable, "scripts/build_frontend.py"]))
 
     failed = [step for step in steps if step["returncode"] != 0]
-    summary = {"ok": not failed, "steps": steps, "skipped": {"tests": args.skip_tests, "build": args.skip_build}}
+    summary = {
+        "ok": not failed,
+        "steps": steps,
+        "skipped": {
+            "tests": args.skip_tests,
+            "compatibility_build": args.skip_compatibility_build,
+            "build": args.skip_build,
+        },
+    }
     print("\n" + json.dumps(summary, ensure_ascii=True, indent=2))
     return 1 if failed else 0
 

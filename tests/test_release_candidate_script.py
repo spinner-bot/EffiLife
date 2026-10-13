@@ -8,6 +8,7 @@ SCRIPT = (ROOT / "scripts" / "verify_release_candidate.py").read_text(encoding="
 def test_release_candidate_script_keeps_platform_and_build_gates_explicit():
     assert '"scripts/check_release_config.py"' in SCRIPT
     assert '"scripts/check_mobile_release_config.py"' in SCRIPT
+    assert '"scripts/build_todos_ui.py"' in SCRIPT
     assert '"scripts/build_frontend.py"' in SCRIPT
     assert '"-m", "pytest", "-q"' in SCRIPT
 

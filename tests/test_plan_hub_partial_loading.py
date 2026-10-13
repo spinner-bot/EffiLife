@@ -15,7 +15,7 @@ def test_plan_hub_keeps_active_plans_when_archive_listing_is_unavailable():
 def test_plan_hub_only_reports_unavailability_when_active_plan_listing_fails():
     load_block = VIEW.split("async function loadPlans()", 1)[1].split("async function refreshFromWorkspace", 1)[0]
     assert "activeResult.status === 'fulfilled'" in load_block
-    assert "errorMessage.value = activeResult.reason instanceof Error" in load_block
+    assert "errorMessage.value = getUserFacingError(activeResult.reason, t('plans.unavailable'))" in load_block
     assert "errorMessage.value = archiveResult.reason" not in load_block
 
 
