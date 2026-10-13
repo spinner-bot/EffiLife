@@ -62,6 +62,27 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
+const EMPTY_MIGRATION_METADATA_KEYS = new Set([
+  'effilife_db_migration_done',
+  'effilife_locale',
+  'effilife_download_path',
+  'effilife_workspace_event',
+  'effilife_plan_helper_reset_pending',
+  'effilife_todos_legacy_migrated_v1',
+])
+
+function isRestorableBackup(backup: BackupData): boolean {
+  if (backup.module !== 'pre_migration_full') return true
+  if (!isObjectRecord(backup.data)) return false
+  return Object.keys(backup.data).some((key) => (
+    key.startsWith('effilife_')
+    && !EMPTY_MIGRATION_METADATA_KEYS.has(key)
+    && !key.startsWith('effilife_backup_')
+    && !key.startsWith('effilife_emergency_backup_')
+    && !key.startsWith('effilife_guide_')
+  ))
+}
+
 // 防抖计时器
 const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -75,7 +96,7 @@ export function getBackups(moduleName: string): BackupData[] {
     if (key && key.startsWith(prefix)) {
       try {
         const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
-        if (backup) backups.push(backup)
+        if (backup && isRestorableBackup(backup)) backups.push(backup)
       } catch {
         // ignore corrupted backup
       }
@@ -314,7 +335,7 @@ export function getBackupModules(): string[] {
     if (key && key.startsWith(prefix)) {
       try {
         const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
-        if (backup && typeof backup.module === 'string' && backup.module) {
+        if (backup && isRestorableBackup(backup) && typeof backup.module === 'string' && backup.module) {
           modules.add(backup.module)
           continue
         }
@@ -341,7 +362,7 @@ export function getAllBackups(): BackupData[] {
     if (key && key.startsWith(STORAGE_PREFIX)) {
       try {
         const backup = parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))
-        if (backup) backups.push(backup)
+        if (backup && isRestorableBackup(backup)) backups.push(backup)
       } catch {
         // ignore corrupted backup
       }

@@ -31,6 +31,13 @@ def test_backup_readers_validate_record_shape_before_exposing_recovery_entries()
     assert SOURCE.count("parseBackupRecord(JSON.parse(localStorage.getItem(key) || '{}'))") == 3
 
 
+def test_backup_readers_hide_empty_historical_migration_checkpoints():
+    assert "function isRestorableBackup(backup: BackupData): boolean" in SOURCE
+    assert "backup.module !== 'pre_migration_full'" in SOURCE
+    assert "EMPTY_MIGRATION_METADATA_KEYS" in SOURCE
+    assert "backup && isRestorableBackup(backup)" in SOURCE
+
+
 def test_backup_module_discovery_does_not_expose_malformed_json_as_an_empty_module():
     assert "// A malformed record must not create an empty recovery module." in SOURCE
     assert "continue\n      }\n      const rest = key.slice(prefix.length)" in SOURCE
