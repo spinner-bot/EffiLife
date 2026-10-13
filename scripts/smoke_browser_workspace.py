@@ -50,6 +50,7 @@ class SmokeResult:
     mobile_startup_recovery_verified: bool
     archive_invalid_recovery_verified: bool
     global_search_flow_verified: bool
+    mobile_search_flow_verified: bool
 
 
 def run_smoke(
@@ -69,6 +70,7 @@ def run_smoke(
     startup_recovery_flow: bool = False,
     archive_invalid_flow: bool = False,
     global_search_flow: bool = False,
+    mobile_search_flow: bool = False,
 ) -> SmokeResult:
     try:
         from playwright.sync_api import sync_playwright
@@ -117,6 +119,7 @@ def run_smoke(
         mobile_startup_recovery_verified = False
         archive_invalid_recovery_verified = False
         global_search_flow_verified = False
+        mobile_search_flow_verified = False
 
         # HOTL/1 requires PH (whole plans) and TD (single quick todos) to be
         # independently discoverable, while the desktop home remains a
@@ -475,6 +478,27 @@ def run_smoke(
             raise RuntimeError("mobile quick capture is not visible above bottom navigation")
         if not mobile_page.locator(".home-time-action").is_visible():
             raise RuntimeError("mobile dashboard does not expose the TH quick record action")
+        if mobile_search_flow:
+            mobile_page.locator(".mobile-quick-capture").click(timeout=5000)
+            mobile_search_todo_input = mobile_page.locator("#new-task-title")
+            mobile_search_todo_input.wait_for(state="visible", timeout=5000)
+            mobile_search_todo_input.fill("Smoke mobile search todo")
+            mobile_page.locator("form.task-create button.task-add").click(timeout=5000)
+            mobile_page.locator(".toast-success").wait_for(state="visible", timeout=3000)
+            mobile_page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            mobile_page.wait_for_timeout(700)
+            mobile_page.locator("#global-search-trigger").click(timeout=5000)
+            mobile_search_input = mobile_page.locator("#global-search-input")
+            mobile_search_input.wait_for(state="visible", timeout=5000)
+            mobile_page.wait_for_function("document.activeElement?.id === 'global-search-input'", timeout=5000)
+            mobile_search_input.fill("Smoke mobile search todo")
+            mobile_search_result = mobile_page.locator(".search-result").filter(has_text="Smoke mobile search todo")
+            mobile_search_result.wait_for(state="visible", timeout=5000)
+            mobile_search_input.press("Enter")
+            mobile_page.wait_for_timeout(700)
+            if "/tasks" not in mobile_page.url or mobile_page.locator("#global-search-dialog").count() != 0:
+                raise RuntimeError("mobile global search result did not open the TD deep link")
+            mobile_search_flow_verified = True
         if td_task_flow:
             mobile_page.locator(".mobile-quick-capture").click(timeout=5000)
             mobile_fab_input = mobile_page.locator("#new-task-title")
@@ -731,6 +755,7 @@ def run_smoke(
         mobile_startup_recovery_verified=mobile_startup_recovery_verified,
         archive_invalid_recovery_verified=archive_invalid_recovery_verified,
         global_search_flow_verified=global_search_flow_verified,
+        mobile_search_flow_verified=mobile_search_flow_verified,
     )
 
 
@@ -803,6 +828,11 @@ def main() -> int:
         action="store_true",
         help="verify unified TD search and deep-link navigation from the workspace shell",
     )
+    parser.add_argument(
+        "--mobile-search-flow",
+        action="store_true",
+        help="verify unified TD search and deep-link navigation at the mobile viewport",
+    )
     args = parser.parse_args()
     try:
         result = run_smoke(
@@ -821,6 +851,7 @@ def main() -> int:
             startup_recovery_flow=args.startup_recovery_flow,
             archive_invalid_flow=args.archive_invalid_flow,
             global_search_flow=args.global_search_flow,
+            mobile_search_flow=args.mobile_search_flow,
         )
     except Exception as error:  # noqa: BLE001 - CLI should report a concise actionable failure
         print(json.dumps({"ok": False, "error": str(error)}, ensure_ascii=False))
