@@ -331,6 +331,13 @@ function enqueueLinkedPlanTodo<T>(key: string, operation: () => Promise<T>): Pro
   return current
 }
 
+function withLinkedPlanTodoLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== 'undefined' && 'locks' in navigator) {
+    return navigator.locks.request(`effilife:plan-todo:${key}`, { mode: 'exclusive' }, operation) as unknown as Promise<T>
+  }
+  return enqueueLinkedPlanTodo(key, operation)
+}
+
 async function mutateTodo(id: string, patchFactory: (current: UnifiedTodo) => Partial<UnifiedTodo>): Promise<UnifiedTodo> {
   return enqueueTodoWrite(id, async () => {
     const todos = await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)
@@ -509,7 +516,7 @@ export function getOrCreatePlanTaskTodo(
 ): Promise<UnifiedTodo> {
   const relatedPlanId = String(planId)
   const relatedTaskId = String(taskId)
-  return enqueueLinkedPlanTodo(`${relatedPlanId}:${relatedTaskId}`, async () => {
+  return withLinkedPlanTodoLock(`${relatedPlanId}:${relatedTaskId}`, async () => {
     const existing = (await getRawAll<UnifiedTodo>(STORE_NAMES.TODOS)).find((todo) => (
       todo.related_plan_id === relatedPlanId && todo.related_plan_task_id === relatedTaskId
     ))

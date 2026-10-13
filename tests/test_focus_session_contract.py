@@ -64,3 +64,10 @@ def test_focus_session_uses_broadcast_channel_with_storage_fallback():
     assert "window.addEventListener('storage', onStorage)" in service
     assert "focusChannel?.addEventListener('message', onBroadcast)" in service
     assert "localStorage remains the compatibility transport" in service
+
+
+def test_plan_task_bridge_uses_cross_window_web_lock_when_available():
+    service = (DESK / "services" / "todoService.ts").read_text(encoding="utf-8")
+    assert "navigator.locks.request" in service
+    assert "effilife:plan-todo:${key}" in service
+    assert "return enqueueLinkedPlanTodo(key, operation)" in service
