@@ -18,4 +18,4 @@ def test_legacy_record_modal_has_dialog_and_focus_contract():
     assert "closeRecordForm(true)" in VIEW
     assert 'class="pv-modal-close" :disabled="isSavingRecord"' in VIEW
     assert 'class="pv-secondary-btn" :disabled="isSavingRecord" @click="closeRecordForm()"' in VIEW
-    assert "recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus()" in VIEW
+    assert "recordModal.value?.querySelector<HTMLElement>('input:not([type=\"hidden\"]), select, textarea, button')?.focus()" in VIEW

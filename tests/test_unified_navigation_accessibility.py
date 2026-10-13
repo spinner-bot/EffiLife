@@ -31,8 +31,9 @@ def test_desktop_shell_provides_fast_workspace_switching_shortcuts():
 
 
 def test_desktop_navigation_discloses_workspace_shortcuts():
-    for shortcut in ("aria-keyshortcuts=\"Alt+1\"", "aria-keyshortcuts=\"Alt+2\"", "aria-keyshortcuts=\"Alt+3\"", "aria-keyshortcuts=\"Alt+4\"", "aria-keyshortcuts=\"Alt+5\""):
+    for shortcut in ("aria-keyshortcuts=\"Alt+1\"", "aria-keyshortcuts=\"Alt+2\"", "aria-keyshortcuts=\"Alt+4\"", "aria-keyshortcuts=\"Alt+5\""):
         assert shortcut in APP
+    assert 'aria-keyshortcuts="Alt+3 Control+Shift+T Meta+Shift+T"' in APP
     assert 'class="global-nav-shortcut" aria-hidden="true">Alt 1</kbd>' in APP
     assert 'class="global-nav-shortcut" aria-hidden="true">Alt 5</kbd>' in APP
     assert ".global-nav-shortcut { display: none; }" in APP
