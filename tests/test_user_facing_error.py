@@ -40,3 +40,7 @@ def test_archive_service_keeps_import_and_restore_messages_user_facing():
     assert "getUserFacingError(e, translate('settings.archive.localStorageUnavailable'))" in ARCHIVE
     assert "(e as Error).message" not in ARCHIVE
     assert "error instanceof Error ? error.message : String(error)" not in ARCHIVE
+
+def test_plan_loading_and_legacy_import_keep_errors_user_facing():
+    assert "getUserFacingError(activeResult.reason, t('plans.unavailable'))" in PLANS
+    assert "(error as Error).message" not in SETTINGS

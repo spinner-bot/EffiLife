@@ -691,7 +691,7 @@ async function onLegacyTodoSelected(event: Event) {
       window.location.reload()
     }
   } catch (error) {
-    notifyToast(t('settings.archive.legacyTodoImportFailed') + (error as Error).message, 'error')
+    notifyToast(t('settings.archive.legacyTodoImportFailed') + getUserFacingError(error, t('settings.archive.localStorageUnavailable')), 'error')
   } finally {
     archiveBusy.value = false
   }

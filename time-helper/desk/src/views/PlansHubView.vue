@@ -230,7 +230,7 @@ async function loadPlans() {
       plans.value = activeResult.value
     } else {
       plans.value = []
-      errorMessage.value = activeResult.reason instanceof Error ? activeResult.reason.message : t('plans.unavailable')
+      errorMessage.value = getUserFacingError(activeResult.reason, t('plans.unavailable'))
     }
     // Archive storage is an optional surface. Keep active plans visible when
     // archive discovery is temporarily unavailable; the archive panel already
