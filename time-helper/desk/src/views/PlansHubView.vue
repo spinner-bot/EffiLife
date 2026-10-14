@@ -114,6 +114,15 @@ const archivedPlanTarget = computed(() => {
 })
 const archivedTaskTargetId = computed(() => String(route.query.task || ''))
 
+function planListSortValue(plan: PlanSummary): { completed: number; date: number } {
+  const hasTasks = (plan.total_tasks || 0) > 0
+  const isCompleted = hasTasks && (plan.completed_tasks || 0) >= (plan.total_tasks || 0)
+  if (!plan.date || plan.date.length < 3) return { completed: isCompleted ? 1 : 0, date: Number.POSITIVE_INFINITY }
+  const [year, month, day] = plan.date
+  const date = new Date(year, month - 1, day).getTime()
+  return { completed: isCompleted ? 1 : 0, date: Number.isFinite(date) ? date : Number.POSITIVE_INFINITY }
+}
+
 const filteredPlans = computed(() => {
   const query = planSearch.value.trim().toLocaleLowerCase()
   return plans.value.filter((plan) => {
@@ -124,6 +133,10 @@ const filteredPlans = computed(() => {
       || (planFilter.value === 'active' && !isCompleted)
     const matchesQuery = !query || `${plan.name} ${plan.id} ${dateSearchText(plan.date)}`.toLocaleLowerCase().includes(query)
     return matchesFilter && matchesQuery
+  }).sort((a, b) => {
+    const aSort = planListSortValue(a)
+    const bSort = planListSortValue(b)
+    return aSort.completed - bSort.completed || aSort.date - bSort.date
   })
 })
 

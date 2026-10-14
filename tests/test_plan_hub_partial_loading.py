@@ -27,3 +27,11 @@ def test_plan_hub_preserves_detail_context_when_external_refresh_fails():
     assert "selectedPlan.value = null" not in refresh_block
     assert "t('plans.retryService')" in VIEW
     assert "v-if=\"detailRefreshUnavailable\"" in VIEW
+
+
+def test_plan_hub_orders_active_and_nearest_plans_before_completed_or_undated_plans():
+    assert "function planListSortValue(plan: PlanSummary)" in VIEW
+    sort_block = VIEW.split("function planListSortValue", 1)[1].split("const filteredArchives", 1)[0]
+    assert "completed: isCompleted ? 1 : 0" in sort_block
+    assert ".sort((a, b) =>" in sort_block
+    assert "aSort.completed - bSort.completed || aSort.date - bSort.date" in sort_block
