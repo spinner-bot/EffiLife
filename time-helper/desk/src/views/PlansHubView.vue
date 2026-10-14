@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronRight, Clock3, FolderPlus, Pencil, Play, Plus, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { useI18n } from '@/i18n'
@@ -92,6 +92,7 @@ const taskContent = ref('')
 const taskMinutes = ref(0)
 const groupSectionIndex = ref<number | null>(null)
 const editingGroupKey = ref<string | null>(null)
+const planEditorInitialDraft = ref('')
 const groupTitle = ref('')
 const groupDescription = ref('')
 const groupStart = ref(0)
@@ -617,6 +618,7 @@ async function savePlanMeta() {
     await updateEventPlan(planId, nextName, toDateTuple(planDate.value))
     selectedPlan.value = await getPlanFull(planId)
     editingMeta.value = false
+    planEditorInitialDraft.value = ''
     showPlanSaved()
   } catch (error) {
     errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
@@ -629,7 +631,31 @@ function startMetaEdit() {
   if (!selectedPlan.value) return
   planName.value = selectedPlan.value.name
   planDate.value = selectedPlan.value.date ? `${selectedPlan.value.date[0]}-${String(selectedPlan.value.date[1]).padStart(2, '0')}-${String(selectedPlan.value.date[2]).padStart(2, '0')}` : toDateInput(new Date())
+  planEditorInitialDraft.value = currentPlanEditorDraft()
   editingMeta.value = true
+}
+
+function currentPlanEditorDraft(): string {
+  return JSON.stringify({
+    name: planName.value,
+    date: planDate.value,
+    sectionName: sectionName.value,
+    sectionInfo: sectionInfo.value,
+    taskContent: taskContent.value,
+    taskMinutes: Number(taskMinutes.value) || 0,
+    groupTitle: groupTitle.value,
+    groupDescription: groupDescription.value,
+    groupStart: Number(groupStart.value) || 0,
+    groupEnd: Number(groupEnd.value) || 0,
+  })
+}
+
+function isPlanEditorDirty(): boolean {
+  if (sectionName.value.trim() || sectionInfo.value.trim() || taskContent.value.trim() || logContent.value.trim()) return true
+  if (editingMeta.value || editingSectionIndex.value !== null || editingTaskSectionIndex.value !== null || groupSectionIndex.value !== null) {
+    return planEditorInitialDraft.value !== currentPlanEditorDraft()
+  }
+  return false
 }
 
 async function saveSection() {
@@ -647,6 +673,7 @@ async function saveSection() {
     sectionName.value = ''
     sectionInfo.value = ''
     editingSectionIndex.value = null
+    planEditorInitialDraft.value = ''
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
@@ -660,12 +687,14 @@ function startSectionEdit(section: PlanFull['sections'][number]) {
   editingSectionIndex.value = section.index
   sectionName.value = section.name
   sectionInfo.value = section.info
+  planEditorInitialDraft.value = currentPlanEditorDraft()
 }
 
 function cancelSectionEdit() {
   editingSectionIndex.value = null
   sectionName.value = ''
   sectionInfo.value = ''
+  planEditorInitialDraft.value = ''
 }
 
 async function deleteSection(section: PlanFull['sections'][number]) {
@@ -710,6 +739,7 @@ async function saveTask() {
     taskSectionIndex.value = null
     editingTaskId.value = null
     editingTaskSectionIndex.value = null
+    planEditorInitialDraft.value = ''
     selectedPlan.value = await getPlanFull(planId)
     showPlanSaved()
   } catch (error) {
@@ -775,6 +805,7 @@ function startNewGroup(section: PlanFull['sections'][number]) {
   groupDescription.value = ''
   groupStart.value = taskIndexes[0] ?? 0
   groupEnd.value = taskIndexes[taskIndexes.length - 1] ?? 1
+  planEditorInitialDraft.value = currentPlanEditorDraft()
 }
 
 function startGroupEdit(section: PlanFull['sections'][number], group: ReturnType<typeof groupEntries>[number]) {
@@ -784,6 +815,7 @@ function startGroupEdit(section: PlanFull['sections'][number], group: ReturnType
   groupDescription.value = group.description
   groupStart.value = group.start
   groupEnd.value = group.end
+  planEditorInitialDraft.value = currentPlanEditorDraft()
 }
 
 function cancelGroupEdit() {
@@ -791,6 +823,7 @@ function cancelGroupEdit() {
   editingGroupKey.value = null
   groupTitle.value = ''
   groupDescription.value = ''
+  planEditorInitialDraft.value = ''
 }
 
 async function saveGroup() {
@@ -836,6 +869,16 @@ function startTaskEdit(sectionIndex: number, task: PlanFull['sections'][number][
   editingTaskSectionIndex.value = sectionIndex
   taskContent.value = task.content
   taskMinutes.value = task.time_minutes
+  planEditorInitialDraft.value = currentPlanEditorDraft()
+}
+
+function startTaskCreate(sectionIndex: number): void {
+  taskSectionIndex.value = sectionIndex
+  editingTaskId.value = null
+  editingTaskSectionIndex.value = sectionIndex
+  taskContent.value = ''
+  taskMinutes.value = 0
+  planEditorInitialDraft.value = currentPlanEditorDraft()
 }
 
 function cancelTaskEdit() {
@@ -844,6 +887,7 @@ function cancelTaskEdit() {
   editingTaskSectionIndex.value = null
   taskContent.value = ''
   taskMinutes.value = 0
+  planEditorInitialDraft.value = ''
 }
 
 async function completeTask(taskId: string) {
@@ -1137,6 +1181,12 @@ async function revealSearchTarget(): Promise<void> {
   window.setTimeout(() => { searchTargetTaskId.value = null }, 2200)
 }
 
+onBeforeRouteLeave(async () => {
+  if (isLoading.value) return false
+  if (!isPlanEditorDirty()) return true
+  return requestConfirm(t('plans.discardEditConfirm'), { tone: 'danger' })
+})
+
 onMounted(async () => {
   await loadPlans()
   await revealSearchTarget()
@@ -1336,7 +1386,7 @@ onUnmounted(() => {
         </form>
         <section v-if="selectedPlan.sections.length === 0" class="plans-empty theme-card">{{ t('plans.noSections') }}</section>
         <section v-for="section in selectedPlan.sections" :key="section.index" class="plan-section theme-card">
-          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || confirmationPending" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="taskSectionIndex = section.index"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !activePlanTasks(section).length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
+          <header><div><span class="section-letter">{{ section.letter }}</span><strong>{{ section.name }}</strong><small>{{ section.info }}</small></div><div v-if="canEditPlan" class="section-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="startSectionEdit(section)"><Pencil :size="15" /> {{ t('plans.editSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || confirmationPending" @click="deleteSection(section)"><Trash2 :size="15" /> {{ t('plans.deleteSection') }}</button><button type="button" class="plans-secondary" :disabled="isLoading" @click="startTaskCreate(section.index)"><Plus :size="15" /> {{ t('plans.addTask') }}</button><button type="button" class="plans-secondary" :disabled="isLoading || !activePlanTasks(section).length" @click="startNewGroup(section)"><Plus :size="15" /> {{ t('plans.addGroup') }}</button></div></header>
           <form v-if="canEditPlan && (taskSectionIndex === section.index || editingTaskSectionIndex === section.index)" class="task-editor" @submit.prevent="saveTask">
             <label>{{ t('plans.taskContent') }}<input v-model="taskContent" required autofocus /></label>
             <label class="task-minutes-field"><span>{{ t('plans.taskMinutes') }}</span><small>{{ t('plans.taskMinutesHint') }}</small><input v-model.number="taskMinutes" type="number" min="0" step="1" /></label>
