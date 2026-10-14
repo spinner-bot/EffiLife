@@ -97,6 +97,19 @@ def run_smoke(
     mobile_search_flow: bool = False,
     theme_matrix_flow: bool = False,
 ) -> SmokeResult:
+    fault_flows = [
+        name for enabled, name in (
+            (inject_write_failure, "--inject-write-failure"),
+            (startup_recovery_flow, "--startup-recovery-flow"),
+            (archive_invalid_flow, "--archive-invalid-flow"),
+            (archive_write_failure_flow, "--archive-write-failure-flow"),
+        ) if enabled
+    ]
+    if len(fault_flows) > 1:
+        raise ValueError(
+            "fault-injection browser smoke flows must run separately; "
+            f"received {', '.join(fault_flows)}"
+        )
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as error:  # pragma: no cover - exercised by the CLI environment
