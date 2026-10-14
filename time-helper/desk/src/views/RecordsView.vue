@@ -98,6 +98,7 @@ const isSaving = ref(false)
 const deletingRecord = ref(false)
 const recordModal = ref<HTMLElement | null>(null)
 const recordReturnFocus = ref<HTMLElement | null>(null)
+const recordInitialDraft = ref('')
 const historyDate = ref(getTodayDate())
 
 function openHistoryDate() {
@@ -140,6 +141,7 @@ function openAddForm() {
   recordReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   resetForm()
   formTag.value = availableTags.value[0] || ''
+  recordInitialDraft.value = currentRecordDraft()
   showForm.value = true
   void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
@@ -161,13 +163,34 @@ function openEditForm(index: number) {
   isEditing.value = true
   editingIndex.value = index
   editingRecordId.value = record.id || null
+  recordInitialDraft.value = currentRecordDraft()
   showForm.value = true
   void nextTick(() => recordModal.value?.querySelector<HTMLElement>('button, input, select, textarea')?.focus())
 }
 
-function closeForm(force = false) {
+function currentRecordDraft(): string {
+  return JSON.stringify({
+    mode: formMode.value,
+    start: formStart.value,
+    end: formEnd.value,
+    duration: formDuration.value,
+    durationRef: formDurationRef.value,
+    durationTime: formDurationTime.value,
+    content: formContent.value,
+    tag: formTag.value,
+    todoId: selectedTodoId.value,
+  })
+}
+
+function isRecordDraftDirty(): boolean {
+  return Boolean(recordInitialDraft.value && recordInitialDraft.value !== currentRecordDraft())
+}
+
+async function closeForm(force = false): Promise<void> {
   if (isSaving.value && !force) return
+  if (!force && isRecordDraftDirty() && !await requestConfirm(t('records.discardEditConfirm'), { tone: 'danger' })) return
   showForm.value = false
+  recordInitialDraft.value = ''
   const returnTarget = recordReturnFocus.value
   recordReturnFocus.value = null
   void nextTick(() => {
@@ -178,7 +201,7 @@ function closeForm(force = false) {
 function onRecordModalKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.preventDefault()
-    closeForm()
+    void closeForm()
     return
   }
   if (event.key !== 'Tab' || !recordModal.value) return
@@ -430,7 +453,7 @@ async function saveRecordInternal() {
   }
   notifyToast(todoLinkFailed ? t('records.todoLinkFailed') : t('records.saved'), todoLinkFailed ? 'error' : 'success')
 
-  closeForm(true)
+  await closeForm(true)
   resetForm()
 }
 
@@ -561,12 +584,12 @@ onUnmounted(() => {
     </div>
 
     <!-- 表单弹窗 -->
-    <div class="modal-overlay" v-if="showForm" @click.self="closeForm()">
+    <div class="modal-overlay" v-if="showForm" @click.self="void closeForm()">
       <div ref="recordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="record-modal-title" @keydown="onRecordModalKeydown">
         <form class="modal-form" @submit.prevent="saveRecord">
         <div class="modal-header">
           <h2 id="record-modal-title">{{ isEditing ? t('records.edit') : t('records.add') }}</h2>
-          <button type="button" class="close-btn" :aria-label="t('search.close')" :disabled="isSaving" @click="closeForm()">
+          <button type="button" class="close-btn" :aria-label="t('search.close')" :disabled="isSaving" @click="void closeForm()">
             <X :size="20" />
           </button>
         </div>
@@ -666,7 +689,7 @@ onUnmounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn secondary" :disabled="isSaving" @click="closeForm()">{{ t('records.cancel') }}</button>
+          <button type="button" class="btn secondary" :disabled="isSaving" @click="void closeForm()">{{ t('records.cancel') }}</button>
           <button type="submit" class="btn primary" :disabled="isSaving">
             <Check :size="16" />
             <span>{{ t('records.save') }}</span>
