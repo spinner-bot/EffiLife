@@ -63,6 +63,19 @@ const editingEstimatedTime = ref(60)
 const editingDeadline = ref('')
 const editingRecurrence = ref<TodoRecurrence>('none')
 const editingCategory = ref('default')
+type TodoEditDraft = {
+  title: string
+  description: string
+  tags: string
+  priorityRank: number
+  urgent: boolean
+  important: boolean
+  estimatedTime: number
+  deadline: string
+  recurrence: TodoRecurrence
+  category: string
+}
+const editingInitialDraft = ref<TodoEditDraft | null>(null)
 const isSaving = ref(false)
 const creatingTodo = ref(false)
 const completingTodoId = ref<string | null>(null)
@@ -526,10 +539,32 @@ function startEdit(todo: UnifiedTodo) {
   editingDeadline.value = todo.deadline ? todo.deadline.slice(0, 10) : ''
   editingRecurrence.value = todo.recurrence || 'none'
   editingCategory.value = todo.category || 'default'
+  editingInitialDraft.value = currentEditDraft()
   errorMessage.value = ''
 }
 
-function cancelEdit() {
+function currentEditDraft(): TodoEditDraft {
+  return {
+    title: editingTitle.value,
+    description: editingDescription.value,
+    tags: editingTagsInput.value,
+    priorityRank: Number(editingPriorityRank.value) || 0,
+    urgent: editingUrgent.value,
+    important: editingImportant.value,
+    estimatedTime: Number(editingEstimatedTime.value) || 60,
+    deadline: editingDeadline.value,
+    recurrence: editingRecurrence.value,
+    category: editingCategory.value,
+  }
+}
+
+function isEditDirty(): boolean {
+  const initial = editingInitialDraft.value
+  return Boolean(initial && JSON.stringify(initial) !== JSON.stringify(currentEditDraft()))
+}
+
+async function cancelEdit(force = false): Promise<void> {
+  if (!force && isEditDirty() && !await requestConfirm(t('tasks.discardEditConfirm'), { tone: 'danger' })) return
   editingId.value = null
   editingTitle.value = ''
   editingDescription.value = ''
@@ -541,6 +576,7 @@ function cancelEdit() {
   editingDeadline.value = ''
   editingRecurrence.value = 'none'
   editingCategory.value = 'default'
+  editingInitialDraft.value = null
   void flushDeferredTodoRefresh()
 }
 
@@ -563,7 +599,7 @@ async function saveEdit(todo: UnifiedTodo) {
     })
     const index = todos.value.findIndex((item) => item.id === todo.id)
     if (index >= 0) todos.value[index] = updated
-    cancelEdit()
+    await cancelEdit(true)
   } catch (error) {
     errorMessage.value = getUserFacingError(error, t('tasks.error.save'))
   } finally {
@@ -1243,7 +1279,7 @@ watch(() => route.query.compose, () => {
               <option v-for="(label, value) in recurrenceLabels" :key="value" :value="value">{{ label }}</option>
             </select>
             <div class="task-edit-actions">
-            <button type="button" class="task-edit-cancel" @click="cancelEdit">{{ t('tasks.cancel') }}</button>
+            <button type="button" class="task-edit-cancel" @click="void cancelEdit()">{{ t('tasks.cancel') }}</button>
             <button type="button" class="task-edit-save" :disabled="isSaving || !editingTitle.trim()" @click="saveEdit(todo)">{{ isSaving ? t('tasks.saving') : t('tasks.save') }}</button>
             </div>
           </div>
