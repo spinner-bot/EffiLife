@@ -10,6 +10,13 @@ from pathlib import Path
 
 
 SCHEMA = "effilife.release-manifest.v1"
+CANONICAL_RELEASE_TARGETS = frozenset({
+    "windows-nsis",
+    "linux-deb",
+    "linux-appimage",
+    "macos-dmg",
+    "android",
+})
 
 
 def sha256(path: Path) -> str:
@@ -39,6 +46,8 @@ def generate(
     bundle_extensions: tuple[str, ...] = (),
     prefix: str = "",
 ) -> dict:
+    if target not in CANONICAL_RELEASE_TARGETS:
+        raise ValueError(f"unsupported release target: {target}")
     if not directory.is_dir():
         raise FileNotFoundError(f"Release directory does not exist: {directory}")
     files = sorted(

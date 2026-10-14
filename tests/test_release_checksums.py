@@ -2,6 +2,8 @@ import hashlib
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "generate_checksums.py"
@@ -119,6 +121,22 @@ def test_release_manifest_contains_version_target_and_artifact_hashes(tmp_path):
     assert manifest["artifacts"][0]["bytes"] == artifact.stat().st_size
     assert manifest["artifacts"][0]["sha256"] == hashlib.sha256(b"installer").hexdigest()
     assert output.exists()
+
+
+def test_release_manifest_rejects_noncanonical_target_names(tmp_path):
+    import importlib.util
+
+    manifest_script = ROOT / "scripts" / "generate_release_manifest.py"
+    spec = importlib.util.spec_from_file_location("efflife_release_manifest_target_guard", manifest_script)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "EffiLife_1.7.0_x64-setup.exe").write_bytes(b"installer")
+
+    with pytest.raises(ValueError, match="unsupported release target: windows-x64-nsis"):
+        module.generate(bundle, tmp_path / "manifest.json", "1.7.0", "windows-x64-nsis")
 
 
 def test_release_manifest_can_limit_entries_to_uploaded_artifacts(tmp_path):
