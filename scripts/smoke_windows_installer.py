@@ -24,7 +24,6 @@ EXPECTED_FILES = (
 # a real pre-rebrand installer can be used as the previous upgrade endpoint.
 # The version capture remains mandatory; this does not weaken version checks.
 # Keep the historical brand explicit; this file is also used by upgrade smoke
-# tests against installers produced before the rebrand.
 INSTALLER_VERSION_PATTERN = re.compile(r"^(?:EffiLife|\u6d6a\u516e\u6548\u7387\u65f6\u949f)_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
 # Historical pre-rebrand builds used the repository's published desk label
 # instead of the Tauri NSIS suffix. Keep this as a second explicit convention.
