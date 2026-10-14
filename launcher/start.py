@@ -6,6 +6,8 @@ EffiLife 效率工具集 - 统一启动器
 import os
 import sys
 import json
+import ctypes
+from ctypes import wintypes
 import subprocess
 import webbrowser
 import shutil
@@ -277,6 +279,75 @@ def process_group_options():
     if os.environ.get("EFFILIFE_INHERIT_PROCESS_GROUP") == "1":
         return {}
     return {"start_new_session": True}
+
+
+def attach_windows_process_job(process):
+    """Attach a launcher child tree to a kill-on-close Windows Job Object.
+
+    npm.cmd can outlive its shim or detach the node process that actually owns
+    the listening port. A Job Object gives the launcher an ownership boundary
+    that remains valid even when the intermediate shim has already exited.
+    Failure to create or assign the job is deliberately non-fatal; the
+    existing taskkill/process-group fallback still handles ordinary children.
+    """
+    if not is_windows() or not getattr(process, "pid", None) or not getattr(process, "_handle", None):
+        return False
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        class JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
+                ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER),
+                ("LimitFlags", wintypes.DWORD),
+                ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t),
+                ("ActiveProcessLimit", wintypes.DWORD),
+                ("Affinity", ctypes.POINTER(ctypes.c_ulong)),
+                ("PriorityClass", wintypes.DWORD),
+                ("SchedulingClass", wintypes.DWORD),
+            ]
+
+        class IO_COUNTERS(ctypes.Structure):
+            _fields_ = [(name, ctypes.c_ulonglong) for name in (
+                "ReadOperationCount", "WriteOperationCount", "OtherOperationCount",
+                "ReadTransferCount", "WriteTransferCount", "OtherTransferCount",
+            )]
+
+        class JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", JOBOBJECT_BASIC_LIMIT_INFORMATION),
+                ("IoInfo", IO_COUNTERS),
+                ("ProcessMemoryLimit", ctypes.c_size_t),
+                ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, wintypes.INT, ctypes.c_void_p, wintypes.DWORD]
+        kernel32.SetInformationJobObject.restype = wintypes.BOOL
+        kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        job = kernel32.CreateJobObjectW(None, None)
+        if not job:
+            return False
+        info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+        # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        info.BasicLimitInformation.LimitFlags = 0x2000
+        if not kernel32.SetInformationJobObject(
+            job, 9, ctypes.byref(info), ctypes.sizeof(info)
+        ) or not kernel32.AssignProcessToJobObject(job, wintypes.HANDLE(process._handle)):
+            kernel32.CloseHandle(job)
+            return False
+        process._effilife_job_handle = job
+        process._effilife_job_close = kernel32.CloseHandle
+        return True
+    except (AttributeError, OSError, TypeError):
+        return False
 
 
 def dependencies_ready(cwd):
@@ -1185,6 +1256,7 @@ def run_module(choice, modules, open_browser=True):
             errors="replace",
             bufsize=1,
         )
+        attach_windows_process_job(process)
 
         output_thread = threading.Thread(target=stream_output, args=(process,), daemon=True)
         output_thread.start()
@@ -1291,6 +1363,20 @@ def terminate_process(process):
     # remains alive. Always target the launcher-owned process tree on Windows,
     # even when poll() already reports that the shim exited.
     if is_windows() and getattr(process, "pid", None):
+        # Closing a kill-on-close job also handles descendants whose npm/cmd
+        # shim has already exited and can no longer be targeted by /T.
+        job_handle = getattr(process, "_effilife_job_handle", None)
+        close_job = getattr(process, "_effilife_job_close", None)
+        if job_handle and close_job:
+            try:
+                close_job(job_handle)
+            except OSError:
+                pass
+            try:
+                del process._effilife_job_handle
+                del process._effilife_job_close
+            except AttributeError:
+                pass
         result = subprocess.run(
             ["taskkill", "/PID", str(process.pid), "/T", "/F"],
             stdout=subprocess.DEVNULL,
@@ -1357,6 +1443,7 @@ def start_companions(module, env):
                 errors="replace",
                 bufsize=1,
             )
+            attach_windows_process_job(process)
         except OSError as error:
             print(f"\n无法启动配套服务: {error}")
             for started in managed:
