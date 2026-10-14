@@ -14,7 +14,7 @@
     "release:check": "python ../../scripts/check_release_config.py",
     "release:mobile-check": "python ../../scripts/check_mobile_release_config.py",
     "mobile:android:init": "tauri android init",
-    "mobile:android:build": "tauri android build --config src-tauri/tauri.mobile.conf.json",
+    "mobile:android:build": "tauri android build",
     "mobile:android:build:managed": "powershell -NoProfile -ExecutionPolicy Bypass -File ../../scripts/build_android_managed.ps1",
     "mobile:ios:init": "tauri ios init",
     "mobile:ios:build": "tauri ios build --config src-tauri/tauri.mobile.conf.json",

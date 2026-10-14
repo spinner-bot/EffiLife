@@ -4,7 +4,8 @@
   "version": "1.7.0",
   "identifier": "com.langxi.efflife",
   "build": {
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
   },
   "bundle": {
     "externalBin": []

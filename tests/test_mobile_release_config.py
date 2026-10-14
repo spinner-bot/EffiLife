@@ -30,7 +30,7 @@ def test_mobile_release_config_rejects_sidecar_regression(tmp_path):
     (tmp_path / "time-helper" / "VERSION").write_text(
         (ROOT / "time-helper" / "VERSION").read_text(encoding="utf-8"), encoding="utf-8"
     )
-    for name in ("tauri.conf.json", "tauri.mobile.conf.json"):
+    for name in ("tauri.conf.json", "tauri.mobile.conf.json", "tauri.android.conf.json"):
         (destination / name).write_text((source / name).read_text(encoding="utf-8"), encoding="utf-8")
     mobile_path = destination / "tauri.mobile.conf.json"
     mobile = json.loads(mobile_path.read_text(encoding="utf-8"))

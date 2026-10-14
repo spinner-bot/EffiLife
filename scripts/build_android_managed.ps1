@@ -5,7 +5,8 @@ param(
     [string]$NdkVersion = '25.2.9519653',
     [string]$NodeDir = $(if ($env:EFFILIFE_NODE_DIR) { $env:EFFILIFE_NODE_DIR } else { 'F:\dev-tools\node' }),
     [string]$RustToolchainDir = $(if ($env:EFFILIFE_RUST_TOOLCHAIN_DIR) { $env:EFFILIFE_RUST_TOOLCHAIN_DIR } else { 'F:\dev-tools\rustup\toolchains\stable-x86_64-pc-windows-msvc\bin' }),
-    [string]$GradleHome = $(if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { 'F:\dev-tools\gradle-home' })
+    [string]$GradleHome = $(if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { 'F:\dev-tools\gradle-home' }),
+    [string]$CargoTargetDir = $(if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { 'F:\android-target\EffiLife' })
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,6 +36,7 @@ $env:ANDROID_HOME = $AndroidSdk
 $env:ANDROID_SDK_ROOT = $AndroidSdk
 $env:NDK_HOME = $ndkRoot
 $env:GRADLE_USER_HOME = $GradleHome
+$env:CARGO_TARGET_DIR = $CargoTargetDir
 $env:PATH = "$NodeDir;$RustToolchainDir;$(Join-Path $AndroidSdk 'platform-tools');$env:PATH"
 
 if ($Action -eq 'check') {
@@ -46,7 +48,7 @@ if ($Action -eq 'check') {
     exit 0
 }
 
-$library = Join-Path $tauriRoot 'target\aarch64-linux-android\release\libefflife_desk_lib.so'
+$library = Join-Path $CargoTargetDir 'aarch64-linux-android\release\libefflife_desk_lib.so'
 $buildStart = Get-Date
 Push-Location $deskRoot
 try {

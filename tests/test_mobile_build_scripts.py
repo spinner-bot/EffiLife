@@ -13,9 +13,13 @@ def test_mobile_build_scripts_have_explicit_init_and_configured_build_commands()
 
     assert scripts["mobile:android:init"] == "tauri android init"
     assert scripts["mobile:ios:init"] == "tauri ios init"
-    for target in ("android", "ios"):
-        assert scripts[f"mobile:{target}:build"].startswith(f"tauri {target} build")
-        assert "--config src-tauri/tauri.mobile.conf.json" in scripts[f"mobile:{target}:build"]
+    assert scripts["mobile:android:build"] == "tauri android build"
+    assert scripts["mobile:ios:build"].startswith("tauri ios build")
+    assert "--config src-tauri/tauri.mobile.conf.json" in scripts["mobile:ios:build"]
+    android = json.loads((ROOT / "time-helper/desk/src-tauri/tauri.android.conf.json").read_text(encoding="utf-8"))
+    assert android["build"]["beforeBuildCommand"] == "npm run build"
+    assert android["build"]["frontendDist"] == "../dist"
+    assert android["bundle"]["externalBin"] == []
 
 
 def test_mobile_build_scripts_remain_separate_from_desktop_sidecar_build():
@@ -32,6 +36,8 @@ def test_windows_managed_android_build_preserves_symlink_fallback_contract():
 
     assert "Tauri Android build stopped at the Windows symlink step" in script
     assert "Get-Item -LiteralPath $library" in script
+    assert "$env:CARGO_TARGET_DIR = $CargoTargetDir" in script
+    assert "F:\\android-target\\EffiLife" in script
     assert "LastWriteTime -lt $buildStart" in script
     assert "Copy-Item -LiteralPath $library -Destination $jniLibrary -Force" in script
     assert "app:assembleArm64Release -x rustBuildArm64Release" in script
