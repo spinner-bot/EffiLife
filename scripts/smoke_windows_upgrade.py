@@ -105,7 +105,7 @@ def run_upgrade(
     previous_match = INSTALLER_VERSION_PATTERN.match(previous.name)
     if previous_match is None:
         raise ValueError(
-            "Previous installer filename does not match EffiLife NSIS convention: "
+            "Previous installer filename does not match a supported EffiLife NSIS convention: "
             f"{previous.name}"
         )
     previous_version = previous_match.group("version")

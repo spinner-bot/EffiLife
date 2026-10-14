@@ -20,7 +20,10 @@ EXPECTED_FILES = (
     "efflife-plan-helper.exe",
     "uninstall.exe",
 )
-INSTALLER_VERSION_PATTERN = re.compile(r"^EffiLife_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
+# Accept the current product name and the historical Chinese product name so
+# a real pre-rebrand installer can be used as the previous upgrade endpoint.
+# The version capture remains mandatory; this does not weaken version checks.
+INSTALLER_VERSION_PATTERN = re.compile(r"^(?:EffiLife|浪兮效率时钟)_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -62,7 +65,7 @@ def run_smoke(installer: Path, target: Path, timeout: float, version_file: Path 
         raise FileNotFoundError(f"Installer not found: {installer}")
     artifact_match = INSTALLER_VERSION_PATTERN.match(installer.name)
     if artifact_match is None:
-        raise ValueError(f"Installer filename does not match EffiLife NSIS convention: {installer.name}")
+        raise ValueError(f"Installer filename does not match a supported EffiLife NSIS convention: {installer.name}")
     artifact_version = artifact_match.group("version")
     if version_file is not None:
         expected_version = version_file.expanduser().resolve().read_text(encoding="utf-8").strip()
