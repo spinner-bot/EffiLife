@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, ChevronDown, ChevronUp, ListTodo, Pencil, Pin, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { AudioManager } from '@/audio'
 import { DataService, parseStoredDate } from '@/services/dataService'
@@ -581,6 +581,12 @@ async function cancelEdit(force = false): Promise<void> {
   editingInitialDraft.value = null
   void flushDeferredTodoRefresh()
 }
+
+onBeforeRouteLeave(async () => {
+  if (isSaving.value) return false
+  if (!editingId.value || !isEditDirty()) return true
+  return confirmTaskAction(t('tasks.discardEditConfirm'), 'danger')
+})
 
 async function saveEdit(todo: UnifiedTodo) {
   if (!editingTitle.value.trim() || isSaving.value) return

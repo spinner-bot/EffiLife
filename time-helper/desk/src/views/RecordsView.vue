@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { hoursToHm, isTimeOverlap, getTodayDate } from '@/services/dataService'
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from 'lucide-vue-next'
@@ -197,6 +197,12 @@ async function closeForm(force = false): Promise<void> {
     if (returnTarget?.isConnected) returnTarget.focus()
   })
 }
+
+onBeforeRouteLeave(async () => {
+  if (isSaving.value) return false
+  if (!showForm.value || !isRecordDraftDirty()) return true
+  return requestConfirm(t('records.discardEditConfirm'), { tone: 'danger' })
+})
 
 function onRecordModalKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {

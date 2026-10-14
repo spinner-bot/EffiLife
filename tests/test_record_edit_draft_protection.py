@@ -7,6 +7,7 @@ I18N = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(e
 
 
 def test_time_record_form_protects_unsaved_changes():
+    assert "import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'" in VIEW
     assert "const recordInitialDraft = ref('')" in VIEW
     assert "function currentRecordDraft(): string" in VIEW
     assert "function isRecordDraftDirty(): boolean" in VIEW
@@ -15,6 +16,7 @@ def test_time_record_form_protects_unsaved_changes():
     assert '@click.self="void closeForm()"' in VIEW
     assert '@click="void closeForm()"' in VIEW
     assert "await closeForm(true)" in VIEW
+    assert "onBeforeRouteLeave(async () =>" in VIEW
 
 
 def test_time_record_discard_confirmation_is_localized():
