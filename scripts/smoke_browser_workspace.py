@@ -17,6 +17,23 @@ from dataclasses import dataclass
 ROUTES = ("/time", "/plans", "/tasks", "/records", "/settings")
 
 
+def click_settings_entry(page, *label_fragments: str) -> None:
+    """Open a settings entry by its visible label, not by menu position.
+
+    Settings entries are intentionally allowed to grow as the product gains
+    capabilities. A positional selector makes the browser evidence silently
+    target the wrong screen after a harmless menu reorder.
+    """
+    entries = page.locator("button.settings-item")
+    wanted = tuple(fragment.casefold() for fragment in label_fragments)
+    for index in range(entries.count()):
+        label = entries.nth(index).inner_text().casefold()
+        if any(fragment in label for fragment in wanted):
+            entries.nth(index).click(timeout=5000)
+            return
+    raise RuntimeError(f"settings entry not found: {label_fragments!r}")
+
+
 @dataclass
 class SmokeResult:
     routes: list[str]
@@ -718,7 +735,7 @@ def run_smoke(
         locale_persistence_verified = True
         page.locator(".locale-switcher select").select_option(original_locale)
         page.wait_for_timeout(150)
-        settings_items.nth(1).click(timeout=5000)
+        click_settings_entry(page, "主题", "theme")
         page.wait_for_timeout(300)
 
         cards = page.locator("button.theme-card")
@@ -790,7 +807,7 @@ def run_smoke(
             # selection is the same one that was confirmed. This catches the
             # historical bug where the preview changed but reload restored
             # the previous theme.
-            page.locator("button.settings-item").nth(1).click(timeout=5000)
+            click_settings_entry(page, "主题", "theme")
             page.wait_for_timeout(300)
             persisted_active = page.locator('button.theme-card[aria-pressed="true"]')
             if persisted_active.count() != 1 or cards.nth(0 if active_index != 0 else 1).get_attribute("aria-pressed") != "true":
@@ -805,7 +822,7 @@ def run_smoke(
             # introducing synthetic archive data into the user's workspace.
             page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
             page.wait_for_timeout(500)
-            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            click_settings_entry(page, "存档", "archive")
             page.locator(".archive-actions button").first.wait_for(state="visible", timeout=10000)
             with page.expect_download(timeout=15000) as download_info:
                 page.locator(".archive-actions button").nth(0).click(timeout=5000)
@@ -832,7 +849,7 @@ def run_smoke(
             # archive actions are enabled again for a subsequent attempt.
             page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
             page.wait_for_timeout(500)
-            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            click_settings_entry(page, "存档", "archive")
             page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
             page.locator('input[type="file"]').first.set_input_files({
                 "name": "invalid.efl",
@@ -848,7 +865,7 @@ def run_smoke(
         if archive_write_failure_flow:
             page.goto(f"{base_url.rstrip('/')}/settings", wait_until="domcontentloaded", timeout=15000)
             page.wait_for_timeout(500)
-            page.locator("button.settings-item").nth(5).click(timeout=5000)
+            click_settings_entry(page, "存档", "archive")
             page.locator(".archive-actions").wait_for(state="visible", timeout=10000)
             with page.expect_download(timeout=15000) as download_info:
                 page.locator(".archive-actions button").first.click(timeout=5000)

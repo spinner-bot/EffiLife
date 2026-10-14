@@ -17,3 +17,10 @@ def test_ph_browser_smoke_requires_creation_success_feedback():
         'page.wait_for_timeout(1000)', 1
     )[0]
     assert 'page.locator(".toast-success").wait_for(state="visible", timeout=3000)' in create_block
+
+
+def test_browser_smoke_opens_settings_by_visible_label():
+    assert 'def click_settings_entry(page, *label_fragments: str)' in SMOKE
+    assert 'click_settings_entry(page, "主题", "theme")' in SMOKE
+    assert 'click_settings_entry(page, "存档", "archive")' in SMOKE
+    assert 'settings_items.nth(5).click' not in SMOKE
