@@ -13,4 +13,4 @@ def test_plan_workspace_announces_errors_and_successful_saves():
 
 
 def test_todo_workspace_announces_errors_to_assistive_technology():
-    assert '<span v-if="errorMessage" class="task-error" role="alert">' in TASKS
+    assert '<div v-if="errorMessage" class="task-error-row" role="alert">' in TASKS

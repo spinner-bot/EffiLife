@@ -51,6 +51,7 @@ const taskSearch = ref('')
 const isLoading = ref(true)
 const dataUnavailable = ref(false)
 const errorMessage = ref('')
+const todoPlanSyncRetryItem = ref<UnifiedTodo | null>(null)
 const editingId = ref<string | null>(null)
 const editingTitle = ref('')
 const editingDescription = ref('')
@@ -481,7 +482,31 @@ async function completeTodo(todo: UnifiedTodo) {
     if (index >= 0) todos.value[index] = updated
     notifyToast(t('tasks.completedOne'), 'success')
   } catch (error) {
-    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : getUserFacingError(error, t('tasks.error.update'))
+    if (error instanceof PlanTodoSyncError) {
+      todoPlanSyncRetryItem.value = todo
+      errorMessage.value = t('home.todoPlanSyncFailed')
+    } else {
+      errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
+    }
+  } finally {
+    completingTodoId.value = null
+  }
+}
+
+async function retryTodoPlanSync(): Promise<void> {
+  const todo = todoPlanSyncRetryItem.value
+  if (!todo || completingTodoId.value) return
+  completingTodoId.value = todo.id
+  try {
+    // The PH task was completed before the TD write failed; only retry the
+    // pending TD projection here.
+    const updated = await TodoService.complete(todo.id)
+    replaceTodo(updated)
+    todoPlanSyncRetryItem.value = null
+    errorMessage.value = ''
+    notifyToast(t('plans.todoSyncRecovered'), 'success')
+  } catch (error) {
+    errorMessage.value = getUserFacingError(error, t('plans.todoSyncFailed'))
   } finally {
     completingTodoId.value = null
   }
@@ -584,16 +609,23 @@ async function bulkCompleteTodos() {
   if (bulkWorking.value || selectedTodoCount.value === 0) return
   bulkWorking.value = true
   let completed = 0
+  let failedTodo: UnifiedTodo | null = null
   try {
     for (const todo of todos.value.filter((item) => selectedTodoIds.value.has(item.id))) {
       if (todo.status === 'completed') continue
+      failedTodo = todo
       replaceTodo(await completeTodoWithPlan(todo))
       completed += 1
     }
     notifyToast(t('tasks.bulkCompleted', { count: completed }), 'success')
     clearTodoSelection()
   } catch (error) {
-    errorMessage.value = error instanceof PlanTodoSyncError ? t('plans.todoSyncFailed') : getUserFacingError(error, t('tasks.error.update'))
+    if (error instanceof PlanTodoSyncError) {
+      todoPlanSyncRetryItem.value = failedTodo
+      errorMessage.value = t('home.todoPlanSyncFailed')
+    } else {
+      errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
+    }
   } finally {
     bulkWorking.value = false
   }
@@ -1051,7 +1083,12 @@ watch(() => route.query.compose, () => {
           <button type="button" class="danger" :disabled="bulkWorking || confirmationPending" @click="bulkDeleteTodos"><Trash2 :size="14" /> {{ t('tasks.bulkDelete') }}</button>
           <button type="button" class="task-bulk-clear" :disabled="bulkWorking || confirmationPending" @click="clearTodoSelection">{{ t('tasks.clearSelection') }}</button>
         </div>
-        <span v-if="errorMessage" class="task-error" role="alert">{{ errorMessage }}</span>
+        <div v-if="errorMessage" class="task-error-row" role="alert">
+          <span class="task-error">{{ errorMessage }}</span>
+          <button v-if="todoPlanSyncRetryItem" type="button" class="task-retry" :disabled="completingTodoId !== null || bulkWorking" @click="retryTodoPlanSync">
+            {{ completingTodoId ? t('tasks.saving') : t('plans.retryTodoSync') }}
+          </button>
+        </div>
         <span v-if="missingTodoTargetId" class="task-deeplink-note" role="status" aria-live="polite">
           {{ t('tasks.todoTargetMissing', { id: missingTodoTargetId }) }}
         </span>
@@ -1327,7 +1364,9 @@ watch(() => route.query.compose, () => {
 .task-bulk-actions button.danger { border-color: var(--color-error); background: var(--color-error); }
 .task-bulk-actions button.task-bulk-clear { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-bg-secondary); }
 .task-bulk-actions button:disabled { cursor: not-allowed; opacity: .55; }
-.task-error { flex-basis: 100%; color: var(--color-error); font-size: 13px; }
+.task-error-row { display: flex; flex-basis: 100%; align-items: center; gap: 10px; color: var(--color-error); font-size: 13px; }
+.task-error { flex: 1 1 auto; }
+.task-error-row .task-retry { flex: 0 0 auto; }
 .task-deeplink-note { flex-basis: 100%; border-left: 3px solid var(--color-primary); padding: 6px 9px; color: var(--color-text-secondary); background: var(--color-primary-muted); font-size: 12px; }
 .task-plan-status { color: var(--color-text-tertiary); font-size: 12px; }
 .task-category-nav { display: grid; gap: 10px; margin-bottom: 18px; border: 1px solid var(--color-border); border-radius: 14px; padding: 13px 14px; }
