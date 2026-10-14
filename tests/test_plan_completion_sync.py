@@ -43,6 +43,14 @@ def test_td_projection_failure_has_a_distinct_recoverable_error_path():
     assert "error instanceof PlanTodoSyncError" in (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 
 
+def test_ph_projection_failure_exposes_a_retry_action():
+    assert "const todoSyncRetryTaskId = ref<string | null>(null)" in PLANS
+    assert "todoSyncRetryTaskId.value = taskId" in PLANS
+    assert "async function retryTodoSync(taskId: string)" in PLANS
+    assert '@click="retryTodoSync(task.internal_id)"' in PLANS
+    assert "plans.todoSyncRecovered" in PLANS
+
+
 def test_single_todo_completion_has_success_feedback():
     tasks = (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
     catalog = (DESK / "i18n" / "index.ts").read_text(encoding="utf-8")

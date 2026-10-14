@@ -101,6 +101,7 @@ const linkedTodoTaskIds = ref<Set<string>>(new Set())
 const linkedTodoMinutesByTask = ref<Map<string, number>>(new Map())
 const recordingTodoTaskId = ref<string | null>(null)
 const linkingTodoTaskId = ref<string | null>(null)
+const todoSyncRetryTaskId = ref<string | null>(null)
 const confirmationPending = ref(false)
 
 const archivedPlanTarget = computed(() => {
@@ -808,6 +809,7 @@ async function completeTask(taskId: string) {
   if (isLoading.value) return
   if (!selectedPlan.value) return
   const planId = selectedPlan.value.id
+  todoSyncRetryTaskId.value = null
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -816,6 +818,7 @@ async function completeTask(taskId: string) {
       await completeLinkedPlanTodo(planId, taskId)
     } catch (syncError) {
       console.warn('Failed to complete linked todo:', syncError)
+      todoSyncRetryTaskId.value = taskId
       notifyToast(t('plans.todoSyncFailed'), 'error')
     }
     selectedPlan.value = await getPlanFull(planId)
@@ -823,6 +826,22 @@ async function completeTask(taskId: string) {
     showPlanSaved()
   } catch (error) {
     errorMessage.value = getUserFacingError(error, t('plans.unavailable'))
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function retryTodoSync(taskId: string) {
+  if (isLoading.value || !selectedPlan.value || todoSyncRetryTaskId.value !== taskId) return
+  isLoading.value = true
+  try {
+    await completeLinkedPlanTodo(selectedPlan.value.id, taskId)
+    todoSyncRetryTaskId.value = null
+    await refreshLinkedTodoTaskIds()
+    notifyToast(t('plans.todoSyncRecovered'), 'success')
+  } catch (error) {
+    console.warn('Retrying linked todo failed:', error)
+    notifyToast(t('plans.todoSyncFailed'), 'error')
   } finally {
     isLoading.value = false
   }
@@ -1299,6 +1318,7 @@ onUnmounted(() => {
               <button v-if="!task.finish" type="button" class="task-log task-focus-action" :disabled="isLoading || linkingTodoTaskId === task.internal_id" :aria-label="t('plans.startFocus')" @click="startTaskFocus(task)"><Play :size="13" /> {{ t('plans.startFocus') }}</button>
               <button type="button" class="task-log" :disabled="isLoading" :aria-label="t('plans.recordTaskLabel', { id: task.display_id, content: task.content })" @click="startLog(task.internal_id)">{{ t('plans.record') }}</button>
               <button v-if="linkedTodoTaskIds.has(task.internal_id)" type="button" class="task-log task-record-time" :disabled="isLoading || recordingTodoTaskId === task.internal_id" :aria-label="t('plans.recordTodoTime')" @click="recordLinkedTodoTime(task.internal_id)"><Clock3 :size="13" /> {{ t('plans.recordTodoTime') }}</button>
+              <button v-if="task.finish && todoSyncRetryTaskId === task.internal_id" type="button" class="task-log task-sync-retry" :disabled="isLoading" :aria-label="t('plans.retryTodoSync')" @click="retryTodoSync(task.internal_id)">{{ isLoading ? t('plans.loading') : t('plans.retryTodoSync') }}</button>
               <button type="button" class="task-edit" :disabled="isLoading" :aria-label="t('plans.editTaskLabel', { id: task.display_id, content: task.content })" @click="startTaskEdit(section.index, task)"><Pencil :size="15" /></button>
               <button type="button" class="task-delete" :disabled="isLoading || confirmationPending" :aria-label="t('plans.deleteTaskLabel', { id: task.display_id, content: task.content })" @click="deleteTask(task.internal_id)"><Trash2 :size="15" /></button>
             </div>
