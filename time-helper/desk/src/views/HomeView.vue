@@ -45,6 +45,7 @@ const lastWorkspaceRefreshAt = ref<number | null>(null)
 const quickTodoTitle = ref('')
 const quickTodoSaving = ref(false)
 const completingTodoId = ref<string | null>(null)
+const todoPlanSyncRetryItem = ref<UnifiedTodo | null>(null)
 const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 type FocusPlanTask = { planId: string; planName: string; task: PlanTaskSummary }
@@ -159,11 +160,31 @@ async function completeHomeTodo(todo: UnifiedTodo) {
     notifyToast(t('tasks.completedOne'), 'success')
   } catch (error) {
     if (error instanceof PlanTodoSyncError) {
+      todoPlanSyncRetryItem.value = todo
       await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
-      notifyToast(t('plans.todoSyncFailed'), 'error')
+      notifyToast(t('home.todoPlanSyncFailed'), 'error')
     } else {
     notifyToast(getUserFacingError(error, t('tasks.error.update')), 'error')
     }
+  } finally {
+    completingTodoId.value = null
+  }
+}
+
+async function retryHomeTodoPlanSync(): Promise<void> {
+  const todo = todoPlanSyncRetryItem.value
+  if (!todo || completingTodoId.value) return
+  completingTodoId.value = todo.id
+  try {
+    // PH was already completed before the TD write failed. Retry only the
+    // pending TD projection so the plan task is not redundantly re-targeted.
+    await TodoService.complete(todo.id)
+    todoPlanSyncRetryItem.value = null
+    await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
+    notifyToast(t('plans.todoSyncRecovered'), 'success')
+  } catch (error) {
+    console.warn('Retrying home todo plan sync failed:', error)
+    notifyToast(t('plans.todoSyncFailed'), 'error')
   } finally {
     completingTodoId.value = null
   }
@@ -904,7 +925,13 @@ onUnmounted(() => {
             {{ t('home.moreTodos', { count: activeTodoCount - todayTodos.length }) }}
           </p>
         </div>
-        <EmptyState v-else :icon="ListTodo" :title="t('home.noTodos')" :description="t('home.createTodoHint')" :action-text="t('home.openTodoCenter')" action-route="/tasks" />
+        <div v-if="todoPlanSyncRetryItem" class="today-todo-sync-retry" role="status" aria-live="polite">
+          <span>{{ t('home.todoPlanSyncFailed') }} · {{ todoPlanSyncRetryItem.title }}</span>
+          <button type="button" :disabled="completingTodoId !== null" @click="retryHomeTodoPlanSync">
+            {{ completingTodoId ? t('tasks.saving') : t('plans.retryTodoSync') }}
+          </button>
+        </div>
+        <EmptyState v-if="!todayTodos.length && !todoPlanSyncRetryItem" :icon="ListTodo" :title="t('home.noTodos')" :description="t('home.createTodoHint')" :action-text="t('home.openTodoCenter')" action-route="/tasks" />
       </section>
 
       <nav class="home-quick-actions" :aria-label="t('home.quickActions')">
@@ -1488,6 +1515,10 @@ onUnmounted(() => {
 .today-todos-unavailable button:hover, .today-todos-unavailable button:focus-visible { border-color: var(--color-primary); outline: 0; }
 .today-todo-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-bg); text-align: left; transition: border-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-row:hover { border-color: var(--color-primary); transform: translateX(2px); }
+.today-todo-sync-retry { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: var(--radius-md); color: var(--color-text-secondary); background: var(--color-bg); font-size: 11px; }
+.today-todo-sync-retry button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-weight: 650; }
+.today-todo-sync-retry button:hover, .today-todo-sync-retry button:focus-visible { border-color: var(--color-primary); outline: 0; }
+.today-todo-sync-retry button:disabled { cursor: wait; opacity: .7; }
 .today-todo-complete { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-primary); border-radius: 50%; color: var(--color-primary); background: transparent; cursor: pointer; transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast); }
 .today-todo-complete:hover, .today-todo-complete:focus-visible { color: var(--color-button-text); background: var(--color-primary); outline: 0; transform: scale(1.06); }
 .today-todo-complete:disabled { color: var(--color-primary); background: var(--color-primary-muted); cursor: wait; opacity: .75; }
