@@ -58,3 +58,26 @@ def test_manifest_verifier_rejects_tampering_and_unsafe_paths(tmp_path):
 
     with pytest.raises(ValueError, match="unsafe path"):
         verifier.verify(manifest, bundle, "1.7.0", "android")
+
+
+def test_manifest_verifier_rejects_noncanonical_target_names(tmp_path):
+    verifier = load_verifier()
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    artifact = bundle / "release.exe"
+    artifact.write_bytes(b"installer")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({
+        "schema": "effilife.release-manifest.v1",
+        "product": "EffiLife",
+        "version": "1.7.0",
+        "target": "windows-x64-nsis",
+        "artifacts": [{
+            "path": "release.exe",
+            "bytes": artifact.stat().st_size,
+            "sha256": hashlib.sha256(b"installer").hexdigest(),
+        }],
+    }), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unsupported release target: windows-x64-nsis"):
+        verifier.verify(manifest, bundle, "1.7.0", "windows-x64-nsis")

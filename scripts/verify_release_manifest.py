@@ -9,6 +9,13 @@ import json
 from pathlib import Path
 
 SCHEMA = "effilife.release-manifest.v1"
+CANONICAL_RELEASE_TARGETS = frozenset({
+    "windows-nsis",
+    "linux-deb",
+    "linux-appimage",
+    "macos-dmg",
+    "android",
+})
 
 
 def sha256(path: Path) -> str:
@@ -20,6 +27,8 @@ def sha256(path: Path) -> str:
 
 
 def verify(manifest_path: Path, directory: Path, version: str, target: str) -> dict:
+    if target not in CANONICAL_RELEASE_TARGETS:
+        raise ValueError(f"unsupported release target: {target}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("schema") != SCHEMA:
         raise ValueError("unsupported release manifest schema")
@@ -27,6 +36,8 @@ def verify(manifest_path: Path, directory: Path, version: str, target: str) -> d
         raise ValueError("release manifest product is not EffiLife")
     if manifest.get("version") != version:
         raise ValueError(f"release manifest version mismatch: expected {version}")
+    if manifest.get("target") not in CANONICAL_RELEASE_TARGETS:
+        raise ValueError(f"unsupported release manifest target: {manifest.get('target')}")
     if manifest.get("target") != target:
         raise ValueError(f"release manifest target mismatch: expected {target}")
 
