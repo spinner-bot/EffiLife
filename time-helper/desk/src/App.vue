@@ -15,7 +15,7 @@ import GlobalSearch from './components/GlobalSearch.vue'
 import ToastHost from './components/ToastHost.vue'
 import ConfirmHost from './components/ConfirmHost.vue'
 import { notifyToast } from '@/services/toastService'
-import { repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
+import { repairPendingPlanTodoSync, repairTodoPlanTaskLinks, repairTodoTimeRecordLinks } from './services/workspaceSync'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from './services/workspaceEvents'
 import { getUserFacingError } from '@/services/userFacingError'
 
@@ -350,6 +350,11 @@ onMounted(async () => {
     // Link repair is recoverable maintenance; it must not create an
     // unhandled rejection or make the first usable frame look broken.
     console.warn('Failed to repair todo/plan links after startup:', error)
+  })
+  void repairPendingPlanTodoSync().catch((error) => {
+    // Persisted cross-module repair is best-effort maintenance and must not
+    // create an unhandled rejection or delay the first usable frame.
+    console.warn('Failed to repair pending plan/todo sync:', error)
   })
 
   // 启动背景音乐

@@ -42,7 +42,7 @@ import { onWorkspaceChanged } from '@/services/workspaceEvents'
 import { getUserFacingError } from '@/services/userFacingError'
 import { getOrCreatePlanTaskTodo, TodoService } from '@/services/todoService'
 import { FocusSessionService } from '@/services/focusSessionService'
-import { completeLinkedPlanTodo, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
+import { clearPendingPlanTodoSync, completeLinkedPlanTodo, queuePendingPlanTodoSync, unlinkTodosFromPlanTask } from '@/services/workspaceSync'
 import { dateSearchText } from '@/services/dateSearch'
 import { parseLocalDate } from '@/services/dataService'
 
@@ -818,6 +818,7 @@ async function completeTask(taskId: string) {
       await completeLinkedPlanTodo(planId, taskId)
     } catch (syncError) {
       console.warn('Failed to complete linked todo:', syncError)
+        void queuePendingPlanTodoSync(planId, taskId)
       todoSyncRetryTaskId.value = taskId
       notifyToast(t('plans.todoSyncFailed'), 'error')
     }
@@ -836,6 +837,7 @@ async function retryTodoSync(taskId: string) {
   isLoading.value = true
   try {
     await completeLinkedPlanTodo(selectedPlan.value.id, taskId)
+        await clearPendingPlanTodoSync(selectedPlan.value.id, taskId)
     todoSyncRetryTaskId.value = null
     await refreshLinkedTodoTaskIds()
     notifyToast(t('plans.todoSyncRecovered'), 'success')

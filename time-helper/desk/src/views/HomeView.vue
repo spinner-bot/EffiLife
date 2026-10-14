@@ -9,7 +9,7 @@ import { EventSystem } from '@/audio'
 import { checkinState } from '@/data'
 import EmptyState from '@/components/EmptyState.vue'
 import { getOrCreatePlanTaskTodo, TodoCategoryService, TodoService, type UnifiedTodo } from '@/services/todoService'
-import { completeLinkedPlanTodo, completeTodoWithPlan, PlanTodoSyncError } from '@/services/workspaceSync'
+import { clearPendingPlanTodoSync, completeLinkedPlanTodo, completeTodoWithPlan, PlanTodoSyncError, queuePendingPlanTodoSync } from '@/services/workspaceSync'
 import { getPriorityScore } from '@/services/priority'
 import { completePlanTask, getPlanFull, listPlanSummaries, planDataSource, type PlanGatewayState, type PlanSummary, type PlanTaskSummary } from '@/services/planGateway'
 import { isMobilePlanRuntime } from '@/services/runtimeCapabilities'
@@ -161,6 +161,7 @@ async function completeHomeTodo(todo: UnifiedTodo) {
   } catch (error) {
     if (error instanceof PlanTodoSyncError) {
       todoPlanSyncRetryItem.value = todo
+      if (todo.related_plan_id && todo.related_plan_task_id) void queuePendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)
       await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
       notifyToast(t('home.todoPlanSyncFailed'), 'error')
     } else {
@@ -179,6 +180,7 @@ async function retryHomeTodoPlanSync(): Promise<void> {
     // PH was already completed before the TD write failed. Retry only the
     // pending TD projection so the plan task is not redundantly re-targeted.
     await TodoService.complete(todo.id)
+    if (todo.related_plan_id && todo.related_plan_task_id) await clearPendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)
     todoPlanSyncRetryItem.value = null
     await Promise.all([refreshTodoSummary(), refreshEventPlanSummary()])
     notifyToast(t('plans.todoSyncRecovered'), 'success')
@@ -299,6 +301,7 @@ async function completeHomePlanTask(item: FocusPlanTask) {
     } catch (syncError) {
       console.warn('Failed to complete linked todo:', syncError)
       planTodoSyncRetryItem.value = item
+      void queuePendingPlanTodoSync(item.planId, item.task.internal_id)
       notifyToast(t('home.planTaskTodoSyncFailed'), 'error')
     }
     await refreshEventPlanSummary()
@@ -318,6 +321,7 @@ async function retryHomePlanTodoSync(): Promise<void> {
   completingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
   try {
     await completeLinkedPlanTodo(item.planId, item.task.internal_id)
+    await clearPendingPlanTodoSync(item.planId, item.task.internal_id)
     planTodoSyncRetryItem.value = null
     await refreshTodoSummary()
     notifyToast(t('plans.todoSyncRecovered'), 'success')

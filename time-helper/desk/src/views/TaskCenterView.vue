@@ -20,7 +20,7 @@ import { requestConfirm } from '@/services/confirmService'
 import { notifyWorkspaceChanged, onWorkspaceChanged } from '@/services/workspaceEvents'
 import { FocusSessionService } from '@/services/focusSessionService'
 import { getUserFacingError } from '@/services/userFacingError'
-import { completeTodoWithPlan, PlanTodoSyncError } from '@/services/workspaceSync'
+import { clearPendingPlanTodoSync, completeTodoWithPlan, PlanTodoSyncError, queuePendingPlanTodoSync } from '@/services/workspaceSync'
 import { useI18n } from '@/i18n'
 const CategoryIconPicker = defineAsyncComponent(() => import('@/components/CategoryIconPicker.vue'))
 const CategoryIconPreview = defineAsyncComponent(() => import('@/components/CategoryIconPreview.vue'))
@@ -484,6 +484,7 @@ async function completeTodo(todo: UnifiedTodo) {
   } catch (error) {
     if (error instanceof PlanTodoSyncError) {
       todoPlanSyncRetryItem.value = todo
+      if (todo.related_plan_id && todo.related_plan_task_id) void queuePendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)
       errorMessage.value = t('home.todoPlanSyncFailed')
     } else {
       errorMessage.value = getUserFacingError(error, t('tasks.error.update'))
@@ -501,6 +502,7 @@ async function retryTodoPlanSync(): Promise<void> {
     // The PH task was completed before the TD write failed; only retry the
     // pending TD projection here.
     const updated = await TodoService.complete(todo.id)
+    if (todo.related_plan_id && todo.related_plan_task_id) await clearPendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)
     replaceTodo(updated)
     todoPlanSyncRetryItem.value = null
     errorMessage.value = ''
@@ -622,6 +624,7 @@ async function bulkCompleteTodos() {
   } catch (error) {
     if (error instanceof PlanTodoSyncError) {
       todoPlanSyncRetryItem.value = failedTodo
+      if (failedTodo?.related_plan_id && failedTodo.related_plan_task_id) void queuePendingPlanTodoSync(failedTodo.related_plan_id, failedTodo.related_plan_task_id)
       errorMessage.value = t('home.todoPlanSyncFailed')
     } else {
       errorMessage.value = getUserFacingError(error, t('tasks.error.update'))

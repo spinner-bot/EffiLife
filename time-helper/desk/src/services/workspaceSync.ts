@@ -1,6 +1,6 @@
 import { TodoService, type UnifiedTodo } from './todoService'
 import type { TimeRecord } from '@/types'
-import { getRawAll, set as idbSet, STORE_NAMES } from '@/storage'
+import { del as idbDelete, getAll, getRawAll, set as idbSet, set as storageSet, STORE_NAMES } from '@/storage'
 import { completePlanTask, getPlanTasks, listPlanSummaries, planDataSource } from './planGateway'
 
 export class PlanTodoSyncError extends Error {
@@ -10,6 +10,65 @@ export class PlanTodoSyncError extends Error {
     super('The linked todo could not be completed after the plan task was completed')
     this.name = 'PlanTodoSyncError'
   }
+}
+
+export interface PendingPlanTodoSync {
+  key: string
+  planId: string
+  planTaskId: string
+  createdAt: string
+}
+
+function pendingPlanTodoSyncKey(planId: string, planTaskId: string): string {
+  return `${String(planId)}:${String(planTaskId)}`
+}
+
+/** Persist an explicit cross-module completion that needs a later retry. */
+export async function queuePendingPlanTodoSync(planId: string, planTaskId: string): Promise<void> {
+  try {
+    const normalizedPlanId = String(planId)
+    const normalizedTaskId = String(planTaskId)
+    await storageSet(STORE_NAMES.PENDING_PLAN_TODO_SYNC, pendingPlanTodoSyncKey(normalizedPlanId, normalizedTaskId), {
+      key: pendingPlanTodoSyncKey(normalizedPlanId, normalizedTaskId),
+      planId: normalizedPlanId,
+      planTaskId: normalizedTaskId,
+      createdAt: new Date().toISOString(),
+    } satisfies PendingPlanTodoSync)
+  } catch (error) {
+    console.warn('Failed to persist pending plan/todo sync:', error)
+  }
+}
+
+export async function clearPendingPlanTodoSync(planId: string, planTaskId: string): Promise<void> {
+  try {
+    await idbDelete(STORE_NAMES.PENDING_PLAN_TODO_SYNC, pendingPlanTodoSyncKey(planId, planTaskId))
+  } catch (error) {
+    // The user operation has already succeeded; a stale queue entry is safe
+    // to retry later and must not turn success into a false error.
+    console.warn('Failed to clear pending plan/todo sync:', error)
+  }
+}
+
+/** Retry persisted projection failures after startup without blocking the shell. */
+export async function repairPendingPlanTodoSync(): Promise<number> {
+  let repaired = 0
+  let pending: PendingPlanTodoSync[]
+  try {
+    pending = await getAll<PendingPlanTodoSync>(STORE_NAMES.PENDING_PLAN_TODO_SYNC)
+  } catch {
+    return 0
+  }
+  for (const item of pending) {
+    if (!item?.planId || !item.planTaskId) continue
+    try {
+      await completeLinkedPlanTodo(item.planId, item.planTaskId)
+      await clearPendingPlanTodoSync(item.planId, item.planTaskId)
+      repaired += 1
+    } catch {
+      // Keep the entry for a later startup or manual retry.
+    }
+  }
+  return repaired
 }
 
 /**
