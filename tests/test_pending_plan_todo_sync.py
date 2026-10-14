@@ -24,3 +24,11 @@ def test_pending_queue_storage_failures_are_best_effort():
     clear_block = source.split("export async function clearPendingPlanTodoSync", 1)[1].split("/** Retry persisted", 1)[0]
     assert "console.warn('Failed to persist pending plan/todo sync:'" in queue_block
     assert "console.warn('Failed to clear pending plan/todo sync:'" in clear_block
+
+
+def test_successful_projection_clears_stale_queue_entry():
+    source = SYNC.read_text(encoding="utf-8")
+    completion_block = source.split("export async function completeTodoWithPlan", 1)[1].split("/**", 1)[0]
+    linked_block = source.split("export async function completeLinkedPlanTodo", 1)[1].split("/**", 1)[0]
+    assert "await clearPendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)" in completion_block
+    assert "await clearPendingPlanTodoSync(planId, planTaskId)" in linked_block

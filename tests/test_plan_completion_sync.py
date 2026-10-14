@@ -31,7 +31,8 @@ def test_plan_workspaces_keep_ph_success_when_td_projection_fails():
 def test_td_completion_uses_the_ph_first_coordinator():
     assert "export async function completeTodoWithPlan" in SYNC
     assert "await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)" in SYNC
-    assert "return await TodoService.complete(todo.id)" in SYNC
+    assert "const completed = await TodoService.complete(todo.id)" in SYNC
+    assert "return completed" in SYNC
     assert "await completeTodoWithPlan(todo)" in HOME
     assert "await completeTodoWithPlan(todo)" in (DESK / "views" / "TaskCenterView.vue").read_text(encoding="utf-8")
 

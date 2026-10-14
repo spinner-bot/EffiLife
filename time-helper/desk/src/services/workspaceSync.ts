@@ -83,7 +83,11 @@ export async function completeTodoWithPlan(todo: UnifiedTodo): Promise<UnifiedTo
     await completePlanTask(todo.related_plan_id, todo.related_plan_task_id)
   }
   try {
-    return await TodoService.complete(todo.id)
+    const completed = await TodoService.complete(todo.id)
+    if (todo.related_plan_id && todo.related_plan_task_id) {
+      await clearPendingPlanTodoSync(todo.related_plan_id, todo.related_plan_task_id)
+    }
+    return completed
   } catch (error) {
     if (todo.related_plan_id && todo.related_plan_task_id) {
       throw new PlanTodoSyncError(error)
@@ -157,6 +161,7 @@ export async function completeLinkedPlanTodo(planId: string, planTaskId: string)
     }
   }
   if (firstError) throw firstError
+  await clearPendingPlanTodoSync(planId, planTaskId)
   return linked.length
 }
 
