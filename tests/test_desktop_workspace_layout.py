@@ -70,6 +70,7 @@ def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
     assert "grid-template-columns: repeat(6, minmax(44px, 1fr));" in mobile_block
     assert "overflow-x: auto;" in mobile_block
     assert "scrollbar-width: none;" in mobile_block
+    assert "backdrop-filter: blur(14px);" in mobile_block
 
 
 def test_mobile_shell_exposes_quick_capture_above_bottom_navigation():
