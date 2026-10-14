@@ -15,6 +15,7 @@ import {
   completePlanTask,
   createEventPlan,
   createEventPlanFromTemplate,
+  copyYesterdayPlan,
   deletePlanTask,
   deletePlanGroup,
   getPlanFull,
@@ -76,6 +77,7 @@ const templateDraftDate = ref(toDateInput(new Date()))
 const templateDraftId = ref('')
 const templateOptions = ref<PlanTemplateSummary[]>([])
 const templateLoading = ref(false)
+const copyingYesterday = ref(false)
 const editingMeta = ref(false)
 const createModal = ref<HTMLElement | null>(null)
 const sectionName = ref('')
@@ -428,6 +430,25 @@ function openTemplatePicker() {
     })
     .catch(() => { templateOptions.value = [] })
     .finally(() => { templateLoading.value = false })
+}
+
+async function copyYesterday() {
+  if (isLoading.value || copyingYesterday.value) return
+  copyingYesterday.value = true
+  errorMessage.value = ''
+  try {
+    const copied = await copyYesterdayPlan()
+    selectedPlan.value = copied
+    await loadPlans()
+    await refreshLinkedTodoTaskIds()
+    view.value = 'detail'
+    await router.replace({ path: '/plans', query: { plan: String(copied.id) } })
+    notifyToast(t('plans.copiedYesterday'), 'success')
+  } catch (error) {
+    errorMessage.value = getUserFacingError(error, t('plans.copyYesterdayFailed'))
+  } finally {
+    copyingYesterday.value = false
+  }
 }
 
 async function createFromTemplate() {
@@ -1066,7 +1087,7 @@ onUnmounted(() => {
         <h1>{{ view === 'detail' ? selectedPlan?.name : t('plans.center') }}</h1>
         <p v-if="view !== 'detail'" class="plans-module-description">{{ t('plans.moduleDescription') }}</p>
       </div>
-      <div v-if="view === 'events' && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
+      <div v-if="view === 'events' && canEditPlan" class="plan-entry-actions"><button type="button" class="plans-secondary" :disabled="copyingYesterday" @click="copyYesterday">{{ copyingYesterday ? t('plans.loading') : t('plans.copyYesterday') }}</button><button type="button" class="plans-secondary" @click="openTemplatePicker">{{ t('plans.fromTemplate') }}</button><button type="button" class="plans-primary" @click="openCreatePlan"><Plus :size="16" /> {{ t('plans.create') }}</button></div>
     </header>
 
     <nav class="module-switcher" :aria-label="t('nav.primary')">

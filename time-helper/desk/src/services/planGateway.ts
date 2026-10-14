@@ -593,6 +593,46 @@ export async function createEventPlan(
   return result
 }
 
+/** Copy the most substantial plan from yesterday into today's workspace. */
+export async function copyYesterdayPlan(): Promise<PlanFull> {
+  if (getPlanRuntime() === 'mobile-unavailable') {
+    return enqueueMobilePlanWrite(async () => {
+      const plans = cloneMobilePlans(await getMobileRawPlans())
+      const now = new Date()
+      const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+      const yesterdayDate: [number, number, number] = [yesterday.getFullYear(), yesterday.getMonth() + 1, yesterday.getDate()]
+      const todayDate: [number, number, number] = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+      const candidates = plans.filter((plan) => {
+        const date = plan.head?.date
+        return Array.isArray(date) && date.length >= 3 && date[0] === yesterdayDate[0] && date[1] === yesterdayDate[1] && date[2] === yesterdayDate[2]
+      })
+      if (candidates.length === 0) throw new Error(translate('plans.noYesterdayPlan'))
+      const taskCount = (plan: RawPlan) => (plan.main || []).reduce((total, section) => total + activeRawTasks(section).length, 0)
+      const source = candidates.sort((a, b) => taskCount(b) - taskCount(a))[0]
+      const nextId = plans.reduce((max, plan, index) => Math.max(max, Number(plan.head?.index ?? index)), 0) + 1
+      const copied = JSON.parse(JSON.stringify(source)) as RawPlan
+      copied.head = { ...copied.head, index: nextId, date: todayDate, name: `${String(copied.head?.name || translate('plans.unnamed', { id: nextId }))} (${todayDate[1]}/${todayDate[2]})` }
+      copied.log = []
+      for (const section of copied.main || []) {
+        for (const task of section.plan || []) {
+          if (task && typeof task === 'object') delete task.finish
+        }
+      }
+      plans.push(copied)
+      await saveMobileRawPlans(plans)
+      planDataSource.value = 'mobile'
+      return toMobilePlanFull(copied, plans.length - 1)
+    })
+  }
+  const result = await request<PlanFull>('/api/plans/copy-yesterday', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+  planDataSource.value = 'service'
+  return result
+}
+
 export async function listPlanTemplates(): Promise<PlanTemplateSummary[]> {
   if (getPlanRuntime() === 'mobile-unavailable') {
     planDataSource.value = 'mobile'
