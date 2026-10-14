@@ -49,6 +49,7 @@ const eventPlans = ref<PlanSummary[]>([])
 const eventPlanState = ref<PlanGatewayState>('idle')
 type FocusPlanTask = { planId: string; planName: string; task: PlanTaskSummary }
 const focusPlanTasks = ref<FocusPlanTask[]>([])
+const planTodoSyncRetryItem = ref<FocusPlanTask | null>(null)
 const completingPlanTaskId = ref<string | null>(null)
 const focusingPlanTaskId = ref<string | null>(null)
 const mobilePlanRuntime = isMobilePlanRuntime()
@@ -276,12 +277,32 @@ async function completeHomePlanTask(item: FocusPlanTask) {
       await completeLinkedPlanTodo(item.planId, item.task.internal_id)
     } catch (syncError) {
       console.warn('Failed to complete linked todo:', syncError)
-      notifyToast(t('plans.todoSyncFailed'), 'error')
+      planTodoSyncRetryItem.value = item
+      notifyToast(t('home.planTaskTodoSyncFailed'), 'error')
     }
     await refreshEventPlanSummary()
-    notifyToast(t('home.planTaskCompleted'), 'success')
+    if (planTodoSyncRetryItem.value?.planId !== item.planId || planTodoSyncRetryItem.value?.task.internal_id !== item.task.internal_id) {
+      notifyToast(t('home.planTaskCompleted'), 'success')
+    }
   } catch (error) {
     notifyToast(getUserFacingError(error, t('plans.unavailable')), 'error')
+  } finally {
+    completingPlanTaskId.value = null
+  }
+}
+
+async function retryHomePlanTodoSync(): Promise<void> {
+  const item = planTodoSyncRetryItem.value
+  if (!item || completingPlanTaskId.value) return
+  completingPlanTaskId.value = `${item.planId}:${item.task.internal_id}`
+  try {
+    await completeLinkedPlanTodo(item.planId, item.task.internal_id)
+    planTodoSyncRetryItem.value = null
+    await refreshTodoSummary()
+    notifyToast(t('plans.todoSyncRecovered'), 'success')
+  } catch (error) {
+    console.warn('Retrying linked todo from home failed:', error)
+    notifyToast(t('plans.todoSyncFailed'), 'error')
   } finally {
     completingPlanTaskId.value = null
   }
@@ -821,6 +842,12 @@ onUnmounted(() => {
                 <Play :size="13" />
               </button>
             </article>
+          </div>
+          <div v-if="planTodoSyncRetryItem" class="focus-plan-sync-retry" role="status" aria-live="polite">
+            <span>{{ t('home.planTaskTodoSyncFailed') }}</span>
+            <button type="button" :disabled="completingPlanTaskId !== null" @click="retryHomePlanTodoSync">
+              {{ completingPlanTaskId ? t('plans.loading') : t('plans.retryTodoSync') }}
+            </button>
           </div>
         </section>
       </section>
@@ -1431,6 +1458,10 @@ onUnmounted(() => {
 .focus-plan-task { display: flex; min-width: 0; gap: 8px; color: var(--color-text-primary); font-size: 13px; }
 .focus-plan-task strong { flex: 0 0 auto; color: var(--color-primary); font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; }
 .focus-plan-task span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.focus-plan-sync-retry { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--color-error) 42%, var(--color-border)); border-radius: var(--radius-md); color: var(--color-text-secondary); background: var(--color-bg); font-size: 11px; }
+.focus-plan-sync-retry button { flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 9px; color: var(--color-primary); background: var(--color-bg-secondary); cursor: pointer; font: inherit; font-weight: 650; }
+.focus-plan-sync-retry button:hover, .focus-plan-sync-retry button:focus-visible { border-color: var(--color-primary); outline: 0; }
+.focus-plan-sync-retry button:disabled { cursor: wait; opacity: .7; }
 .focus-plan-meta { overflow: hidden; color: var(--color-text-tertiary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 
 .today-todos-card {
