@@ -42,9 +42,15 @@ def test_windows_managed_android_build_preserves_symlink_fallback_contract():
     assert "Copy-Item -LiteralPath $library -Destination $jniLibrary -Force" in script
     assert "Get-ChildItem -LiteralPath $frontendDist -Force | Copy-Item -Destination $assets -Recurse -Force" in script
     assert "Assert-Path $frontendDist 'Unified frontend dist'" in script
-    assert "app:assembleArm64Release -x rustBuildArm64Release" in script
+    assert "[ValidateSet('arm64', 'x86_64')]" in script
+    assert "RustTarget = 'x86_64-linux-android'" in script
+    assert "AndroidAbi = 'x86_64'" in script
+    assert "assembleX86_64Release" in script
+    assert "--target $AndroidArch" in script
+    assert '"app:$($archConfig.GradleTask)" "-x" "rustBuild$($archConfig.GradleTask.Substring(8))"' in script
     assert "android.overridePathCheck=true" in script
-    assert "app\\build\\outputs\\apk\\arm64\\release\\app-arm64-release-unsigned.apk" in script
+    assert "ApkDirectory = 'arm64'" in script
+    assert "ApkName = 'app-arm64-release-unsigned.apk'" in script
     assert "Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256" in script
 
 

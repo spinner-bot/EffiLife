@@ -6,7 +6,9 @@ param(
     [string]$NodeDir = $(if ($env:EFFILIFE_NODE_DIR) { $env:EFFILIFE_NODE_DIR } else { 'F:\dev-tools\node' }),
     [string]$RustToolchainDir = $(if ($env:EFFILIFE_RUST_TOOLCHAIN_DIR) { $env:EFFILIFE_RUST_TOOLCHAIN_DIR } else { 'F:\dev-tools\rustup\toolchains\stable-x86_64-pc-windows-msvc\bin' }),
     [string]$GradleHome = $(if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { 'F:\dev-tools\gradle-home' }),
-    [string]$CargoTargetDir = $(if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { 'F:\android-target\EffiLife' })
+    [string]$CargoTargetDir = $(if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { 'F:\android-target\EffiLife' }),
+    [ValidateSet('arm64', 'x86_64')]
+    [string]$AndroidArch = 'arm64'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -48,11 +50,32 @@ if ($Action -eq 'check') {
     exit 0
 }
 
-$library = Join-Path $CargoTargetDir 'aarch64-linux-android\release\libefflife_desk_lib.so'
+$archConfig = @{
+    arm64 = @{
+        RustTarget = 'aarch64-linux-android'
+        AndroidAbi = 'arm64-v8a'
+        GradleTask = 'assembleArm64Release'
+        ApkDirectory = 'arm64'
+        ApkName = 'app-arm64-release-unsigned.apk'
+    }
+    x86_64 = @{
+        RustTarget = 'x86_64-linux-android'
+        AndroidAbi = 'x86_64'
+        GradleTask = 'assembleX86_64Release'
+        ApkDirectory = 'x86_64'
+        ApkName = 'app-x86_64-release-unsigned.apk'
+    }
+}[$AndroidArch]
+$rustTarget = $archConfig.RustTarget
+$library = Join-Path $CargoTargetDir "$rustTarget\release\libefflife_desk_lib.so"
 $buildStart = Get-Date
 Push-Location $deskRoot
 try {
-    & $npm run mobile:android:build
+    if ($AndroidArch -eq 'arm64') {
+        & $npm run mobile:android:build
+    } else {
+        & $npm run mobile:android:build -- --target $AndroidArch
+    }
     $tauriExitCode = $LASTEXITCODE
 } finally {
     Pop-Location
@@ -64,7 +87,7 @@ if ($tauriExitCode -ne 0) {
     Write-Warning "Tauri Android build stopped at the Windows symlink step; continuing with the fresh Rust library and managed Gradle build."
 }
 
-$jniLibrary = Join-Path $androidRoot 'app\src\main\jniLibs\arm64-v8a\libefflife_desk_lib.so'
+$jniLibrary = Join-Path $androidRoot "app\src\main\jniLibs\$($archConfig.AndroidAbi)\libefflife_desk_lib.so"
 Assert-Path $library 'Android Rust library'
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $jniLibrary) | Out-Null
 Copy-Item -LiteralPath $library -Destination $jniLibrary -Force
@@ -85,14 +108,14 @@ if (-not (Test-Path -LiteralPath $gradleProperties)) {
 
 Push-Location $androidRoot
 try {
-    & (Join-Path $androidRoot 'gradlew.bat') app:assembleArm64Release -x rustBuildArm64Release
+    & (Join-Path $androidRoot 'gradlew.bat') "app:$($archConfig.GradleTask)" "-x" "rustBuild$($archConfig.GradleTask.Substring(8))"
     if ($LASTEXITCODE -ne 0) { throw "Android APK build failed with exit code $LASTEXITCODE" }
 } finally {
     Pop-Location
 }
 
-$apkPath = Join-Path $androidRoot 'app\build\outputs\apk\arm64\release\app-arm64-release-unsigned.apk'
-Assert-Path $apkPath 'Android ARM64 unsigned APK'
+$apkPath = Join-Path $androidRoot "app\build\outputs\apk\$($archConfig.ApkDirectory)\release\$($archConfig.ApkName)"
+Assert-Path $apkPath "Android $AndroidArch unsigned APK"
 $apk = Get-Item -LiteralPath $apkPath
 if ($apk.Length -le 0) { throw "Android APK artifact is empty: $apkPath" }
 $apkHash = (Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256).Hash
