@@ -237,8 +237,15 @@ async function refreshEventPlanSummary() {
     const activePlans = await listPlanSummaries()
     if (requestId !== eventPlanSummaryRequestId) return
     eventPlans.value = activePlans
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
     const focusCandidates = activePlans
       .filter((plan) => !isPlanComplete(plan) && plan.total_tasks > plan.completed_tasks)
+      .sort((a, b) => {
+        const aPriority = planFocusPriority(a, todayStart)
+        const bPriority = planFocusPriority(b, todayStart)
+        return aPriority.rank - bPriority.rank || aPriority.timestamp - bPriority.timestamp
+      })
       .slice(0, 2)
     const details = await Promise.allSettled(focusCandidates.map((plan) => getPlanFull(plan.id)))
     if (requestId !== eventPlanSummaryRequestId) return
@@ -337,6 +344,17 @@ function isPlanComplete(plan: PlanSummary): boolean {
   const total = Number(plan.total_tasks || 0)
   return total > 0 && Number(plan.completed_tasks || 0) >= total
 }
+
+function planFocusPriority(plan: PlanSummary, todayStart: number): { rank: number; timestamp: number } {
+  if (!plan.date || plan.date.length < 3) return { rank: 3, timestamp: Number.POSITIVE_INFINITY }
+  const [year, month, day] = plan.date
+  const timestamp = new Date(year, month - 1, day).getTime()
+  if (!Number.isFinite(timestamp)) return { rank: 3, timestamp: Number.POSITIVE_INFINITY }
+  if (timestamp < todayStart) return { rank: 0, timestamp }
+  if (timestamp === todayStart) return { rank: 1, timestamp }
+  return { rank: 2, timestamp }
+}
+
 const activeEventPlans = computed(() => eventPlans.value.filter((plan) => !isPlanComplete(plan)))
 const completedEventPlanCount = computed(() => eventPlans.value.filter(isPlanComplete).length)
 const eventPlanPreview = computed(() => activeEventPlans.value.slice(0, 3))

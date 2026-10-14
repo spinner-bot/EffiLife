@@ -20,3 +20,12 @@ def test_home_focus_only_reads_a_bounded_number_of_plan_details():
     start = HOME.index("focusPlanTasks.value =", HOME.index("const details"))
     end = HOME.index("eventPlanState.value", start)
     assert ".slice(0, 5)" in HOME[start:end]
+
+
+def test_home_focus_prioritizes_overdue_and_today_plans_before_future_plans():
+    focus_block = HOME[HOME.index("function planFocusPriority"):HOME.index("const activeEventPlans")]
+    assert "timestamp < todayStart" in focus_block
+    assert "timestamp === todayStart" in focus_block
+    refresh_block = HOME[HOME.index("const focusCandidates"):HOME.index("const details")]
+    assert ".sort((a, b) =>" in refresh_block
+    assert "planFocusPriority(a, todayStart)" in refresh_block
