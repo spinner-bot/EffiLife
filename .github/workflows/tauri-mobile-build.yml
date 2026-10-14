@@ -88,7 +88,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: time-helper/desk
-        run: npm run mobile:android:build
+        run: npm run mobile:android:build -- --split-per-abi
 
       - name: Sign Android APK for formal release
         if: vars.EFFILIFE_FORMAL_RELEASE_ENABLED == 'true'
@@ -98,14 +98,16 @@ jobs:
           EFFILIFE_ANDROID_KEY_ALIAS: ${{ secrets.EFFILIFE_ANDROID_KEY_ALIAS }}
           EFFILIFE_ANDROID_KEY_PASSWORD: ${{ secrets.EFFILIFE_ANDROID_KEY_PASSWORD }}
         run: |
-          apk="$(find time-helper/desk/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-unsigned.apk' -print -quit)"
-          test -n "$apk"
-          output="${apk%-unsigned.apk}.apk"
-          python scripts/sign_android_artifact.py \
-            --input "$apk" \
-            --output "$output" \
-            --zipalign "$ANDROID_HOME/build-tools/36.0.0/zipalign" \
-            --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          mapfile -t unsigned_apks < <(find time-helper/desk/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-unsigned.apk' -print | sort)
+          test "${#unsigned_apks[@]}" -gt 0
+          for apk in "${unsigned_apks[@]}"; do
+            output="${apk%-unsigned.apk}.apk"
+            python scripts/sign_android_artifact.py \
+              --input "$apk" \
+              --output "$output" \
+              --zipalign "$ANDROID_HOME/build-tools/36.0.0/zipalign" \
+              --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          done
 
       - name: Verify Android artifact
         run: >-

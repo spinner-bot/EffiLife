@@ -41,7 +41,7 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert workflow.count("python scripts/build_frontend.py") == 1
     assert "npm run tauri -- android init --ci --skip-targets-install --config src-tauri/tauri.mobile.conf.json" in workflow
     assert "python scripts/check_build_environment.py --target android" in workflow
-    assert "npm run mobile:android:build" in workflow
+    assert "npm run mobile:android:build -- --split-per-abi" in workflow
     assert "actions/upload-artifact@v6" in workflow
     assert "gen/android/app/build/outputs/apk/**/*.apk" in workflow
     assert "python scripts/verify_mobile_artifacts.py" in workflow
@@ -49,6 +49,10 @@ def test_mobile_build_workflow_is_manual_and_builds_platform_artifacts():
     assert "Sign Android APK for formal release" in workflow
     assert "EFFILIFE_ANDROID_KEYSTORE_BASE64" in workflow
     assert "python scripts/sign_android_artifact.py" in workflow
+    assert 'mapfile -t unsigned_apks' in workflow
+    assert 'test "${#unsigned_apks[@]}" -gt 0' in workflow
+    assert 'for apk in "${unsigned_apks[@]}"; do' in workflow
+    assert workflow.count('python scripts/sign_android_artifact.py') == 1
     assert "apksigner" in workflow
     assert "python scripts/generate_checksums.py" in workflow
     assert "release-checksums/EffiLife-android.sha256" in workflow
