@@ -527,7 +527,9 @@ async function retryTodoPlanSync(): Promise<void> {
   }
 }
 
-function startEdit(todo: UnifiedTodo) {
+async function startEdit(todo: UnifiedTodo): Promise<void> {
+  if (isSaving.value || editingId.value === todo.id) return
+  if (editingId.value && isEditDirty() && !await requestConfirm(t('tasks.discardEditConfirm'), { tone: 'danger' })) return
   editingId.value = todo.id
   editingTitle.value = todo.title
   editingDescription.value = todo.description || ''

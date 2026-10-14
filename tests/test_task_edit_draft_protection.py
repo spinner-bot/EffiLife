@@ -9,6 +9,8 @@ I18N = (ROOT / "time-helper" / "desk" / "src" / "i18n" / "index.ts").read_text(e
 def test_task_edit_cancel_protects_unsaved_changes():
     assert "type TodoEditDraft =" in VIEW
     assert "function isEditDirty(): boolean" in VIEW
+    assert "async function startEdit(todo: UnifiedTodo): Promise<void>" in VIEW
+    assert "editingId.value && isEditDirty() && !await requestConfirm(t('tasks.discardEditConfirm')" in VIEW
     assert "async function cancelEdit(force = false): Promise<void>" in VIEW
     assert "t('tasks.discardEditConfirm')" in VIEW
     assert '@click="void cancelEdit()"' in VIEW
