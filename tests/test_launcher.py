@@ -200,6 +200,7 @@ def test_launcher_can_serve_prebuilt_workspace_without_node(monkeypatch, tmp_pat
     monkeypatch.setattr(launcher, "BASE_DIR", tmp_path)
     monkeypatch.setattr(launcher, "find_npm", lambda: None)
     monkeypatch.setattr(launcher, "find_node", lambda: None)
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: False)
     command, url, setup = launcher.get_time_helper_cmd()
     assert command[:2] == [sys.executable, str(tmp_path / "launcher" / "static_server.py")]
     assert "--port" in command and "1420" in command
@@ -341,7 +342,8 @@ def test_launcher_does_not_start_external_plan_helper_for_native_tauri(monkeypat
     assert modules["1"]["companions"] == []
 
 
-def test_launcher_keeps_unified_workspace_as_first_menu_entry():
+def test_launcher_keeps_unified_workspace_as_first_menu_entry(monkeypatch):
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: False)
     modules = launcher.build_modules()
     assert modules["1"]["name"] == "EffiLife unified workspace"
     assert modules["1"]["url"] == "http://127.0.0.1:1420"
@@ -374,7 +376,8 @@ def test_posix_launcher_falls_back_when_python3_is_unavailable():
     assert 'exec "$PYTHON_BIN" launcher/start.py --unified "$@"' in source
 
 
-def test_launcher_assigns_the_legacy_todos_server_its_declared_port():
+def test_launcher_assigns_the_legacy_todos_server_its_declared_port(monkeypatch):
+    monkeypatch.setattr(launcher, "local_port_is_occupied", lambda _url: False)
     modules = launcher.build_modules()
     assert modules["4"]["url"] == "http://127.0.0.1:1421"
     assert modules["4"]["cmd"][-5:] == ["--host", "127.0.0.1", "--port", "1421", "--strictPort"]
