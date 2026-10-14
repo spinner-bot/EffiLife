@@ -23,7 +23,22 @@ EXPECTED_FILES = (
 # Accept the current product name and the historical Chinese product name so
 # a real pre-rebrand installer can be used as the previous upgrade endpoint.
 # The version capture remains mandatory; this does not weaken version checks.
+# Keep the historical brand explicit; this file is also used by upgrade smoke
+# tests against installers produced before the rebrand.
+INSTALLER_VERSION_PATTERN = re.compile(r"^(?:EffiLife|\u6d6a\u516e\u6548\u7387\u65f6\u949f)_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
+# Historical pre-rebrand builds used the repository's published desk label
+# instead of the Tauri NSIS suffix. Keep this as a second explicit convention.
+INSTALLER_VERSION_PATTERN = re.compile(
+    r"^(?:EffiLife|\u6d6a\u516e\u6548\u7387\u65f6\u949f)_(?P<version>[^_（]+)(?:_x64-setup|（desk_发布版）)\.exe$",
+    re.IGNORECASE,
+)
 INSTALLER_VERSION_PATTERN = re.compile(r"^(?:EffiLife|浪兮效率时钟)_(?P<version>[^_]+)_x64-setup\.exe$", re.IGNORECASE)
+
+
+INSTALLER_VERSION_PATTERN = re.compile(
+    r"^(?:EffiLife|\u6d6a\u516e\u6548\u7387\u65f6\u949f)_(?P<version>[^_\uff08]+)(?:_x64-setup|\uff08desk_\u53d1\u5e03\u7248\uff09)\.exe$",
+    re.IGNORECASE,
+)
 
 
 def _parser() -> argparse.ArgumentParser:
