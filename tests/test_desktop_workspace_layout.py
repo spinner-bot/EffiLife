@@ -80,6 +80,7 @@ def test_mobile_navigation_reveals_the_active_route_after_navigation():
     assert "document.querySelector<HTMLElement>('.mobile-bottom-nav-link.active')" in app
     assert "activeLink.scrollIntoView" in app
     assert "revealActiveMobileNavigation()" in app
+    assert "runtimeReady.value = true\n  await nextTick()\n  revealActiveMobileNavigation()" in app
 
 
 def test_mobile_shell_exposes_quick_capture_above_bottom_navigation():

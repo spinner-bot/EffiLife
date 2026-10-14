@@ -338,6 +338,8 @@ onMounted(async () => {
   applyTheme()
   syncSystemThemeMediaQuery()
   runtimeReady.value = true
+  await nextTick()
+  revealActiveMobileNavigation()
   // The shell is visible now; wait only before running maintenance that uses
   // the optional services, so a delayed service cannot hide the workspace.
   await optionalStartup
