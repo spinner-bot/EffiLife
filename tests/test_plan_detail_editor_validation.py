@@ -33,3 +33,11 @@ def test_plan_creation_modal_exposes_sections_and_tasks_before_submit():
     assert 'v-for="(task, taskIndex) in section.tasks"' in VIEW
     assert '@click="addCreateSection"' in VIEW
     assert '@click="addCreateTask(section)"' in VIEW
+
+
+def test_plan_creation_draft_requires_confirmation_before_discard():
+    assert "function isCreatePlanDirty(): boolean" in VIEW
+    assert "t('plans.discardCreateConfirm')" in VIEW
+    assert '@click.self="void closeCreatePlan()"' in VIEW
+    assert '@click="void closeCreatePlan()"' in VIEW
+    assert "if (!force && isCreatePlanDirty()" in VIEW

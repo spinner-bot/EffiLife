@@ -374,8 +374,20 @@ function openCreatePlan() {
   void nextTick(() => createNameInput.value?.focus())
 }
 
-function closeCreatePlan(force = false) {
+function isCreatePlanDirty(): boolean {
+  if (planName.value.trim() || planDate.value !== toDateInput(new Date())) return true
+  if (createSections.value.length !== 1) return true
+  return createSections.value.some((section) => (
+    section.name.trim()
+    || section.info.trim()
+    || section.tasks.length !== 1
+    || section.tasks.some((task) => task.content.trim() || Number(task.time_minutes) !== 0)
+  ))
+}
+
+async function closeCreatePlan(force = false): Promise<void> {
   if (isLoading.value && !force) return
+  if (!force && isCreatePlanDirty() && !await requestConfirm(t('plans.discardCreateConfirm'), { tone: 'danger' })) return
   showCreate.value = false
   createSections.value = []
   const returnTarget = createReturnFocus.value
@@ -389,7 +401,7 @@ function onCreateModalKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation()
-    closeCreatePlan(true)
+    void closeCreatePlan()
     return
   }
   if (event.key !== 'Tab' || !createModal.value) return
@@ -1339,7 +1351,7 @@ onUnmounted(() => {
       </template>
     </div>
 
-    <div v-if="showCreate" class="modal-backdrop" @click.self="closeCreatePlan()">
+    <div v-if="showCreate" class="modal-backdrop" @click.self="void closeCreatePlan()">
       <form ref="createModal" class="create-modal theme-card" role="dialog" aria-modal="true" aria-labelledby="plan-create-title" @submit.prevent="createPlan" @keydown="onCreateModalKeydown">
         <h2 id="plan-create-title">{{ t('plans.create') }}</h2>
         <p>{{ t('plans.createHint') }}</p>
@@ -1367,7 +1379,7 @@ onUnmounted(() => {
           </div>
           <button type="button" class="plans-secondary create-add-section" @click="addCreateSection"><Plus :size="14" /> {{ t('plans.addSection') }}</button>
         </div>
-        <div class="modal-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="closeCreatePlan()">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
+        <div class="modal-actions"><button type="button" class="plans-secondary" :disabled="isLoading" @click="void closeCreatePlan()">{{ t('plans.cancel') }}</button><button class="plans-primary" type="submit" :disabled="isLoading">{{ t('plans.createAndEdit') }}</button></div>
       </form>
     </div>
   </div>
