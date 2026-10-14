@@ -40,6 +40,8 @@ def test_windows_managed_android_build_preserves_symlink_fallback_contract():
     assert "F:\\android-target\\EffiLife" in script
     assert "LastWriteTime -lt $buildStart" in script
     assert "Copy-Item -LiteralPath $library -Destination $jniLibrary -Force" in script
+    assert "Get-ChildItem -LiteralPath $frontendDist -Force | Copy-Item -Destination $assets -Recurse -Force" in script
+    assert "Assert-Path $frontendDist 'Unified frontend dist'" in script
     assert "app:assembleArm64Release -x rustBuildArm64Release" in script
     assert "android.overridePathCheck=true" in script
     assert "app\\build\\outputs\\apk\\arm64\\release\\app-arm64-release-unsigned.apk" in script

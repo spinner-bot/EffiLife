@@ -72,7 +72,9 @@ Copy-Item -LiteralPath $library -Destination $jniLibrary -Force
 $assets = Join-Path $androidRoot 'app\src\main\assets'
 New-Item -ItemType Directory -Force -Path $assets | Out-Null
 Get-ChildItem -LiteralPath $assets -Force | Remove-Item -Recurse -Force
-Copy-Item -LiteralPath (Join-Path $deskRoot 'dist\*') -Destination $assets -Recurse -Force
+$frontendDist = Join-Path $deskRoot 'dist'
+Assert-Path $frontendDist 'Unified frontend dist'
+Get-ChildItem -LiteralPath $frontendDist -Force | Copy-Item -Destination $assets -Recurse -Force
 
 $gradleProperties = Join-Path $androidRoot 'gradle.properties'
 if (-not (Test-Path -LiteralPath $gradleProperties)) {
