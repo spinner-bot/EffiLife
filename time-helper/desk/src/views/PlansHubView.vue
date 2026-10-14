@@ -69,6 +69,7 @@ const showCreate = ref(false)
 const showTemplatePicker = ref(false)
 const createNameInput = ref<HTMLInputElement | null>(null)
 const createReturnFocus = ref<HTMLElement | null>(null)
+const templateReturnFocus = ref<HTMLElement | null>(null)
 const planName = ref('')
 const planDate = ref(toDateInput(new Date()))
 const createSections = ref<InitialPlanSection[]>([])
@@ -445,15 +446,28 @@ function isTemplateDraftDirty(): boolean {
   )
 }
 
-async function closeTemplatePicker(force = false): Promise<void> {
+async function closeTemplatePicker(force = false, restoreFocus = true): Promise<void> {
   if (!force && isTemplateDraftDirty() && !await requestConfirm(t('plans.discardCreateConfirm'), { tone: 'danger' })) return
   showTemplatePicker.value = false
   templateDraftId.value = ''
   templateDraftInitialId.value = ''
   templateOptions.value = []
+  const returnTarget = templateReturnFocus.value
+  templateReturnFocus.value = null
+  if (restoreFocus) void nextTick(() => {
+    if (returnTarget?.isConnected) returnTarget.focus()
+  })
+}
+
+function onTemplateWorkspaceKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  event.stopPropagation()
+  void closeTemplatePicker()
 }
 
 function openTemplatePicker() {
+  templateReturnFocus.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   templateDraftName.value = ''
   templateDraftDate.value = toDateInput(new Date())
   templateDraftId.value = ''
@@ -507,7 +521,7 @@ async function createFromTemplate() {
     )
     const createdId = selectedPlan.value.id
     notifyToast(t('plans.created'), 'success')
-    await closeTemplatePicker(true)
+    await closeTemplatePicker(true, false)
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
@@ -1165,7 +1179,7 @@ onUnmounted(() => {
 
     <div class="plans-content">
 
-      <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card">
+      <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card" @keydown="onTemplateWorkspaceKeydown">
         <header class="template-workspace-header">
           <div><p class="plans-eyebrow">{{ t('plans.template') }}</p><h2>{{ t('plans.templateWorkspaceTitle') }}</h2><p>{{ t('plans.templateWorkspaceHint') }}</p></div>
           <button type="button" class="plans-secondary" @click="void closeTemplatePicker()">{{ t('plans.cancel') }}</button>
