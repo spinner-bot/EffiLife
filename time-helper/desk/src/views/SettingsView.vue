@@ -658,6 +658,9 @@ function formatArchivePreview(preview: ArchivePreview): string {
     : preview.planStatus === 'stale'
       ? t('settings.archive.planSnapshotStale')
       : t('settings.archive.planSnapshotUnavailable')
+  const planStatusWarning = preview.planStatus === 'snapshot' || preview.planStatus === 'stale'
+    ? t('settings.archive.planSnapshotLocalExportWarning')
+    : ''
   const exportDate = new Date(preview.exportDate)
   const formattedExportDate = Number.isNaN(exportDate.getTime())
     ? preview.exportDate
@@ -667,7 +670,9 @@ function formatArchivePreview(preview: ArchivePreview): string {
     timeRecords: preview.repairedTodoRecordLinks,
     planTasks: preview.repairedTodoPlanTaskLinks,
   })
-  return `${summary}\n${replacement}\n${t('settings.archive.importExportDate', { date: formattedExportDate })}\n${repairs}\n${planStatus}\n${integrity}`
+  return [summary, replacement, t('settings.archive.importExportDate', { date: formattedExportDate }), repairs, planStatus, planStatusWarning, integrity]
+    .filter(Boolean)
+    .join('\n')
 }
 
 function openLegacyTodoImport() {
