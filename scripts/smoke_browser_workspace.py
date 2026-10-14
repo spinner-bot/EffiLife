@@ -72,6 +72,7 @@ class SmokeResult:
     mobile_startup_recovery_verified: bool
     archive_invalid_recovery_verified: bool
     archive_write_failure_recovery_verified: bool
+    pending_sync_recovery_verified: bool
     global_search_flow_verified: bool
     mobile_search_flow_verified: bool
 
@@ -93,6 +94,7 @@ def run_smoke(
     startup_recovery_flow: bool = False,
     archive_invalid_flow: bool = False,
     archive_write_failure_flow: bool = False,
+    pending_sync_recovery_flow: bool = False,
     global_search_flow: bool = False,
     mobile_search_flow: bool = False,
     theme_matrix_flow: bool = False,
@@ -161,6 +163,7 @@ def run_smoke(
         mobile_startup_recovery_verified = False
         archive_invalid_recovery_verified = False
         archive_write_failure_recovery_verified = False
+        pending_sync_recovery_verified = False
         global_search_flow_verified = False
         mobile_search_flow_verified = False
 
@@ -182,6 +185,81 @@ def run_smoke(
         else:
             page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
         page.wait_for_timeout(300)
+        if pending_sync_recovery_flow:
+            # Seed the same durable stores used by the application, then
+            # close and reopen the page to exercise startup repair across a
+            # document/session boundary rather than calling the repair API.
+            page.evaluate(
+                """
+                async () => {
+                    const todo = {
+                        id: 'SMOKE-PENDING-SYNC-TODO',
+                        title: 'Smoke pending sync todo',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        priority: 'normal', category: 'default', status: 'pending',
+                        tags: [], subtasks: [], recurrence: 'none',
+                        deadline_warning_days: 3, sort_order: 0,
+                        related_plan_id: 'SMOKE-PENDING-SYNC-PLAN',
+                        related_plan_task_id: 'SMOKE-PENDING-SYNC-TASK',
+                    };
+                    const pending = {
+                        key: 'SMOKE-PENDING-SYNC-PLAN:SMOKE-PENDING-SYNC-TASK',
+                        planId: 'SMOKE-PENDING-SYNC-PLAN',
+                        planTaskId: 'SMOKE-PENDING-SYNC-TASK',
+                        createdAt: new Date().toISOString(),
+                    };
+                    await new Promise((resolve, reject) => {
+                        const request = indexedDB.open('efflife_db', 4);
+                        request.onerror = () => reject(request.error);
+                        request.onsuccess = () => {
+                            const db = request.result;
+                            const tx = db.transaction(['todos', 'pending_plan_todo_sync'], 'readwrite');
+                            tx.objectStore('todos').put(todo);
+                            tx.objectStore('pending_plan_todo_sync').put({
+                                key: pending.key,
+                                value: pending,
+                                updatedAt: Date.now(),
+                            });
+                            tx.oncomplete = () => { db.close(); resolve(); };
+                            tx.onerror = () => reject(tx.error);
+                        };
+                    });
+                }
+                """
+            )
+            page.close()
+            page = context.new_page()
+            page.goto(f"{base_url.rstrip('/')}/", wait_until="domcontentloaded", timeout=15000)
+            page.locator(".overview-grid").wait_for(state="visible", timeout=15000)
+            repair_state = None
+            for _ in range(20):
+                repair_state = page.evaluate(
+                    """
+                    async () => await new Promise((resolve, reject) => {
+                        const request = indexedDB.open('efflife_db', 4);
+                        request.onerror = () => reject(request.error);
+                        request.onsuccess = () => {
+                            const db = request.result;
+                            const tx = db.transaction(['todos', 'pending_plan_todo_sync'], 'readonly');
+                            const todoRequest = tx.objectStore('todos').get('SMOKE-PENDING-SYNC-TODO');
+                            const pendingRequest = tx.objectStore('pending_plan_todo_sync').get('SMOKE-PENDING-SYNC-PLAN:SMOKE-PENDING-SYNC-TASK');
+                            tx.oncomplete = () => {
+                                db.close();
+                                resolve({ todo: todoRequest.result, pending: pendingRequest.result });
+                            };
+                            tx.onerror = () => reject(tx.error);
+                        };
+                    })
+                    """
+                )
+                if repair_state.get("todo", {}).get("status") == "completed" and repair_state.get("pending") is None:
+                    break
+                page.wait_for_timeout(500)
+            pending_value = repair_state.get("pending")
+            if repair_state.get("todo", {}).get("status") != "completed" or pending_value is not None:
+                raise RuntimeError(f"startup pending sync repair did not converge: {repair_state!r}")
+            pending_sync_recovery_verified = True
         if onboarding_flow:
             onboarding_tooltip = page.locator(".guide-tooltip")
             onboarding_tooltip.wait_for(state="visible", timeout=5000)
@@ -232,7 +310,7 @@ def run_smoke(
         # the browser-safe application fallback while keeping the native
         # desktop shortcut covered by the app-shell contract tests.
         page.keyboard.press("Alt+Shift+t")
-        page.wait_for_timeout(700)
+        page.locator(".pv-modal").wait_for(state="visible", timeout=5000)
         if "/time" not in page.url or page.locator(".pv-modal").count() != 1:
             raise RuntimeError("TH keyboard shortcut did not open the time-record form")
         page.keyboard.press("Escape")
@@ -949,6 +1027,7 @@ def run_smoke(
         mobile_startup_recovery_verified=mobile_startup_recovery_verified,
         archive_invalid_recovery_verified=archive_invalid_recovery_verified,
         archive_write_failure_recovery_verified=archive_write_failure_recovery_verified,
+        pending_sync_recovery_verified=pending_sync_recovery_verified,
         global_search_flow_verified=global_search_flow_verified,
         mobile_search_flow_verified=mobile_search_flow_verified,
     )
@@ -1024,6 +1103,11 @@ def main() -> int:
         help="inject one archive import write failure and verify the recovery UI remains usable",
     )
     parser.add_argument(
+        "--pending-sync-recovery-flow",
+        action="store_true",
+        help="seed a durable PH-TD projection queue and verify startup repair after reopening the app",
+    )
+    parser.add_argument(
         "--global-search-flow",
         action="store_true",
         help="verify unified TD search and deep-link navigation from the workspace shell",
@@ -1056,6 +1140,7 @@ def main() -> int:
             startup_recovery_flow=args.startup_recovery_flow,
             archive_invalid_flow=args.archive_invalid_flow,
             archive_write_failure_flow=args.archive_write_failure_flow,
+            pending_sync_recovery_flow=args.pending_sync_recovery_flow,
             global_search_flow=args.global_search_flow,
             mobile_search_flow=args.mobile_search_flow,
             theme_matrix_flow=args.theme_matrix_flow,
