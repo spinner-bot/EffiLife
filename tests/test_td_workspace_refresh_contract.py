@@ -6,6 +6,6 @@ TASKS = (ROOT / "time-helper" / "desk" / "src" / "views" / "TaskCenterView.vue")
 
 
 def test_td_refreshes_after_archive_import_and_network_recovery():
-    assert "if (!source || !['todos', 'records', 'settings', 'archive', 'network'].includes(source)) return" in TASKS
+    assert "if (!source || !['todos', 'plans', 'records', 'settings', 'archive', 'network'].includes(source)) return" in TASKS
     assert "await loadTodos()" in TASKS
     assert "await loadCategories()" in TASKS
