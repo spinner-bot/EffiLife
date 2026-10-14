@@ -429,7 +429,20 @@ watch(() => route.path, async (path, previousPath) => {
   if (!runtimeReady.value || path === previousPath) return
   await nextTick()
   mainContent.value?.focus({ preventScroll: true })
+  revealActiveMobileNavigation()
 })
+
+function revealActiveMobileNavigation(): void {
+  if (typeof window === 'undefined' || !window.matchMedia('(max-width: 680px)').matches) return
+  const activeLink = document.querySelector<HTMLElement>('.mobile-bottom-nav-link.active')
+  if (!activeLink) return
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  activeLink.scrollIntoView({
+    behavior: reducedMotion ? 'auto' : 'smooth',
+    block: 'nearest',
+    inline: 'nearest',
+  })
+}
 
 // 监听统计数据变化，检查事件
 watch(() => appStore.todayStat, () => {

@@ -73,6 +73,15 @@ def test_mobile_navigation_keeps_touch_targets_without_hiding_module_entries():
     assert "backdrop-filter: blur(14px);" in mobile_block
 
 
+def test_mobile_navigation_reveals_the_active_route_after_navigation():
+    app = (ROOT / "time-helper/desk/src/App.vue").read_text(encoding="utf-8")
+    assert "function revealActiveMobileNavigation(): void" in app
+    assert "window.matchMedia('(max-width: 680px)')" in app
+    assert "document.querySelector<HTMLElement>('.mobile-bottom-nav-link.active')" in app
+    assert "activeLink.scrollIntoView" in app
+    assert "revealActiveMobileNavigation()" in app
+
+
 def test_mobile_shell_exposes_quick_capture_above_bottom_navigation():
     app = (ROOT / "time-helper/desk/src/App.vue").read_text(encoding="utf-8")
     mobile_block = app.split("@media (max-width: 680px)", 1)[1]
