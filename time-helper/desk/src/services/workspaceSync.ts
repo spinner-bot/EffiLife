@@ -85,9 +85,19 @@ export async function completeLinkedPlanTodo(planId: string, planTaskId: string)
     && todo.status !== 'archived'
     && todo.status !== 'cancelled'
   ))
+  let firstError: unknown = null
   for (const todo of linked) {
-    await TodoService.complete(todo.id)
+    try {
+      await TodoService.complete(todo.id)
+    } catch (error) {
+      // PH remains completed, but one TD projection must not prevent the
+      // remaining exact relations from being attempted. The caller still
+      // receives an error so the partial projection stays visible and
+      // recoverable instead of being mistaken for success.
+      firstError ??= error
+    }
   }
+  if (firstError) throw firstError
   return linked.length
 }
 

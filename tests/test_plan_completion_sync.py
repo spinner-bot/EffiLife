@@ -16,6 +16,9 @@ def test_plan_completion_projects_to_exact_active_todo_relations():
     assert "todo.status !== 'archived'" in SYNC
     assert "todo.status !== 'cancelled'" in SYNC
     assert "await TodoService.complete(todo.id)" in SYNC
+    assert "let firstError: unknown = null" in SYNC
+    assert "firstError ??= error" in SYNC
+    assert "if (firstError) throw firstError" in SYNC
 
 
 def test_plan_workspaces_keep_ph_success_when_td_projection_fails():
