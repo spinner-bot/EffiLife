@@ -41,3 +41,11 @@ def test_plan_creation_draft_requires_confirmation_before_discard():
     assert '@click.self="void closeCreatePlan()"' in VIEW
     assert '@click="void closeCreatePlan()"' in VIEW
     assert "if (!force && isCreatePlanDirty()" in VIEW
+
+
+def test_template_creation_draft_uses_the_same_discard_protection():
+    assert "function isTemplateDraftDirty(): boolean" in VIEW
+    assert "async function closeTemplatePicker(force = false)" in VIEW
+    assert "if (!force && isTemplateDraftDirty()" in VIEW
+    assert '@click="void closeTemplatePicker()"' in VIEW
+    assert "await closeTemplatePicker(true)" in VIEW

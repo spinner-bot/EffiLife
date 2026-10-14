@@ -75,6 +75,7 @@ const createSections = ref<InitialPlanSection[]>([])
 const templateDraftName = ref('')
 const templateDraftDate = ref(toDateInput(new Date()))
 const templateDraftId = ref('')
+const templateDraftInitialId = ref('')
 const templateOptions = ref<PlanTemplateSummary[]>([])
 const templateLoading = ref(false)
 const copyingYesterday = ref(false)
@@ -436,9 +437,19 @@ function removeCreateTask(section: InitialPlanSection, index: number): void {
   section.tasks.splice(index, 1)
 }
 
-function closeTemplatePicker() {
+function isTemplateDraftDirty(): boolean {
+  return Boolean(
+    templateDraftName.value.trim()
+    || templateDraftDate.value !== toDateInput(new Date())
+    || (templateDraftId.value && templateDraftId.value !== templateDraftInitialId.value)
+  )
+}
+
+async function closeTemplatePicker(force = false): Promise<void> {
+  if (!force && isTemplateDraftDirty() && !await requestConfirm(t('plans.discardCreateConfirm'), { tone: 'danger' })) return
   showTemplatePicker.value = false
   templateDraftId.value = ''
+  templateDraftInitialId.value = ''
   templateOptions.value = []
 }
 
@@ -446,13 +457,17 @@ function openTemplatePicker() {
   templateDraftName.value = ''
   templateDraftDate.value = toDateInput(new Date())
   templateDraftId.value = ''
+  templateDraftInitialId.value = ''
   templateOptions.value = []
   templateLoading.value = true
   showTemplatePicker.value = true
   void listPlanTemplates()
     .then((templates) => {
       templateOptions.value = templates
-      if (templates.length === 1) templateDraftId.value = templates[0].id
+      if (templates.length === 1) {
+        templateDraftId.value = templates[0].id
+        templateDraftInitialId.value = templates[0].id
+      }
     })
     .catch(() => { templateOptions.value = [] })
     .finally(() => { templateLoading.value = false })
@@ -492,7 +507,7 @@ async function createFromTemplate() {
     )
     const createdId = selectedPlan.value.id
     notifyToast(t('plans.created'), 'success')
-    closeTemplatePicker()
+    await closeTemplatePicker(true)
     view.value = 'detail'
     await router.replace({ path: '/plans', query: { plan: String(createdId) } })
   } catch (error) {
@@ -1153,7 +1168,7 @@ onUnmounted(() => {
       <section v-if="showTemplatePicker && view === 'events'" class="template-workspace theme-card">
         <header class="template-workspace-header">
           <div><p class="plans-eyebrow">{{ t('plans.template') }}</p><h2>{{ t('plans.templateWorkspaceTitle') }}</h2><p>{{ t('plans.templateWorkspaceHint') }}</p></div>
-          <button type="button" class="plans-secondary" @click="closeTemplatePicker">{{ t('plans.cancel') }}</button>
+          <button type="button" class="plans-secondary" @click="void closeTemplatePicker()">{{ t('plans.cancel') }}</button>
         </header>
         <div v-if="templateLoading" class="plans-empty template-workspace-empty">{{ t('plans.templateLoading') }}</div>
         <div v-else-if="templateOptions.length === 0" class="plans-empty template-workspace-empty">{{ t('plans.templateEmpty') }}</div>
@@ -1161,7 +1176,7 @@ onUnmounted(() => {
           <label>{{ t('plans.templateChoose') }}<select v-model="templateDraftId" required><option value="" disabled>{{ t('plans.templateChoose') }}</option><option v-for="template in templateOptions" :key="template.id" :value="template.id">{{ templateDisplayName(template) }} · {{ templateDisplayDescription(template) }}</option></select></label>
           <label>{{ t('plans.name') }}<input v-model="templateDraftName" required /></label>
           <label>{{ t('plans.date') }}<input v-model="templateDraftDate" type="date" required /></label>
-          <div class="template-workspace-actions"><button type="button" class="plans-secondary" @click="closeTemplatePicker">{{ t('plans.cancel') }}</button><button type="submit" class="plans-primary" :disabled="isLoading || !templateDraftId">{{ isLoading ? t('plans.loading') : t('plans.templateCreate') }}</button></div>
+          <div class="template-workspace-actions"><button type="button" class="plans-secondary" @click="void closeTemplatePicker()">{{ t('plans.cancel') }}</button><button type="submit" class="plans-primary" :disabled="isLoading || !templateDraftId">{{ isLoading ? t('plans.loading') : t('plans.templateCreate') }}</button></div>
         </form>
       </section>
 
