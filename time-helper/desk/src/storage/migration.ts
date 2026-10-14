@@ -6,6 +6,9 @@ import { createBackup } from './backup'
 
 const STORAGE_PREFIX = 'efflife_'
 const MIGRATION_FLAG_KEY = 'efflife_db_migration_done'
+// Keep the marker versioned so future schema migrations can run for existing
+// users.  The old boolean value "true" is treated as version 1 below.
+export const CURRENT_STORAGE_MIGRATION_VERSION = 1
 const NON_DATA_STORAGE_KEYS = new Set([
   MIGRATION_FLAG_KEY,
   'efflife_locale',
@@ -27,12 +30,20 @@ function isWorkspaceDataStorageKey(key: string): boolean {
 
 // 检测是否已完成迁移
 export function isMigrationDone(): boolean {
-  return localStorage.getItem(MIGRATION_FLAG_KEY) === 'true'
+  return getStoredMigrationVersion() >= CURRENT_STORAGE_MIGRATION_VERSION
 }
 
-// 标记迁移完成
+export function getStoredMigrationVersion(): number {
+  const stored = localStorage.getItem(MIGRATION_FLAG_KEY)
+  if (stored === 'true') return 1
+  if (!stored) return 0
+  const parsed = Number.parseInt(stored, 10)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+}
+
+// 标记当前版本迁移完成
 function markMigrationDone(): void {
-  localStorage.setItem(MIGRATION_FLAG_KEY, 'true')
+  localStorage.setItem(MIGRATION_FLAG_KEY, String(CURRENT_STORAGE_MIGRATION_VERSION))
 }
 
 // 从 localStorage 读取 JSON
