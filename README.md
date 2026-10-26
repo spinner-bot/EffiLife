@@ -126,7 +126,7 @@ EffiLife/
 
 | 目录 | 技术栈 | 说明 |
 |------|--------|------|
-| `time-helper/python/` | Python 3 + Tkinter | 原生桌面版，单文件实现 |
+| `archive/v1-time-helper/` | Python 3 + Tkinter | 1 代单文件原生版，已归档，不参与当前构建 |
 | `time-helper/desk/` | Vue 3 + Tauri (Rust) | 桌面版，支持主题、音频、动效系统 |
 | `time-helper/desk/` | Vue 3 + Tauri Mobile | 复用统一前端的移动端适配链路（Android 真机验收待完成；iOS 按当前范围暂缓） |
 
