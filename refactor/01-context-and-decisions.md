@@ -51,7 +51,7 @@
 
 | 术语 | 指代 |
 |---|---|
-| 1 代 | `time-helper/python/浪兮效率时钟.py`，单文件 Tkinter 应用 |
+| 1 代 | `archive/v1-time-helper/time-helper/浪兮效率时钟.py`（原 `time-helper/python/`），单文件 Tkinter 应用 |
 | 2 代 | 当前统一工作台（TH/PH/TD 三模块合并） |
 | 3 代 | 本次重构后的单一软件，版本 3.0.0 |
 | 包 | 统一指 d3el / r3el / t3el / f3el 四类压缩包 |
