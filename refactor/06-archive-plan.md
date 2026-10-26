@@ -29,8 +29,8 @@ archive/
 
 ### 1 代：`archive/v1-time-helper/`
 
-- 内容：`time-helper/python/浪兮效率时钟.py`（约 115 KB，单文件 Tkinter）。
-- 归档时机：可以立即归档；它已不参与统一工作台构建。
+- 内容：`archive/v1-time-helper/time-helper/浪兮效率时钟.py`（约 115 KB，单文件 Tkinter；原路径 `time-helper/python/`）。
+- 归档时机：已于 2026-10-26 归档（`d394f8c`）；它已不参与统一工作台构建。
 - README 需包含：用途、运行方式（Python 3.6+）、数据目录、已知限制、归档日期。
 - 归档后不再修改。
 
@@ -63,14 +63,13 @@ archive/
 6. **二进制只留元数据**：安装包不入 git，记录路径与校验和。
 7. **密集提交**：创建目录、写 README、移动文件、更新引用分别提交。
 
-## 5. 需要同步更新的引用
+## 5. 引用更新（已完成）
 
-- 根 `README.md` 的“实现版本”表：1 代路径从 `time-helper/python/` 改为 `archive/v1-time-helper/`，并标注“已归档，不参与当前构建”。
-- `plan-helper/archive/` 目录在迁移完成后删除，避免出现第二个归档入口。
-- 任何脚本/文档若引用旧路径，一并更新；测试若引用旧路径，改为断言归档存在或移除。
+- 根 `README.md` 的“实现版本”表已改为 `archive/v1-time-helper/`，并标注“已归档，不参与当前构建”（`656a892`）。
+- `plan-helper/archive/` 已删除，`test.py` 合并到 `archive/misc/plan-helper/`（`33efcc8`、`b1af49d`）。
+- 旧 `time-helper/python/` 空目录已删除。
 
 ## 6. 待确认
 
 - 2 代快照是否包含完整 git 历史，还是仅工作树快照 + 最后提交 hash（建议后者，避免仓库体积翻倍）。
 - 是否把 Windows 安装包一起归档到 `archive/v2-unified-workspace/artifacts/`（建议只记录路径与 SHA-256）。
-- 1 代归档后，是否保留 `time-helper/python/` 空目录或直接删除（建议删除）。
