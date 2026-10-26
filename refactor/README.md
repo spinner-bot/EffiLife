@@ -21,6 +21,7 @@
 | [05-versioning-and-architecture.md](05-versioning-and-architecture.md) | 3.0.0 版本策略、取消三模块、桌面优先 |
 | [06-archive-plan.md](06-archive-plan.md) | 归档区结构与 1/2 代快照策略 |
 | [07-open-questions.md](07-open-questions.md) | 待确认事项与已解决决策 |
+| [09-package-registry.md](09-package-registry.md) | 软件分配的包 ID、注册表、权限登记与生命周期 |
 
 ## 工作规则
 
