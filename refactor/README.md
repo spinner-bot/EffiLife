@@ -22,6 +22,7 @@
 | [06-archive-plan.md](06-archive-plan.md) | 归档区结构与 1/2 代快照策略 |
 | [07-open-questions.md](07-open-questions.md) | 待确认事项与已解决决策 |
 | [09-package-registry.md](09-package-registry.md) | 软件分配的包 ID、注册表、权限登记与生命周期 |
+| [10-design-doc-template.md](10-design-doc-template.md) | 用户设计文档模板（填写后成为 11-user-design.md） |
 
 ## 工作规则
 
