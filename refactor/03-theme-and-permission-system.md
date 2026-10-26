@@ -12,7 +12,7 @@
 
 ```
 .t3el 主题包
-   manifest.json      身份、版本、兼容范围、声明权限、能力
+   manifest.json      名称、版本、作者、兼容范围、声明权限、能力
    tokens.json        语义 token（颜色角色/字体/间距/圆角/阴影/透明度）
    layers.json        声明式装饰层（渐变/纹理/噪点/粒子/模糊/暗角）
    motion.json        动效配置
