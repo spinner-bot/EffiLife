@@ -53,7 +53,6 @@ signature/             可选：签名与校验和
 
 ```json
 {
-  "id": "example.theme.aurora",
   "type": "theme",
   "name": { "zh-CN": "极光", "en": "Aurora" },
   "version": "1.0.0",
@@ -68,9 +67,13 @@ signature/             可选：签名与校验和
   "preview": "preview.webp",
   "entrypoints": {},
   "checksums": {},
-  "signature": null
+  "signature": null,
+  "slug": "aurora"
 }
 ```
+
+- **包内没有作为身份的 `id`。** 安装时由软件注册表分配本地 ID（见 09）。
+- `slug` 可选，仅用于更新识别，不作为身份；缺失时按名称+作者匹配。
 
 ### 类型专属字段
 
@@ -104,7 +107,7 @@ signature/             可选：签名与校验和
 4. 用户确认安装与授权
 5. 安装到应用数据目录（内置包除外）
 6. 启用：解析器加载，失败则禁用并说明原因
-7. 升级：按 id + 版本替换，保留用户 options
+7. 升级：按注册表 ID + 版本替换，保留用户 options；更新识别规则见 09
 8. 卸载：删除包与缓存，回退到默认主题/资源
 
 ## 6. 版本维度
