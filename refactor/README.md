@@ -5,7 +5,7 @@
 ## 状态
 
 - 阶段：Phase 0（设计）
-- 最后更新：2026-10-26
+- 最后更新：2026-10-27
 - 当前产品版本：1.7.0
 - 重构完成后目标版本：**3.0.0**
 - 审计报告：[../docs/audit/2026-10-26-视觉审计.md](../docs/audit/2026-10-26-视觉审计.md)
@@ -20,7 +20,8 @@
 | [04-package-formats.md](04-package-formats.md) | d3el / r3el / t3el / f3el 包格式与扩展名机制 |
 | [05-versioning-and-architecture.md](05-versioning-and-architecture.md) | 3.0.0 版本策略、取消三模块、桌面优先 |
 | [06-archive-plan.md](06-archive-plan.md) | 归档区结构与 1/2 代快照策略 |
-| [07-open-questions.md](07-open-questions.md) | 待确认事项与建议默认值 |
+| [07-open-questions.md](07-open-questions.md) | 待确认事项与已解决决策 |
+| [08-visual-direction.md](08-visual-direction.md) | 视觉方向、默认主题、字体、间距、动效与验收 |
 
 ## 工作规则
 
