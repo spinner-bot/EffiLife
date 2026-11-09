@@ -7,5 +7,8 @@ def get_level(score):
     else:
         return chr(temp)
 
-for i in range(101):
-    print(i, get_level(i), end="\n" if not i%10 else "  ")
+def main_e():
+    for i in range(101):
+        print(i, get_level(i), end="\n" if not i%10 else "  ")
+
+if __name__ == 

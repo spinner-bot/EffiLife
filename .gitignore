@@ -40,6 +40,9 @@ npm-debug.log*
 __pycache__/
 *.pyc
 
+# Local scratch workspace (audit raw captures, temporary scripts)
+/.tmp/
+
 # Integration runtime data
 common/data/user/
 common/data/cross_refs/
