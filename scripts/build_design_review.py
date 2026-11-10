@@ -198,6 +198,14 @@ def render_document(document_id, label, filename):
 
 
 def main():
+    product_source = (ROOT / "refactor" / DOCUMENTS[0][2]).read_text(encoding="utf-8")
+
+    def metadata(field):
+        match = re.search(rf"^- {field}：(.+)$", product_source, re.MULTILINE)
+        if not match:
+            raise SystemExit(f"Missing product document metadata: {field}")
+        return escape(match.group(1).strip(), quote=True)
+
     articles, navigation = [], []
     for document in DOCUMENTS:
         article, toc = render_document(*document)
@@ -209,7 +217,7 @@ def main():
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="Codex  (sqs_A100)">
+  <meta name="author" content="__AUTHOR__">
   <meta name="description" content="EffiLife 产品设计、系统架构与远期目标审阅稿。">
   <title>EffiLife · 产品设计审阅稿</title>
   <style>__STYLE__</style>
@@ -228,7 +236,7 @@ def main():
       <p class="eyebrow">EFFILIFE / DESIGN REVIEW</p>
       <h1>个人生活管理的产品设计</h1>
       <p class="intro">以时间与事件两条主线关联个人生活，整理统一录入、信息层级、使用动线与可扩展系统架构。下文完整收录三份设计文档，供逐条审计与修改。</p>
-      <div class="meta"><span>2026-11-10</span><span>产品稿 v0.2</span><span>作者：Codex  (sqs_A100)</span><span>状态：待审计</span></div>
+      <div class="meta"><span>__DATE__</span><span>产品稿 v__PRODUCT_VERSION__</span><span>作者：__AUTHOR__</span><span>状态：待审计</span></div>
       <div class="toolbar"><button type="button" id="print-button" hidden>打印 / 导出 PDF</button><a href="#product">开始阅读</a><a href="#architecture">系统架构</a><a href="#roadmap">远期目标</a></div>
     </header>
     <div class="legend" aria-label="条目状态说明">
@@ -251,6 +259,9 @@ def main():
     page = page.replace("__STYLE__", STYLE)
     page = page.replace("__NAVIGATION__", "\n".join(navigation))
     page = page.replace("__ARTICLES__", "\n".join(articles))
+    page = page.replace("__DATE__", metadata("日期"))
+    page = page.replace("__PRODUCT_VERSION__", metadata("版本"))
+    page = page.replace("__AUTHOR__", metadata("作者"))
     OUTPUT.write_text(page, encoding="utf-8")
     print(f"Generated {OUTPUT.relative_to(ROOT)} ({OUTPUT.stat().st_size:,} bytes)")
 
