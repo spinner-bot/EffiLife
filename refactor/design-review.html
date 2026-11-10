@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Codex  (sqs_A100)">
+  <meta name="description" content="EffiLife 产品设计、系统架构与远期目标审阅稿。">
+  <title>EffiLife · 产品设计审阅稿</title>
+  <style>
+:root {
+  color-scheme: light;
+  --page: #f5f6f8; --paper: #ffffff; --ink: #182330;
+  --muted: #526071; --line: #dce2e9; --accent: #274ab0;
+  --confirmed: #126647; --confirmed-bg: #f0f8f4;
+  --proposal: #795019; --proposal-bg: #fff8ed;
+  --radius: 12px;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 24px; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px; line-height: 1.9; overflow-wrap: anywhere;
+}
+a { color: var(--accent); text-underline-offset: 4px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 4px;
+}
+.skip { position: absolute; left: 16px; top: -100px; padding: 10px 18px; background: var(--paper); z-index: 5; }
+.skip:focus { top: 12px; }
+.layout { display: grid; grid-template-columns: 272px minmax(0, 1fr); max-width: 1450px; margin: auto; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 30px 22px 36px; border-right: 1px solid var(--line);
+}
+.brand { margin: 0; font-size: 19px; font-weight: 750; letter-spacing: -.4px; }
+.sidebar-label { margin: 0 0 24px; font-size: 14px; color: var(--muted); }
+.sidebar details { padding: 12px 0; border-top: 1px solid var(--line); }
+.sidebar summary { cursor: pointer; font-weight: 650; padding: 3px 0; }
+.sidebar .toc { font-size: 14px; line-height: 1.65; }
+.sidebar ul { list-style: none; padding: 0; margin: 10px 0 0; }
+.sidebar ul ul { padding-left: 14px; margin-top: 5px; }
+.sidebar li { margin: 8px 0; }
+.sidebar a { display: inline-block; color: var(--muted); text-decoration: none; }
+.sidebar a:hover { color: var(--accent); text-decoration: underline; }
+.sidebar-note { font-size: 13px; color: var(--muted); margin-top: 24px; }
+main { min-width: 0; padding: 46px clamp(22px, 4vw, 64px) 80px; }
+.eyebrow { margin: 0 0 10px; color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: 1.4px; }
+h1 { margin: 0; font-size: clamp(28px, 3vw, 40px); line-height: 1.35; letter-spacing: -.8px; }
+.intro { color: var(--muted); max-width: 44em; margin: 16px 0 20px; }
+.meta { display: flex; gap: 10px 20px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+button {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); padding: 9px 16px; border-radius: 8px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 18px 0; margin: 24px 0; border-block: 1px solid var(--line); font-size: 14px; }
+.legend span { display: inline-flex; gap: 8px; align-items: center; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--confirmed); }
+.dot.proposal { background: var(--proposal); }
+.dot.direction { background: var(--accent); }
+.document { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(22px, 3vw, 40px); margin-top: 28px; }
+.document-top { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+.document-top a { color: var(--muted); }
+h2, h3, h4, h5 { line-height: 1.5; scroll-margin-top: 24px; }
+h2 { font-size: 26px; margin: 0 0 24px; }
+h3 { font-size: 21px; margin: 40px 0 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+h4 { font-size: 17px; margin: 26px 0 12px; }
+p { margin: 14px 0; }
+ul, ol { padding-left: 1.55em; }
+li { margin: 7px 0; }
+li > p { margin: 6px 0; }
+strong { font-weight: 680; }
+code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; background: #edf0f5; padding: 2px 5px; border-radius: 4px; }
+pre { overflow-x: auto; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+pre code { padding: 0; background: transparent; }
+.requirement { border-left: 3px solid var(--confirmed); padding: 16px 18px; background: var(--confirmed-bg); border-radius: 0 8px 8px 0; }
+.requirement.proposal { border-color: var(--proposal); background: var(--proposal-bg); }
+.requirement.direction { border-color: var(--accent); background: #f1f5ff; }
+.status { display: block; font-size: 12px; font-weight: 650; color: var(--confirmed); margin-bottom: 6px; }
+.proposal .status { color: var(--proposal); }
+.direction .status { color: var(--accent); }
+.permalink { display: inline-block; margin-left: 7px; font-weight: 400; font-size: 13px; text-decoration: none; }
+.requirement:target { outline: 2px solid var(--accent); outline-offset: 4px; }
+.table-scroll { width: 100%; overflow-x: auto; margin: 18px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 540px; text-align: left; font-size: 14px; line-height: 1.8; }
+th, td { padding: 12px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: #f4f6fa; font-weight: 650; }
+tr:last-child td { border-bottom: 0; }
+th:first-child, td:first-child { min-width: 110px; }
+blockquote { padding-left: 18px; border-left: 3px solid var(--line); color: var(--muted); margin-inline: 0; }
+footer { padding-top: 28px; font-size: 13px; color: var(--muted); }
+@media (max-width: 900px) {
+  .layout { display: block; }
+  .sidebar { position: static; height: auto; padding: 20px 22px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .sidebar-label { margin-bottom: 10px; }
+  .sidebar-note { margin: 10px 0 0; }
+  main { padding-top: 28px; }
+  .document { padding: 22px 18px; }
+}
+@media (max-width: 480px) {
+  body { font-size: 15px; }
+  main { padding-inline: 14px; }
+  .requirement { padding: 14px; }
+  h2 { font-size: 23px; }
+  h3 { font-size: 19px; }
+}
+@media print {
+  :root { --page: #fff; --line: #bbb; }
+  body { font-size: 11pt; line-height: 1.7; }
+  .layout { display: block; max-width: none; }
+  .sidebar, .toolbar, .skip, .permalink, .document-top { display: none; }
+  main { padding: 0; }
+  h1 { font-size: 25pt; }
+  h2 { font-size: 20pt; }
+  h3 { font-size: 15pt; }
+  h2, h3, h4 { break-after: avoid; }
+  .document { border: 0; border-radius: 0; padding: 0; margin-top: 28px; }
+  .document + .document { break-before: page; }
+  .requirement { break-inside: avoid; background: transparent !important; }
+  .table-scroll { overflow: visible; border-radius: 0; }
+  table { min-width: 0; font-size: 10pt; }
+  tr { break-inside: avoid; }
+  a { color: inherit; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">跳到文档正文</a>
+<div class="layout">
+  <aside class="sidebar" aria-label="文档目录">
+    <p class="brand">EffiLife</p>
+    <p class="sidebar-label">设计文档 · 审阅版</p>
+    <nav aria-label="章节导航"><details open><summary>产品设计</summary><div class="toc">
+<ul>
+<li><a href="#product-11-产品设计审阅稿">11 产品设计审阅稿</a><ul>
+<li><a href="#product-1-协作方式与阅读说明">1. 协作方式与阅读说明</a></li>
+<li><a href="#product-2-设计初衷与产品定位">2. 设计初衷与产品定位</a></li>
+<li><a href="#product-3-统一录入方向">3. 统一录入方向</a></li>
+<li><a href="#product-4-内容层级与使用动线">4. 内容层级与使用动线</a></li>
+<li><a href="#product-5-视觉与交互方向">5. 视觉与交互方向</a></li>
+<li><a href="#product-6-连续使用与数据关联提案">6. 连续使用与数据关联提案</a></li>
+<li><a href="#product-7-验收场景提案">7. 验收场景提案</a></li>
+<li><a href="#product-8-后续审计与远期目标">8. 后续审计与远期目标</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<details open><summary>系统架构</summary><div class="toc">
+<ul>
+<li><a href="#architecture-13-多端与可扩展系统架构提案">13 多端与可扩展系统架构提案</a><ul>
+<li><a href="#architecture-1-用户明确的架构约束">1. 用户明确的架构约束</a></li>
+<li><a href="#architecture-2-职责划分提案">2. 职责划分提案</a></li>
+<li><a href="#architecture-3-多端适配">3. 多端适配</a></li>
+<li><a href="#architecture-4-多语言系统">4. 多语言系统</a></li>
+<li><a href="#architecture-5-主题系统">5. 主题系统</a></li>
+<li><a href="#architecture-6-字体与资源系统">6. 字体与资源系统</a></li>
+<li><a href="#architecture-7-新能力与统一录入">7. 新能力与统一录入</a></li>
+<li><a href="#architecture-8-持久化-版本与兼容">8. 持久化、版本与兼容</a></li>
+<li><a href="#architecture-9-架构验收提案">9. 架构验收提案</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<details open><summary>远期目标</summary><div class="toc">
+<ul>
+<li><a href="#roadmap-12-远期产品目标">12 远期产品目标</a><ul>
+<li><a href="#roadmap-1-产品定位与共同基础">1. 产品定位与共同基础</a></li>
+<li><a href="#roadmap-2-已提出的远期目标">2. 已提出的远期目标</a></li>
+<li><a href="#roadmap-3-与当前设计工作的关系">3. 与当前设计工作的关系</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details></nav>
+    <p class="sidebar-note">可按 R / P 编号提出修改意见。章节与条目支持直接链接。</p>
+  </aside>
+  <main id="content" tabindex="-1">
+    <header>
+      <p class="eyebrow">EFFILIFE / DESIGN REVIEW</p>
+      <h1>个人生活管理的产品设计</h1>
+      <p class="intro">以时间与事件两条主线关联个人生活，整理统一录入、信息层级、使用动线与可扩展系统架构。下文完整收录三份设计文档，供逐条审计与修改。</p>
+      <div class="meta"><span>2026-11-10</span><span>产品稿 v0.2</span><span>作者：Codex  (sqs_A100)</span><span>状态：待审计</span></div>
+      <div class="toolbar"><button type="button" id="print-button" hidden>打印 / 导出 PDF</button><a href="#product">开始阅读</a><a href="#architecture">系统架构</a><a href="#roadmap">远期目标</a></div>
+    </header>
+    <div class="legend" aria-label="条目状态说明">
+      <span><i class="dot" aria-hidden="true"></i>用户已明确的要求</span>
+      <span><i class="dot direction" aria-hidden="true"></i>用户探索方向</span>
+      <span><i class="dot proposal" aria-hidden="true"></i>Codex 提案，待审计</span>
+    </div>
+    <article class="document" id="product" aria-label="产品设计"><div class="document-top"><span>产品设计</span><a href="11-user-design.md">Markdown 源文档</a></div><h2 id="product-11-产品设计审阅稿">11 产品设计审阅稿</h2>
+<ul>
+<li>版本：0.2</li>
+<li>日期：2026-11-10</li>
+<li>作者：Codex  (sqs_A100)</li>
+<li>状态：待用户审计；尚未作为实现定稿</li>
+<li>依据：本轮用户说明、<a href="../docs/HOTL/1.txt">H 文档</a>与已确认的重构决策</li>
+</ul>
+<h3 id="product-1-协作方式与阅读说明">1. 协作方式与阅读说明</h3>
+<p>用户提供产品初衷、核心关系和关键取舍，Codex 据此撰写完整草案，自行拟定常规交互和技术细节。用户通过审计草案修正方案。提问集中在影响产品方向、无法从已有要求合理判断的问题上。</p>
+<p>本文使用两类编号：</p>
+<ul>
+<li><strong>R：用户已明确的要求</strong>。保留原意，作为后续方案的依据。</li>
+<li><strong>P：Codex 提案</strong>。为形成可审阅的完整方案而拟定，供用户修改；列出提案不代表用户已经批准。</li>
+</ul>
+<p>字段布局、默认值、按钮位置、录入时间格式等细节由 Codex 先拟，随具体页面设计补充。当前审计首先关注产品关系、内容层级与使用动线。</p>
+<h3 id="product-2-设计初衷与产品定位">2. 设计初衷与产品定位</h3>
+<p class="requirement confirmed" id="r-001"><span class="status">用户已明确</span><strong>R-001 起点与远期方向。</strong><a class="permalink" href="#r-001" aria-label="定位 R-001">#</a> EffiLife 起源于作者未被现成软件满足的实际需求，并考虑长期产品化与商业化。当前先讨论产品本身。</p>
+<p class="requirement confirmed" id="r-002"><span class="status">用户已明确</span><strong>R-002 持续生活管理。</strong><a class="permalink" href="#r-002" aria-label="定位 R-002">#</a> 产品面向个人持续、全方位的生活管理。其复合模型旨在适配现代人快节奏、多任务的城市生活，覆盖工作、生活和休息等方面。</p>
+<p class="requirement confirmed" id="r-003"><span class="status">用户已明确</span><strong>R-003 时间与事件两条主线。</strong><a class="permalink" href="#r-003" aria-label="定位 R-003">#</a> 核心是将时间和事件合理关联。两条主线分别组织时间分配与事务推进，并能共同表达用户的实际行动。关联需要减少重复操作，同时保留两种视角的管理价值。</p>
+<p class="requirement confirmed" id="r-004"><span class="status">用户已明确</span><strong>R-004 零散待办的补充职责。</strong><a class="permalink" href="#r-004" aria-label="定位 R-004">#</a> 待办管理订票、取快递、买盐等事项，保留其独立使用场景和既有优先排位算法。</p>
+<p class="requirement confirmed" id="r-005"><span class="status">用户已明确</span><strong>R-005 并行计划。</strong><a class="permalink" href="#r-005" aria-label="定位 R-005">#</a> 用户可以同时推进多份主题明确的计划，借助时间视角了解每天的投入和生活分配，并处理日常待办。</p>
+<p class="requirement confirmed" id="r-006"><span class="status">用户已明确</span><strong>R-006 事件侧基本单元。</strong><a class="permalink" href="#r-006" aria-label="定位 R-006">#</a> 一份 <code>Plan</code> 是围绕明确主题组织的整份计划，包含基本信息、计划内容和执行日志。保留条目定位、分组及近似树状层级的组织价值。</p>
+<p class="requirement confirmed" id="r-007"><span class="status">用户已明确</span><strong>R-007 进展日志。</strong><a class="permalink" href="#r-007" aria-label="定位 R-007">#</a> <code>log</code> 是核心特色，支持记录具体子项取得进展但尚未完成的情况。一次推进与最终完成具有不同含义。</p>
+<h3 id="product-3-统一录入方向">3. 统一录入方向</h3>
+<h4 id="product-3-1-用户提出的要求与探索方向">3.1 用户提出的要求与探索方向</h4>
+<p class="requirement confirmed" id="r-008"><span class="status">用户已明确</span><strong>R-008 减少重复记录。</strong><a class="permalink" href="#r-008" aria-label="定位 R-008">#</a> 用户不应每做一件事，都先进入时间侧记用时，再进入事件侧登记进展。</p>
+<p class="requirement confirmed" id="r-009"><span class="status">用户已明确</span><strong>R-009 统一入口。</strong><a class="permalink" href="#r-009" aria-label="定位 R-009">#</a> 用户希望日常行动采用统一、醒目的录入入口，同时承接已纳入计划的行动和吃饭等未纳入计划的生活事件。</p>
+<p class="requirement direction" id="r-010"><span class="status">用户探索方向 · 具体规则待细化</span><strong>R-010 类别关联方向。</strong><a class="permalink" href="#r-010" aria-label="定位 R-010">#</a> 用户提出一种可能方案：为计划条目指定时间侧类别，并支持从任意父节点统一指定下方子条目的类别，记录时自动归类。这是待细化的设计方向，具体继承、覆盖与存储规则由草案提出。</p>
+<h4 id="product-3-2-录入方案提案">3.2 录入方案提案</h4>
+<p class="requirement proposal" id="p-001"><span class="status">Codex 提案 · 待审计</span><strong>P-001 以本次行动组织录入。</strong><a class="permalink" href="#p-001" aria-label="定位 P-001">#</a> 设置全局“记录”主入口。用户填写本次做了什么及实际用时，可关联计划子项并记录进展；确认提交后，由软件维护两个视角的对应信息。</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="产品设计：表格 1"><table>
+<thead>
+<tr>
+<th scope="col">情境</th>
+<th scope="col">时间侧表达</th>
+<th scope="col">事件侧表达</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推进某个计划子项，尚未完成</td>
+<td>本次实际时间及类别</td>
+<td>关联子项的进展日志，保留未完成状态</td>
+</tr>
+<tr>
+<td>完成某个计划子项</td>
+<td>本次实际时间及类别</td>
+<td>记录完成状态；日志展示方式随页面草案细化</td>
+</tr>
+<tr>
+<td>吃饭等独立生活事件</td>
+<td>本次实际时间及类别</td>
+<td>可独立记录，无需先创建主题计划</td>
+</tr>
+</tbody>
+</table></div>
+<p>该表描述一次行动同时具有时间与事件信息时的处理。原有历史进展日志可以保留其内容和发生时刻，实际用时缺失时明确表示未知。</p>
+<p class="requirement proposal" id="p-002"><span class="status">Codex 提案 · 待审计</span><strong>P-002 自动带出已有信息。</strong><a class="permalink" href="#p-002" aria-label="定位 P-002">#</a> 选择计划条目后带出其名称、所属计划和时间类别，允许调整本次记录。统一入口保持同一套录入逻辑，并可使用当前页面已选中的条目作为初始上下文。</p>
+<p class="requirement proposal" id="p-003"><span class="status">Codex 提案 · 待审计</span><strong>P-003 父节点提供批量类别设置。</strong><a class="permalink" href="#p-003" aria-label="定位 P-003">#</a> 父节点展示操作范围；下方尚未指定类别的条目默认采用该类别，已有明确类别的条目保留原值，并提供显式覆盖选项。新增条目的默认类别采用最近上级指定值。具体规则待页面草案与数据方案共同审计。</p>
+<p class="requirement proposal" id="p-004"><span class="status">Codex 提案 · 待审计</span><strong>P-004 时间填写采用事后补录作为默认方案。</strong><a class="permalink" href="#p-004" aria-label="定位 P-004">#</a> 草案支持实际起止时间与时长之间的便捷填写，允许调整结束时间。计时操作与字段排列后续拟定，用户无需在当前阶段逐项选择。</p>
+<h3 id="product-4-内容层级与使用动线">4. 内容层级与使用动线</h3>
+<p class="requirement confirmed" id="r-011"><span class="status">用户已明确</span><strong>R-011 为“看”专门设计。</strong><a class="permalink" href="#r-011" aria-label="定位 R-011">#</a> 查看状态、浏览进展和理解信息本身就是完整的使用目的，需要专门的组件与界面。</p>
+<p class="requirement confirmed" id="r-012"><span class="status">用户已明确</span><strong>R-012 降低路径负担。</strong><a class="permalink" href="#r-012" aria-label="定位 R-012">#</a> 高频操作应容易到达，减少进入三四层菜单、反复切换和复杂重复操作。内容层级、信息展示和交互共同组成使用动线。</p>
+<h4 id="product-4-1-一级结构提案">4.1 一级结构提案</h4>
+<p class="requirement proposal" id="p-005"><span class="status">Codex 提案 · 待审计</span><strong>P-005 采用一套主导航与全局记录入口。</strong><a class="permalink" href="#p-005" aria-label="定位 P-005">#</a> 桌面主导航初拟如下，名称、顺序与布局均可在审计中调整。</p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="产品设计：表格 2"><table>
+<thead>
+<tr>
+<th scope="col">入口</th>
+<th scope="col">主要职责</th>
+<th scope="col">第一层应提供的内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>总览</td>
+<td>了解当前生活与事务状态</td>
+<td>今日时间分配、并行计划进展、需要处理的待办、最近行动</td>
+</tr>
+<tr>
+<td>计划</td>
+<td>组织并持续推进主题事务</td>
+<td>并行计划、主题结构、具体子项、执行日志</td>
+</tr>
+<tr>
+<td>时间</td>
+<td>了解和安排时间投入</td>
+<td>日期切换、当日分配与记录、历史时间信息</td>
+</tr>
+<tr>
+<td>待办</td>
+<td>收集与处理零散事项</td>
+<td>待办清单、优先排位、临近截止事项、分类筛选</td>
+</tr>
+<tr>
+<td>设置</td>
+<td>管理产品行为与个性化配置</td>
+<td>按用户目的组织的设置分区、主题与包管理、数据管理</td>
+</tr>
+</tbody>
+</table></div>
+<p>记录主入口在各主页面保持稳定位置；相关内容页通过明确的对象链接衔接。计划和待办分别可直接进入，时间侧与事件侧通过共同记录和上下文链接关联。</p>
+<p>日报、周报等专门回顾能力见远期目标。当前的总览与时间历史继续承接已有基础信息展示。</p>
+<h4 id="product-4-2-主要动线提案">4.2 主要动线提案</h4>
+<p class="requirement proposal" id="p-006"><span class="status">Codex 提案 · 待审计</span><strong>P-006 围绕使用目的安排路径。</strong><a class="permalink" href="#p-006" aria-label="定位 P-006">#</a></p>
+<div class="table-scroll" role="region" tabindex="0" aria-label="产品设计：表格 3"><table>
+<thead>
+<tr>
+<th scope="col">使用目的</th>
+<th scope="col">拟定路径</th>
+<th scope="col">路径需要保留的信息</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>看目前的生活状态</td>
+<td>打开总览即可查看主要信息，按需进入具体视角</td>
+<td>当前日期与展示范围</td>
+</tr>
+<tr>
+<td>看某项重要事务推进情况</td>
+<td>总览中的计划摘要 → 该计划的结构与日志</td>
+<td>计划身份、选中条目与最近进展</td>
+</tr>
+<tr>
+<td>记录一次行动</td>
+<td>全局记录入口 → 填写并提交 → 返回原场景</td>
+<td>输入草稿、关联条目、原页面位置</td>
+</tr>
+<tr>
+<td>从时间记录理解投入去向</td>
+<td>时间记录 → 关联计划条目及其进展</td>
+<td>原记录与时间范围</td>
+</tr>
+<tr>
+<td>从计划理解已有投入</td>
+<td>计划条目 → 关联执行日志与实际时间记录</td>
+<td>条目身份及相关历史</td>
+</tr>
+<tr>
+<td>处理零散事项</td>
+<td>待办入口 → 收集、查看排位或处理事项</td>
+<td>分类、筛选和清单位置</td>
+</tr>
+</tbody>
+</table></div>
+<p>操作完成后更新对应视角，保留用户原来的浏览上下文。常用动作直接在相关内容附近呈现，较少使用的管理操作逐步展开。</p>
+<h4 id="product-4-3-为浏览设计的组件提案">4.3 为浏览设计的组件提案</h4>
+<p class="requirement proposal" id="p-007"><span class="status">Codex 提案 · 待审计</span><strong>P-007 建立可独立阅读的信息组件。</strong><a class="permalink" href="#p-007" aria-label="定位 P-007">#</a> 优先设计每日时间分配、并行计划摘要、条目进展、执行日志流、待办摘要等组件。组件显示清楚的对象、时间范围、状态和必要说明，再提供进入详情或相关操作的位置。</p>
+<p>总览各区呈现核心信息与变化，并能进入对应视角；编辑控件在用户开始相关操作后展开。日志内容保留进展描述，时间信息同时区分发生时刻与实际用时。</p>
+<h3 id="product-5-视觉与交互方向">5. 视觉与交互方向</h3>
+<p class="requirement confirmed" id="r-013"><span class="status">用户已明确</span><strong>R-013 现代、清爽、美观。</strong><a class="permalink" href="#r-013" aria-label="定位 R-013">#</a> 界面需要达到成熟个人产品的品质，将信息展示与交互体验共同设计，支持长期舒适使用。用户明确反对旧界面类似简陋开发工具设置面板的体验。</p>
+<p class="requirement proposal" id="p-008"><span class="status">Codex 提案 · 待审计</span><strong>P-008 默认视觉采用轻量桌面工作台方向。</strong><a class="permalink" href="#p-008" aria-label="定位 P-008">#</a> 使用中性色表面、清楚的文字层级、适度的信息密度、稳定的分区与克制的强调色。通过分栏、列表和上下文详情利用桌面空间；交互动作就近出现。字号、间距、颜色与控件状态由统一体系管理。</p>
+<p>字体沿用已决定的 Inter Variable 与 Noto Sans SC 子集；组件底层沿用 Reka UI。具体色值、布局尺寸和动效由 Codex 在设计地基与页面草案中提出。</p>
+<p class="requirement proposal" id="p-009"><span class="status">Codex 提案 · 待审计</span><strong>P-009 先确定一套完整的默认界面。</strong><a class="permalink" href="#p-009" aria-label="定位 P-009">#</a> 以总览为试点，将浏览状态、主要操作与进入详情的路径一起展示，审计后推广到其他页面。旧 25 套主题按已有决策保留，并通过后续主题运行时与迁移方案承接。</p>
+<h3 id="product-6-连续使用与数据关联提案">6. 连续使用与数据关联提案</h3>
+<p class="requirement proposal" id="p-010"><span class="status">Codex 提案 · 待审计</span><strong>P-010 一次提交具有完整结果。</strong><a class="permalink" href="#p-010" aria-label="定位 P-010">#</a> 一次行动涉及时间记录与计划信息时，保存结果明确反映整个操作。失败保留草稿；出现部分写入时，由软件维护可恢复的操作状态，重试应避免产生重复记录。具体事务或补偿机制由数据与实现方案决定。</p>
+<p class="requirement proposal" id="p-011"><span class="status">Codex 提案 · 待审计</span><strong>P-011 历史关联可追溯。</strong><a class="permalink" href="#p-011" aria-label="定位 P-011">#</a> 行动、日志、条目与时间记录之间使用稳定引用。修改实际用时后，对应统计更新；修改进展描述后，对应日志展示更新。删除或解除关联的影响需要向用户说明，并在数据方案中定义恢复规则。</p>
+<p class="requirement proposal" id="p-012"><span class="status">Codex 提案 · 待审计</span><strong>P-012 连续积累覆盖跨日使用。</strong><a class="permalink" href="#p-012" aria-label="定位 P-012">#</a> 页面支持查看历史日期，保留多次推进同一条目的过程；跨日的记录按实际日期与时间表达。累计实际投入、计划预计用时和条目完成状态分别表达。</p>
+<p>本文定义产品行为与数据关系的要求。数据 schema、存储位置及与现有协议的迁移方案在后续技术文档中具体设计。</p>
+<h4 id="product-6-1-多端与系统级可扩展性">6.1 多端与系统级可扩展性</h4>
+<p class="requirement confirmed" id="r-014"><span class="status">用户已明确</span><strong>R-014 从开始考虑多端。</strong><a class="permalink" href="#r-014" aria-label="定位 R-014">#</a> 产品远期需要多端适配，当前即应在系统架构中考虑可扩展性。首期交付以桌面端为主，架构需要明确平台能力与业务规则的边界。</p>
+<p class="requirement confirmed" id="r-015"><span class="status">用户已明确</span><strong>R-015 资源与能力可扩展。</strong><a class="permalink" href="#r-015" aria-label="定位 R-015">#</a> 多语言、主题、字体等系统需要支持后续新增和替换，避免初期把固定选项和具体实现散布到各处。用户要求采用模块化思维与系统级架构设计。</p>
+<p class="requirement proposal" id="p-013"><span class="status">Codex 提案 · 待审计</span><strong>P-013 通过共同契约与适配器组织系统。</strong><a class="permalink" href="#p-013" aria-label="定位 P-013">#</a> 领域规则、应用服务、平台与存储适配、展示交互、资源与扩展系统分别承担明确职责；不同端遵循一致的记录与关联语义，采用适合设备的界面动线。</p>
+<p class="requirement proposal" id="p-014"><span class="status">Codex 提案 · 待审计</span><strong>P-014 语言、主题与字体通过登记和加载机制扩展。</strong><a class="permalink" href="#p-014" aria-label="定位 P-014">#</a> 界面从注册目录生成选项，资源通过稳定标识与语义角色引用，加载、切换和失败回退由对应服务统一管理。已有字体决定作为默认资源，后续新增字体走同一机制。</p>
+<p>完整职责划分与扩展验收提案见 <a href="#architecture">13-system-architecture.md</a>。</p>
+<h3 id="product-7-验收场景提案">7. 验收场景提案</h3>
+<p>以下场景用于后续页面与实现审计，不表示当前代码已经具备这些行为：</p>
+<ol>
+<li>用户打开总览，直接了解当天时间分配、多个主题计划进展与待办情况。</li>
+<li>用户为一个尚未完成的计划子项记录实际投入与进展，只需提交一次；时间侧与日志侧都能看到相应信息。</li>
+<li>用户记录吃饭等生活事件，可以直接完成录入。</li>
+<li>用户通过父节点为下方条目统一设置时间类别，并能理解已有类别的处理范围。</li>
+<li>用户从某条时间记录进入关联计划，能定位到对应条目与进展；返回后保留原来的浏览位置。</li>
+<li>保存失败时，用户保有已填写内容和清楚的恢复操作，重试成功后没有重复记录。</li>
+<li>用户仅浏览时，能够完整理解概览、分配和进展，无需进入编辑流程。</li>
+<li>新增语言、主题或字体时，通过资源与登记机制接入；核心页面和业务流程继续使用共同契约。</li>
+</ol>
+<p>现有七档视口、WCAG AA、视觉回归和主题切换质量门槛继续作为重构依据，具体见 <a href="02-refactor-process.md">02-refactor-process.md</a>。</p>
+<h3 id="product-8-后续审计与远期目标">8. 后续审计与远期目标</h3>
+<p>本稿首先供用户审计以下三处：</p>
+<ol>
+<li>产品定位与时间、事件、待办的关系是否准确；</li>
+<li>总览、主导航与统一录入是否形成合理的日常使用路径；</li>
+<li>默认视觉方向是否符合长期使用的预期。</li>
+</ol>
+<p>用户可以按 R/P 编号修改。Codex 根据反馈完善页面方案，主动检查跨章节影响，常规细节先形成具体提案。</p>
+<p>产品化与商业化、日报/周报、智能穿戴、小型 AI agent、语音输入与后续多端交付统一记录于 <a href="#roadmap">12-long-term-goals.md</a>。</p></article>
+<article class="document" id="architecture" aria-label="系统架构"><div class="document-top"><span>系统架构</span><a href="13-system-architecture.md">Markdown 源文档</a></div><h2 id="architecture-13-多端与可扩展系统架构提案">13 多端与可扩展系统架构提案</h2>
+<ul>
+<li>日期：2026-11-10</li>
+<li>作者：Codex  (sqs_A100)</li>
+<li>状态：用户已明确架构约束；下文的职责划分与验收方案为 Codex 提案，待审计</li>
+<li>依据：<a href="#product">产品设计审阅稿</a>、D-029、D-030</li>
+</ul>
+<h3 id="architecture-1-用户明确的架构约束">1. 用户明确的架构约束</h3>
+<ol>
+<li>产品远期需要多端适配，从一开始就考虑可扩展性。</li>
+<li>多语言、主题、字体等系统需要支持后续扩展，避免因初期固定实现而在扩展时大改。</li>
+<li>采用模块化思维，先做系统级架构设计，再安排具体功能实现。</li>
+</ol>
+<p>首期交付仍以桌面端为主。多端适配在当前架构阶段形成边界和契约，其他客户端的实际交付目标与排期后续确定。</p>
+<h3 id="architecture-2-职责划分提案">2. 职责划分提案</h3>
+<div class="table-scroll" role="region" tabindex="0" aria-label="系统架构：表格 1"><table>
+<thead>
+<tr>
+<th scope="col">层次</th>
+<th scope="col">职责</th>
+<th scope="col">主要约束</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>领域规则</td>
+<td>主题计划、条目、进展日志、时间分配、待办及其关联语义</td>
+<td>表达业务规则，采用明确的标识与数据契约</td>
+</tr>
+<tr>
+<td>应用服务</td>
+<td>统一录入、修改、查询、归档等完整使用操作</td>
+<td>组织验证、关联写入、结果反馈和恢复，供不同入口与客户端调用</td>
+</tr>
+<tr>
+<td>数据与平台适配</td>
+<td>存储、文件选择、导入导出、通知、设备能力及现有服务调用</td>
+<td>封装各运行环境的具体实现，向上提供稳定接口与能力状态</td>
+</tr>
+<tr>
+<td>展示与交互</td>
+<td>信息组件、使用动线、桌面或触屏布局</td>
+<td>使用应用服务和查询结果，针对设备特点组织信息与操作</td>
+</tr>
+<tr>
+<td>资源与扩展系统</td>
+<td>语言、主题、字体、资源包、功能扩展</td>
+<td>统一登记、加载、校验、生命周期和回退，通过受控接口协作</td>
+</tr>
+</tbody>
+</table></div>
+<p>这些是单一产品内部的职责边界。文件组织、接口名称及具体共享代码方式在实现设计中确定。</p>
+<p>领域规则与应用服务通过接口使用存储及平台能力，界面通过应用服务操作数据。首次实现即约束依赖方向，避免文件系统、Tauri 调用或特定服务地址扩散到页面和业务规则中。</p>
+<h3 id="architecture-3-多端适配">3. 多端适配</h3>
+<h4 id="architecture-3-1-业务语义与设备交互">3.1 业务语义与设备交互</h4>
+<p>不同客户端遵循相同的计划、日志、时间、待办和记录关联语义。具体代码可以共享，也可以通过同一版本化契约与行为用例保持一致；现阶段不强制所有现有 Python、Rust、TypeScript 逻辑迁入同一种语言。</p>
+<p>桌面与移动端可以采用适合各自屏幕、键盘、指针或触屏的导航和记录入口，调用同一语义的应用操作。组件与 token 体系承载公共规则，平台壳负责设备特有交互。</p>
+<h4 id="architecture-3-2-平台能力接口">3.2 平台能力接口</h4>
+<p>应用统一查询平台能力，再决定可用操作和反馈方式。文件选择、文件分享、通知等由适配器实现；明确区分可用、不可用、受限与失败。</p>
+<p>当前桌面 Plan Helper sidecar 的接入需要封装在服务适配器内。未来客户端根据自身环境提供等价业务能力，核心动线依赖应用服务的能力契约。存储适配同样集中，具体 schema 与迁移在数据方案中制定。</p>
+<p>多端适配、跨设备数据同步与云端服务分别定义范围。同步策略及账号系统在后续有明确需求时设计。</p>
+<h3 id="architecture-4-多语言系统">4. 多语言系统</h3>
+<p>语言通过统一注册目录描述：稳定语言标识、显示名称、文字方向、格式化规则与资源加载方式。导航、组件、主题及功能包的显示文字使用资源键或本地化元数据，业务身份保持稳定。</p>
+<p>新增语言主要增加语言资源与注册信息。日期、数字、复数、断行和文字方向通过共同的本地化与布局能力处理，语言选择器由已注册项目生成。语言包缺失字段时按明确的回退链处理。</p>
+<p>用户创建的计划名称和日志内容保留原文。语言切换影响显示资源与格式，语言显示名不充当类别、主题或业务对象的标识。</p>
+<h3 id="architecture-5-主题系统">5. 主题系统</h3>
+<p>内置主题与后续主题包沿用共同的 manifest、解析和权限机制，见 <a href="03-theme-and-permission-system.md">03</a>、<a href="04-package-formats.md">04</a>与 <a href="09-package-registry.md">09</a>。</p>
+<p>页面和组件依赖语义 token 与明确的样式扩展点。新增主题主要增加包内容和登记信息，主题选择界面由注册表生成，包的加载、切换、卸载与失败回退由主题运行时统一处理。</p>
+<p>L0–L2 遵循既定布局边界；L3 的布局与数据能力通过宿主 API 和沙箱提供。模块化扩展继续遵循既有权限分层。</p>
+<h3 id="architecture-6-字体与资源系统">6. 字体与资源系统</h3>
+<p>Inter Variable 与 Noto Sans SC 子集作为已有决定的默认资源。字体通过统一目录描述资源来源、许可、字重、覆盖文字范围与回退规则；组件引用正文字体、标题字体、等宽字体等语义角色。</p>
+<p>字体加载与释放、加载状态和失败回退由字体服务管理。语言、主题或资源包可通过已定义的资源引用机制关联字体，具体允许范围与授权遵循包规范。</p>
+<p>新增字体主要调整资源与目录登记，界面中的字体选择由登记信息生成。组件通过角色和 token 获取字体，布局在字体加载和回退时保持可读与可操作。</p>
+<h3 id="architecture-7-新能力与统一录入">7. 新能力与统一录入</h3>
+<p>日报/周报、智能穿戴、自然语言 agent 与语音输入通过各自模块接入应用服务，使用明确的输入输出与能力声明。应用维护它们所需的查询、记录提交和生命周期接口，具体实现按远期目标推进。</p>
+<p>自然语言和语音未来可以生成录入草稿，复用统一录入的校验、关联提交与结果反馈。智能穿戴的数据来源、时间信息和确认方式在接入方案中定义，以便追溯记录来源。</p>
+<p>统一录入服务负责一次行动的关联处理，界面和后续扩展调用同一语义的操作。依赖版本和能力要求通过元数据表达，扩展失败按宿主定义的结果与恢复流程处理。</p>
+<h3 id="architecture-8-持久化-版本与兼容">8. 持久化、版本与兼容</h3>
+<p>资源与扩展引用采用稳定标识；本地包与跨设备引用遵循 <a href="09-package-registry.md">09 包注册表</a> 的稳定 ID、本地 ID 与重新解析规则。</p>
+<p>语言、主题、字体等配置有明确 schema 版本、默认值和缺失资源回退。读取旧配置与旧存档时通过迁移适配处理，导入结果说明可恢复内容及缺失依赖。</p>
+<p>数据层的具体表结构、存储引擎与迁移实现另行形成方案。当前先约束引用、边界和行为，保持后续替换适配器与演进格式的空间。</p>
+<h3 id="architecture-9-架构验收提案">9. 架构验收提案</h3>
+<p>实现设计与阶段验收使用以下场景检查扩展成本：</p>
+<ol>
+<li>新增一门语言，主要修改资源与登记项，导航及通用控件正确显示并适配文字方向。</li>
+<li>安装新主题，解析器按已有契约加载，页面正确消费 token 和权限能力。</li>
+<li>新增一套字体，登记后可供既定字体角色使用，加载失败有可读回退。</li>
+<li>接入另一种存储或平台适配器，计划、日志和统一录入的业务语义保持一致。</li>
+<li>在另一类设备上采用不同入口布局，继续调用相同语义的记录操作并得到一致的关联结果。</li>
+<li>增加一种未来录入来源，可以复用既有的草稿校验和提交能力。</li>
+</ol>
+<p>每阶段选择与实际变更有关的场景验收。当前文档给出设计约束与提案，实际支持程度由后续实现和验证记录说明。</p></article>
+<article class="document" id="roadmap" aria-label="远期目标"><div class="document-top"><span>远期目标</span><a href="12-long-term-goals.md">Markdown 源文档</a></div><h2 id="roadmap-12-远期产品目标">12 远期产品目标</h2>
+<ul>
+<li>日期：2026-11-10</li>
+<li>作者：Codex  (sqs_A100)</li>
+<li>来源：用户在本轮产品设计讨论中的直接说明</li>
+<li>状态：方向已明确；具体方案、优先级、版本与排期待定</li>
+</ul>
+<h3 id="roadmap-1-产品定位与共同基础">1. 产品定位与共同基础</h3>
+<p>EffiLife 起源于作者未被现成软件满足的实际需求，同时考虑长期产品化与商业化。产品面向个人持续、全方位的生活管理，关注现代人快节奏、多任务城市生活中的长期使用。</p>
+<p>产品以时间和事件两条相互关联的主线为核心，以零散待办补充日常事务管理：</p>
+<ul>
+<li>时间主线帮助用户了解和安排每天的时间分配，兼顾工作、生活和休息。</li>
+<li>事件主线围绕明确主题组织整份计划，支持多个计划并行推进。</li>
+<li>待办承接订票、取快递等需要及时处理的零散事项。</li>
+</ul>
+<p>计划中的 <code>log</code> 是重要的过程记录：具体子项取得进展但尚未完成时，可以记录日志，保留条目关联、发生时间和进展内容。日志发生时刻与一次行动的实际用时具有不同含义，后续关联设计需要保留这一差别。</p>
+<p>已有定位说明见 <a href="../docs/HOTL/1.txt">H 文档</a>。本轮补充的持续生活管理定位，是以下远期目标的共同依据。</p>
+<h3 id="roadmap-2-已提出的远期目标">2. 已提出的远期目标</h3>
+<h4 id="roadmap-lt-001-产品化与商业化">LT-001 产品化与商业化</h4>
+<p>用户明确要求：项目需要考虑远期产品化、商业化，产品定位应覆盖自用之外的发展。</p>
+<p>目标用户细分、商业模式和收费方案目前暂不讨论。本记录保留这一长期方向，具体决策后续补充。</p>
+<h4 id="roadmap-lt-002-日报-周报等统计与回顾">LT-002 日报、周报等统计与回顾</h4>
+<p>用户考虑增加日报、周报等统计模块，服务于持续、全方位的个人生活管理。</p>
+<p>具体统计内容、展示方式、生成时机及是否支持其他周期，后续设计。</p>
+<h4 id="roadmap-lt-003-关联智能穿戴设备">LT-003 关联智能穿戴设备</h4>
+<p>用户考虑后续关联智能穿戴设备，并认为 EffiLife 的产品定位与智能穿戴设备较为接近：持续围绕个人生活提供记录、观察与反馈。</p>
+<p>具体设备、接入渠道、数据类型和关联方式均待设计。</p>
+<h4 id="roadmap-lt-004-统一录入入口的小型-ai-agent">LT-004 统一录入入口的小型 AI agent</h4>
+<p>在统一录入入口中引入一个小型 agent，让用户能够通过自然语言录入。</p>
+<p>其服务对象是此前讨论的日常行动录入：既能表达与计划子项有关的进展或完成情况，也能表达吃饭等未纳入主题计划的生活事件。字段识别范围、歧义处理、用户确认方式及模型部署方式，后续设计。</p>
+<h4 id="roadmap-lt-005-语音输入">LT-005 语音输入</h4>
+<p>用户进一步提出，统一录入入口未来可以支持语音输入。</p>
+<p>语音输入与自然语言录入在体验上衔接。语音识别方案、是否本地处理、支持语言和纠错方式等均未确定，后续设计。</p>
+<h4 id="roadmap-lt-006-多端适配与交付">LT-006 多端适配与交付</h4>
+<p>用户明确提出产品远期需要多端适配，同时要求从一开始就考虑可扩展性。后续端的具体范围、发布顺序和排期待定。</p>
+<p>架构准备从当前开始：业务语义与设备交互划清边界，多语言、主题、字体等系统采用可扩展的模块化设计。具体职责与接入提案见 <a href="#architecture">13-system-architecture.md</a>。</p>
+<h3 id="roadmap-3-与当前设计工作的关系">3. 与当前设计工作的关系</h3>
+<p>当前仍处于 Phase 0。本文件登记远期方向，具体发布版本与验收范围待后续决定，不将上述目标加入当前重构的发布门槛。</p>
+<p>统一录入入口本身属于当前产品设计讨论：用户希望减少分别进入时间侧、事件侧重复记录的负担。计划条目指定时间类别、从父节点统一指定下方条目类别，以及一次录入关联时间记录与计划执行信息，都是正在讨论的设计方向，尚未定稿为数据 schema 或实现方案。</p>
+<p>AI agent 与语音是该入口的远期增强；基础入口的设计和使用动线可以独立讨论。移动端底栏中部是用户举出的醒目入口位置示例，后续移动端设计时再评估。首期交付仍以桌面端为主，多端边界与资源可扩展性从当前架构设计开始落实。</p>
+<p>后续细化这些目标时，应继续围绕时间与事件的关联、零散待办的补充职责以及长期连续使用展开，并将新增决策分别标明为提案、已确认或待定。</p></article>
+    <footer>本页从 Markdown 源文档生成，支持离线阅读。源文档链接适用于仓库内阅读；文内三份文档之间可直接跳转。</footer>
+  </main>
+</div>
+<script>
+  const printButton = document.getElementById('print-button');
+  printButton.hidden = false;
+  printButton.addEventListener('click', () => window.print());
+</script>
+</body>
+</html>
