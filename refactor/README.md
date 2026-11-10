@@ -2,6 +2,12 @@
 
 本目录是前端/主题/包系统重构的设计工作区。设计稿由 Codex 依据用户的背景说明与关键决策起草，用户审计修订。**在设计稿评审通过之前，这里只写文档，不改业务代码。**
 
+## HTML 审阅版
+
+浏览器直接打开 [design-review.html](design-review.html)，可离线阅读产品设计、系统架构和远期目标，支持章节导航、R/P 条目定位及打印 / 导出 PDF。
+
+HTML 内容从 11、12、13 三份 Markdown 文档生成。修改源文档后，在仓库根目录执行 `python3 scripts/build_design_review.py` 更新 HTML；生成工具依赖 Python-Markdown，可用 `python3 -m pip install Markdown` 安装。阅读 HTML 本身无需安装依赖或启动服务。
+
 ## 状态
 
 - 阶段：Phase 0（设计）
