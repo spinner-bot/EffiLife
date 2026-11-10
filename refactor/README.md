@@ -5,7 +5,7 @@
 ## 状态
 
 - 阶段：Phase 0（设计）
-- 最后更新：2026-10-27
+- 最后更新：2026-11-10
 - 当前产品版本：1.7.0
 - 重构完成后目标版本：**3.0.0**
 - 审计报告：[../docs/audit/2026-10-26-视觉审计.md](../docs/audit/2026-10-26-视觉审计.md)
@@ -23,6 +23,7 @@
 | [07-open-questions.md](07-open-questions.md) | 待确认事项与已解决决策 |
 | [09-package-registry.md](09-package-registry.md) | 软件分配的包 ID、注册表、权限登记与生命周期 |
 | [10-design-doc-template.md](10-design-doc-template.md) | 用户设计文档模板（填写后成为 11-user-design.md） |
+| [12-long-term-goals.md](12-long-term-goals.md) | 远期产品化与商业化、日报/周报统计、智能穿戴、自然语言 AI agent 与语音输入 |
 
 ## 工作规则
 
