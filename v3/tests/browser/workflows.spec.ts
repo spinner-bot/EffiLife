@@ -141,11 +141,13 @@ test('persists locale and theme through the shared registry', async ({ page }, i
   await page.goto('/#/settings')
   await page.getByRole('combobox', { name: '语言', exact: true }).selectOption('en-US')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Make it feel like yours.')
+  await page.goto('/#/more/appearance')
   await page.getByRole('button', { name: 'Midnight', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.reload()
-  await expect(page.getByRole('combobox', { name: 'Language', exact: true })).toHaveValue('en-US')
   await expect(page.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.goto('/#/more/settings')
+  await expect(page.getByRole('combobox', { name: 'Language', exact: true })).toHaveValue('en-US')
   await expect(page.getByText('Version ' + version, { exact: false })).toBeVisible()
   await page.screenshot({ path: info.outputPath('settings-dark-1440.png'), fullPage: true })
 })
@@ -178,7 +180,7 @@ test('exports, previews replacement, imports and restores the prior workspace', 
 test('keeps major screens within seven viewport widths', async ({ page }, info) => {
   for (const width of [320, 390, 768, 1024, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 950 })
-    for (const path of ['/', '/plans', '/time', '/todos', '/settings']) {
+    for (const path of ['/', '/plans', '/time', '/todos', '/more', '/more/categories', '/more/time-plans', '/more/rules', '/more/appearance', '/more/settings']) {
       await page.goto('/#' + path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
