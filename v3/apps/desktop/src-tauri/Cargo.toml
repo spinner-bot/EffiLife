@@ -5,7 +5,6 @@ description = "EffiLife personal life management"
 authors = ["Codex  (sqs_A100)"]
 edition = "2021"
 rust-version = "1.88"
-license = "MIT"
 publish = false
 
 [lib]
