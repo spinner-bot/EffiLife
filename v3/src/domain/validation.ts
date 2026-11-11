@@ -39,7 +39,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   const plans = rows(value.plans)
   unique(plans.map(plan => plan.id))
   const planNodes = new Map<string, Set<unknown>>()
-  const logOwners = new Map<string, { planId: unknown; taskId: unknown; recordIds: unknown[] }>()
+  const logOwners = new Map<string, { planId: unknown; taskId: unknown; recordIds: Set<unknown> }>()
   for (const plan of plans) {
     text(plan.title); text(plan.description); validInstant(plan.createdAt); validInstant(plan.updatedAt)
     requireCondition(plan.categoryId === undefined || categoryIds.has(plan.categoryId), 'storage.danglingReference')
@@ -73,14 +73,16 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
       requireCondition(log.taskId === undefined || byId.get(log.taskId)?.kind === 'task', 'storage.danglingReference')
       requireCondition(Array.isArray(log.recordIds), 'storage.invalidWorkspace')
       unique(log.recordIds)
-      logOwners.set(String(log.id), { planId: plan.id, taskId: log.taskId, recordIds: log.recordIds })
+      logOwners.set(String(log.id), { planId: plan.id, taskId: log.taskId, recordIds: new Set(log.recordIds) })
     }
   }
   const records = rows(value.records)
   unique(records.map(record => record.id))
+  const recordById = new Map(records.map(record => [record.id, record]))
   const todos = rows(value.todos)
   unique(todos.map(todo => todo.id))
   const todoById = new Map(todos.map(todo => [todo.id, todo]))
+  const todoRecordIds = new Map(todos.map(todo => [todo.id, Array.isArray(todo.recordIds) ? new Set(todo.recordIds) : undefined]))
   for (const record of records) {
     text(record.title); text(record.note); validInstant(record.startAt); validInstant(record.endAt)
     minutesBetween(record.startAt, record.endAt)
@@ -90,17 +92,15 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
     requireCondition(record.planId === undefined || planNodes.has(String(record.planId)), 'storage.danglingReference')
     requireCondition(record.taskId === undefined || planNodes.get(String(record.planId))?.has(record.taskId), 'storage.danglingReference')
     if (record.todoId !== undefined) {
-      const owner = todoById.get(record.todoId)
-      requireCondition(owner && Array.isArray(owner.recordIds) && owner.recordIds.includes(record.id), 'storage.danglingReference')
+      requireCondition(todoRecordIds.get(record.todoId)?.has(record.id), 'storage.danglingReference')
     }
     if (record.logId !== undefined) {
       const log = logOwners.get(String(record.logId))
-      requireCondition(log && log.planId === record.planId && log.taskId === record.taskId && log.recordIds.includes(record.id), 'storage.danglingReference')
+      requireCondition(log && log.planId === record.planId && log.taskId === record.taskId && log.recordIds.has(record.id), 'storage.danglingReference')
     }
   }
-  const recordIds = new Set(records.map(record => record.id))
   for (const [id, log] of logOwners) for (const recordId of log.recordIds) {
-    requireCondition(recordIds.has(recordId) && records.find(record => record.id === recordId)?.logId === id, 'storage.danglingReference')
+    requireCondition(recordById.get(recordId)?.logId === id, 'storage.danglingReference')
   }
   for (const todo of todos) {
     text(todo.title); text(todo.description)
@@ -112,9 +112,9 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
     requireCondition(typeof todo.urgent === 'boolean' && typeof todo.important === 'boolean', 'storage.invalidWorkspace')
     requireCondition(Number.isSafeInteger(todo.priorityRank) && Number(todo.priorityRank) >= 0 && Number.isFinite(todo.estimatedMinutes) && Number(todo.estimatedMinutes) >= 0, 'storage.invalidWorkspace')
     requireCondition(Array.isArray(todo.tags) && todo.tags.every(tag => typeof tag === 'string'), 'storage.invalidWorkspace')
-    requireCondition(Array.isArray(todo.recordIds) && todo.recordIds.every(id => recordIds.has(id)), 'storage.danglingReference')
+    requireCondition(Array.isArray(todo.recordIds) && todo.recordIds.every(id => recordById.has(id)), 'storage.danglingReference')
     for (const id of todo.recordIds) {
-      const record = records.find(record => record.id === id)!
+      const record = recordById.get(id)!
       // Older v3 and legacy archives only had the forward list. Preserve it
       // until the next edit; all newly written reverse links are consistent.
       requireCondition(record.todoId === undefined || record.todoId === todo.id, 'storage.danglingReference')
