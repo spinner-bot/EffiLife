@@ -10,7 +10,7 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
     return { entityId: id }
   }
   if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
-  requireCondition('planId' in command, 'validation.planMissing')
+  requireCondition('planId' in command && command.planId, 'validation.planMissing')
   const plan = findPlan(workspace, command.planId)
   plan.updatedAt = context.now
   switch (command.type) {
