@@ -42,7 +42,7 @@ test('runs all retained built-in decorative renderers in opaque worker frames', 
   for (const theme of catalog) {
     await page.getByRole('button', { name: theme.name['zh-CN'], exact: true }).click()
     const frame = page.locator('.theme-decoration iframe')
-    if (theme.decoration.renderer || theme.decoration.particles || theme.decoration.gradient) {
+    if (theme.decoration.renderer || theme.decoration.particles || theme.decoration.gradient || 'ambient' in theme.decoration) {
       await expect(frame).toHaveAttribute('sandbox', 'allow-scripts')
       await expect(frame).toHaveAttribute('data-ready', 'true')
     } else await expect(frame).toHaveCount(0)
@@ -93,10 +93,10 @@ test('terminates a stuck worker without freezing the host and keeps it stopped a
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   const row = page.locator('.list-row').filter({ has: page.getByText('隔离界面', { exact: true }) })
   await expect(row).toContainText('加载失败', { timeout: 25000 })
-  await expect(page.locator('.theme-decoration iframe')).toHaveCount(0)
+  await expect(page.locator('.theme-decoration iframe[title="隔离界面"]')).toHaveCount(0)
   await page.reload()
   await expect(row).toContainText('加载失败')
-  await expect(page.locator('.theme-decoration iframe')).toHaveCount(0)
+  await expect(page.locator('.theme-decoration iframe[title="隔离界面"]')).toHaveCount(0)
 })
 
 test('enforces opaque origins and CSP even against native network API recovery', async ({ page }) => {
