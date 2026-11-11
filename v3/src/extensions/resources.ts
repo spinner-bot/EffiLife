@@ -27,9 +27,9 @@ function installResources(entry: InstalledPackage, candidate: PackageCandidate, 
       locales.register({ ...locale, name: resource.name })
       dispose.push(() => { locales.remove(locale.id) })
     } else {
-      const id = 'pkg:' + entry.id + ':' + resource.alias
+      const id = 'pkg:' + entry.kind + ':' + entry.id + ':' + resource.alias
       requireCondition(!fonts.get(id), 'extensions.resourceConflict')
-      const family = 'EffiLife_' + entry.id + '_' + resource.alias.replaceAll('-', '_')
+      const family = 'EffiLife_' + entry.kind + '_' + entry.id + '_' + resource.alias.replaceAll('-', '_')
       const bytes = payloadBytes(candidate.payload, resource.path)
       let face: FontFace | undefined
       let live = true
