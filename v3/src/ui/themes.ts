@@ -10,6 +10,8 @@ export interface ThemeDefinition {
   decoration?: { gradient: string | null; particles: unknown; renderer: string | null }
   legacyType?: string
   css?: string
+  author?: string
+  version?: string
 }
 export const themes = new Registry<ThemeDefinition>()
 for (const theme of catalog) themes.register(theme)
