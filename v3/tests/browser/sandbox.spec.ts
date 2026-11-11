@@ -35,10 +35,10 @@ async function install(page: Page, source: string, grants: Capability[], type: '
   await dialog.getByRole('button', { name: '确认安装', exact: true }).click()
   if (grants.some(capability => capability.startsWith('app.'))) await page.getByRole('dialog', { name: '允许此扩展访问应用系统？' }).getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).not.toBeVisible()
-  if (type === 'theme') await page.getByRole('button', { name: '隔离界面 · Example · 1.0.0 · #100000', exact: true }).click()
+  if (type === 'theme') { await page.goto('/#/more/appearance'); await page.getByRole('button', { name: '隔离界面 · Example · 1.0.0 · #100000', exact: true }).click() }
 }
 test('runs all retained built-in decorative renderers in opaque worker frames', async ({ page }, info) => {
-  await page.goto('/#/settings')
+  await page.goto('/#/more/appearance')
   for (const theme of catalog) {
     await page.getByRole('button', { name: theme.name['zh-CN'], exact: true }).click()
     const frame = page.locator('.theme-decoration iframe')
