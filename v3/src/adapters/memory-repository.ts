@@ -24,7 +24,10 @@ export class MemoryRepository implements WorkspaceRepository {
   }
   async replace(workspace: Workspace) {
     assertWorkspace(workspace)
-    await this.transact(current => ({ workspace: { ...structuredClone(workspace), revision: current.revision + 1 }, result: undefined }))
+    return this.transact(current => {
+      const next = { ...structuredClone(workspace), revision: Math.max(current.revision, workspace.revision) + 1 }
+      return { workspace: next, result: structuredClone(next) }
+    })
   }
   async readBackup() { return this.previous ? structuredClone(this.previous) : null }
   close() {}
