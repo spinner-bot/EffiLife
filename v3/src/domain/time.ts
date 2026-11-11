@@ -93,3 +93,25 @@ export function overlapMinutes(records: TimeRecord[], date: string, timeZone: st
   return intervals.reduce((sum, [from, until]) => sum + (until - from) / 60000, 0) - unionMinutes(intervals)
 }
 
+export function zonedInstant(value: string, timeZone: string): string {
+  requireCondition(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value), 'validation.invalidTime')
+  const desired = Date.parse(value + 'Z')
+  requireCondition(Number.isFinite(desired), 'validation.invalidTime')
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  })
+  const localAsUTC = (candidate: number) => {
+    const parts = formatter.formatToParts(new Date(candidate))
+    const field = (name: string) => Number(parts.find(part => part.type === name)!.value)
+    return Date.UTC(field('year'), field('month') - 1, field('day'), field('hour'), field('minute'), field('second'))
+  }
+  let candidate = desired
+  for (let iteration = 0; iteration < 4; iteration++) {
+    const adjusted = desired - (localAsUTC(candidate) - candidate)
+    if (candidate === adjusted) break
+    candidate = adjusted
+  }
+  requireCondition(localAsUTC(candidate) === desired && new Date(desired).toISOString().slice(0, 16) === value.slice(0, 16), 'validation.invalidTime')
+  return new Date(candidate).toISOString()
+}
+
