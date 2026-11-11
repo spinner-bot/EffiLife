@@ -15,7 +15,7 @@ export type CoreCommand =
   | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant }
   | { type: 'deleteRecord'; recordId: string }
   | { type: 'updateLog'; planId: string; logId: string; content: string }
-  | { type: 'saveTodo'; todoId?: string; title: string; description?: string; categoryId?: string; deadline?: Instant; priorityRank?: number; urgent?: boolean; important?: boolean; estimatedMinutes?: number; tags?: string[]; pinned?: boolean; sortOrder?: number; subtasks?: Array<{ id: string; title: string; completed: boolean }>; recurrence?: TodoRecurrence | null; deadlineWarningDays?: number }
+  | { type: 'saveTodo'; todoId?: string; title: string; description?: string; categoryId?: string; deadline?: Instant | null; priorityRank?: number; urgent?: boolean; important?: boolean; estimatedMinutes?: number; tags?: string[]; pinned?: boolean; sortOrder?: number; subtasks?: Array<{ id: string; title: string; completed: boolean }>; recurrence?: TodoRecurrence | null; deadlineWarningDays?: number }
   | { type: 'setTodoPinned'; todoId: string; pinned: boolean }
   | { type: 'setTodoSubtask'; todoId: string; subtaskId: string; completed: boolean }
   | { type: 'setTodoStatus'; todoId: string; status: TodoStatus }
