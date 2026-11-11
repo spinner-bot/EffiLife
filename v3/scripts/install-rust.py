@@ -48,7 +48,7 @@ def main():
     text = manifest.read_text()
 
     def component(name):
-        section = re.search(r"(?m)^\\[pkg\\." + name + r"\\.target\\.x86_64-unknown-linux-gnu\\]\\n(.*?)(?=\\n\\[|\\Z)", text, re.S)
+        section = re.search(r"(?m)^\[pkg\." + name + r"\.target\.x86_64-unknown-linux-gnu\]\n(.*?)(?=\n\[|\Z)", text, re.S)
         if not section:
             raise SystemExit("Rust component is unavailable: " + name)
         fields = dict(re.findall(r'(?m)^(xz_url|xz_hash) = "([^"]+)"$', section.group(1)))
