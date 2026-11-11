@@ -75,7 +75,8 @@ export function assertManifest(value: unknown, appVersion?: string): asserts val
     requireCondition(!value.maxAppVersion || compareVersions(appVersion, String(value.maxAppVersion)) <= 0, 'extensions.incompatible')
   }
   requireCondition(Array.isArray(value.permissions) && value.permissions.every(isCapability) && new Set(value.permissions).size === value.permissions.length, 'extensions.unknownCapability')
-  requireCondition(Array.isArray(value.requiredPermissions) && value.requiredPermissions.every(item => isCapability(item) && value.permissions.includes(item)), 'extensions.invalidManifest')
+  const permissions = value.permissions
+  requireCondition(Array.isArray(value.requiredPermissions) && value.requiredPermissions.every(item => isCapability(item) && permissions.includes(item)), 'extensions.invalidManifest')
   for (const key of ['tokens', 'entry']) if (value[key] !== undefined) requireCondition(safePackagePath(value[key]), 'archive.unsafePath')
   for (const key of ['styles', 'scripts']) if (value[key] !== undefined) requireCondition(Array.isArray(value[key]) && value[key].every(safePackagePath), 'archive.unsafePath')
   if (value.extends !== undefined) requireCondition(Number.isSafeInteger(value.extends) && Number(value.extends) >= 0, 'extensions.invalidManifest')
