@@ -23,8 +23,8 @@ async function createPlan(page: Page, title = '数学课程复习') {
 
 async function createTask(page: Page) {
   await createPlan(page)
-  await page.getByRole('button', { name: '添加章节', exact: true }).first().click()
-  let dialog = page.getByRole('dialog', { name: '添加章节', exact: true })
+  await page.getByRole('button', { name: '添加分组', exact: true }).first().click()
+  let dialog = page.getByRole('dialog', { name: '添加分组', exact: true })
   await dialog.getByLabel('名称', { exact: true }).fill('微积分')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
@@ -37,7 +37,7 @@ async function createTask(page: Page) {
   await expect(dialog).not.toBeVisible()
   await page.getByRole('button', { name: '更多操作', exact: true }).first().click()
   await page.getByRole('menuitem', { name: '统一设置时间类别', exact: true }).click()
-  dialog = page.getByRole('dialog', { name: '统一设置时间类别', exact: true })
+  dialog = page.getByRole('dialog', { name: '统一设置分组内子项类别', exact: true })
   await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption('study')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
@@ -45,11 +45,11 @@ async function createTask(page: Page) {
 
 test('assigns categories from the whole plan while preserving explicit branches', async ({ page }) => {
   await createTask(page)
-  const assign = async (category: string, overwrite = false) => {
+  const assign = async (category: string) => {
     await page.getByRole('button', { name: '设置整个计划的时间类别', exact: true }).click()
-    const dialog = page.getByRole('dialog', { name: '统一设置时间类别', exact: true })
+    const dialog = page.getByRole('dialog', { name: '背景时间类别', exact: true })
     await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption(category)
-    await dialog.getByLabel('同时覆盖下方已有类别', { exact: true }).setChecked(overwrite)
+    await expect(dialog.getByRole('checkbox')).toHaveCount(0)
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(dialog).not.toBeVisible()
   }
@@ -69,8 +69,8 @@ test('assigns categories from the whole plan while preserving explicit branches'
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await checkRecording('work', '新根任务')
-  await assign('rest', true)
-  await checkRecording('rest', '极限与连续')
+  await assign('rest')
+  await checkRecording('study', '极限与连续')
   await checkRecording('rest', '新根任务')
   await page.reload()
   await checkRecording('rest')
