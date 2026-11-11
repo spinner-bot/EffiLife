@@ -44,6 +44,12 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
       const removed = new Set([target.id, ...descendants(plan, target.id).map(node => node.id)])
       requireCondition(!plan.logs.some(log => log.taskId && removed.has(log.taskId)) && !workspace.records.some(record => record.planId === plan.id && record.taskId && removed.has(record.taskId)), 'validation.taskHasHistory')
       plan.nodes = plan.nodes.filter(node => !removed.has(node.id))
+      for (const todo of workspace.todos) {
+        if (todo.relatedPlanId === plan.id && todo.relatedTaskId && removed.has(todo.relatedTaskId)) {
+          todo.relatedTaskId = undefined
+          todo.updatedAt = context.now
+        }
+      }
       break
     }
     case 'setTaskCompletion': {
