@@ -37,7 +37,7 @@ v3/ 为全部新工作入口。采用 Vue 3 + TypeScript 展示层、纯领域�
 
 每个文件或完整小改动立即提交；每个阶段写入 docs/progress/ 并更新 CHANGELOG.md。按新增行为设计有意义的测试，测试通过后推进下一项；出现失败先定位修复，记录真实结果。
 
-现有重构资料参考 ../refactor/11-user-design.md、../refactor/13-system-architecture.md 等仓库旧路径时，应以仓库根为相对起点；v3 内后续文档使用实际存在的相对链接。
+已审阅资料见 [产品设计稿](../../refactor/11-user-design.md)、[系统架构提案](../../refactor/13-system-architecture.md)。后续新增与修订的工作文档统一放在 v3/ 内。
 
 ## 工具链依据
 
