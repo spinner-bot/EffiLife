@@ -46,7 +46,9 @@ function installResources(entry: InstalledPackage, candidate: PackageCandidate, 
   }
 }
 export function reconcileResources(entries: readonly InstalledPackage[]): void {
-  const signature = JSON.stringify(entries.map(entry => [entry.kind, entry.id, entry.checksum, entry.updatedAt, entry.status, entry.grants]))
+  // A data archive may contain changed bytes with copied metadata. Compare the
+  // content too; claimed fingerprints are not a trusted cache invalidation key.
+  const signature = JSON.stringify(entries)
   if (signature === fingerprint) return
   fingerprint = signature
   for (const dispose of cleanup.values()) dispose()
