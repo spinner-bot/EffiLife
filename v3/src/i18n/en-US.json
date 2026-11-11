@@ -1,4 +1,13 @@
 {
+  "common.discardConfirm": "Discard unsaved input?",
+  "common.discardBody": "Cancel to continue editing, or confirm to discard and close.",
+  "common.approxHour": "Around {hour}:00",
+  "common.skipContent": "Skip to main content",
+  "common.navigation": "Main navigation",
+  "form.logTime": "Progress time",
+  "form.color": "Color",
+  "form.difficulty": "Category difficulty",
+  "settings.migrationGeneral": "Some legacy data needs compatibility handling; original content is retained.",
   "app.tagline": "Time and life, connected",
   "nav.home": "Overview",
   "nav.plans": "Plans",
