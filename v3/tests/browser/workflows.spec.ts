@@ -237,3 +237,13 @@ test('edits and removes a cross-midnight logged action consistently across both 
   await page.goto('/#/time?date=2026-11-11')
   await expect(page.getByText('这一天，还没有时间记录', { exact: true })).toBeVisible()
 })
+
+test('skips navigation by keyboard without changing the current hash route', async ({ page }) => {
+  await page.goto('/#/time?date=2026-11-11')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: '跳到主要内容', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('main')).toBeFocused()
+  await expect(page).toHaveURL(/#\/time\?date=2026-11-11$/)
+})
