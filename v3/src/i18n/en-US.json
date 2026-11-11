@@ -322,5 +322,14 @@
   "capability.app.data.read": "Read plans, to-dos and time records",
   "capability.app.data.write": "Change plans, to-dos and time records",
   "capability.app.theme": "Switch themes",
-  "capability.app.events": "Subscribe to application changes"
+  "capability.app.events": "Subscribe to application changes",
+  "extensions.safeMode": "Safe mode: extensions are paused",
+  "extensions.recover": "Restore defaults and disable extensions",
+  "extensions.enterSafe": "Safe mode · Alt+Shift+0",
+  "extensions.scriptFailed": "An extension script failed. It was stopped and the default interface restored.",
+  "extensions.scriptTimeout": "An extension stopped responding. It was stopped and your data was retained.",
+  "extensions.requestLimit": "An extension sent too many requests and was stopped.",
+  "extensions.unsupportedCanvas": "This device does not support isolated canvas. Decorative scripts were disabled.",
+  "extensions.permissionDenied": "This capability is not granted, or the extension version or enabled state has changed.",
+  "extensions.invalidRequest": "The extension request does not match an application interface."
 }
