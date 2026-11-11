@@ -10,7 +10,7 @@ import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
 const props = defineProps<{ open: boolean; todo?: Todo }>()
 const emit = defineEmits<{ close: [] }>()
-const form = reactive({ title: '', description: '', categoryId: 'life', deadline: '', priorityRank: 5, urgent: false, important: false, estimatedMinutes: 0, tags: '', pinned: false, deadlineWarningDays: 3, repeat: 'none' as 'none' | TodoRecurrence['frequency'], interval: 1, subtasks: [] as Array<{ id: string; title: string; completed: boolean }> })
+const form = reactive({ title: '', description: '', categoryId: 'life', deadline: '', priorityRank: 5, urgent: false, important: false, estimatedMinutes: 0, tags: '', pinned: false, sortOrder: 0, deadlineWarningDays: 3, repeat: 'none' as 'none' | TodoRecurrence['frequency'], interval: 1, subtasks: [] as Array<{ id: string; title: string; completed: boolean }> })
 const checklistTitle = ref('')
 const error = ref('')
 const busy = ref(false)
@@ -20,7 +20,7 @@ watch(() => props.open, value => {
   if (!value) return
   const todo = props.todo
   Object.assign(form, { title: todo?.title || '', description: todo?.description || '', categoryId: todo?.categoryId || 'life', deadline: todo?.deadline ? dateTimeInput(todo.deadline, current.value.preferences.timeZone) : '', priorityRank: todo?.priorityRank ?? 5, urgent: todo?.urgent || false, important: todo?.important || false, estimatedMinutes: todo?.estimatedMinutes || 0, tags: todo?.tags.join(', ') || '' })
-  Object.assign(form, { pinned: todo?.pinned || false, deadlineWarningDays: todo?.deadlineWarningDays ?? 3, repeat: todo?.recurrence?.frequency || 'none', interval: todo?.recurrence?.interval || 1, subtasks: (todo?.subtasks || []).map(item => ({ id: item.id, title: item.title, completed: item.completed })) })
+  Object.assign(form, { pinned: todo?.pinned || false, sortOrder: todo?.sortOrder || 0, deadlineWarningDays: todo?.deadlineWarningDays ?? 3, repeat: todo?.recurrence?.frequency || 'none', interval: todo?.recurrence?.interval || 1, subtasks: (todo?.subtasks || []).map(item => ({ id: item.id, title: item.title, completed: item.completed })) })
   checklistTitle.value = ''; operationId = crypto.randomUUID()
   initial = JSON.stringify(form); error.value = ''
 })
@@ -61,6 +61,7 @@ function addChecklist() {
         <label class="field"><span>{{ t('form.priority') }}</span><input v-model.number="form.priorityRank" class="input" type="number" min="0" step="1" required /></label><label class="field"><span>{{ t('form.estimated') }}</span><input v-model.number="form.estimatedMinutes" class="input" type="number" min="0" /></label>
         <label class="field"><span>{{ t('todos.repeat') }}</span><select v-model="form.repeat" class="select"><option value="none">{{ t('todos.repeat.none') }}</option><option value="day">{{ t('todos.repeat.day') }}</option><option value="week">{{ t('todos.repeat.week') }}</option><option value="month">{{ t('todos.repeat.month') }}</option></select></label>
         <label v-if="form.repeat !== 'none'" class="field"><span>{{ t('todos.repeatInterval') }}</span><input v-model.number="form.interval" type="number" class="input" min="1" step="1" required /></label>
+        <label class="field"><span>{{ t('todos.sort.manual') }}</span><input v-model.number="form.sortOrder" class="input" type="number" step="1" required /></label>
         <label class="field"><span>{{ t('todos.warningDays') }}</span><input v-model.number="form.deadlineWarningDays" class="input" type="number" min="0" step="1" required /></label><label class="field"><span>{{ t('todos.tags') }}</span><input v-model="form.tags" class="input" :placeholder="t('todos.tagsHint')" /></label>
       </div><p v-if="form.repeat !== 'none'" class="small muted">{{ t('todos.repeatBody') }}</p><div class="cluster"><label class="check-field"><input v-model="form.important" type="checkbox" />{{ t('form.important') }}</label><label class="check-field"><input v-model="form.urgent" type="checkbox" />{{ t('form.urgent') }}</label><label class="check-field"><input v-model="form.pinned" type="checkbox" />{{ t('todos.pinned') }}</label></div></div></details>
       <p v-if="error" class="form-error" role="alert">{{ error }}</p><div class="dialog-footer"><UiButton :disabled="busy" @click="close">{{ t('common.cancel') }}</UiButton><UiButton type="submit" variant="primary" :disabled="busy">{{ t('common.save') }}</UiButton></div>
