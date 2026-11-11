@@ -23,7 +23,7 @@ export async function initialize() {
   loading.value = true
   try { await refresh() } catch (error) { startupError.value = error } finally { loading.value = false }
 }
-export async function dispatch(command: WorkspaceCommand, operationId = crypto.randomUUID()) {
+export async function dispatch(command: WorkspaceCommand, operationId: string = crypto.randomUUID()) {
   pendingWrites.value++
   try {
     const result = await service.dispatch({ command, operationId })
