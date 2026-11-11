@@ -32,6 +32,11 @@
 .theme-name { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; font-size: var(--text-xs); gap: var(--space-2); }
 .theme-option > .muted { display: block; padding: 0 12px 10px; font-size: 10px; overflow-wrap: anywhere; }
 .todo-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.todo-filter-panel > summary { cursor: pointer; color: var(--muted); font-size: var(--text-sm); }
+.todo-filter-panel[open] .todo-filters { padding-top: 12px; }
+.list-row[data-todo-id] { align-items: flex-start; }
+.list-row[data-todo-id] > .todo-check { margin-top: 4px; }
+.list-row[data-todo-id] .badge { overflow-wrap: anywhere; white-space: normal; }
 .todo-checklist { margin-top: 12px; }
 .todo-checklist summary { color: var(--muted); font-size: var(--text-xs); cursor: pointer; }
 .todo-checklist .check-field { margin-top: 8px; }
