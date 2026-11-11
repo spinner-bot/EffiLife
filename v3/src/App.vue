@@ -35,7 +35,7 @@ const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
 const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
 watch(() => [current.value.preferences, current.value.packages] as const, async ([preferences, packages]) => {
-  reconcileResources(safeMode ? [] : packages)
+  reconcileResources(safeMode ? [] : packages, version)
   setLocale(safeMode ? 'zh-CN' : preferences.locale)
   applyTheme(safeMode ? 1 : preferences.themeId)
   try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
