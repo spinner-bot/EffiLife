@@ -4,6 +4,12 @@ import { findPlan, findNode, categoryFor } from './plans'
 import { requireCondition, requireTitle } from './errors'
 import { instant, minutesBetween, referenceFor } from './time'
 
+function removeRecords(workspace: Workspace, ids: Set<string>) {
+  workspace.records = workspace.records.filter(item => !ids.has(item.id))
+  for (const plan of workspace.plans) for (const log of plan.logs) log.recordIds = log.recordIds.filter(id => !ids.has(id))
+  for (const todo of workspace.todos) todo.recordIds = todo.recordIds.filter(id => !ids.has(id))
+}
+
 export function applyRecordCommand(workspace: Workspace, command: WorkspaceCommand, context: CommandContext): OperationResult | undefined {
   if (command.type === 'recordAction') {
     requireCondition(!command.taskId || command.planId, 'validation.planMissing')
@@ -62,9 +68,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
   }
   if (command.type === 'deleteRecord') {
     requireCondition(workspace.records.some(item => item.id === command.recordId), 'validation.recordMissing')
-    workspace.records = workspace.records.filter(item => item.id !== command.recordId)
-    for (const plan of workspace.plans) for (const log of plan.logs) log.recordIds = log.recordIds.filter(id => id !== command.recordId)
-    for (const todo of workspace.todos) todo.recordIds = todo.recordIds.filter(id => id !== command.recordId)
+    removeRecords(workspace, new Set([command.recordId]))
     return { recordId: command.recordId }
   }
   if (command.type === 'updateLog') {
@@ -73,6 +77,15 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     requireCondition(log, 'validation.logMissing')
     log.content = requireTitle(command.content)
     for (const record of workspace.records) if (record.logId === log.id && record.planId === plan.id) record.note = log.content
+    plan.updatedAt = context.now
+    return { logId: log.id }
+  }
+  if (command.type === 'deleteLog') {
+    const plan = findPlan(workspace, command.planId)
+    const log = plan.logs.find(item => item.id === command.logId)
+    requireCondition(log, 'validation.logMissing')
+    removeRecords(workspace, new Set(log.recordIds))
+    plan.logs = plan.logs.filter(item => item.id !== log.id)
     plan.updatedAt = context.now
     return { logId: log.id }
   }
