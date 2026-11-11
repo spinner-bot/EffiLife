@@ -62,9 +62,9 @@ async function action(type: TreeAction, node: PlanNode) {
     if (type === 'delete' && await confirmAction(t('plans.deleteNodeConfirm'))) await dispatch({ type: 'deleteNode', planId: plan.value.id, nodeId: node.id })
   } catch (failure) { notify(errorMessage(failure), 'error') }
 }
-async function saveCategory() {
+async function saveCategory(wholePlan = false) {
   if (!plan.value || !categoryTarget.value) return
-  try { await dispatch({ type: 'assignCategory', planId: plan.value.id, nodeId: categoryTarget.value.id, categoryId: categoryId.value, overwrite: categoryTarget.value.kind === 'group' }); categoryTarget.value = undefined } catch (failure) { categoryError.value = errorMessage(failure) }
+  try { await dispatch({ type: 'assignCategory', planId: plan.value.id, nodeId: categoryTarget.value.id, categoryId: categoryId.value, overwrite: categoryTarget.value.kind === 'group' || (categoryTarget.value.kind === 'plan' && wholePlan) }); categoryTarget.value = undefined } catch (failure) { categoryError.value = errorMessage(failure) }
 }
 async function archive() {
   if (!plan.value) return
@@ -116,7 +116,7 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
     <LogEditor :plan-id="plan.id" :log="editingLog" @close="editingLog = undefined" />
     <TextEditorDialog :open="renaming" :title="t('plans.rename')" :initial-title="plan.title" :initial-description="plan.description" :save="rename" @close="renaming = false" />
     <UiDialog :open="Boolean(categoryTarget)" :title="t(categoryTarget?.kind === 'group' ? 'plans.groupCategory' : categoryTarget?.kind === 'task' ? 'plans.taskCategory' : 'plans.defaultCategory')" :description="categoryTarget?.title" @close="categoryTarget = undefined">
-      <form class="stack" @submit.prevent="saveCategory"><label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="categoryId" required /></label><p class="small muted">{{ t(categoryTarget?.kind === 'group' ? 'plans.groupCategoryHelp' : categoryTarget?.kind === 'plan' ? 'plans.planCategoryHelp' : 'plans.categoryScope') }}</p><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
+      <form class="stack" @submit.prevent="saveCategory()"><label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="categoryId" required /></label><p class="small muted">{{ t(categoryTarget?.kind === 'group' ? 'plans.groupCategoryHelp' : categoryTarget?.kind === 'plan' ? 'plans.planCategoryHelp' : 'plans.categoryScope') }}</p><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><UiButton v-if="categoryTarget?.kind === 'plan'" @click="saveCategory(true)">{{ t('plans.applyAllCategories') }}</UiButton><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
     </UiDialog>
   </template>
   <EmptyState v-else :title="t('plans.notFound')" icon="plans"><RouterLink to="/plans" class="text-link">{{ t('common.back') }}</RouterLink></EmptyState>

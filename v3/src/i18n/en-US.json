@@ -466,5 +466,6 @@
   "appearance.reset": "Restore theme defaults",
   "appearance.reducedMotion": "Respects reduced motion. Each animation exposes only the parameters it supports.",
   "appearance.previewTitle": "Space to focus, room to breathe",
-  "appearance.previewHelp": "Live preview of this material"
+  "appearance.previewHelp": "Live preview of this material",
+  "plans.applyAllCategories": "Apply to every group and task (replace explicit categories)"
 }

@@ -466,5 +466,6 @@
   "appearance.reset": "恢复主题默认",
   "appearance.reducedMotion": "遵循系统的减少动态效果设置；不同动画仅提供其实际支持的参数。",
   "appearance.previewTitle": "专注当下，保留生活的层次",
-  "appearance.previewHelp": "当前材质参数的即时预览"
+  "appearance.previewHelp": "当前材质参数的即时预览",
+  "plans.applyAllCategories": "统一设置全部分组与子项（覆盖现有类别）"
 }
