@@ -76,7 +76,7 @@ export function referenceFor(workspace: Workspace, occurredAt: string): TimingRe
   const until = Date.parse(instant(occurredAt))
   const observations = [
     ...workspace.records.map(record => ({ id: record.id, at: record.endAt })),
-    ...workspace.plans.flatMap(plan => plan.logs.map(log => ({ id: log.id, at: log.occurredAt }))),
+    ...workspace.plans.flatMap(plan => plan.logs.filter(log => !log.timePrecision || log.timePrecision === 'minute').map(log => ({ id: log.id, at: log.occurredAt }))),
   ].filter(item => Number.isFinite(Date.parse(item.at)) && Date.parse(item.at) < until)
     .sort((left, right) => Date.parse(right.at) - Date.parse(left.at))
   const anchor = observations[0]
