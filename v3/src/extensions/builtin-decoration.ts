@@ -30,7 +30,7 @@ export async function builtinDecoration(theme: ThemeDefinition): Promise<Install
   const renderer = decoration.factory ? '(' + decoration.factory + ')().renderCanvas' : decoration.renderer || '() => {}'
   const source = (decoration.helpers || '') + '\nconst renderer = ' + renderer + ';\nconst particles = ' + particles.toString() + ';\nEffiLife.onFrame(({ctx,width,height,time}) => { renderer(ctx,width,height,time); particles(' + JSON.stringify(decoration.particles) + ',ctx,width,height,time); });'
   const manifest: ExtensionManifest = {
-    type: 'theme', name: theme.name, author: 'EffiLife', license: 'MIT', version: '1.0.0', formatVersion: 1, apiVersion: 1,
+    type: 'theme', name: theme.name, author: 'EffiLife', license: 'UNLICENSED', version: '1.0.0', formatVersion: 1, apiVersion: 1,
     permissions: ['appearance.tokens', 'overlay.canvas'], requiredPermissions: ['appearance.tokens', 'overlay.canvas'],
     tokens: 'tokens.json', scripts: ['scripts/decoration.js'],
   }
