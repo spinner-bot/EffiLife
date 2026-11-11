@@ -1,0 +1,33 @@
+{
+  "engine": "WebKitGTK 2.50.4",
+  "features": {
+    "randomUUID": "function",
+    "clone": "function",
+    "secure": true,
+    "locale": "zh-CN",
+    "canvas": "function"
+  },
+  "checks": [
+    "production startup",
+    "real IndexedDB capture and reload",
+    "isolated decorative Worker ready",
+    "real package upload and advanced consent",
+    "opaque DOM and storage isolation",
+    "CSP native fetch blocking",
+    "layout recovery",
+    "390px layout",
+    "glass material filtering"
+  ],
+  "isolation": {
+    "indexed": true,
+    "parent": true,
+    "storage": true,
+    "probe": "true / blocked",
+    "images": 0
+  },
+  "networkRequests": 0,
+  "overflow": 0,
+  "version": "3.1.0",
+  "frontendIndexSha256": "23af251632a0f31da5f76ca6c9fadc6e3cb1a172b023397b5cd44120eef0b837",
+  "frontendTreeSha256": "dd0327c810408a14e2cff6fee0c3385f43838b4839fff5f5be89f982f960b253"
+}
