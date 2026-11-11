@@ -6,7 +6,9 @@ import { current, workspace, loading, startupError, initialize, dispatch } from 
 import { t, setLocale, currentLocale, errorMessage } from './i18n'
 import { defaultHeaderClock } from './domain/preferences'
 import { headerClockText } from './ui/header-clock'
-import { applyTheme } from './ui/themes'
+import { applyTheme, themes } from './ui/themes'
+import { applySurface, appearanceFor } from './ui/surface-effects'
+import { defaultAppearance } from './domain/appearance'
 import { applyFont } from './ui/fonts'
 import { openRecord, notify } from './ui/state'
 import { useNow } from './ui/useNow'
@@ -40,6 +42,7 @@ watch(() => [current.value.preferences, current.value.packages] as const, async 
   reconcileResources(safeMode ? [] : packages, version)
   setLocale(safeMode ? 'zh-CN' : preferences.locale)
   applyTheme(safeMode ? 1 : preferences.themeId)
+  applySurface(safeMode ? defaultAppearance() : appearanceFor(themes.get(preferences.themeId) || themes.get(1)!, preferences.appearance))
   try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
 }, { immediate: true })
 watch(title, value => { document.title = value + ' · EffiLife' }, { immediate: true })

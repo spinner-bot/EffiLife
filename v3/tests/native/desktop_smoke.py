@@ -80,7 +80,7 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('原生桌面真实待办')"))
         driver.call("POST", "/refresh", {})
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('原生桌面真实待办')"), "native IndexedDB persistence")
-        driver.script("location.hash='/settings'")
+        driver.script("location.hash='/more/settings'")
         driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"导入存档\"]'))"))
         forbidden = output / "unselected-path.d3el"
         forbidden.unlink(missing_ok=True)
@@ -116,7 +116,7 @@ def main():
         driver.fill(driver.element(".quick-capture input"), "导出之后添加的事项")
         driver.button("添加待办", "document.querySelector('.quick-capture')")
         driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"))
-        driver.script("location.hash='/settings'")
+        driver.script("location.hash='/more/settings'")
         driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"导入存档\"]'))"))
         driver.file(driver.element('input[aria-label="导入存档"]'), destination)
         dialog = "Array.from(document.querySelectorAll('[role=dialog]')).find(e=>e.getAttribute('aria-hidden')!=='true')"
@@ -124,10 +124,22 @@ def main():
         driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"), "native archive import")
         driver.script("location.hash='/todos'")
         driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===1 && document.querySelector('.list-row').textContent.includes('原生桌面真实待办')"))
-        driver.script("location.hash='/settings'")
+        driver.script("location.hash='/more/settings'")
         driver.button("恢复上一份有效备份")
         driver.button("确认", dialog)
         driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"))
+        driver.script("location.hash='/more'")
+        driver.wait(lambda: driver.script("return document.querySelectorAll('.more-entry').length===5"), "More management hierarchy")
+        assert driver.script("return Array.from(document.querySelectorAll('.more-entry')).map(e=>e.getAttribute('href'))") == ['#/more/categories', '#/more/time-plans', '#/more/rules', '#/more/appearance', '#/more/settings']
+        driver.script("location.hash='/more/appearance'")
+        driver.button("通透玻璃")
+        driver.wait(lambda: driver.script("return document.documentElement.dataset.surfaceEffect==='glass' && getComputedStyle(document.querySelector('.panel')).backdropFilter.includes('blur')"), "native glass material")
+        driver.button("卡片高级设置")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"模糊度\"]'))"), "native material advanced settings")
+        driver.button("保存", dialog)
+        driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"))
+        driver.call("POST", "/refresh", {})
+        driver.wait(lambda: driver.script("return document.documentElement.dataset.surfaceEffect==='glass' && document.querySelector('.panel') && getComputedStyle(document.querySelector('.panel')).backdropFilter.includes('blur')"), "native material persistence")
         driver.button("北欧极夜")
         try:
             driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
@@ -145,10 +157,10 @@ def main():
         sessions.append(driver)
         driver.wait(lambda: driver.script("return Boolean(document.querySelector('h1'))"), "native restart")
         driver.script("location.hash='/todos'")
-        driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"), "durable backup restore after process restart")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('.quick-capture')) && document.querySelectorAll('.list-row').length===2"), "durable backup restore after process restart")
         rect = driver.call("GET", "/window/rect")
         subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / "desktop.png"), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
-        report = {"application": str(application.relative_to(ROOT)), "applicationSha256": hashlib.sha256(application.read_bytes()).hexdigest(), "version": (ROOT / "VERSION").read_text().strip(), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "main-window CSP rejects inline script injection", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
+        report = {"application": str(application.relative_to(ROOT)), "applicationSha256": hashlib.sha256(application.read_bytes()).hexdigest(), "version": (ROOT / "VERSION").read_text().strip(), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "main-window CSP rejects inline script injection", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "More management hierarchy", "native glass material and advanced settings persisted", "durability across native process restart"]}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("Tauri desktop smoke passed:", ", ".join(report["checks"]), flush=True)
 

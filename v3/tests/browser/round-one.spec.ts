@@ -128,3 +128,27 @@ test('persists header time date period and alignment preferences at narrow width
   await page.clock.fastForward('01:00')
   await expect(page.locator('.topbar-date')).toContainText('1:06')
 })
+
+test('maps multiple named records to distinct colored segments within category rings', async ({ page }, info) => {
+  await page.goto('/#/time?date=2026-11-11')
+  for (const [title, category, start, end] of [['设计评审','work','09:00','09:40'],['实现设置页面','work','10:00','11:15'],['午间散步','life','12:00','12:25']]) {
+    await page.getByRole('button', { name: '记录行动', exact: true }).first().click()
+    const dialog = page.getByRole('dialog', { name: '记录一次行动' })
+    await dialog.getByLabel('名称', { exact: true }).fill(title!)
+    await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption(category!)
+    await dialog.getByLabel('开始时间', { exact: true }).fill('2026-11-11T' + start)
+    await dialog.getByLabel('结束时间', { exact: true }).fill('2026-11-11T' + end)
+    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+  }
+  await expect(page.locator('.category-ring-card')).toHaveCount(2)
+  const work = page.locator('.category-ring-card').filter({ has: page.getByRole('heading', { name: '工作', exact: true }) })
+  await expect(work.locator('circle[stroke-dasharray]')).toHaveCount(2)
+  const colors = await work.locator('circle[stroke-dasharray]').evaluateAll(nodes => nodes.map(node => node.getAttribute('stroke')))
+  expect(new Set(colors).size).toBe(2)
+  await expect(work.locator('.record-legend')).toContainText('设计评审')
+  await expect(work.locator('.record-legend')).toContainText('实现设置页面')
+  await page.reload()
+  await expect(page.locator('.compact-record')).toHaveCount(3)
+  await page.screenshot({ path: info.outputPath('category-record-composition.png'), fullPage: true })
+})

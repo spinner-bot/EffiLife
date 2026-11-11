@@ -8,6 +8,7 @@ export type CoreCommand =
   | { type: 'archivePlan'; planId: string; archived: boolean }
   | { type: 'addNode'; planId: string; parentId: string | null; kind: NodeKind; title: string; description?: string; estimatedMinutes?: number; categoryId?: string }
   | { type: 'updateNode'; planId: string; nodeId: string; title: string; description: string; estimatedMinutes: number; categoryId?: string | null }
+  | { type: 'moveNode'; planId: string; nodeId: string; parentId: string | null; beforeId?: string | null }
   | { type: 'deleteNode'; planId: string; nodeId: string }
   | { type: 'setTaskCompletion'; planId: string; taskId: string; completed: boolean }
   | { type: 'assignCategory'; planId: string; nodeId: string | null; categoryId: string; overwrite: boolean }

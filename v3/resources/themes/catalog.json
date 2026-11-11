@@ -21,9 +21,29 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "orbits",
+        "color": "#4f46e5",
+        "secondary": "#475569",
+        "count": 4,
+        "scale": 0.75
+      }
     },
-    "legacyType": "light"
+    "legacyType": "light",
+    "appearance": {
+      "effect": "solid",
+      "parameters": {
+        "radius": 14,
+        "shadow": 0.15
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 2,
@@ -47,9 +67,29 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "dust",
+        "color": "#818cf8",
+        "secondary": "#cbd5e1",
+        "count": 24,
+        "scale": 0.75
+      }
     },
-    "legacyType": "dark"
+    "legacyType": "dark",
+    "appearance": {
+      "effect": "solid",
+      "parameters": {
+        "radius": 14,
+        "shadow": 0.15
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 3,
@@ -73,9 +113,29 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "orbits",
+        "color": "#4f46e5",
+        "secondary": "#475569",
+        "count": 4,
+        "scale": 0.75
+      }
     },
-    "legacyType": "system"
+    "legacyType": "system",
+    "appearance": {
+      "effect": "solid",
+      "parameters": {
+        "radius": 14,
+        "shadow": 0.15
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 4,
@@ -99,9 +159,29 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "waves",
+        "color": "#6366f1",
+        "secondary": "#52525b",
+        "count": 4,
+        "scale": 1
+      }
     },
-    "legacyType": "solid"
+    "legacyType": "solid",
+    "appearance": {
+      "effect": "solid",
+      "parameters": {
+        "radius": 14,
+        "shadow": 0.15
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 5,
@@ -125,9 +205,30 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "orbits",
+        "color": "#ffffff",
+        "secondary": "rgba(0,0,0,0.7)",
+        "count": 4,
+        "scale": 1
+      }
     },
-    "legacyType": "gradient"
+    "legacyType": "gradient",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 6,
@@ -151,9 +252,30 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "orbits",
+        "color": "#6366f1",
+        "secondary": "rgba(255,255,255,0.8)",
+        "count": 4,
+        "scale": 1
+      }
     },
-    "legacyType": "glass"
+    "legacyType": "glass",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 7,
@@ -177,9 +299,30 @@
       "particles": null,
       "renderer": null,
       "helpers": null,
-      "factory": null
+      "factory": null,
+      "ambient": {
+        "motif": "grid",
+        "color": "#ff00ff",
+        "secondary": "#00ff88cc",
+        "count": 4,
+        "scale": 1
+      }
     },
-    "legacyType": "neon"
+    "legacyType": "neon",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.7,
+        "intensity": 0.32,
+        "density": 1
+      }
+    }
   },
   {
     "id": 8,
@@ -205,7 +348,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "ink"
+    "legacyType": "ink",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 9,
@@ -231,7 +388,21 @@
       "helpers": "function drawFlower(ctx, x, y, size, color) {\n    ctx.fillStyle = color;\n    for (let i = 0; i < 5; i++) {\n        const angle = (i / 5) * Math.PI * 2;\n        const px = x + Math.cos(angle) * size;\n        const py = y + Math.sin(angle) * size;\n        ctx.beginPath();\n        ctx.arc(px, py, size * 0.5, 0, Math.PI * 2);\n        ctx.fill();\n    }\n    // 花心\n    ctx.fillStyle = '#ffd700';\n    ctx.beginPath();\n    ctx.arc(x, y, size * 0.3, 0, Math.PI * 2);\n    ctx.fill();\n}",
       "factory": null
     },
-    "legacyType": "vintage"
+    "legacyType": "vintage",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 10,
@@ -257,7 +428,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "cyberpunk"
+    "legacyType": "cyberpunk",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 11,
@@ -283,7 +468,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "pixel"
+    "legacyType": "pixel",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 12,
@@ -309,7 +508,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "aurora"
+    "legacyType": "aurora",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 13,
@@ -342,7 +555,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "sakura"
+    "legacyType": "sakura",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 14,
@@ -375,7 +602,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "ocean"
+    "legacyType": "ocean",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 15,
@@ -408,7 +649,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "forest"
+    "legacyType": "forest",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 16,
@@ -434,7 +689,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "tech"
+    "legacyType": "tech",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 17,
@@ -467,7 +736,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "midnight_library"
+    "legacyType": "midnight_library",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 18,
@@ -500,7 +783,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "star_voyage"
+    "legacyType": "star_voyage",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 19,
@@ -533,7 +830,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "rainy_city"
+    "legacyType": "rainy_city",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 20,
@@ -566,7 +877,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "desert_dusk"
+    "legacyType": "desert_dusk",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 21,
@@ -599,7 +924,21 @@
       "helpers": null,
       "factory": null
     },
-    "legacyType": "bamboo_dawn"
+    "legacyType": "bamboo_dawn",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 22,
@@ -625,7 +964,21 @@
       "helpers": null,
       "factory": "() => {\n        const snow = Array.from({ length: 120 }, () => ({\n            x: Math.random(), y: Math.random(),\n            vx: (Math.random() - 0.5) * 0.0003, vy: Math.random() * 0.0003 + 0.00015,\n            s: Math.random() * 2.2 + 0.5, o: Math.random() * 0.5 + 0.3,\n            wp: Math.random() * Math.PI * 2, wf: Math.random() * 0.015 + 0.005\n        }));\n        const cab = Array.from({ length: 7 }, () => ({\n            x: Math.random(), y: 0.72 + Math.random() * 0.14,\n            w: Math.random() * 0.015 + 0.006, h: Math.random() * 0.008 + 0.004,\n            fo: Math.random() * Math.PI * 2, fs: Math.random() * 0.002 + 0.001\n        }));\n        return {\n            bgColor: '#081530',\n            bgGradient: 'linear-gradient(to bottom, #040b18 0%, #081530 30%, #0c1e3a 70%, #101825 100%)',\n            textColor: '#c8d8e8',\n            textSecondary: '#8a9ab0',\n            textTertiary: '#5a6a80',\n            borderColor: 'rgba(100, 160, 220, 0.15)',\n            buttonBg: 'rgba(100, 160, 220, 0.1)',\n            buttonText: '#c8d8e8',\n            accentColor: '#ffa050',\n            cardBg: 'rgba(10, 20, 40, 0.7)',\n            backdropFilter: 'blur(10px)',\n            boxShadow: '0 4px 20px rgba(0, 20, 60, 0.5)',\n            renderCanvas: (ctx, w, h, t) => {\n                // L1: Sky\n                const bg = ctx.createLinearGradient(0, 0, 0, h);\n                bg.addColorStop(0, '#040b18');\n                bg.addColorStop(0.3, '#081530');\n                bg.addColorStop(0.7, '#0c1e3a');\n                bg.addColorStop(1, '#101825');\n                ctx.fillStyle = bg;\n                ctx.fillRect(0, 0, w, h);\n                // L2: Stars\n                for (let i = 0; i < 55; i++) {\n                    const sx = (i * 137.508 + 50) % w, sy = (i * 73.137 + 20) % (h * 0.4);\n                    const sb = (Math.sin(t * 0.0004 + i * 1.7) + 1) * 0.5;\n                    ctx.beginPath();\n                    ctx.arc(sx, sy, 0.4 + sb * 0.7, 0, Math.PI * 2);\n                    ctx.fillStyle = `rgba(200,220,255,${0.1 + sb * 0.3})`;\n                    ctx.fill();\n                }\n                // L3: Aurora (4 bands, multi-frequency organic flow)\n                ctx.save();\n                ctx.globalCompositeOperation = 'screen';\n                const bands = [\n                    { y: 0.14, wd: 0.11, hu: 150, sp: 0.00025, am: 35, ph: 0 },\n                    { y: 0.21, wd: 0.09, hu: 180, sp: 0.00018, am: 45, ph: 2.1 },\n                    { y: 0.27, wd: 0.07, hu: 280, sp: 0.00032, am: 25, ph: 4.3 },\n                    { y: 0.17, wd: 0.05, hu: 120, sp: 0.00015, am: 50, ph: 1.2 },\n                ];\n                for (const b of bands) {\n                    const by = h * b.y;\n                    for (let x = 0; x < w; x += 3) {\n                        const wave = Math.sin(x * 0.003 + t * b.sp + b.ph) * b.am\n                            + Math.sin(x * 0.007 + t * b.sp * 1.3 + b.ph * 0.5) * b.am * 0.4\n                            + Math.sin(x * 0.001 + t * b.sp * 0.7) * b.am * 0.6;\n                        const cy = by + wave;\n                        const inten = (Math.sin(x * 0.002 + t * b.sp * 0.5 + b.ph) + 1) * 0.5;\n                        const r = h * b.wd;\n                        const grad = ctx.createRadialGradient(x, cy, 0, x, cy, r);\n                        grad.addColorStop(0, `hsla(${b.hu},80%,60%,${0.07 * inten})`);\n                        grad.addColorStop(0.5, `hsla(${b.hu},70%,50%,${0.03 * inten})`);\n                        grad.addColorStop(1, 'hsla(180,60%,40%,0)');\n                        ctx.fillStyle = grad;\n                        ctx.fillRect(x - r, cy - r, r * 2, r * 2);\n                    }\n                }\n                ctx.restore();\n                // L4: Snow (wind + wobble physics)\n                const windF = Math.sin(t * 0.0003) * 0.00005;\n                for (const p of snow) {\n                    p.wp += p.wf;\n                    p.vx += windF;\n                    p.vx += Math.sin(p.wp) * 0.000008;\n                    p.vx *= 0.99;\n                    p.x += p.vx;\n                    p.y += p.vy;\n                    if (p.y > 1.02) {\n                        p.y = -0.02;\n                        p.x = Math.random();\n                    }\n                    if (p.x > 1.02)\n                        p.x = -0.02;\n                    if (p.x < -0.02)\n                        p.x = 1.02;\n                    const px = p.x * w, py = p.y * h;\n                    if (p.s > 1.5) {\n                        ctx.beginPath();\n                        ctx.arc(px, py, p.s * 2, 0, Math.PI * 2);\n                        ctx.fillStyle = `rgba(200,220,255,${p.o * 0.08})`;\n                        ctx.fill();\n                    }\n                    ctx.beginPath();\n                    ctx.arc(px, py, p.s, 0, Math.PI * 2);\n                    ctx.fillStyle = `rgba(230,240,255,${p.o})`;\n                    ctx.fill();\n                }\n                // L5: Mountains (3 layers, atmospheric perspective)\n                const mts = [\n                    { y: 0.68, c: 'rgba(8,16,32,0.9)', f: 0.002, a: 55 },\n                    { y: 0.75, c: 'rgba(12,20,38,0.95)', f: 0.003, a: 40 },\n                    { y: 0.82, c: 'rgba(16,24,42,1)', f: 0.005, a: 28 },\n                ];\n                for (const m of mts) {\n                    ctx.beginPath();\n                    ctx.moveTo(0, h);\n                    for (let x = 0; x <= w; x += 3) {\n                        ctx.lineTo(x, h * m.y + Math.sin(x * m.f) * m.a + Math.sin(x * m.f * 2.3 + 1) * m.a * 0.5);\n                    }\n                    ctx.lineTo(w, h);\n                    ctx.closePath();\n                    ctx.fillStyle = m.c;\n                    ctx.fill();\n                }\n                // L6: Snow ground\n                const gnd = ctx.createLinearGradient(0, h * 0.88, 0, h);\n                gnd.addColorStop(0, '#1a2540');\n                gnd.addColorStop(0.5, '#253050');\n                gnd.addColorStop(1, '#2a3558');\n                ctx.fillStyle = gnd;\n                ctx.fillRect(0, h * 0.88, w, h * 0.12);\n                // L7: Cabin lights (warm flicker)\n                for (const c of cab) {\n                    const fl = (Math.sin(t * c.fs + c.fo) + 1) * 0.5\n                        * (Math.sin(t * c.fs * 2.7 + c.fo * 1.5) + 1) * 0.5;\n                    const warm = 0.4 + fl * 0.6;\n                    const cx = c.x * w, cy = c.y * h, cw = c.w * w;\n                    const wg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cw * 4);\n                    wg.addColorStop(0, `rgba(255,180,80,${0.3 * warm})`);\n                    wg.addColorStop(0.5, `rgba(255,150,50,${0.12 * warm})`);\n                    wg.addColorStop(1, 'rgba(255,150,50,0)');\n                    ctx.fillStyle = wg;\n                    ctx.fillRect(cx - cw * 4, cy - cw * 4, cw * 8, cw * 8);\n                    ctx.fillStyle = `rgba(255,200,120,${warm})`;\n                    ctx.fillRect(cx - cw / 2, cy - c.h * h / 2, cw, c.h * h);\n                }\n                // L8: Title glow\n                ctx.save();\n                ctx.textAlign = 'center';\n                ctx.textBaseline = 'middle';\n                ctx.font = `bold ${Math.min(36, w * 0.03)}px \"PingFang SC\",\"Microsoft YaHei\",sans-serif`;\n                ctx.shadowColor = 'rgba(100,200,255,0.3)';\n                ctx.shadowBlur = 20;\n                ctx.fillStyle = 'rgba(180,210,240,0.12)';\n                ctx.fillText('北欧极夜', w / 2, h / 2);\n                ctx.shadowBlur = 0;\n                ctx.restore();\n                // L9: Vignette\n                const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.7);\n                vig.addColorStop(0, 'rgba(0,0,0,0)');\n                vig.addColorStop(1, 'rgba(0,0,0,0.5)');\n                ctx.fillStyle = vig;\n                ctx.fillRect(0, 0, w, h);\n            }\n        };\n    }"
     },
-    "legacyType": "nordic_polar_night"
+    "legacyType": "nordic_polar_night",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 23,
@@ -651,7 +1004,21 @@
       "helpers": null,
       "factory": "() => {\n        const petals = Array.from({ length: 50 }, () => ({\n            x: Math.random(), y: Math.random(),\n            vx: (Math.random() - 0.3) * 0.0002, vy: Math.random() * 0.0002 + 0.00008,\n            rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.02,\n            s: Math.random() * 4 + 2, o: Math.random() * 0.5 + 0.3,\n            hue: Math.random() * 20 + 340, wp: Math.random() * Math.PI * 2\n        }));\n        const stones = [\n            { x: 0.3, y: 0.55, r: 25 }, { x: 0.55, y: 0.48, r: 18 },\n            { x: 0.7, y: 0.58, r: 30 }, { x: 0.45, y: 0.62, r: 15 },\n        ];\n        const lanterns = [\n            { x: 0.2, y: 0.4, fo: 0 }, { x: 0.8, y: 0.35, fo: 2.5 },\n        ];\n        return {\n            bgColor: '#f5f0e6',\n            bgGradient: 'linear-gradient(to bottom, #f5f0e6 0%, #ebe5d5 50%, #e0d8c8 100%)',\n            textColor: '#3a3530',\n            textSecondary: '#6b6055',\n            textTertiary: '#9a8e80',\n            borderColor: 'rgba(90, 75, 60, 0.15)',\n            buttonBg: 'rgba(90, 75, 60, 0.08)',\n            buttonText: '#3a3530',\n            accentColor: '#c47070',\n            cardBg: 'rgba(245, 240, 230, 0.8)',\n            backdropFilter: 'blur(5px)',\n            boxShadow: '0 2px 12px rgba(90, 75, 60, 0.12)',\n            renderCanvas: (ctx, w, h, t) => {\n                // L1: Paper background with warm gradient\n                const bg = ctx.createLinearGradient(0, 0, 0, h);\n                bg.addColorStop(0, '#f5f0e6');\n                bg.addColorStop(0.5, '#ebe5d5');\n                bg.addColorStop(1, '#ddd5c5');\n                ctx.fillStyle = bg;\n                ctx.fillRect(0, 0, w, h);\n                // L2: Paper texture (subtle noise dots)\n                ctx.fillStyle = 'rgba(160,140,120,0.03)';\n                for (let i = 0; i < 200; i++) {\n                    const tx = (i * 197.3 + 30) % w, ty = (i * 113.7 + 50) % h;\n                    ctx.fillRect(tx, ty, 1, 1);\n                }\n                // L3: Zen garden sand area\n                const sandY = h * 0.45, sandH = h * 0.45;\n                ctx.fillStyle = '#e8e0d0';\n                ctx.fillRect(0, sandY, w, sandH);\n                // Raked lines (horizontal)\n                ctx.strokeStyle = 'rgba(180,170,155,0.25)';\n                ctx.lineWidth = 0.8;\n                for (let dy = 0; dy < sandH; dy += 6) {\n                    ctx.beginPath();\n                    ctx.moveTo(0, sandY + dy);\n                    for (let x = 0; x < w; x += 4) {\n                        const ripple = Math.sin(x * 0.02 + dy * 0.1) * 0.5;\n                        ctx.lineTo(x, sandY + dy + ripple);\n                    }\n                    ctx.stroke();\n                }\n                // Concentric circles around stones\n                ctx.strokeStyle = 'rgba(170,160,140,0.2)';\n                ctx.lineWidth = 0.6;\n                for (const st of stones) {\n                    const sx = st.x * w, sy = sandY + st.y * sandH * 0.4 + sandH * 0.2;\n                    for (let r = st.r + 5; r < st.r + 40; r += 5) {\n                        ctx.beginPath();\n                        ctx.arc(sx, sy, r, 0, Math.PI * 2);\n                        ctx.stroke();\n                    }\n                    // Stone itself\n                    const sg = ctx.createRadialGradient(sx - 3, sy - 3, 0, sx, sy, st.r);\n                    sg.addColorStop(0, '#8a8070');\n                    sg.addColorStop(0.7, '#6a6050');\n                    sg.addColorStop(1, '#5a5040');\n                    ctx.fillStyle = sg;\n                    ctx.beginPath();\n                    ctx.ellipse(sx, sy, st.r, st.r * 0.7, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                }\n                // L4: Moss patches\n                const mosses = [\n                    { x: 0.1, y: 0.42, r: 30 }, { x: 0.9, y: 0.45, r: 25 },\n                    { x: 0.15, y: 0.88, r: 35 }, { x: 0.85, y: 0.9, r: 28 },\n                    { x: 0.5, y: 0.92, r: 20 },\n                ];\n                for (const m of mosses) {\n                    const mx = m.x * w, my = m.y * h;\n                    const mg = ctx.createRadialGradient(mx, my, 0, mx, my, m.r);\n                    mg.addColorStop(0, 'rgba(100,130,80,0.5)');\n                    mg.addColorStop(0.6, 'rgba(110,140,85,0.3)');\n                    mg.addColorStop(1, 'rgba(120,150,90,0)');\n                    ctx.fillStyle = mg;\n                    ctx.beginPath();\n                    ctx.ellipse(mx, my, m.r * 1.3, m.r * 0.8, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                }\n                // L5: Paper lanterns (warm glow with flicker)\n                for (const ln of lanterns) {\n                    const lx = ln.x * w, ly = ln.y * h;\n                    const fl = (Math.sin(t * 0.002 + ln.fo) + 1) * 0.5\n                        * (Math.sin(t * 0.005 + ln.fo * 1.3) + 1) * 0.5;\n                    const glow = 0.5 + fl * 0.5;\n                    // Outer glow\n                    const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, 80);\n                    lg.addColorStop(0, `rgba(255,200,120,${0.2 * glow})`);\n                    lg.addColorStop(0.4, `rgba(255,180,100,${0.08 * glow})`);\n                    lg.addColorStop(1, 'rgba(255,180,100,0)');\n                    ctx.fillStyle = lg;\n                    ctx.fillRect(lx - 80, ly - 80, 160, 160);\n                    // Lantern body\n                    ctx.fillStyle = `rgba(240,220,180,${0.7 + glow * 0.3})`;\n                    ctx.beginPath();\n                    ctx.ellipse(lx, ly, 12, 18, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                    ctx.strokeStyle = 'rgba(120,80,40,0.5)';\n                    ctx.lineWidth = 1;\n                    ctx.stroke();\n                    // Lantern top/bottom caps\n                    ctx.fillStyle = 'rgba(100,70,40,0.6)';\n                    ctx.fillRect(lx - 8, ly - 20, 16, 4);\n                    ctx.fillRect(lx - 6, ly + 16, 12, 3);\n                    // Post\n                    ctx.fillStyle = 'rgba(100,70,40,0.4)';\n                    ctx.fillRect(lx - 2, ly + 18, 4, 40);\n                }\n                // L6: Cherry blossom petals (falling with drift + rotation)\n                for (const p of petals) {\n                    p.wp += 0.012;\n                    p.vx += Math.sin(p.wp) * 0.000005;\n                    p.x += p.vx + Math.sin(t * 0.0002) * 0.00003;\n                    p.y += p.vy;\n                    p.rot += p.rv;\n                    if (p.y > 1.05) {\n                        p.y = -0.05;\n                        p.x = Math.random();\n                    }\n                    if (p.x > 1.1)\n                        p.x = -0.1;\n                    if (p.x < -0.1)\n                        p.x = 1.1;\n                    const px = p.x * w, py = p.y * h;\n                    ctx.save();\n                    ctx.translate(px, py);\n                    ctx.rotate(p.rot);\n                    ctx.globalAlpha = p.o;\n                    // Petal shape\n                    ctx.fillStyle = `hsl(${p.hue},60%,82%)`;\n                    ctx.beginPath();\n                    ctx.ellipse(0, 0, p.s * 0.5, p.s, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                    // Highlight\n                    ctx.fillStyle = `hsl(${p.hue},50%,90%)`;\n                    ctx.beginPath();\n                    ctx.ellipse(-p.s * 0.15, -p.s * 0.2, p.s * 0.2, p.s * 0.4, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                    ctx.restore();\n                }\n                // L7: Branch silhouettes\n                ctx.strokeStyle = 'rgba(80,60,40,0.15)';\n                ctx.lineWidth = 2;\n                ctx.beginPath();\n                ctx.moveTo(0, h * 0.15);\n                ctx.bezierCurveTo(w * 0.2, h * 0.12, w * 0.3, h * 0.18, w * 0.4, h * 0.08);\n                ctx.stroke();\n                ctx.beginPath();\n                ctx.moveTo(w, h * 0.1);\n                ctx.bezierCurveTo(w * 0.8, h * 0.14, w * 0.7, h * 0.06, w * 0.6, h * 0.12);\n                ctx.stroke();\n                // L8: Title\n                ctx.save();\n                ctx.textAlign = 'center';\n                ctx.textBaseline = 'middle';\n                ctx.font = `${Math.min(32, w * 0.028)}px \"PingFang SC\",\"Microsoft YaHei\",serif`;\n                ctx.fillStyle = 'rgba(60,50,40,0.08)';\n                ctx.fillText('日式庭院', w / 2, h / 2);\n                ctx.restore();\n                // L9: Soft vignette\n                const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.65);\n                vig.addColorStop(0, 'rgba(0,0,0,0)');\n                vig.addColorStop(1, 'rgba(60,50,30,0.15)');\n                ctx.fillStyle = vig;\n                ctx.fillRect(0, 0, w, h);\n            }\n        };\n    }"
     },
-    "legacyType": "japanese_garden"
+    "legacyType": "japanese_garden",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 24,
@@ -677,7 +1044,21 @@
       "helpers": null,
       "factory": "() => {\n        const embers = Array.from({ length: 80 }, () => ({\n            x: 0.25 + (Math.random() - 0.5) * 0.12, y: 0.85 + Math.random() * 0.1,\n            vx: (Math.random() - 0.5) * 0.0002, vy: -(Math.random() * 0.0004 + 0.0001),\n            s: Math.random() * 2.5 + 0.5, life: Math.random(),\n            decay: Math.random() * 0.003 + 0.001, hue: Math.random() * 30 + 15\n        }));\n        const dust = Array.from({ length: 50 }, () => ({\n            x: 0.45 + Math.random() * 0.35, y: Math.random(),\n            vx: (Math.random() - 0.5) * 0.00005, vy: (Math.random() - 0.5) * 0.00004,\n            s: Math.random() * 1.5 + 0.3, o: Math.random() * 0.4 + 0.1,\n            phase: Math.random() * Math.PI * 2\n        }));\n        const pages = Array.from({ length: 5 }, () => ({\n            x: 0.2 + Math.random() * 0.15, y: 0.7 + Math.random() * 0.15,\n            vx: Math.random() * 0.0002 + 0.0001, vy: -(Math.random() * 0.0003 + 0.0001),\n            rot: Math.random() * Math.PI * 2, rv: (Math.random() - 0.5) * 0.008,\n            s: Math.random() * 8 + 6, o: Math.random() * 0.3 + 0.15\n        }));\n        const bookColors = ['#5c1a1a', '#2a3a2a', '#1a2a3a', '#3a2a1a', '#3a1a2a', '#1a3a2a', '#4a3a1a', '#2a1a3a'];\n        return {\n            bgColor: '#2a1510',\n            bgGradient: 'linear-gradient(to bottom, #1a0e08 0%, #2a1510 40%, #3a2218 70%, #1a0e08 100%)',\n            textColor: '#d4c4a8',\n            textSecondary: '#a89878',\n            textTertiary: '#7a6a50',\n            borderColor: 'rgba(180, 140, 80, 0.15)',\n            buttonBg: 'rgba(180, 140, 80, 0.1)',\n            buttonText: '#d4c4a8',\n            accentColor: '#c8a050',\n            cardBg: 'rgba(40, 20, 12, 0.8)',\n            backdropFilter: 'blur(8px)',\n            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',\n            renderCanvas: (ctx, w, h, t) => {\n                // L1: Background\n                const bg = ctx.createLinearGradient(0, 0, 0, h);\n                bg.addColorStop(0, '#1a0e08');\n                bg.addColorStop(0.4, '#2a1510');\n                bg.addColorStop(0.7, '#3a2218');\n                bg.addColorStop(1, '#1a0e08');\n                ctx.fillStyle = bg;\n                ctx.fillRect(0, 0, w, h);\n                // L2: Wall paneling (subtle vertical lines)\n                ctx.strokeStyle = 'rgba(60,40,25,0.3)';\n                ctx.lineWidth = 1;\n                for (let x = w * 0.05; x < w; x += w * 0.12) {\n                    ctx.beginPath();\n                    ctx.moveTo(x, 0);\n                    ctx.lineTo(x, h * 0.85);\n                    ctx.stroke();\n                }\n                // L3: Window light beam\n                const beamAlpha = 0.06 + Math.sin(t * 0.0005) * 0.015;\n                ctx.save();\n                const beamGrad = ctx.createLinearGradient(w * 0.75, 0, w * 0.35, h);\n                beamGrad.addColorStop(0, `rgba(255,220,150,${beamAlpha * 1.5})`);\n                beamGrad.addColorStop(0.5, `rgba(255,200,120,${beamAlpha})`);\n                beamGrad.addColorStop(1, `rgba(255,180,100,${beamAlpha * 0.3})`);\n                ctx.fillStyle = beamGrad;\n                ctx.beginPath();\n                ctx.moveTo(w * 0.7, 0);\n                ctx.lineTo(w * 0.85, 0);\n                ctx.lineTo(w * 0.55, h);\n                ctx.lineTo(w * 0.3, h);\n                ctx.closePath();\n                ctx.fill();\n                ctx.restore();\n                // L4: Dust in light beam\n                for (const d of dust) {\n                    d.phase += 0.008;\n                    d.x += d.vx + Math.sin(d.phase) * 0.00002;\n                    d.y += d.vy + Math.cos(d.phase * 0.7) * 0.000015;\n                    // Wrap in beam area\n                    if (d.x < 0.3)\n                        d.x = 0.8;\n                    if (d.x > 0.85)\n                        d.x = 0.35;\n                    if (d.y < -0.02)\n                        d.y = 1.02;\n                    if (d.y > 1.02)\n                        d.y = -0.02;\n                    const dx = d.x * w, dy = d.y * h;\n                    // Check if in beam (approximate)\n                    const beamX = 0.7 - (d.y * 0.3);\n                    const inBeam = d.x > beamX - 0.1 && d.x < beamX + 0.15;\n                    const bright = inBeam ? 1 : 0.15;\n                    ctx.beginPath();\n                    ctx.arc(dx, dy, d.s, 0, Math.PI * 2);\n                    ctx.fillStyle = `rgba(255,220,160,${d.o * bright})`;\n                    ctx.fill();\n                }\n                // L5: Bookshelf (left side)\n                const shelfX = w * 0.02, shelfW = w * 0.1;\n                ctx.fillStyle = 'rgba(50,30,18,0.8)';\n                ctx.fillRect(shelfX, h * 0.05, shelfW, h * 0.75);\n                // Shelves\n                for (let sy = 0.05; sy < 0.8; sy += 0.12) {\n                    ctx.fillStyle = 'rgba(70,40,25,0.9)';\n                    ctx.fillRect(shelfX - 2, h * sy, shelfW + 4, 3);\n                    // Books on shelf\n                    let bx = shelfX + 3;\n                    for (let bi = 0; bi < 6 && bx < shelfX + shelfW - 3; bi++) {\n                        const seed = bi * 7 + Math.floor(sy * 10) * 13;\n                        const bw = 4 + ((seed * 31) % 7);\n                        const bh = h * 0.09 + ((seed * 17) % 10) * h * 0.002;\n                        ctx.fillStyle = bookColors[(bi + Math.floor(sy * 10)) % bookColors.length];\n                        ctx.fillRect(bx, h * sy - bh + 3, bw, bh);\n                        bx += bw + 1;\n                    }\n                }\n                // L6: Fireplace\n                const fpX = w * 0.22, fpY = h * 0.82, fpW = w * 0.18, fpH = h * 0.18;\n                // Mantel\n                ctx.fillStyle = 'rgba(60,35,20,0.9)';\n                ctx.fillRect(fpX - 10, fpY - 5, fpW + 20, 8);\n                // Fireplace opening\n                ctx.fillStyle = '#0a0503';\n                ctx.beginPath();\n                ctx.moveTo(fpX, fpY + fpH);\n                ctx.lineTo(fpX, fpY + 10);\n                ctx.quadraticCurveTo(fpX + fpW / 2, fpY - 5, fpX + fpW, fpY + 10);\n                ctx.lineTo(fpX + fpW, fpY + fpH);\n                ctx.closePath();\n                ctx.fill();\n                // Fire glow\n                const flicker = 0.7 + Math.sin(t * 0.008) * 0.15 + Math.sin(t * 0.013) * 0.1;\n                const fg = ctx.createRadialGradient(fpX + fpW / 2, fpY + fpH * 0.6, 0, fpX + fpW / 2, fpY + fpH * 0.6, fpW * 0.8);\n                fg.addColorStop(0, `rgba(255,150,50,${0.3 * flicker})`);\n                fg.addColorStop(0.4, `rgba(255,100,30,${0.15 * flicker})`);\n                fg.addColorStop(1, 'rgba(255,80,20,0)');\n                ctx.fillStyle = fg;\n                ctx.fillRect(fpX - fpW * 0.3, fpY, fpW * 1.6, fpH);\n                // Flame tongues\n                for (let fi = 0; fi < 5; fi++) {\n                    const fx = fpX + fpW * (0.15 + fi * 0.17);\n                    const fBase = fpY + fpH * 0.8;\n                    const fH = fpH * (0.3 + Math.sin(t * 0.01 + fi * 1.5) * 0.15);\n                    const fGrad = ctx.createLinearGradient(fx, fBase, fx, fBase - fH);\n                    fGrad.addColorStop(0, `rgba(255,200,80,${0.6 * flicker})`);\n                    fGrad.addColorStop(0.4, `rgba(255,120,30,${0.4 * flicker})`);\n                    fGrad.addColorStop(1, 'rgba(255,60,10,0)');\n                    ctx.fillStyle = fGrad;\n                    ctx.beginPath();\n                    ctx.moveTo(fx - 6, fBase);\n                    ctx.quadraticCurveTo(fx + Math.sin(t * 0.012 + fi) * 4, fBase - fH * 0.6, fx, fBase - fH);\n                    ctx.quadraticCurveTo(fx + 4 + Math.sin(t * 0.009 + fi) * 3, fBase - fH * 0.4, fx + 6, fBase);\n                    ctx.closePath();\n                    ctx.fill();\n                }\n                // L7: Embers rising from fire\n                for (const e of embers) {\n                    e.life -= e.decay;\n                    if (e.life <= 0) {\n                        e.x = 0.25 + (Math.random() - 0.5) * 0.12;\n                        e.y = 0.85 + Math.random() * 0.05;\n                        e.life = 1;\n                        e.vy = -(Math.random() * 0.0004 + 0.0001);\n                    }\n                    e.x += e.vx + Math.sin(t * 0.003 + e.hue) * 0.00003;\n                    e.y += e.vy;\n                    const ex = e.x * w, ey = e.y * h;\n                    ctx.beginPath();\n                    ctx.arc(ex, ey, e.s * e.life, 0, Math.PI * 2);\n                    ctx.fillStyle = `hsla(${e.hue},100%,${50 + e.life * 30}%,${e.life * 0.6})`;\n                    ctx.fill();\n                }\n                // L8: Floating pages\n                for (const p of pages) {\n                    p.x += p.vx;\n                    p.y += p.vy;\n                    p.rot += p.rv;\n                    p.vy -= 0.0000003; // slight upward acceleration (heat)\n                    if (p.y < -0.1 || p.x > 1.1) {\n                        p.x = 0.22 + Math.random() * 0.1;\n                        p.y = 0.78 + Math.random() * 0.05;\n                        p.vy = -(Math.random() * 0.0003 + 0.0001);\n                        p.vx = Math.random() * 0.0002 + 0.0001;\n                    }\n                    const px = p.x * w, py = p.y * h;\n                    ctx.save();\n                    ctx.translate(px, py);\n                    ctx.rotate(p.rot);\n                    ctx.globalAlpha = p.o;\n                    ctx.fillStyle = '#f0e8d8';\n                    ctx.fillRect(-p.s / 2, -p.s * 0.7, p.s, p.s * 1.4);\n                    // Text lines on page\n                    ctx.fillStyle = 'rgba(60,50,40,0.2)';\n                    for (let li = 0; li < 4; li++) {\n                        ctx.fillRect(-p.s / 2 + 2, -p.s * 0.5 + li * p.s * 0.3, p.s - 4, 1);\n                    }\n                    ctx.restore();\n                }\n                // L9: Title\n                ctx.save();\n                ctx.textAlign = 'center';\n                ctx.textBaseline = 'middle';\n                ctx.font = `bold ${Math.min(32, w * 0.028)}px \"Georgia\",\"Times New Roman\",serif`;\n                ctx.fillStyle = 'rgba(200,170,120,0.1)';\n                ctx.fillText('维多利亚书房', w / 2, h / 2);\n                ctx.restore();\n                // L10: Heavy vignette\n                const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.65);\n                vig.addColorStop(0, 'rgba(0,0,0,0)');\n                vig.addColorStop(1, 'rgba(10,5,2,0.6)');\n                ctx.fillStyle = vig;\n                ctx.fillRect(0, 0, w, h);\n            }\n        };\n    }"
     },
-    "legacyType": "victorian_study"
+    "legacyType": "victorian_study",
+    "appearance": {
+      "effect": "frosted",
+      "parameters": {
+        "opacity": 0.86,
+        "blur": 24,
+        "tint": 0.03
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   },
   {
     "id": 25,
@@ -703,6 +1084,20 @@
       "helpers": null,
       "factory": "() => {\n        const bubbles = Array.from({ length: 40 }, () => ({\n            x: Math.random(), y: Math.random(),\n            r: Math.random() * 4 + 1.5, vy: -(Math.random() * 0.0003 + 0.0001),\n            wp: Math.random() * Math.PI * 2, wa: Math.random() * 0.00015 + 0.00005,\n            o: Math.random() * 0.4 + 0.15\n        }));\n        const seaweed = Array.from({ length: 8 }, () => ({\n            x: Math.random() * 0.9 + 0.05, h: Math.random() * 0.15 + 0.08,\n            seg: Math.floor(Math.random() * 4) + 5,\n            phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.001 + 0.0005,\n            amp: Math.random() * 8 + 5, hue: 130 + Math.random() * 30\n        }));\n        const fish = Array.from({ length: 15 }, (_, i) => ({\n            ox: (Math.random() - 0.5) * 0.08, oy: (Math.random() - 0.5) * 0.04,\n            s: Math.random() * 5 + 4, phase: i * 0.5,\n            hue: Math.random() > 0.7 ? 35 : (Math.random() * 20 + 190)\n        }));\n        const particles = Array.from({ length: 60 }, () => ({\n            x: Math.random(), y: Math.random(),\n            vx: (Math.random() - 0.5) * 0.00003, vy: (Math.random() - 0.5) * 0.00003,\n            s: Math.random() * 1.2 + 0.3, o: Math.random() * 0.25 + 0.05\n        }));\n        return {\n            bgColor: '#0a2a2a',\n            bgGradient: 'linear-gradient(to bottom, #083838 0%, #0a2a2a 40%, #0a1a20 70%, #061218 100%)',\n            textColor: '#a0d8d0',\n            textSecondary: '#70a8a0',\n            textTertiary: '#508078',\n            borderColor: 'rgba(80, 200, 180, 0.15)',\n            buttonBg: 'rgba(80, 200, 180, 0.08)',\n            buttonText: '#a0d8d0',\n            accentColor: '#e8a090',\n            cardBg: 'rgba(10, 30, 35, 0.8)',\n            backdropFilter: 'blur(8px)',\n            boxShadow: '0 4px 20px rgba(0, 30, 40, 0.5)',\n            renderCanvas: (ctx, w, h, t) => {\n                // L1: Deep ocean gradient\n                const bg = ctx.createLinearGradient(0, 0, 0, h);\n                bg.addColorStop(0, '#0c3a3a');\n                bg.addColorStop(0.3, '#0a2a2a');\n                bg.addColorStop(0.7, '#0a1a20');\n                bg.addColorStop(1, '#061218');\n                ctx.fillStyle = bg;\n                ctx.fillRect(0, 0, w, h);\n                // L2: Caustics (animated light patterns on the floor)\n                ctx.save();\n                ctx.globalAlpha = 0.04;\n                ctx.globalCompositeOperation = 'screen';\n                for (let i = 0; i < 12; i++) {\n                    const cx = (i * w / 12 + Math.sin(t * 0.0003 + i) * 40) % w;\n                    const cy = h * 0.8 + Math.cos(t * 0.0004 + i * 2) * 20;\n                    const cr = 40 + Math.sin(t * 0.0005 + i * 1.5) * 15;\n                    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);\n                    cg.addColorStop(0, 'rgba(150,220,200,0.5)');\n                    cg.addColorStop(1, 'rgba(150,220,200,0)');\n                    ctx.fillStyle = cg;\n                    ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);\n                }\n                ctx.restore();\n                // L3: God rays from surface\n                ctx.save();\n                ctx.globalCompositeOperation = 'screen';\n                const rays = [\n                    { x: 0.2, w: 0.08, a: 0.04, sp: 0.0002, ph: 0 },\n                    { x: 0.5, w: 0.1, a: 0.05, sp: 0.00015, ph: 1.5 },\n                    { x: 0.75, w: 0.07, a: 0.035, sp: 0.00025, ph: 3 },\n                ];\n                for (const r of rays) {\n                    const sway = Math.sin(t * r.sp + r.ph) * 0.03;\n                    const alpha = r.a * (0.7 + Math.sin(t * r.sp * 2 + r.ph) * 0.3);\n                    const rx = (r.x + sway) * w, rw = r.w * w;\n                    const rg = ctx.createLinearGradient(rx, 0, rx + rw * 0.5, h * 0.8);\n                    rg.addColorStop(0, `rgba(150,220,200,${alpha})`);\n                    rg.addColorStop(0.5, `rgba(120,200,180,${alpha * 0.5})`);\n                    rg.addColorStop(1, 'rgba(100,180,160,0)');\n                    ctx.fillStyle = rg;\n                    ctx.beginPath();\n                    ctx.moveTo(rx - rw / 2, 0);\n                    ctx.lineTo(rx + rw / 2, 0);\n                    ctx.lineTo(rx + rw, h * 0.8);\n                    ctx.lineTo(rx - rw * 0.3, h * 0.8);\n                    ctx.closePath();\n                    ctx.fill();\n                }\n                ctx.restore();\n                // L4: Temple columns at bottom\n                const colY = h * 0.85;\n                const cols = [0.15, 0.35, 0.55, 0.75, 0.9];\n                for (const cx of cols) {\n                    const px = cx * w;\n                    const colGrad = ctx.createLinearGradient(px - 12, colY, px + 12, colY);\n                    colGrad.addColorStop(0, 'rgba(60,80,75,0.5)');\n                    colGrad.addColorStop(0.5, 'rgba(80,100,90,0.6)');\n                    colGrad.addColorStop(1, 'rgba(50,70,65,0.4)');\n                    ctx.fillStyle = colGrad;\n                    ctx.fillRect(px - 12, colY, 24, h - colY);\n                    // Column capital\n                    ctx.fillStyle = 'rgba(70,90,80,0.5)';\n                    ctx.fillRect(px - 16, colY - 4, 32, 8);\n                    // Cracks/aging\n                    ctx.strokeStyle = 'rgba(40,60,55,0.3)';\n                    ctx.lineWidth = 0.5;\n                    ctx.beginPath();\n                    ctx.moveTo(px - 3, colY + 10);\n                    ctx.lineTo(px + 2, colY + 30);\n                    ctx.stroke();\n                }\n                // Floor\n                const floorGrad = ctx.createLinearGradient(0, h * 0.95, 0, h);\n                floorGrad.addColorStop(0, 'rgba(40,60,55,0.3)');\n                floorGrad.addColorStop(1, 'rgba(180,160,100,0.15)');\n                ctx.fillStyle = floorGrad;\n                ctx.fillRect(0, h * 0.95, w, h * 0.05);\n                // L5: Seaweed (multi-segment swaying)\n                for (const sw of seaweed) {\n                    const baseX = sw.x * w, baseY = h * 0.95;\n                    const segH = (sw.h * h) / sw.seg;\n                    let px = baseX, py = baseY;\n                    ctx.beginPath();\n                    ctx.moveTo(px, py);\n                    for (let si = 0; si < sw.seg; si++) {\n                        const sway = Math.sin(t * sw.speed + sw.phase + si * 0.4) * sw.amp * (si / sw.seg);\n                        px = baseX + sway;\n                        py = baseY - (si + 1) * segH;\n                        ctx.lineTo(px, py);\n                    }\n                    ctx.strokeStyle = `hsla(${sw.hue},50%,35%,0.6)`;\n                    ctx.lineWidth = 3;\n                    ctx.stroke();\n                    // Leaf blobs\n                    for (let si = 1; si < sw.seg; si += 2) {\n                        const sway = Math.sin(t * sw.speed + sw.phase + si * 0.4) * sw.amp * (si / sw.seg);\n                        const lx = baseX + sway, ly = baseY - si * segH;\n                        ctx.beginPath();\n                        ctx.ellipse(lx + 5, ly, 4, 2, 0.3, 0, Math.PI * 2);\n                        ctx.fillStyle = `hsla(${sw.hue},45%,40%,0.4)`;\n                        ctx.fill();\n                    }\n                }\n                // L6: Bubbles (rising with wobble)\n                for (const b of bubbles) {\n                    b.wp += 0.015;\n                    b.y += b.vy;\n                    b.x += Math.sin(b.wp) * b.wa;\n                    if (b.y < -0.03) {\n                        b.y = 1.03;\n                        b.x = Math.random();\n                    }\n                    const bx = b.x * w, by = b.y * h;\n                    // Highlight\n                    ctx.beginPath();\n                    ctx.arc(bx, by, b.r, 0, Math.PI * 2);\n                    ctx.strokeStyle = `rgba(180,230,220,${b.o})`;\n                    ctx.lineWidth = 0.8;\n                    ctx.stroke();\n                    ctx.beginPath();\n                    ctx.arc(bx - b.r * 0.25, by - b.r * 0.25, b.r * 0.3, 0, Math.PI * 2);\n                    ctx.fillStyle = `rgba(220,250,240,${b.o * 0.5})`;\n                    ctx.fill();\n                }\n                // L7: Fish school (boid-like, following a leader path)\n                const schoolX = (Math.sin(t * 0.0002) * 0.3 + 0.5) * w;\n                const schoolY = h * 0.35 + Math.sin(t * 0.00015) * h * 0.1;\n                const dirX = Math.cos(t * 0.0002) * 0.3;\n                const dirY = Math.sin(t * 0.00015) * 0.1;\n                for (const f of fish) {\n                    const fx = schoolX + f.ox * w + Math.sin(t * 0.001 + f.phase) * 10;\n                    const fy = schoolY + f.oy * h + Math.cos(t * 0.0012 + f.phase) * 6;\n                    const angle = Math.atan2(dirY, dirX);\n                    ctx.save();\n                    ctx.translate(fx, fy);\n                    if (dirX < 0)\n                        ctx.scale(-1, 1); // flip direction\n                    ctx.rotate(angle * 0.3);\n                    // Fish body\n                    ctx.fillStyle = `hsla(${f.hue},60%,55%,0.6)`;\n                    ctx.beginPath();\n                    ctx.ellipse(0, 0, f.s, f.s * 0.4, 0, 0, Math.PI * 2);\n                    ctx.fill();\n                    // Tail\n                    ctx.beginPath();\n                    ctx.moveTo(-f.s, 0);\n                    ctx.lineTo(-f.s * 1.5, -f.s * 0.35);\n                    ctx.lineTo(-f.s * 1.5, f.s * 0.35);\n                    ctx.closePath();\n                    ctx.fill();\n                    // Eye\n                    ctx.fillStyle = 'rgba(255,255,255,0.7)';\n                    ctx.beginPath();\n                    ctx.arc(f.s * 0.4, -f.s * 0.1, f.s * 0.12, 0, Math.PI * 2);\n                    ctx.fill();\n                    ctx.restore();\n                }\n                // L8: Floating plankton particles\n                for (const p of particles) {\n                    p.x += p.vx;\n                    p.y += p.vy;\n                    if (p.x < 0)\n                        p.x = 1;\n                    if (p.x > 1)\n                        p.x = 0;\n                    if (p.y < 0)\n                        p.y = 1;\n                    if (p.y > 1)\n                        p.y = 0;\n                    const px = p.x * w, py = p.y * h;\n                    ctx.beginPath();\n                    ctx.arc(px, py, p.s, 0, Math.PI * 2);\n                    ctx.fillStyle = `rgba(160,220,200,${p.o})`;\n                    ctx.fill();\n                }\n                // L9: Title\n                ctx.save();\n                ctx.textAlign = 'center';\n                ctx.textBaseline = 'middle';\n                ctx.font = `bold ${Math.min(36, w * 0.03)}px \"PingFang SC\",\"Microsoft YaHei\",sans-serif`;\n                ctx.shadowColor = 'rgba(100,200,180,0.3)';\n                ctx.shadowBlur = 15;\n                ctx.fillStyle = 'rgba(160,216,208,0.1)';\n                ctx.fillText('海底神殿', w / 2, h / 2);\n                ctx.shadowBlur = 0;\n                ctx.restore();\n                // L10: Underwater fog vignette\n                const vig = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.65);\n                vig.addColorStop(0, 'rgba(0,0,0,0)');\n                vig.addColorStop(1, 'rgba(6,18,24,0.55)');\n                ctx.fillStyle = vig;\n                ctx.fillRect(0, 0, w, h);\n            }\n        };\n    }"
     },
-    "legacyType": "underwater_temple"
+    "legacyType": "underwater_temple",
+    "appearance": {
+      "effect": "glass",
+      "parameters": {
+        "opacity": 0.8,
+        "blur": 16,
+        "saturation": 120
+      },
+      "animation": {
+        "enabled": true,
+        "speed": 0.85,
+        "intensity": 0.48,
+        "density": 1
+      }
+    }
   }
 ]

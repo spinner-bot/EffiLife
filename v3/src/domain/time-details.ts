@@ -5,7 +5,10 @@ import { intervalsForDate, unionMinutes } from './time'
 export function recordColor(id: string): string {
   let hash = 2166136261
   for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
-  return `hsl(${(hash >>> 0) % 360} 57% 53%)`
+  hash = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b)
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35)
+  const hue = ((hash ^ (hash >>> 16)) >>> 0) / 0x100000000 * 360
+  return `hsl(${hue.toFixed(6)} 57% 53%)`
 }
 export function categoryDetails(workspace: Workspace, date: string) {
   return workspace.categories.flatMap(category => {

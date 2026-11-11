@@ -42,6 +42,11 @@ export function categoryFor(plan: Plan, nodeId?: string, fallback = 'life'): str
   return plan.categoryId || fallback
 }
 
+/** Older archives can omit a plan default or use a fully custom category catalog. */
+export function effectivePlanCategory(workspace: Workspace, plan: Plan, nodeId?: string): string {
+  return categoryFor(plan, nodeId, workspace.categories.find(category => category.id === 'life')?.id || workspace.categories[0]?.id || 'life')
+}
+
 export function planProgress(plan: Plan): { total: number; completed: number; percent: number; logs: number } {
   const tasks = plan.nodes.filter(node => node.kind === 'task' && !node.deletedAt)
   const completed = tasks.filter(task => task.completedAt).length

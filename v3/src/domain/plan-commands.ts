@@ -11,7 +11,7 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
     workspace.plans.push({ id, title: requireTitle(command.title), description: command.description?.trim() || '', createdAt: context.now, updatedAt: context.now, categoryId, nodes: [], logs: [] })
     return { entityId: id }
   }
-  if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
+  if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'moveNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
   requireCondition('planId' in command && command.planId, 'validation.planMissing')
   const plan = findPlan(workspace, command.planId)
   plan.updatedAt = context.now
@@ -43,6 +43,26 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
       node.title = requireTitle(command.title)
       node.description = command.description.trim()
       node.estimatedMinutes = command.estimatedMinutes
+      break
+    }
+    case 'moveNode': {
+      requireCondition(!plan.archivedAt, 'validation.planArchived')
+      const node = findNode(plan, command.nodeId)
+      requireCondition(!node.deletedAt, 'validation.taskDeleted')
+      const subtree = new Set([node.id, ...descendants(plan, node.id).map(child => child.id)])
+      requireCondition(!command.parentId || !subtree.has(command.parentId), 'validation.treeCycle')
+      if (command.parentId) {
+        const parent = findNode(plan, command.parentId)
+        requireCondition(parent.kind !== 'task' && !parent.deletedAt, 'validation.invalidParent')
+      }
+      const oldParent = node.parentId
+      const siblings = plan.nodes.filter(item => item.parentId === command.parentId && item.id !== node.id && !item.deletedAt).sort((a, b) => a.order - b.order)
+      const index = command.beforeId ? siblings.findIndex(item => item.id === command.beforeId) : siblings.length
+      requireCondition(index >= 0, 'validation.invalidParent')
+      node.parentId = command.parentId
+      siblings.splice(index, 0, node)
+      for (const [order, sibling] of siblings.entries()) sibling.order = order
+      if (oldParent !== command.parentId) plan.nodes.filter(item => item.parentId === oldParent && !item.deletedAt).sort((a, b) => a.order - b.order).forEach((item, order) => { item.order = order })
       break
     }
     case 'deleteNode': {

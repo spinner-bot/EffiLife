@@ -18,7 +18,7 @@ function start(event: PointerEvent, id: string) {
   const rect = row.getBoundingClientRect()
   height.value = rect.height; width.value = rect.width; offsetY = event.clientY - rect.top; offsetX = event.clientX - rect.left
   pending = id; pointerId = event.pointerId; startY = event.clientY; startX = event.clientX
-  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  ;root.value!.setPointerCapture(event.pointerId)
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', release); window.addEventListener('pointercancel', cancel)
 }
 function move(event: PointerEvent) {
@@ -26,7 +26,7 @@ function move(event: PointerEvent) {
   if (!dragging.value && Math.hypot(event.clientY - startY, event.clientX - startX) < 5) return
   if (!dragging.value) { insertion.value = props.ids.indexOf(pending); dragging.value = pending }
   event.preventDefault(); y.value = event.clientY - offsetY; x.value = event.clientX - offsetX
-  const rows = [...root.value!.querySelectorAll<HTMLElement>('[data-sort-id]')].filter(row => row.dataset.sortId !== '__gap__')
+  const rows = [...root.value!.querySelectorAll<HTMLElement>('[data-sort-id]')].filter(row => row.dataset.sortId !== '__gap__' && row.dataset.sortId !== dragging.value)
   insertion.value = rows.filter(row => { const rect = row.getBoundingClientRect(); return event.clientY > rect.top + rect.height / 2 }).length
   if (event.clientY < 70) window.scrollBy({ top: -16 })
   else if (event.clientY > innerHeight - 70) window.scrollBy({ top: 16 })
@@ -54,8 +54,6 @@ onUnmounted(cleanup)
 </template>
 <style>
 .sortable-row { display: flex; align-items: center; gap: .5rem; min-height: 64px; padding: .5rem .75rem; border-bottom: 1px solid var(--line); }
-.drag-handle { display: grid; place-items: center; padding: .5rem; border: 0; border-radius: .4rem; background: transparent; color: var(--muted); cursor: grab; touch-action: none; flex: 0 0 auto; }
-.drag-handle:hover, .drag-handle:focus-visible { background: var(--subtle); color: var(--ink); }
 .sort-gap { background: color-mix(in srgb, var(--muted) 14%, transparent); border: 1px dashed var(--muted); border-radius: var(--radius-sm); }
 .sort-ghost { position: fixed; z-index: 900; pointer-events: none; opacity: .9; display: flex; align-items: center; gap: .75rem; padding: .5rem 1rem; box-shadow: 0 16px 40px #0003; }
 .sort-move { transition: transform 220ms ease; }.sort-enter-active, .sort-leave-active { transition: opacity 150ms ease; }.sort-enter-from,.sort-leave-to { opacity: 0; }.sort-leave-active { position: absolute; }

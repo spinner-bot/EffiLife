@@ -45,3 +45,6 @@
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 600px) { .form-grid { grid-template-columns: minmax(0, 1fr); } .dialog-content { padding: var(--space-6); max-height: calc(100dvh - 24px - env(safe-area-inset-bottom)); } .dialog-heading { font-size: var(--text-lg); } .toast-host { bottom: calc(90px + env(safe-area-inset-bottom)); right: var(--space-4); } .button { min-height: 44px; } }
 
+
+.drag-handle { display: grid; place-items: center; padding: .5rem; border: 0; border-radius: .4rem; background: transparent; color: var(--muted); cursor: grab; touch-action: none; flex: 0 0 auto; }
+.drag-handle:hover, .drag-handle:focus-visible { background: var(--subtle); color: var(--ink); }
