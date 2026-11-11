@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.tools/
+.cache/
+*.tsbuildinfo
+.env.local
+apps/desktop/src-tauri/target/
+

@@ -1,0 +1,28 @@
+import type { Instant, NodeKind, Preferences, Todo, TodoStatus } from './models'
+
+export type WorkspaceCommand =
+  | { type: 'createPlan'; title: string; description?: string }
+  | { type: 'updatePlan'; planId: string; title: string; description: string }
+  | { type: 'archivePlan'; planId: string; archived: boolean }
+  | { type: 'addNode'; planId: string; parentId: string | null; kind: NodeKind; title: string; description?: string; estimatedMinutes?: number; categoryId?: string }
+  | { type: 'updateNode'; planId: string; nodeId: string; title: string; description: string; estimatedMinutes: number }
+  | { type: 'deleteNode'; planId: string; nodeId: string }
+  | { type: 'setTaskCompletion'; planId: string; taskId: string; completed: boolean }
+  | { type: 'assignCategory'; planId: string; nodeId: string; categoryId: string; overwrite: boolean }
+  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; timing?: 'actual' | 'confirmed-reference' }
+  | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant }
+  | { type: 'deleteRecord'; recordId: string }
+  | { type: 'updateLog'; planId: string; logId: string; content: string }
+  | { type: 'saveTodo'; todoId?: string; title: string; description?: string; categoryId?: string; deadline?: Instant; priorityRank?: number; urgent?: boolean; important?: boolean; estimatedMinutes?: number; tags?: string[] }
+  | { type: 'setTodoStatus'; todoId: string; status: TodoStatus }
+  | { type: 'deleteTodo'; todoId: string }
+  | { type: 'savePreferences'; preferences: Partial<Preferences> }
+  | { type: 'saveCategory'; categoryId?: string; name: string; color: string; difficulty: number; icon?: string }
+
+export interface CommandEnvelope {
+  operationId: string
+  command: WorkspaceCommand
+}
+
+export type TodoEdit = Partial<Pick<Todo, 'description' | 'deadline' | 'priorityRank' | 'urgent' | 'important' | 'estimatedMinutes' | 'tags'>>
+

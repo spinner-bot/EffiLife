@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest'
+import { emptyWorkspace } from '../../src/domain/initial'
+import { execute } from '../../src/domain/engine'
+import { categoryFor, displayCode } from '../../src/domain/plans'
+import type { WorkspaceCommand } from '../../src/domain/commands'
+
+function setup() {
+  let sequence = 0
+  let state = emptyWorkspace('3.0.0')
+  const run = (command: WorkspaceCommand) => {
+    const result = execute(state, { command, operationId: 'operation-' + ++sequence }, { now: '2026-11-11T01:00:00Z', id: () => 'entity-' + ++sequence })
+    state = result.workspace
+    return result.result.entityId!
+  }
+  const planId = run({ type: 'createPlan', title: 'Trip' })
+  const sectionId = run({ type: 'addNode', planId, parentId: null, kind: 'section', title: 'Travel', categoryId: 'life' })
+  const groupId = run({ type: 'addNode', planId, parentId: sectionId, kind: 'group', title: 'Prepare' })
+  const taskId = run({ type: 'addNode', planId, parentId: groupId, kind: 'task', title: 'Read', categoryId: 'study' })
+  return { run, planId, sectionId, groupId, taskId, state: () => state }
+}
+
+describe('hierarchical plan categories', () => {
+  it('keeps explicit child choices unless bulk overwrite is requested', () => {
+    const f = setup()
+    f.run({ type: 'assignCategory', planId: f.planId, nodeId: f.sectionId, categoryId: 'work', overwrite: false })
+    expect(categoryFor(f.state().plans[0]!, f.groupId)).toBe('work')
+    expect(categoryFor(f.state().plans[0]!, f.taskId)).toBe('study')
+    f.run({ type: 'assignCategory', planId: f.planId, nodeId: f.sectionId, categoryId: 'rest', overwrite: true })
+    expect(categoryFor(f.state().plans[0]!, f.taskId)).toBe('rest')
+  })
+  it('gives newly created descendants the nearest ancestor category', () => {
+    const f = setup()
+    f.run({ type: 'assignCategory', planId: f.planId, nodeId: f.groupId, categoryId: 'exercise', overwrite: false })
+    const id = f.run({ type: 'addNode', planId: f.planId, parentId: f.groupId, kind: 'task', title: 'Walk' })
+    expect(categoryFor(f.state().plans[0]!, id)).toBe('exercise')
+  })
+  it('uses display codes without replacing stable task identities', () => {
+    const f = setup()
+    expect(displayCode(f.state().plans[0]!, f.taskId)).toBe('A1')
+    f.run({ type: 'recordAction', planId: f.planId, taskId: f.taskId, content: 'Progress' })
+    expect(f.state().plans[0]!.logs[0]!.taskId).toBe(f.taskId)
+    expect(() => f.run({ type: 'deleteNode', planId: f.planId, nodeId: f.sectionId })).toThrow('validation.taskHasHistory')
+  })
+})
+
