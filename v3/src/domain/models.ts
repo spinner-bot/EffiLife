@@ -40,6 +40,7 @@ export interface ProgressLog {
   kind: 'progress' | 'completion'
   recordIds: EntityId[]
   timingReference?: TimingReference
+  timePrecision?: 'minute' | 'hour' | 'date'
 }
 
 export interface Plan {
@@ -134,6 +135,7 @@ export interface Workspace {
   receipts: Record<string, OperationReceipt>
   packages: InstalledPackage[]
   packageTombstones: Array<{ kind: InstalledPackage['kind']; id: number }>
+  legacy?: { importedAt: Instant; source: unknown }
 }
 
 export interface CommandContext {
