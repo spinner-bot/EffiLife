@@ -9,6 +9,7 @@ export interface ThemeDefinition {
   palette: { background: string; surface: string; text: string; muted: string; accent: string }
   decoration?: { gradient: string | null; particles: unknown; renderer: string | null }
   legacyType?: string
+  css?: string
 }
 export const themes = new Registry<ThemeDefinition>()
 for (const theme of catalog) themes.register(theme)
@@ -62,9 +63,13 @@ export function themeTokens(theme: ThemeDefinition): Record<string, string> {
 }
 export function applyTheme(id: number): void {
   let theme = themes.get(id) || themes.get(1)!
+  document.documentElement.dataset.activeTheme = String(theme.id)
   if (theme.mode === 'system') theme = themes.get(matchMedia('(prefers-color-scheme: dark)').matches ? 2 : 1)!
   const tokens = themeTokens(theme)
   for (const [key, value] of Object.entries(tokens)) document.documentElement.style.setProperty(key, value)
   document.documentElement.style.colorScheme = tokens['--color-scheme']!
+  let style = document.getElementById('effilife-theme-visuals') as HTMLStyleElement | null
+  if (!style) { style = document.createElement('style'); style.id = 'effilife-theme-visuals'; document.head.append(style) }
+  style.textContent = theme.css || ''
 }
 
