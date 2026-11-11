@@ -5,10 +5,16 @@ import { extensionFor } from '../../src/extensions/formats'
 import type { Capability } from '../../src/extensions/capabilities'
 
 const errors = new WeakMap<Page, string[]>()
-test.beforeEach(({ page }) => {
+const policyBlocks = new WeakMap<Page, string[]>()
+test.beforeEach(({ page }, info) => {
   const list: string[] = []; errors.set(page, list)
+  policyBlocks.set(page, [])
   page.on('pageerror', error => list.push(error.message))
-  page.on('console', message => { if (['error', 'warning'].includes(message.type())) list.push(message.text()) })
+  page.on('console', message => {
+    if (!['error', 'warning'].includes(message.type())) return
+    if (info.title.includes('CSP') && message.text().includes('extension-network-probe') && /content security policy/i.test(message.text())) policyBlocks.get(page)!.push(message.text())
+    else list.push(message.text())
+  })
 })
 test.afterEach(({ page }) => { expect(errors.get(page)).toEqual([]) })
 async function install(page: Page, source: string, grants: Capability[], type: 'theme' | 'function' = 'theme') {
@@ -90,5 +96,33 @@ test('terminates a stuck worker without freezing the host and keeps it stopped a
   await page.reload()
   await expect(row).toContainText('加载失败')
   await expect(page.locator('.theme-decoration iframe')).toHaveCount(0)
+})
+
+test('enforces opaque origins and CSP even against native network API recovery', async ({ page }) => {
+  const requests: string[] = []
+  await page.route('**/extension-network-probe', route => { requests.push(route.request().url()); return route.fulfill({ body: 'unexpected network access' }) })
+  await install(page, `
+EffiLife.onMount(async () => {
+  let proto = self, nativeFetch;
+  while(proto) { const descriptor = Object.getOwnPropertyDescriptor(proto, 'fetch'); if(typeof descriptor?.value === 'function') nativeFetch = descriptor.value; proto = Object.getPrototypeOf(proto); }
+  let network = 'unavailable';
+  if(nativeFetch) { try { await nativeFetch.call(self, 'http://127.0.0.1:3420/extension-network-probe'); network = 'unexpected'; } catch { network = 'blocked'; } }
+  EffiLife.render({html:'<main><h1>Security probe</h1><p id="network">' + network + '</p><img src="http://127.0.0.1:3420/extension-network-probe"><script>parent.document.body.innerHTML="escaped"</script><a href="http://127.0.0.1:3420/extension-network-probe">escape</a></main>',css:'main{padding:32px;color:#172033}'});
+});
+`, ['app.layout'])
+  const locator = page.frameLocator('.theme-replacement iframe')
+  await expect(locator.getByRole('heading')).toHaveText('Security probe')
+  await expect(locator.locator('#network')).toHaveText(/blocked|unavailable/)
+  await expect(locator.locator('img,a')).toHaveCount(0)
+  const frame = page.frames().find(frame => frame.parentFrame())!
+  const result = await frame.evaluate(async () => {
+    const denied = (read: () => unknown) => { try { read(); return false } catch (error) { return (error as Error).name === 'SecurityError' } }
+    let network = false
+    try { await fetch('http://127.0.0.1:3420/extension-network-probe') } catch { network = true }
+    return { parent: denied(() => parent.document), local: denied(() => localStorage), indexed: denied(() => indexedDB.open('forbidden')), network }
+  })
+  expect(result).toEqual({ parent: true, local: true, indexed: true, network: true })
+  expect(requests).toEqual([])
+  expect(policyBlocks.get(page)!.length).toBeGreaterThan(0)
 })
 
