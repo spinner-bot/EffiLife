@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { current, dispatch } from '../../application/runtime'
+import { DomainError } from '../../domain/errors'
 import { categoryFor } from '../../domain/plans'
 import { referenceFor, minutesBetween } from '../../domain/time'
 import { activeTodo } from '../../domain/todos'
@@ -87,7 +88,7 @@ async function save() {
   saving.value = true
   try {
     const timeZone = current.value.preferences.timeZone
-    if (form.withTime && (!durationInput.value || elapsed.value <= 0 || Math.abs(Number(durationInput.value) - elapsed.value) > 1e-6)) throw new Error('validation.durationMismatch')
+    if (form.withTime && (!durationInput.value || elapsed.value <= 0 || Math.abs(Number(durationInput.value) - elapsed.value) > 1e-6)) throw new DomainError('validation.durationMismatch')
     await dispatch({
       type: 'recordAction', title: form.title || undefined, content: form.content,
       planId: form.planId || undefined, taskId: form.taskId || undefined,
