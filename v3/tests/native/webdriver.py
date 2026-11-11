@@ -65,6 +65,9 @@ class Driver:
         self.call("POST", "/element/" + element[ELEMENT] + "/clear", {})
         self.call("POST", "/element/" + element[ELEMENT] + "/value", {"text": value})
 
+    def file(self, element, path: Path):
+        self.call("POST", "/element/" + element[ELEMENT] + "/value", {"text": str(path.resolve())})
+
     def screenshot(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(base64.b64decode(self.call("GET", "/screenshot")))
