@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "product": "EffiLife",
+  "version": "3.1.0",
+  "status": "local-acceptance-candidate",
+  "date": "2026-11-12",
+  "author": "Codex  (sqs_A100)",
+  "replaces": "3.0.1",
+  "includesBuildCorrection": "3.0.2",
+  "sourceCommit": "7816971e668b624a6daebf8d610824d40a68f581",
+  "platform": "linux-amd64",
+  "archive": {
+    "path": ".cache/delivery/EffiLife-3.1.0-7816971e-linux-amd64.zip",
+    "bytes": 19508710,
+    "sha256": "da79da0b94a72af1ff12ba294c083202d3a1b6beb49c82c63418812c2403a38a",
+    "payloadFiles": 668
+  },
+  "debianPackage": {
+    "filename": "EffiLife_3.1.0_amd64.deb",
+    "bytes": 9235946,
+    "sha256": "be2790b7a8c9ddb021f987dc1f20bd66a760eb4cf1651060d347391687ffc649"
+  },
+  "executableSha256": "1d681765f0ef0d2de4a5748e719234f24b57ce1c5df01ec3125b7266ac2d3889",
+  "frontendTreeSha256": "dd0327c810408a14e2cff6fee0c3385f43838b4839fff5f5be89f982f960b253",
+  "verification": {
+    "unitTests": 116,
+    "chromiumTests": 40,
+    "tauriChecks": 13,
+    "webkitChecks": 9,
+    "versionAndChangelog": true,
+    "strictTypesAndProductionBuild": true,
+    "trustedFrameCspHash": true,
+    "actualMouseAndTouchDragging": true,
+    "nativeGtkExportAndRecovery": true,
+    "materialFilterInBothEngines": true
+  },
+  "firstRound": {
+    "implementedOrClarified": [
+      "FB-001",
+      "FB-002",
+      "FB-003",
+      "FB-004",
+      "FB-005",
+      "FB-006",
+      "FB-007",
+      "FB-008",
+      "FB-009",
+      "FB-010",
+      "FB-011",
+      "FB-012",
+      "FB-014",
+      "FB-015",
+      "FB-016",
+      "FB-017",
+      "FB-018",
+      "FB-019",
+      "FB-020",
+      "FB-021",
+      "FB-022"
+    ],
+    "deferred": [
+      {
+        "id": "FB-013",
+        "backlog": "DEV-001",
+        "reason": "User requested a near-term follow-up after further trial feedback; explicit FB-022 todo row improvements are included."
+      }
+    ],
+    "userRetest": "pending"
+  },
+  "evidence": {
+    "build": "3.1.0-build-verification.json",
+    "tauri": "3.1.0/tauri-result.json",
+    "webkit": "3.1.0/webkit-result.json",
+    "unitAndBrowser": "3.1.0/verification.txt",
+    "implementation": "../round-1-plan.html",
+    "feedback": "../feedback/experience.html"
+  },
+  "boundaries": [
+    "Windows, macOS and mobile native environments were not tested.",
+    "Linux native evidence comes from one local Ubuntu SDK environment; no independent human review or new v3 remote CI run is claimed.",
+    "Root lab WebKit tests disable the operating-system process sandbox; application iframe/Worker/CSP isolation is tested separately.",
+    "DEV-001 full todo redesign remains deferred pending user feedback; explicit FB-022 row changes are included.",
+    "Final ZIP digest is recorded after packaging in the repository acceptance record; the bundle contains delivery.json and SHA256SUMS."
+  ]
+}
