@@ -71,6 +71,7 @@ export function reconcileResources(entries: readonly InstalledPackage[]): void {
           const tokens = readThemeTokens(candidate)
           const definition: ThemeDefinition = {
             id: entry.id, slug: candidate.manifest.slug || String(entry.id), name: candidate.manifest.name,
+            author: entry.author, version: entry.version,
             mode: tokens.mode || 'light', palette: { ...parent.palette, ...tokens.palette },
           }
           if (granted.includes('appearance.css')) definition.css = (candidate.manifest.styles || []).map(path => scopeVisualCss(new TextDecoder().decode(payloadBytes(candidate.payload, path)), entry.id)).join('\n')
