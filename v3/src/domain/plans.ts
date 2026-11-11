@@ -64,16 +64,19 @@ export function displayCode(plan: Plan, nodeId: string): string {
   if (node.kind !== 'task') return ''
   if (node.legacyCode) return node.legacyCode
   const sections = plan.nodes.filter(item => item.kind === 'section').sort((a, b) => a.order - b.order)
-  let parent = node.parentId ? findNode(plan, node.parentId) : undefined
-  const seen = new Set<string>([node.id])
-  while (parent && parent.kind !== 'section') {
-    requireCondition(!seen.has(parent.id), 'validation.treeCycle')
-    seen.add(parent.id)
-    parent = parent.parentId ? findNode(plan, parent.parentId) : undefined
+  const sectionOf = (item: PlanNode) => {
+    let parent = item.parentId ? findNode(plan, item.parentId) : undefined
+    const seen = new Set<string>([item.id])
+    while (parent && parent.kind !== 'section') {
+      requireCondition(!seen.has(parent.id), 'validation.treeCycle')
+      seen.add(parent.id)
+      parent = parent.parentId ? findNode(plan, parent.parentId) : undefined
+    }
+    return parent
   }
-  const tasks = (parent ? descendants(plan, parent.id) : plan.nodes)
-    .filter(item => item.kind === 'task').sort((a, b) => a.order - b.order)
-  const section = parent ? sections.findIndex(item => item.id === parent!.id) : 0
+  const parent = sectionOf(node)
+  const tasks = plan.nodes.filter(item => item.kind === 'task' && sectionOf(item)?.id === parent?.id).sort((a, b) => a.order - b.order)
+  const section = parent ? sections.findIndex(item => item.id === parent.id) : sections.length
   const prefix = letters(Math.max(0, section))
   const legacyMaximum = Math.max(0, ...tasks.filter(item => item.legacyCode?.startsWith(prefix)).map(item => Number(item.legacyCode!.slice(prefix.length)) || 0))
   const newTasks = tasks.filter(item => !item.legacyCode)
