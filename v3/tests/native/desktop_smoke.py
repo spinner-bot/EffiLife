@@ -42,6 +42,8 @@ def main():
         if not number:
             raise RuntimeError("Xvfb failed; see process.log")
         env["DISPLAY"] = ":" + number
+        def snapshot(name):
+            subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / name), "0", "0", "1440", "1000"], env=env, check=True)
         driver_port, native_port = port(), port()
         webkit = sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
         command = [str(sdk / "usr/bin/proot"), "-b", str(webkit) + ":/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1", str(sdk / "usr/bin/dbus-run-session"), "--", str(ROOT / ".tools/tauri-driver/bin/tauri-driver"), "--port", str(driver_port), "--native-port", str(native_port), "--native-driver", str(sdk / "usr/bin/WebKitWebDriver")]
@@ -75,6 +77,7 @@ def main():
             result = subprocess.run([xdotool, "search", "--onlyvisible", "--name", "Save|保存"], env=env, capture_output=True, text=True)
             return result.stdout.strip().splitlines()[-1] if result.returncode == 0 and result.stdout.strip() else None
         window = driver.wait(save_window, "native GTK save dialog")
+        snapshot("save-dialog.png")
         destination = output / "native-export.d3el"
         destination.unlink(missing_ok=True)
         subprocess.run([xdotool, "windowfocus", "--sync", window, "key", "--clearmodifiers", "ctrl+l"], env=env, check=True)
@@ -84,6 +87,7 @@ def main():
         time.sleep(0.3)
         if not destination.exists():
             subprocess.run([xdotool, "key", "--clearmodifiers", "alt+s"], env=env, check=True)
+        snapshot("save-confirmation.png")
         driver.wait(lambda: destination.is_file() and destination.stat().st_size > 0, "native file write")
         with zipfile.ZipFile(destination) as archive:
             manifest = json.loads(archive.read("manifest.json"))
