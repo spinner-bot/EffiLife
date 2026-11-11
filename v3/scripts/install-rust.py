@@ -10,6 +10,7 @@ import re
 import subprocess
 import tarfile
 import urllib.request
+from download import download
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,7 +59,7 @@ def main():
         archive = cache / fields["xz_url"].rsplit("/", 1)[-1]
         if not archive.is_file() or hashlib.sha256(archive.read_bytes()).hexdigest() != fields["xz_hash"]:
             print("Downloading " + archive.name, flush=True)
-            fetch(fields["xz_url"], archive)
+            download(fields["xz_url"], archive)
         if hashlib.sha256(archive.read_bytes()).hexdigest() != fields["xz_hash"]:
             raise SystemExit("Rust component checksum mismatch: " + name)
         return archive
