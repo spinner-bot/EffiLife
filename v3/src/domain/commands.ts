@@ -24,9 +24,10 @@ export type CoreCommand =
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
   | { type: 'saveCategory'; categoryId?: string; name?: string; color: string; difficulty: number; icon?: string }
   | { type: 'saveTimePlan'; timePlanId?: string; name: string; mode: TimePlan['mode']; items: TimePlan['items']; backgroundCategoryId?: string; useForDate?: string; makeDefault?: boolean }
-  | { type: 'deleteTimePlan'; timePlanId: string }
+  | { type: 'deleteTimePlan'; timePlanId: string; replacementId?: string }
   | { type: 'setDateTimePlan'; date: string; timePlanId: string | null }
   | { type: 'saveTimeRule'; ruleId?: string; kind: TimeRule['kind']; value: string; timePlanId: string }
+  | { type: 'reorderTimeRules'; ruleIds: string[] }
   | { type: 'deleteTimeRule'; ruleId: string }
   | { type: 'installPackage'; candidate: PackageCandidate; updateId?: number; grants?: Capability[] }
   | { type: 'setPackageGrants'; kind: 'theme' | 'resource' | 'function'; packageId: number; grants: Capability[] }
