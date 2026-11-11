@@ -5,7 +5,8 @@
   "rust": {
     "version": "1.99.1",
     "date": "2026-10-15",
-    "source": "https://static.rust-lang.org"
+    "source": "https://static.rust-lang.org",
+    "webdriverVersion": "2.1.0"
   }
 }
 
