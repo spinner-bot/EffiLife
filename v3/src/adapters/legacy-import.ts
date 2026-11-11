@@ -34,14 +34,13 @@ export function importLegacy(
   const helper = object(root.plan_helper || root.planHelper || app.planHelper)
   const plans = Array.isArray(root.main) && root.head ? [root] : list(helper.plans || root.plans)
   const planMapping = importLegacyPlans(state, plans, warnings)
-  for (const archivedValue of list(helper.archives)) {
+  for (const [archiveIndex, archivedValue] of list(helper.archives).entries()) {
     const archived = object(archivedValue)
     const payload = object(archived.payload)
     const archivedPlan = object(payload.plan || archived.plan)
     const marker = state.plans.length
-    importLegacyPlans(state, Array.isArray(archivedPlan.main) ? [archivedPlan] : [], warnings)
+    importLegacyPlans(state, Array.isArray(archivedPlan.main) ? [archivedPlan] : [], warnings, 'legacy-archive-' + archiveIndex + '-plan-')
     for (const plan of state.plans.slice(marker)) {
-      if (state.plans.slice(0, marker).some(other => other.id === plan.id)) plan.id += '-archive-' + marker
       plan.archivedAt = string(payload.archived_at, now)
     }
   }
