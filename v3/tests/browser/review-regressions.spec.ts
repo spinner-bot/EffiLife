@@ -76,3 +76,34 @@ test('editing a template leaves an automatic date free to follow later calendar 
   await page.goto('/#/time?date=2026-11-11')
   await expect(panel.getByRole('heading', { name: '编辑后的原方案', exact: true })).toBeVisible()
 })
+
+test('previews invalid legacy wall times and deletes a migrated task without losing its todo', async ({ page }) => {
+  await page.goto('/#/settings')
+  await page.getByLabel('时区', { exact: true }).fill('America/Santiago')
+  await page.getByLabel('时区', { exact: true }).press('Tab')
+  const source = {
+    records: { '2026-09-06': [{ start: '00:30', end: '00:45', content: '不存在的时间' }, { start: '01:00', end: '01:30', content: '真实有效记录' }] },
+    planHelper: { plans: [{ head: { index: 7, name: '迁移计划', date: [2026, 9, 6] }, main: [{ name: '章节', plan: [null, { content: '可删除任务', is_active: true }] }], log: [] }] },
+    todos: [{ id: 'related', title: '保留的待办', created_at: '2026-09-06T04:00:00Z', related_plan_id: 7, related_plan_task_id: 'A1' }],
+  }
+  await page.getByLabel('导入存档', { exact: true }).setInputFiles({ name: 'legacy-review.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(source)) })
+  let dialog = page.getByRole('dialog', { name: '检查即将导入的内容' })
+  await expect(dialog.getByText(/部分旧时间在所选时区不存在或无效/)).toBeVisible()
+  await dialog.getByRole('button', { name: '确认替换并导入', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await page.goto('/#/time?date=2026-09-06')
+  await expect(page.locator('.list-row')).toHaveCount(1)
+  await expect(page.locator('.list-row')).toContainText('真实有效记录')
+  await page.goto('/#/plans')
+  await page.getByRole('link', { name: /迁移计划/ }).click()
+  await page.getByRole('button', { name: '更多操作', exact: true }).first().click()
+  await page.getByRole('menuitem', { name: '删除', exact: true }).click()
+  dialog = page.getByRole('dialog')
+  await expect(dialog).toContainText('相关待办会保留')
+  await dialog.getByRole('button', { name: '确认', exact: true }).click()
+  await expect(page.getByText('可删除任务', { exact: true })).not.toBeVisible()
+  await page.goto('/#/todos')
+  await expect(page.locator('.list-row')).toContainText('保留的待办')
+  await page.reload()
+  await expect(page.locator('.list-row')).toContainText('保留的待办')
+})
