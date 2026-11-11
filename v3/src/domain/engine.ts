@@ -4,6 +4,7 @@ import { applyPlanCommand } from './plan-commands'
 import { applyRecordCommand } from './record-commands'
 import { applyTodoCommand } from './todo-commands'
 import { applyTimePlanCommand } from './time-plan-commands'
+import { applyPackageCommand } from './package-commands'
 import { requireCondition, requireTitle, DomainError } from './errors'
 import { instant } from './time'
 
@@ -32,6 +33,7 @@ export function execute(
     ?? applyRecordCommand(workspace, command, normalizedContext)
     ?? applyTodoCommand(workspace, command, normalizedContext)
     ?? applyTimePlanCommand(workspace, command, normalizedContext)
+    ?? applyPackageCommand(workspace, command, normalizedContext)
   if (command.type === 'savePreferences') {
     const value = { ...workspace.preferences, ...command.preferences }
     requireCondition(value.locale.trim() && value.fontId.trim(), 'validation.invalidPreferences')
