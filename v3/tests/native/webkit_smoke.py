@@ -48,7 +48,7 @@ def main():
         directory = profile / key
         directory.mkdir(parents=True, mode=0o700)
         env["XDG_" + ("RUNTIME_DIR" if key == "run" else key.upper() + "_HOME")] = str(directory)
-    env.update({"GDK_BACKEND": "x11", "LIBGL_ALWAYS_SOFTWARE": "1", "WEBKIT_DISABLE_DMABUF_RENDERER": "1", "WEBKIT_DISABLE_COMPOSITING_MODE": "1", "XKB_CONFIG_ROOT": str(sdk / "usr/share/X11/xkb"), "WEBKIT_EXEC_PATH": str(sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"), "WEBKIT_INJECTED_BUNDLE_PATH": str(sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/injected-bundle")})
+    env.update({"GDK_BACKEND": "x11", "LIBGL_ALWAYS_SOFTWARE": "1", "WEBKIT_DISABLE_DMABUF_RENDERER": "1", "XKB_CONFIG_ROOT": str(sdk / "usr/share/X11/xkb"), "WEBKIT_EXEC_PATH": str(sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"), "WEBKIT_INJECTED_BUNDLE_PATH": str(sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/injected-bundle")})
     if os.geteuid() == 0:
         env["WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS"] = "1"
     with ExitStack() as cleanup:
@@ -86,6 +86,9 @@ def main():
         driver = Driver(endpoint, {"browserName": "MiniBrowser", "webkitgtk:browserOptions": {"binary": str(browser), "args": ["--automation"]}})
         cleanup.callback(driver.close)
         driver.call("POST", "/window/rect", {"width": 1440, "height": 1000})
+        def snapshot(driver, name):
+            rect = driver.call("GET", "/window/rect")
+            subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / name), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
         driver.navigate(base + "/")
         driver.wait(lambda: driver.script("return document.querySelector('h1')?.textContent === '让每一份投入，都有迹可循。'"), "production application startup")
         features = driver.script("return {secure:isSecureContext,randomUUID:typeof crypto.randomUUID,clone:typeof structuredClone,canvas:typeof HTMLCanvasElement.prototype.transferControlToOffscreen,locale:document.documentElement.lang}")
@@ -97,17 +100,17 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('WebKit 真实待办')"), "durable todo capture")
         driver.call("POST", "/refresh", {})
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('WebKit 真实待办')"), "IndexedDB persistence")
-        driver.screenshot(output / "todos-1440.png")
+        snapshot(driver, "todos-1440.png")
         driver.navigate(base + "/#/settings")
         driver.button("北欧极夜")
         driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready === 'true'"), "opaque Worker and OffscreenCanvas")
-        driver.screenshot(output / "theme-1440.png")
+        snapshot(driver, "theme-1440.png")
         driver.call("POST", "/window/rect", {"width": 390, "height": 950})
         driver.navigate(base + "/#/todos")
         driver.wait(lambda: driver.script("return document.querySelector('h1')?.textContent.includes('把小事放下')"))
         overflow = driver.script("return document.documentElement.scrollWidth - innerWidth")
         assert overflow <= 1, overflow
-        driver.screenshot(output / "todos-390.png")
+        snapshot(driver, "todos-390.png")
         report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "390px layout"], "overflow": overflow}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("WebKitGTK smoke passed:", ", ".join(report["checks"]), flush=True)
