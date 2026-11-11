@@ -5,6 +5,7 @@ import { assertWorkspace } from '../../src/domain/validation'
 import { nextTodoOccurrence } from '../../src/domain/todo-recurrence'
 import type { WorkspaceCommand } from '../../src/domain/commands'
 import type { Todo } from '../../src/domain/models'
+import { matchesTodo, sortTodos } from '../../src/domain/todos'
 
 function setup(now = '2026-11-11T02:00:00Z', zone = 'Asia/Shanghai') {
   let workspace = emptyWorkspace('3.0.0', now, zone), id = 0, operation = 0
@@ -64,5 +65,14 @@ it('preserves omitted deadline edits and accepts explicit clearing or recurrence
   f.run({ type: 'saveTodo', todoId: id, title: 'Renamed', deadline: null, recurrence: null })
   expect(f.state.todos[0]?.deadline).toBeUndefined()
   expect(f.state.todos[0]?.recurrence).toBeUndefined()
+})
+it('keeps pinned items first while custom sorting and checklist search remain independent', () => {
+  const f = setup()
+  f.run({ type: 'saveTodo', title: 'Later', sortOrder: 10, tags: ['home'], subtasks: [{ id: 'milk', title: 'Buy milk', completed: false }] })
+  f.run({ type: 'saveTodo', title: 'Earlier', sortOrder: 1 })
+  f.run({ type: 'saveTodo', title: 'Pinned', sortOrder: 20, pinned: true })
+  expect(sortTodos(f.state, f.state.todos, '2026-11-11T02:00:00Z', 'manual').map(todo => todo.title)).toEqual(['Pinned', 'Earlier', 'Later'])
+  expect(matchesTodo(f.state.todos[0]!, 'BUY milk', 'life', 'home')).toBe(true)
+  expect(matchesTodo(f.state.todos[0]!, 'milk', 'work', 'home')).toBe(false)
 })
 
