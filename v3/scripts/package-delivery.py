@@ -74,7 +74,7 @@ def main():
         (staging / 'delivery.json').write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + '\n')
         (staging / 'SHA256SUMS').write_text(''.join(value + '  ' + key + '\n' for key, value in checksums.items()))
         candidate = temporary / archive.name
-        with zipfile.ZipFile(candidate, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as bundle:
+        with zipfile.ZipFile(candidate, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6, strict_timestamps=False) as bundle:
             for path in sorted(staging.rglob('*')):
                 if path.is_file():
                     bundle.write(path, path.relative_to(staging).as_posix())
