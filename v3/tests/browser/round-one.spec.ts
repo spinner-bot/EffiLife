@@ -47,7 +47,7 @@ test('manages allocation templates and reorders rules while the fallback stays f
   for (const name of ['普通工作日', '休息日']) {
     await page.getByRole('button', { name: '添加重复日期规则', exact: true }).click()
     const dialog = page.getByRole('dialog')
-    await dialog.getByLabel('分配方案', { exact: true }).selectOption({ label: name })
+    await dialog.getByRole('combobox', { name: '分配方案', exact: true }).selectOption({ label: name })
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(dialog).not.toBeVisible()
   }
