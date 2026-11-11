@@ -143,6 +143,19 @@ export interface InstalledPackage {
   grants: string[]
   manifest: Record<string, unknown>
   payload: Record<string, string>
+  checksum?: string
+  installedAt?: Instant
+  updatedAt?: Instant
+}
+
+export interface ExtensionAudit {
+  id: string
+  packageId: number
+  kind: InstalledPackage['kind']
+  action: 'install' | 'upgrade' | 'grants' | 'enable' | 'disable' | 'remove' | 'failure' | 'write'
+  occurredAt: Instant
+  capabilities: string[]
+  detail?: string
 }
 
 export interface Workspace {
@@ -160,6 +173,7 @@ export interface Workspace {
   packageTombstones: Array<{ kind: InstalledPackage['kind']; id: number }>
   legacy?: { importedAt: Instant; source: unknown }
   timePlanning?: TimePlanning
+  extensionAudit?: ExtensionAudit[]
 }
 
 export interface CommandContext {
