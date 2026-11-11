@@ -17,9 +17,15 @@ import EditRecordDialog from './EditRecordDialog.vue'
 import TimePlanningPanel from './TimePlanningPanel.vue'
 
 const route = useRoute()
-const date = ref(String(route.query.date || dateKey(new Date(), current.value.preferences.timeZone)))
+function validDate(value: unknown) {
+  if (typeof value === 'string') {
+    try { dayBounds(value, current.value.preferences.timeZone); return value } catch { /* Keep invalid links outside the live query. */ }
+  }
+  return dateKey(new Date(), current.value.preferences.timeZone)
+}
+const date = ref(validDate(route.query.date))
 const editing = ref<TimeRecord>()
-watch(() => route.query.date, value => { if (typeof value === 'string') date.value = value })
+watch(() => route.query.date, value => { if (typeof value === 'string') date.value = validDate(value) })
 const records = computed(() => {
   try {
     const [start, end] = dayBounds(date.value, current.value.preferences.timeZone)
