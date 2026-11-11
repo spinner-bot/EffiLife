@@ -28,7 +28,7 @@ def main():
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repository, text=True).strip()
     native = json.loads((ROOT / 'test-results/native-desktop/result.json').read_text())
     webkit = json.loads((ROOT / 'test-results/native-webkit/result.json').read_text())
-    if native.get('version') != version or len(native['checks']) != 10 or webkit.get('version') != version or len(webkit['checks']) != 8:
+    if native.get('version') != version or len(native['checks']) < 11 or 'main-window CSP rejects inline script injection' not in native['checks'] or webkit.get('version') != version or len(webkit['checks']) < 8:
         raise SystemExit('Current-version native and WebKit acceptance evidence is required.')
     if webkit['frontendIndexSha256'] != digest(ROOT / 'dist/index.html'):
         raise SystemExit('The production frontend changed after WebKit verification.')
