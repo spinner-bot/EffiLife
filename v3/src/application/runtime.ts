@@ -32,6 +32,16 @@ export async function dispatch(command: WorkspaceCommand, operationId: string = 
     return result
   } finally { pendingWrites.value-- }
 }
+export async function replaceWorkspace(value: Workspace) {
+  pendingWrites.value++
+  try { const state = await service.replace(value); workspace.value = state; startupError.value = null }
+  finally { pendingWrites.value-- }
+}
+export async function restoreWorkspace() {
+  pendingWrites.value++
+  try { const state = await service.restoreBackup(); workspace.value = state; startupError.value = null }
+  finally { pendingWrites.value-- }
+}
 service.subscribe(() => {
   refresh().catch(error => { startupError.value = error })
 })
