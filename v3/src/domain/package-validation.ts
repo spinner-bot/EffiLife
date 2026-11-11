@@ -13,9 +13,10 @@ export function assertPackages(packages: unknown, tombstones: unknown, audit: un
     requireCondition(!used.has(identity), 'storage.duplicateIdentity')
     used.add(identity)
     assertManifest(entry.manifest)
+    const manifest = entry.manifest
     requireCondition(entry.kind === entry.manifest.type && entry.version === entry.manifest.version && entry.author === entry.manifest.author && typeof entry.name === 'string', 'extensions.invalidRegistry')
     requireCondition(['enabled', 'disabled', 'broken'].includes(String(entry.status)), 'extensions.invalidRegistry')
-    requireCondition(Array.isArray(entry.permissions) && entry.permissions.length === entry.manifest.permissions.length && entry.permissions.every(item => isCapability(item) && entry.manifest.permissions.includes(item)), 'extensions.invalidRegistry')
+    requireCondition(Array.isArray(entry.permissions) && entry.permissions.length === manifest.permissions.length && entry.permissions.every(item => isCapability(item) && manifest.permissions.includes(item)) && new Set(entry.permissions).size === entry.permissions.length, 'extensions.invalidRegistry')
     requireCondition(Array.isArray(entry.grants) && entry.grants.every(item => isCapability(item) && (entry.permissions as unknown[]).includes(item)) && new Set(entry.grants).size === entry.grants.length, 'extensions.invalidRegistry')
     requireCondition(entry.status !== 'enabled' || entry.manifest.requiredPermissions.every(item => (entry.grants as unknown[]).includes(item)), 'extensions.missingGrant')
     assertCandidate({ manifest: entry.manifest, payload: entry.payload, checksum: entry.checksum })
