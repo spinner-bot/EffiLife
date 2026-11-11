@@ -43,7 +43,7 @@ export function themeTokens(theme: ThemeDefinition): Record<string, string> {
   const ink = ensure(css(rgb(theme.palette.text)), surface, foreground)
   const muted = ensure(css(rgb(theme.palette.muted)), surface, dark ? '#b8c4d4' : '#5f6b7b')
   const accent = css(rgb(theme.palette.accent))
-  const onAccent = contrast('#ffffff', accent) >= contrast('#18202a', accent) ? '#ffffff' : '#18202a'
+  const onAccent = contrast('#ffffff', accent) >= contrast('#000000', accent) ? '#ffffff' : '#000000'
   return {
     '--page': page, '--surface': surface, '--ink': ink, '--muted': muted,
     '--accent': accent, '--on-accent': onAccent,
