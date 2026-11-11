@@ -22,6 +22,7 @@ import ThemeHost from './ui/ThemeHost.vue'
 const route = useRoute()
 const version = __APP_VERSION__
 const replacementLayout = ref(false)
+const requestedReplacement = computed(() => !safeMode && current.value.packages.some(entry => entry.kind === 'theme' && entry.id === current.value.preferences.themeId && entry.status === 'enabled' && entry.grants.includes('app.layout')))
 async function recover() {
   try { await dispatch({ type: 'recoverAppearance' }); if (safeMode) leaveSafeMode() }
   catch (error) { notify(errorMessage(error), 'error') }
@@ -63,7 +64,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', recoveryKey))
     </div>
   </div>
   <ThemeHost v-if="!loading && workspace" @layout="value => replacementLayout = value" />
-  <div v-if="safeMode || replacementLayout" class="recovery-dock"><span v-if="safeMode">{{ t('extensions.safeMode') }}</span><UiButton @click="recover">{{ t('extensions.recover') }}</UiButton></div>
+  <div v-if="safeMode || requestedReplacement" class="recovery-dock"><span v-if="safeMode">{{ t('extensions.safeMode') }}</span><UiButton @click="recover">{{ t('extensions.recover') }}</UiButton></div>
   <RecordDialog /><FeedbackHost />
 </template>
 
