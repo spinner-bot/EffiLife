@@ -12,7 +12,7 @@ import apt_pkg
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / ".cache" / "native-debs"
 SDK = ROOT / ".tools" / "native-sdk"
-ROOTS = ["libwebkit2gtk-4.1-dev", "libgtk-3-dev", "libayatana-appindicator3-dev", "librsvg2-dev", "libssl-dev", "libglib2.0-bin", "patchelf", "xvfb", "xauth", "webkit2gtk-driver"]
+ROOTS = ["libwebkit2gtk-4.1-dev", "libgtk-3-dev", "libayatana-appindicator3-dev", "librsvg2-dev", "libssl-dev", "libglib2.0-bin", "patchelf", "xvfb", "xauth", "webkit2gtk-driver", "proot", "xdotool"]
 
 def main():
     CACHE.mkdir(parents=True, exist_ok=True)
