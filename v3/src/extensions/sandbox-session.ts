@@ -10,6 +10,7 @@ export interface SandboxOptions {
   theme: Record<string, string>
   request(request: SandboxRequest): Promise<unknown>
   failure(code: string): void
+  ready?(): void
 }
 export class SandboxSession {
   readonly frame = document.createElement('iframe')
@@ -65,7 +66,7 @@ export class SandboxSession {
     if (message.type === 'connected') this.send({ type: 'init', source: workerPrelude + '\n' + this.options.source, capabilities: this.options.capabilities, state: this.state() })
     else if (message.type === 'heartbeat' || message.type === 'ready') {
       this.lastHeartbeat = Date.now()
-      if (message.type === 'ready') this.frame.dataset.ready = 'true'
+      if (message.type === 'ready') { this.frame.dataset.ready = 'true'; this.options.ready?.() }
     } else if (message.type === 'failure') this.fail(typeof message.code === 'string' ? message.code : 'extensions.scriptFailed')
     else if (message.type === 'request') {
       if (Date.now() - this.windowStart > 1000) { this.windowStart = Date.now(); this.count = 0 }
