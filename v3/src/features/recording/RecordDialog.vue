@@ -19,6 +19,7 @@ const blank = () => ({
 })
 const form = reactive(blank())
 const error = ref('')
+const durationInput = ref('')
 const saving = ref(false)
 let initial = ''
 let operationId = ''
@@ -33,6 +34,7 @@ const reference = computed(() => {
 const elapsed = computed(() => {
   try { return minutesBetween(parseDateTimeInput(form.startAt, current.value.preferences.timeZone), parseDateTimeInput(form.endAt, current.value.preferences.timeZone)) } catch { return 0 }
 })
+watch([() => form.startAt, () => form.endAt], () => { durationInput.value = elapsed.value > 0 ? String(elapsed.value) : '' }, { flush: 'sync' })
 watch(() => recording.sequence, () => {
   Object.assign(form, blank(), { planId: recording.planId, taskId: recording.taskId, todoId: recording.todoId, target: recording.planId ? 'plan:' + recording.planId : recording.todoId ? 'todo:' + recording.todoId : '' })
   if (recording.planId) {
@@ -66,8 +68,9 @@ function useReference() {
   form.reference = true
 }
 function setDuration(event: Event) {
-  const minutes = Number((event.target as HTMLInputElement).value)
-  if (!Number.isFinite(minutes) || minutes <= 0 || !form.endAt) return
+  durationInput.value = (event.target as HTMLInputElement).value
+  const minutes = Number(durationInput.value)
+  if (!Number.isInteger(minutes) || minutes <= 0 || !form.endAt) return
   try {
     const end = parseDateTimeInput(form.endAt, current.value.preferences.timeZone)
     form.startAt = dateTimeInput(new Date(Date.parse(end) - minutes * 60000).toISOString(), current.value.preferences.timeZone)
@@ -84,6 +87,7 @@ async function save() {
   saving.value = true
   try {
     const timeZone = current.value.preferences.timeZone
+    if (form.withTime && (!durationInput.value || elapsed.value <= 0 || Math.abs(Number(durationInput.value) - elapsed.value) > 1e-6)) throw new Error('validation.durationMismatch')
     await dispatch({
       type: 'recordAction', title: form.title || undefined, content: form.content,
       planId: form.planId || undefined, taskId: form.taskId || undefined,
@@ -92,6 +96,7 @@ async function save() {
       occurredAt: parseDateTimeInput(form.endAt, timeZone),
       startAt: form.withTime ? parseDateTimeInput(form.startAt, timeZone) : undefined,
       endAt: form.withTime ? parseDateTimeInput(form.endAt, timeZone) : undefined,
+      expectedMinutes: form.withTime ? Number(durationInput.value) : undefined,
       timing: form.reference ? 'confirmed-reference' : 'actual',
     }, operationId)
     recording.open = false
@@ -115,7 +120,7 @@ async function save() {
         <div class="form-grid">
           <label class="field"><span>{{ t('form.start') }}</span><input v-model="form.startAt" class="input" type="datetime-local" required @input="form.reference = false" /></label>
           <label class="field"><span>{{ t('form.end') }}</span><input v-model="form.endAt" class="input" type="datetime-local" required @input="form.reference = false" /></label>
-          <label class="field"><span>{{ t('form.duration') }} · {{ t('common.minutes', { value: '' }).trim() }}</span><input class="input" type="number" min="1" step="1" :value="elapsed || ''" @change="setDuration" /></label>
+          <label class="field"><span>{{ t('form.duration') }} · {{ t('common.minutes', { value: '' }).trim() }}</span><input class="input" type="number" min="1" step="1" :value="durationInput" required @input="setDuration" /></label>
         </div>
         <div v-if="reference" class="notice stack"><p>{{ t('record.reference', { minutes: Math.round(reference.minutes) }) }}</p><UiButton variant="ghost" @click="useReference"><Icon name="timer" :size="17" />{{ t('record.useReference') }}</UiButton></div>
         <p v-if="form.reference" class="small muted">{{ t('record.referenceConfirmed') }}</p>
