@@ -375,5 +375,6 @@
   "plans.editLog": "Edit progress log",
   "plans.editLogBody": "Update this action’s description. Linked actual time records display the same content.",
   "plans.deleteLog": "Delete this action?",
-  "plans.deleteLogBody": "Remove this log and its directly linked time records. The task’s completion state is retained and can be reopened separately."
+  "plans.deleteLogBody": "Remove this log and its directly linked time records. The task’s completion state is retained and can be reopened separately.",
+  "todos.filters": "Filters & sorting"
 }
