@@ -27,7 +27,7 @@ function particles(config: { enabled?: boolean; type: string; count: number; spe
 export async function builtinDecoration(theme: ThemeDefinition): Promise<InstalledPackage | undefined> {
   const decoration = theme.decoration
   if (!decoration || !(decoration.renderer || decoration.particles || decoration.gradient)) return undefined
-  const source = 'const renderer = ' + (decoration.renderer || '() => {}') + ';\nconst particles = ' + particles.toString() + ';\nEffiLife.onFrame(({ctx,width,height,time}) => { renderer(ctx,width,height,time); particles(' + JSON.stringify(decoration.particles) + ',ctx,width,height,time); });'
+  const source = (decoration.helpers || '') + '\nconst renderer = ' + (decoration.renderer || '() => {}') + ';\nconst particles = ' + particles.toString() + ';\nEffiLife.onFrame(({ctx,width,height,time}) => { renderer(ctx,width,height,time); particles(' + JSON.stringify(decoration.particles) + ',ctx,width,height,time); });'
   const manifest: ExtensionManifest = {
     type: 'theme', name: theme.name, author: 'EffiLife', license: 'MIT', version: '1.0.0', formatVersion: 1, apiVersion: 1,
     permissions: ['appearance.tokens', 'overlay.canvas'], requiredPermissions: ['appearance.tokens', 'overlay.canvas'],
