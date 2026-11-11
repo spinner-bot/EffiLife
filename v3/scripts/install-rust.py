@@ -35,17 +35,20 @@ def main():
     if (destination / "bin" / "cargo").is_file() and (destination / "bin" / "rustc").is_file():
         print(destination, flush=True)
         return
-    cache = ROOT / ".cache" / "rust"
+    cache = ROOT / ".cache" / "rust" / settings["version"]
     cache.mkdir(parents=True, exist_ok=True)
     base = settings["source"] + "/dist/" + settings["date"]
     manifest = cache / "channel-rust-stable.toml"
     print("Reading official pinned Rust manifest", flush=True)
-    fetch(base + "/" + manifest.name, manifest)
     checksum = manifest.with_suffix(".toml.sha256")
-    fetch(base + "/" + checksum.name, checksum)
+    if not manifest.is_file() or not checksum.is_file() or hashlib.sha256(manifest.read_bytes()).hexdigest() != checksum.read_text().split()[0]:
+        fetch(base + "/" + manifest.name, manifest)
+        fetch(base + "/" + checksum.name, checksum)
     if hashlib.sha256(manifest.read_bytes()).hexdigest() != checksum.read_text().split()[0]:
         raise SystemExit("Rust manifest checksum mismatch")
     text = manifest.read_text()
+    if 'date = "' + settings['date'] + '"' not in text:
+        raise SystemExit("Unexpected Rust manifest date")
 
     def component(name):
         section = re.search(r"(?m)^\[pkg\." + name + r"\.target\.x86_64-unknown-linux-gnu\]\n(.*?)(?=\n\[|\Z)", text, re.S)
