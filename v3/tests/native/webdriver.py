@@ -55,7 +55,7 @@ class Driver:
         self.call("POST", "/element/" + element[ELEMENT] + "/click", {})
 
     def button(self, text, scope="document"):
-        node = self.wait(lambda: self.script("return Array.from(" + scope + ".querySelectorAll('button')).find(e => e.textContent.trim() === arguments[0] && e.getClientRects().length) || null", text), "button " + text)
+        node = self.wait(lambda: self.script("return Array.from(" + scope + ".querySelectorAll('button')).find(e => (e.getAttribute('aria-label') === arguments[0] || e.textContent.trim() === arguments[0]) && e.getClientRects().length) || null", text), "button " + text)
         self.click(node)
 
     def field(self, label, scope="document"):
