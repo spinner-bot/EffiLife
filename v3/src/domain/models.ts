@@ -105,7 +105,14 @@ export interface Todo {
   relatedTaskId?: EntityId
 }
 
+export interface HeaderClockPreferences {
+  display: 'date' | 'time' | 'both'
+  hourCycle: 12 | 24
+  showPeriod: boolean
+  align: 'center' | 'right'
+}
 export interface Preferences {
+  headerClock?: HeaderClockPreferences
   locale: string
   themeId: number
   fontId: string

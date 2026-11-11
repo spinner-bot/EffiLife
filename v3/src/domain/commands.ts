@@ -3,16 +3,16 @@ import type { PackageCandidate } from '../extensions/manifest'
 import type { Capability } from '../extensions/capabilities'
 
 export type CoreCommand =
-  | { type: 'createPlan'; title: string; description?: string }
+  | { type: 'createPlan'; title: string; description?: string; categoryId?: string }
   | { type: 'updatePlan'; planId: string; title: string; description: string }
   | { type: 'archivePlan'; planId: string; archived: boolean }
   | { type: 'addNode'; planId: string; parentId: string | null; kind: NodeKind; title: string; description?: string; estimatedMinutes?: number; categoryId?: string }
-  | { type: 'updateNode'; planId: string; nodeId: string; title: string; description: string; estimatedMinutes: number }
+  | { type: 'updateNode'; planId: string; nodeId: string; title: string; description: string; estimatedMinutes: number; categoryId?: string | null }
   | { type: 'deleteNode'; planId: string; nodeId: string }
   | { type: 'setTaskCompletion'; planId: string; taskId: string; completed: boolean }
   | { type: 'assignCategory'; planId: string; nodeId: string | null; categoryId: string; overwrite: boolean }
-  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; todoId?: string; completeTodo?: boolean; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; timing?: 'actual' | 'confirmed-reference' }
-  | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant }
+  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; todoId?: string; completeTodo?: boolean; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; expectedMinutes?: number; timing?: 'actual' | 'confirmed-reference' }
+  | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant; expectedMinutes?: number }
   | { type: 'deleteRecord'; recordId: string }
   | { type: 'updateLog'; planId: string; logId: string; content: string }
   | { type: 'deleteLog'; planId: string; logId: string }
@@ -24,9 +24,10 @@ export type CoreCommand =
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
   | { type: 'saveCategory'; categoryId?: string; name?: string; color: string; difficulty: number; icon?: string }
   | { type: 'saveTimePlan'; timePlanId?: string; name: string; mode: TimePlan['mode']; items: TimePlan['items']; backgroundCategoryId?: string; useForDate?: string; makeDefault?: boolean }
-  | { type: 'deleteTimePlan'; timePlanId: string }
+  | { type: 'deleteTimePlan'; timePlanId: string; replacementId?: string }
   | { type: 'setDateTimePlan'; date: string; timePlanId: string | null }
   | { type: 'saveTimeRule'; ruleId?: string; kind: TimeRule['kind']; value: string; timePlanId: string }
+  | { type: 'reorderTimeRules'; ruleIds: string[] }
   | { type: 'deleteTimeRule'; ruleId: string }
   | { type: 'installPackage'; candidate: PackageCandidate; updateId?: number; grants?: Capability[] }
   | { type: 'setPackageGrants'; kind: 'theme' | 'resource' | 'function'; packageId: number; grants: Capability[] }

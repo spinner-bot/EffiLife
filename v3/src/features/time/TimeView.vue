@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import type { TimeRecord } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
 import { dateKey, dayBounds, overlapMinutes, minutesBetween } from '../../domain/time'
-import { t, clock, duration, categoryName, errorMessage } from '../../i18n'
+import { t, clock, duration, errorMessage } from '../../i18n'
 import { openRecord, confirmAction, notify } from '../../ui/state'
 import PageHeader from '../../ui/PageHeader.vue'
 import Panel from '../../ui/Panel.vue'
@@ -12,7 +12,8 @@ import EmptyState from '../../ui/EmptyState.vue'
 import UiButton from '../../ui/UiButton.vue'
 import ActionMenu from '../../ui/ActionMenu.vue'
 import Icon from '../../ui/Icon.vue'
-import TimeOverview from './TimeOverview.vue'
+import CategoryRings from './CategoryRings.vue'
+import CategoryBadge from '../categories/CategoryBadge.vue'
 import EditRecordDialog from './EditRecordDialog.vue'
 import TimePlanningPanel from './TimePlanningPanel.vue'
 
@@ -25,6 +26,11 @@ function validDate(value: unknown) {
 }
 const date = ref(validDate(route.query.date))
 const editing = ref<TimeRecord>()
+watch(() => route.query.record, async id => {
+  if (typeof id !== 'string') return
+  await nextTick()
+  document.querySelector<HTMLElement>('[data-record-id="' + CSS.escape(id) + '"]')?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+}, { immediate: true, flush: 'post' })
 watch(() => route.query.date, value => { if (typeof value === 'string') date.value = validDate(value) })
 const records = computed(() => {
   try {
@@ -50,14 +56,13 @@ function todoFor(record: TimeRecord) { return current.value.todos.find(todo => t
 <template>
   <PageHeader :title="t('time.title')" :subtitle="t('time.subtitle')"><label class="field"><span class="sr-only">{{ t('form.date') }}</span><input v-model="date" type="date" class="input" required /></label></PageHeader>
   <div class="stack">
-    <Panel :title="t('home.dayBalance')"><TimeOverview v-if="date" :date="date" /></Panel>
+    <Panel :title="t('time.categoryBreakdown')"><CategoryRings v-if="date" :date="date" /></Panel>
     <TimePlanningPanel v-if="date" :date="date" />
     <p v-if="overlaps > 0" class="notice">{{ t('time.overlap', { minutes: Math.round(overlaps) }) }}</p>
     <Panel :title="t('time.records')">
-      <div v-for="record in records" :key="record.id" class="list-row" :data-selected="route.query.record === record.id || undefined">
-        <span class="row-mark"><Icon name="time" :size="18" /></span>
-        <div class="grow"><p class="row-title">{{ record.title }}</p><div class="row-detail"><span>{{ clock(record.startAt, current.preferences.timeZone) }} — {{ clock(record.endAt, current.preferences.timeZone) }}</span><span>{{ duration(minutesBetween(record.startAt, record.endAt)) }}</span><span>{{ t(record.timing === 'actual' ? 'record.actual' : 'record.estimated') }}</span></div><p v-if="record.note" class="muted small">{{ record.note }}</p>
-          <div class="row-detail"><span v-if="current.categories.find(item => item.id === record.categoryId)" class="badge">{{ categoryName(current.categories.find(item => item.id === record.categoryId)!) }}</span><RouterLink v-if="todoFor(record)" :to="{ path: '/todos', query: { todo: todoFor(record)!.id } }" class="text-link small">{{ todoFor(record)!.title }}<Icon name="arrow" :size="14" /></RouterLink><RouterLink v-if="record.planId" :to="{ name: 'plan', params: { id: record.planId }, query: { task: record.taskId, log: record.logId } }" class="text-link small">{{ current.plans.find(item => item.id === record.planId)?.title }}<Icon name="arrow" :size="14" /></RouterLink></div>
+      <div v-for="record in records" :key="record.id" class="list-row compact-record" :data-record-id="record.id" :data-selected="route.query.record === record.id || undefined">
+        <div class="grow"><div class="cluster spread record-heading"><p class="row-title"><CategoryBadge :category-id="record.categoryId" />{{ record.title }}</p><div class="cluster record-links"><RouterLink v-if="todoFor(record)" :to="{ path: '/todos', query: { todo: todoFor(record)!.id } }" class="text-link small" :aria-label="todoFor(record)!.title" :title="todoFor(record)!.title"><Icon name="todos" :size="16" /></RouterLink><RouterLink v-if="record.planId" :to="{ name: 'plan', params: { id: record.planId }, query: { task: record.taskId, log: record.logId } }" class="text-link small" :aria-label="current.plans.find(item => item.id === record.planId)?.title" :title="current.plans.find(item => item.id === record.planId)?.title"><Icon name="plans" :size="16" /></RouterLink></div></div>
+          <p class="row-detail compact-record-detail"><strong :title="record.startAt + ' — ' + record.endAt">{{ clock(record.startAt, current.preferences.timeZone) }} — {{ clock(record.endAt, current.preferences.timeZone) }} · {{ duration(minutesBetween(record.startAt, record.endAt)) }}<span v-if="record.timing !== 'actual'"> · {{ t('record.estimated') }}</span></strong><span v-if="record.note" class="record-description" :title="record.note">{{ record.note }}</span><span class="sr-only">{{ t(record.timing === 'actual' ? 'record.actual' : 'record.estimated') }}</span></p>
         </div><ActionMenu :items="menu(record)" />
       </div>
       <EmptyState v-if="!records.length" :title="t('time.emptyTitle')" :description="t('time.emptyBody')" icon="time"><UiButton variant="primary" @click="openRecord()">{{ t('common.record') }}<Icon name="plus" :size="17" /></UiButton></EmptyState>
@@ -66,3 +71,7 @@ function todoFor(record: TimeRecord) { return current.value.todos.find(todo => t
   <EditRecordDialog :record="editing" @close="editing = undefined" />
 </template>
 
+<style scoped>
+.record-heading { gap: .5rem; flex-wrap: nowrap; align-items: baseline; }.record-heading .row-title { min-width: 0; overflow-wrap: anywhere; }.record-links { flex-shrink: 0; }.compact-record-detail { flex-wrap: nowrap; min-width: 0; gap: .6rem; }.compact-record-detail strong { font-weight: 650; flex-shrink: 0; }.record-description { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; }
+@media(max-width: 520px) { .compact-record-detail { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.record-description { margin-inline-start: .5rem; } }
+</style>

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { current, dispatch } from '../../application/runtime'
-import { categoryFor, displayCode } from '../../domain/plans'
+import { DomainError } from '../../domain/errors'
+import { categoryFor } from '../../domain/plans'
 import { referenceFor, minutesBetween } from '../../domain/time'
 import { activeTodo } from '../../domain/todos'
 import { dateTimeInput, parseDateTimeInput } from '../../ui/datetime'
 import { recording, confirmAction, notify } from '../../ui/state'
-import { t, categoryName, errorMessage } from '../../i18n'
+import { t, errorMessage } from '../../i18n'
+import CategorySelect from '../categories/CategorySelect.vue'
 import UiDialog from '../../ui/UiDialog.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
@@ -18,6 +20,7 @@ const blank = () => ({
 })
 const form = reactive(blank())
 const error = ref('')
+const durationInput = ref('')
 const saving = ref(false)
 let initial = ''
 let operationId = ''
@@ -32,6 +35,7 @@ const reference = computed(() => {
 const elapsed = computed(() => {
   try { return minutesBetween(parseDateTimeInput(form.startAt, current.value.preferences.timeZone), parseDateTimeInput(form.endAt, current.value.preferences.timeZone)) } catch { return 0 }
 })
+watch([() => form.startAt, () => form.endAt], () => { durationInput.value = elapsed.value > 0 ? String(elapsed.value) : '' }, { flush: 'sync' })
 watch(() => recording.sequence, () => {
   Object.assign(form, blank(), { planId: recording.planId, taskId: recording.taskId, todoId: recording.todoId, target: recording.planId ? 'plan:' + recording.planId : recording.todoId ? 'todo:' + recording.todoId : '' })
   if (recording.planId) {
@@ -65,8 +69,9 @@ function useReference() {
   form.reference = true
 }
 function setDuration(event: Event) {
-  const minutes = Number((event.target as HTMLInputElement).value)
-  if (!Number.isFinite(minutes) || minutes <= 0 || !form.endAt) return
+  durationInput.value = (event.target as HTMLInputElement).value
+  const minutes = Number(durationInput.value)
+  if (!Number.isInteger(minutes) || minutes <= 0 || !form.endAt) return
   try {
     const end = parseDateTimeInput(form.endAt, current.value.preferences.timeZone)
     form.startAt = dateTimeInput(new Date(Date.parse(end) - minutes * 60000).toISOString(), current.value.preferences.timeZone)
@@ -83,6 +88,7 @@ async function save() {
   saving.value = true
   try {
     const timeZone = current.value.preferences.timeZone
+    if (form.withTime && (!durationInput.value || elapsed.value <= 0 || Math.abs(Number(durationInput.value) - elapsed.value) > 1e-6)) throw new DomainError('validation.durationMismatch')
     await dispatch({
       type: 'recordAction', title: form.title || undefined, content: form.content,
       planId: form.planId || undefined, taskId: form.taskId || undefined,
@@ -91,6 +97,7 @@ async function save() {
       occurredAt: parseDateTimeInput(form.endAt, timeZone),
       startAt: form.withTime ? parseDateTimeInput(form.startAt, timeZone) : undefined,
       endAt: form.withTime ? parseDateTimeInput(form.endAt, timeZone) : undefined,
+      expectedMinutes: form.withTime ? Number(durationInput.value) : undefined,
       timing: form.reference ? 'confirmed-reference' : 'actual',
     }, operationId)
     recording.open = false
@@ -103,18 +110,18 @@ async function save() {
     <form class="stack" @submit.prevent="save">
       <div class="form-grid">
         <label class="field"><span>{{ t('record.context') }}</span><select v-model="form.target" class="select" @change="changeContext"><option value="">{{ t('form.noPlan') }}</option><optgroup v-if="plans.length" :label="t('nav.plans')"><option v-for="item in plans" :key="item.id" :value="'plan:' + item.id">{{ item.title }}</option></optgroup><optgroup v-if="todos.length" :label="t('nav.todos')"><option v-for="item in todos" :key="item.id" :value="'todo:' + item.id">{{ item.title }}</option></optgroup></select></label>
-        <label v-if="plan" class="field"><span>{{ t('form.task') }}</span><select v-model="form.taskId" class="select" @change="changeTask"><option value="">{{ t('form.planNote') }}</option><option v-for="item in tasks" :key="item.id" :value="item.id">{{ displayCode(plan, item.id) }} · {{ item.title }}</option></select></label>
+        <label v-if="plan" class="field"><span>{{ t('form.task') }}</span><select v-model="form.taskId" class="select" @change="changeTask"><option value="">{{ t('form.planNote') }}</option><option v-for="item in tasks" :key="item.id" :value="item.id">{{ item.title }}</option></select></label>
         <label v-else class="field"><span>{{ t('form.title') }}</span><input v-model="form.title" class="input" required /></label>
       </div>
       <label class="field"><span>{{ t('form.content') }}</span><textarea v-model="form.content" class="textarea" :placeholder="t('form.contentPlaceholder')" :required="!form.taskId && Boolean(form.planId)" /></label>
-      <label class="field"><span>{{ t('form.category') }}</span><select v-model="form.categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label>
+      <label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="form.categoryId" required /></label>
       <label v-if="plan" class="check-field"><input v-model="form.withTime" type="checkbox" /><span>{{ t('form.withTime') }}</span></label>
       <label v-if="!form.withTime" class="field"><span>{{ t('form.logTime') }}</span><input v-model="form.endAt" class="input" type="datetime-local" required /></label>
       <div v-if="form.withTime" class="stack">
         <div class="form-grid">
           <label class="field"><span>{{ t('form.start') }}</span><input v-model="form.startAt" class="input" type="datetime-local" required @input="form.reference = false" /></label>
           <label class="field"><span>{{ t('form.end') }}</span><input v-model="form.endAt" class="input" type="datetime-local" required @input="form.reference = false" /></label>
-          <label class="field"><span>{{ t('form.duration') }} · {{ t('common.minutes', { value: '' }).trim() }}</span><input class="input" type="number" min="1" step="1" :value="elapsed || ''" @change="setDuration" /></label>
+          <label class="field"><span>{{ t('form.duration') }} · {{ t('common.minutes', { value: '' }).trim() }}</span><input class="input" type="number" min="1" step="1" :value="durationInput" required @input="setDuration" /></label>
         </div>
         <div v-if="reference" class="notice stack"><p>{{ t('record.reference', { minutes: Math.round(reference.minutes) }) }}</p><UiButton variant="ghost" @click="useReference"><Icon name="timer" :size="17" />{{ t('record.useReference') }}</UiButton></div>
         <p v-if="form.reference" class="small muted">{{ t('record.referenceConfirmed') }}</p>

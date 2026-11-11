@@ -3,8 +3,9 @@ import { reactive, ref, watch } from 'vue'
 import type { Todo, TodoRecurrence } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
 import { dateTimeInput, parseDateTimeInput } from '../../ui/datetime'
-import { t, categoryName, errorMessage } from '../../i18n'
+import { t, errorMessage } from '../../i18n'
 import { confirmAction } from '../../ui/state'
+import CategorySelect from '../categories/CategorySelect.vue'
 import UiDialog from '../../ui/UiDialog.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
@@ -54,7 +55,7 @@ function addChecklist() {
         <div class="cluster" style="flex-wrap: nowrap"><input v-model="checklistTitle" class="input grow" :placeholder="t('todos.addCheck')" :aria-label="t('todos.addCheck')" @keydown.enter.prevent="addChecklist" /><UiButton icon :aria-label="t('todos.addCheck')" :disabled="!checklistTitle.trim()" @click="addChecklist"><Icon name="plus" :size="17" /></UiButton></div>
       </section>
       <div class="form-grid">
-        <label class="field"><span>{{ t('form.category') }}</span><select v-model="form.categoryId" class="select"><option v-for="category in current.categories" :key="category.id" :value="category.id">{{ categoryName(category) }}</option></select></label>
+        <label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="form.categoryId" required /></label>
         <label class="field"><span>{{ t('form.deadline') }} · {{ t('common.optional') }}</span><input v-model="form.deadline" type="datetime-local" class="input" /></label>
       </div>
       <details><summary>{{ t('todos.scheduling') }}</summary><div class="stack" style="padding-top: 16px"><div class="form-grid">

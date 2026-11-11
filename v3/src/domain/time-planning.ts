@@ -44,7 +44,7 @@ export function resolveTimePlan(workspace: Workspace, date: string) {
   const override = planning.overrides[date]
   if (override) return planning.plans.find(plan => plan.id === override)
   const rule = planning.rules.find(item => item.kind !== 'default' && matchesRule(item, date)) || [...planning.rules].reverse().find(item => item.kind === 'default')
-  return planning.plans.find(plan => plan.id === rule?.planId)
+  return planning.plans.find(plan => plan.id === rule?.planId) || planning.plans[0]
 }
 
 export function timePlanSummary(workspace: Workspace, date: string, now: string) {
