@@ -1,4 +1,4 @@
-import type { AppearanceOptions } from '../domain/appearance'
+import { assertAppearance, type AppearanceOptions } from '../domain/appearance'
 import catalog from '../../resources/themes/catalog.json'
 import { Registry } from '../extensions/registry'
 
@@ -16,7 +16,10 @@ export interface ThemeDefinition {
   version?: string
 }
 export const themes = new Registry<ThemeDefinition>()
-for (const theme of catalog) themes.register(theme)
+for (const { appearance, ...theme } of catalog) {
+  assertAppearance(appearance, 'validation.invalidPreferences')
+  themes.register({ ...theme, appearance })
+}
 
 function rgb(value: string, fallback: number[] = [255, 255, 255]): number[] {
   if (/^#[a-f0-9]{6}$/i.test(value)) return [1, 3, 5].map(index => parseInt(value.slice(index, index + 2), 16))
