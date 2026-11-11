@@ -28,6 +28,8 @@ async function recover() {
   catch (error) { notify(errorMessage(error), 'error') }
 }
 function recoveryKey(event: KeyboardEvent) { if (event.altKey && event.shiftKey && event.code === 'Digit0') { event.preventDefault(); enterSafeMode() } }
+const colorScheme = matchMedia('(prefers-color-scheme: dark)')
+function schemeChanged() { applyTheme(safeMode ? 1 : current.value.preferences.themeId) }
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
 const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
@@ -41,9 +43,9 @@ watch(title, value => { document.title = value + ' · EffiLife' }, { immediate: 
 onMounted(() => {
   initialize()
   window.addEventListener('keydown', recoveryKey)
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(safeMode ? 1 : current.value.preferences.themeId))
+  colorScheme.addEventListener('change', schemeChanged)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', recoveryKey))
+onBeforeUnmount(() => { window.removeEventListener('keydown', recoveryKey); colorScheme.removeEventListener('change', schemeChanged) })
 </script>
 <template>
   <a href="#main-content" class="skip-link">{{ t('common.skipContent') }}</a>
