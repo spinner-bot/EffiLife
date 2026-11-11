@@ -31,7 +31,7 @@ test('installs a local theme, grants visual CSS, revokes it and recovers on unin
     'tokens.json': JSON.stringify({ palette: { background: '#102a20', surface: '#17382c', text: '#ffffff', accent: '#47b894' } }),
     'styles/main.css': '.panel { border-radius: 28px; }',
   })
-  const theme = page.getByRole('button', { name: '森林', exact: true })
+  const theme = page.getByRole('button', { name: '森林 · Example · 1.0.0 · #100000', exact: true })
   await theme.click()
   await expect(theme).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.panel').first()).toHaveCSS('border-radius', '14px')
