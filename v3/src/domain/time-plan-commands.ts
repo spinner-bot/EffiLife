@@ -21,6 +21,14 @@ export function applyTimePlanCommand(workspace: Workspace, command: WorkspaceCom
       const value = { id: current?.id || context.id(), name: requireTitle(command.name), mode: command.mode, items: structuredClone(command.items), backgroundCategoryId: command.mode === 'partition' ? command.backgroundCategoryId : undefined }
       if (current) Object.assign(current, value)
       else planning.plans.push(value)
+      if (command.useForDate) {
+        dayBounds(command.useForDate, workspace.preferences.timeZone)
+        planning.overrides[command.useForDate] = value.id
+      }
+      if (command.makeDefault === true) {
+        planning.rules = planning.rules.filter(rule => rule.kind !== 'default')
+        planning.rules.push({ id: context.id(), kind: 'default', value: '', planId: value.id })
+      } else if (command.makeDefault === false) planning.rules = planning.rules.filter(rule => !(rule.kind === 'default' && rule.planId === value.id))
       return { entityId: value.id }
     }
     case 'deleteTimePlan': {
