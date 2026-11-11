@@ -371,5 +371,9 @@
   "validation.invalidRecurrence": "重复周期需要选择日、周或月，并填写正整数间隔。",
   "validation.invalidSubtasks": "检查项身份或状态不正确。",
   "validation.subtaskMissing": "找不到这条检查项。",
-  "legacy.todoCustomRecurrence": "旧版自定义重复未保存具体间隔，已保留原文。请在待办中重新指定周期。"
+  "legacy.todoCustomRecurrence": "旧版自定义重复未保存具体间隔，已保留原文。请在待办中重新指定周期。",
+  "plans.editLog": "编辑进展日志",
+  "plans.editLogBody": "修改这次行动的描述；关联的实际时间记录会同步显示。",
+  "plans.deleteLog": "删除本次行动？",
+  "plans.deleteLogBody": "同时删除这条日志及直接关联的时间记录。子项的完成状态保留，需要时可单独重新打开。"
 }
