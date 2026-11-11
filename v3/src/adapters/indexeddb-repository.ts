@@ -101,16 +101,20 @@ export class IndexedDBRepository implements WorkspaceRepository {
     })
   }
 
-  async replace(workspace: Workspace): Promise<void> {
+  async replace(workspace: Workspace): Promise<Workspace> {
     assertWorkspace(workspace)
     const database = await this.open()
-    await new Promise<void>((resolve, reject) => {
+    return new Promise<Workspace>((resolve, reject) => {
       const transaction = database.transaction(STORE, 'readwrite')
       const store = transaction.objectStore(STORE)
-      store.get(PRIMARY).onsuccess = event => {
+      let current: unknown
+      let committed: Workspace
+      store.get(PRIMARY).onsuccess = event => { current = (event.target as IDBRequest).result }
+      store.get(BACKUP).onsuccess = event => {
         try {
-          const current = (event.target as IDBRequest).result
           let revision = workspace.revision
+          const previous = (event.target as IDBRequest).result
+          if (previous) { try { assertWorkspace(previous); revision = Math.max(revision, previous.revision) } catch { /* A damaged backup does not block a validated import. */ } }
           if (current) {
             try {
               assertWorkspace(current)
@@ -118,10 +122,11 @@ export class IndexedDBRepository implements WorkspaceRepository {
               revision = Math.max(revision, current.revision)
             } catch { /* Preserve the existing known-good backup when primary is corrupt. */ }
           }
-          store.put({ ...structuredClone(workspace), revision: revision + 1 }, PRIMARY)
+          committed = { ...structuredClone(workspace), revision: revision + 1 }
+          store.put(committed, PRIMARY)
         } catch { transaction.abort() }
       }
-      transaction.oncomplete = () => resolve()
+      transaction.oncomplete = () => resolve(structuredClone(committed))
       transaction.onerror = () => reject(new DomainError('storage.writeFailed'))
       transaction.onabort = () => reject(new DomainError('storage.writeFailed'))
     })
