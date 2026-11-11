@@ -5,6 +5,7 @@ import { requireCondition, DomainError } from '../domain/errors'
 import { inspectZip } from '../extensions/zip-structure'
 import { importLegacy } from './legacy-import'
 import { extensionFor } from '../extensions/formats'
+import { requireArchiveConsent } from '../extensions/archive-consent'
 
 export interface ArchivePreview {
   workspace: Workspace
@@ -102,7 +103,8 @@ export async function inspectArchive(
   }
   if (isObject(input) && input.schemaVersion !== undefined) {
     assertWorkspace(input)
-    return preview(input, 'v3', [])
+    const consent = requireArchiveConsent(input)
+    return preview(consent.workspace, 'v3', consent.changed ? ['extensions.importConsent'] : [])
   }
   requireCondition(isObject(input) && (
     isObject(input.records) || isObject(input.app) || isObject(input.planHelper) || isObject(input.plan_helper) || Array.isArray(input.main)
