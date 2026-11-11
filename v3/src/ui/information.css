@@ -30,6 +30,7 @@
 .theme-preview { height: 60px; display: flex; gap: 6px; align-items: flex-end; padding: 12px; }
 .theme-preview span { height: 22px; width: 28px; border-radius: 4px; }
 .theme-name { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; font-size: var(--text-xs); gap: var(--space-2); }
+.theme-option > .muted { display: block; padding: 0 12px 10px; font-size: 10px; overflow-wrap: anywhere; }
 .table-wrap { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .data-table th, .data-table td { text-align: start; padding: var(--space-4); border-bottom: 1px solid var(--line); }

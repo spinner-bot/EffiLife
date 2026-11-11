@@ -15,16 +15,27 @@ export class WorkspaceService {
     private readonly events?: WorkspaceEvents,
   ) {}
   read() { return this.repository.read() }
-  async dispatch(envelope: CommandEnvelope) {
+  private notify() {
+    // Cross-window notification is best effort; a completed transaction must
+    // never be reported as failed because a channel has already closed.
+    try { this.events?.publish() } catch { /* A focus refresh also reconciles windows. */ }
+  }
+  async dispatchCommitted(envelope: CommandEnvelope) {
     const context = this.context()
     const command = plainDto(envelope)
-    const result = await this.repository.transact(current => execute(current, command, context))
-    this.events?.publish()
+    const result = await this.repository.transact(current => {
+      const outcome = execute(current, command, context)
+      return { workspace: outcome.workspace, result: outcome }
+    })
+    this.notify()
     return result
+  }
+  async dispatch(envelope: CommandEnvelope) {
+    return (await this.dispatchCommitted(envelope)).result
   }
   async replace(workspace: Workspace) {
     await this.repository.replace(plainDto(workspace))
-    this.events?.publish()
+    this.notify()
   }
   async restoreBackup() {
     const backup = await this.repository.readBackup()

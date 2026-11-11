@@ -1,4 +1,6 @@
 import type { Instant, NodeKind, Preferences, Todo, TodoStatus, TimePlan, TimeRule } from './models'
+import type { PackageCandidate } from '../extensions/manifest'
+import type { Capability } from '../extensions/capabilities'
 
 export type WorkspaceCommand =
   | { type: 'createPlan'; title: string; description?: string }
@@ -23,6 +25,10 @@ export type WorkspaceCommand =
   | { type: 'setDateTimePlan'; date: string; timePlanId: string | null }
   | { type: 'saveTimeRule'; ruleId?: string; kind: TimeRule['kind']; value: string; timePlanId: string }
   | { type: 'deleteTimeRule'; ruleId: string }
+  | { type: 'installPackage'; candidate: PackageCandidate; updateId?: number; grants?: Capability[] }
+  | { type: 'setPackageGrants'; kind: 'theme' | 'resource' | 'function'; packageId: number; grants: Capability[] }
+  | { type: 'setPackageStatus'; kind: 'theme' | 'resource' | 'function'; packageId: number; enabled: boolean }
+  | { type: 'removePackage'; kind: 'theme' | 'resource' | 'function'; packageId: number }
 
 export interface CommandEnvelope {
   operationId: string

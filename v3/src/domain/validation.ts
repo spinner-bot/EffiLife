@@ -3,6 +3,7 @@ import { requireCondition } from './errors'
 import { minutesBetween } from './time'
 import { validRule } from './time-planning'
 import type { TimeRule } from './models'
+import { assertPackages } from './package-validation'
 
 export function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
@@ -115,8 +116,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   }
   requireCondition(isObject(value.receipts), 'storage.invalidWorkspace')
   for (const receipt of Object.values(value.receipts)) requireCondition(isObject(receipt) && typeof receipt.fingerprint === 'string' && isObject(receipt.result), 'storage.invalidWorkspace')
-  rows(value.packages)
-  rows(value.packageTombstones)
+  assertPackages(value.packages, value.packageTombstones, value.extensionAudit)
   if (value.timePlanning !== undefined) {
     requireCondition(isObject(value.timePlanning), 'storage.invalidWorkspace')
     const planning = value.timePlanning
