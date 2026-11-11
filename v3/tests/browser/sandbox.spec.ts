@@ -124,5 +124,13 @@ EffiLife.onMount(async () => {
   expect(result).toEqual({ parent: true, local: true, indexed: true, network: true })
   expect(requests).toEqual([])
   expect(policyBlocks.get(page)!.length).toBeGreaterThan(0)
+  await page.goto('/?safe=1#/settings')
+  await expect(page.getByText('安全模式：扩展暂未加载', { exact: true })).toBeVisible()
+  await expect(page.locator('.extension-frame')).toHaveCount(0)
+  const row = page.locator('.list-row').filter({ has: page.getByText('隔离界面', { exact: true }) })
+  await expect(row).toContainText('已启用')
+  await page.getByRole('button', { name: '恢复默认外观与停用扩展' }).click()
+  await expect(page).not.toHaveURL(/safe=1/)
+  await expect(row).toContainText('已停用')
 })
 
