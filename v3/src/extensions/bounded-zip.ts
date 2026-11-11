@@ -3,6 +3,9 @@ import { DomainError, requireCondition } from '../domain/errors'
 import { inspectZip } from './zip-structure'
 import { importBudget, type ImportBudget } from './import-budget'
 
+// JSZip 3.10.2 exposes this documented API but omits it from JSZipObject's
+// bundled types. Keep that compatibility declaration at the adapter boundary.
+type StreamingEntry = JSZip.JSZipObject & { internalStream(type: 'uint8array'): JSZip.JSZipStreamHelper<Uint8Array> }
 const crcTable = Uint32Array.from({ length: 256 }, (_, index) => {
   let value = index
   for (let bit = 0; bit < 8; bit++) value = value & 1 ? 0xedb88320 ^ value >>> 1 : value >>> 1
@@ -26,7 +29,7 @@ export async function openBoundedZip(bytes: Uint8Array, budget: ImportBudget = i
     const result = new Promise<Uint8Array>((resolve, reject) => {
       const chunks: Uint8Array[] = []
       let size = 0, crc = 0xffffffff, settled = false
-      const stream = file.internalStream('uint8array')
+      const stream = (file as StreamingEntry).internalStream('uint8array')
       function fail(error: unknown) {
         if (settled) return
         settled = true
