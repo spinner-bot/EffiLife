@@ -376,5 +376,9 @@
   "plans.editLogBody": "Update this action’s description. Linked actual time records display the same content.",
   "plans.deleteLog": "Delete this action?",
   "plans.deleteLogBody": "Remove this log and its directly linked time records. The task’s completion state is retained and can be reopened separately.",
-  "todos.filters": "Filters & sorting"
+  "todos.filters": "Filters & sorting",
+  "record.context": "Related item",
+  "record.completeTodo": "Also complete this to-do",
+  "todos.recordTime": "Record time for this action",
+  "validation.todoArchived": "This to-do is archived or cancelled. Restore it before recording."
 }
