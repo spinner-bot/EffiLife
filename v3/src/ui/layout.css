@@ -65,4 +65,4 @@
   .app-topbar[data-clock-align="center"] .topbar-date { justify-self: center; text-align: center; }
 }
 
-.panel { background: var(--card-surface, var(--surface)); backdrop-filter: var(--card-filter, none); -webkit-backdrop-filter: var(--card-filter, none); border-radius: var(--card-radius, var(--radius)); box-shadow: var(--card-shadow, none); }
+.panel { background: var(--card-surface, var(--surface)); -webkit-backdrop-filter: var(--card-filter, none); backdrop-filter: var(--card-filter, none); border-radius: var(--card-radius, var(--radius)); box-shadow: var(--card-shadow, none); }
