@@ -6,7 +6,7 @@ export const navigation = [
   { path: '/plans', key: 'nav.plans', icon: 'plans' },
   { path: '/time', key: 'nav.time', icon: 'time' },
   { path: '/todos', key: 'nav.todos', icon: 'todos' },
-  { path: '/settings', key: 'nav.settings', icon: 'settings' },
+  { path: '/more', key: 'nav.more', icon: 'more' },
 ]
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -16,7 +16,13 @@ export const router = createRouter({
     { path: '/plans/:id', name: 'plan', component: () => import('./features/plans/PlanDetailView.vue'), meta: { title: 'nav.plans' } },
     { path: '/time', name: 'time', component: () => import('./features/time/TimeView.vue'), meta: { title: 'nav.time' } },
     { path: '/todos', name: 'todos', component: () => import('./features/todos/TodosView.vue'), meta: { title: 'nav.todos' } },
-    { path: '/settings', name: 'settings', component: () => import('./features/settings/SettingsView.vue'), meta: { title: 'nav.settings' } },
+    { path: '/more', component: () => import('./features/settings/MoreView.vue'), meta: { title: 'nav.more' } },
+    { path: '/more/categories', component: () => import('./features/categories/CategoriesView.vue'), meta: { title: 'settings.categories' } },
+    { path: '/more/time-plans', component: () => import('./features/time/TimePlansView.vue'), meta: { title: 'planning.manage' } },
+    { path: '/more/rules', component: () => import('./features/time/TimeRulesView.vue'), meta: { title: 'planning.rules' } },
+    { path: '/more/appearance', component: () => import('./features/settings/AppearanceView.vue'), meta: { title: 'more.appearance' } },
+    { path: '/more/settings', name: 'settings', component: () => import('./features/settings/SettingsView.vue'), meta: { title: 'settings.title' } },
+    { path: '/settings', redirect: '/more/settings' },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior(to, from, saved) { return saved || (to.path === from.path ? {} : { top: 0 }) },
