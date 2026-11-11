@@ -26,7 +26,7 @@ function move(event: PointerEvent) {
   if (!dragging.value && Math.hypot(event.clientY - startY, event.clientX - startX) < 5) return
   if (!dragging.value) { insertion.value = props.ids.indexOf(pending); dragging.value = pending }
   event.preventDefault(); y.value = event.clientY - offsetY; x.value = event.clientX - offsetX
-  const rows = [...root.value!.querySelectorAll<HTMLElement>('[data-sort-id]')].filter(row => row.dataset.sortId !== '__gap__')
+  const rows = [...root.value!.querySelectorAll<HTMLElement>('[data-sort-id]')].filter(row => row.dataset.sortId !== '__gap__' && row.dataset.sortId !== dragging.value)
   insertion.value = rows.filter(row => { const rect = row.getBoundingClientRect(); return event.clientY > rect.top + rect.height / 2 }).length
   if (event.clientY < 70) window.scrollBy({ top: -16 })
   else if (event.clientY > innerHeight - 70) window.scrollBy({ top: 16 })

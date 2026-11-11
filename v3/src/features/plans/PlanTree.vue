@@ -50,7 +50,7 @@ function start(event: PointerEvent, node: PlanNode, depth: number) {
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', release); window.addEventListener('pointercancel', cancel); window.addEventListener('keydown', escape)
 }
 function locate() {
-  const elements = [...root.value!.querySelectorAll<HTMLElement>('[data-tree-row]')].filter(element => element.dataset.treeRow !== '__gap__')
+  const elements = [...root.value!.querySelectorAll<HTMLElement>('[data-tree-row]')].filter(element => rows.value.some(row => row.node.id === element.dataset.treeRow))
   insertion.value = elements.filter(element => { const rect = element.getBoundingClientRect(); return pointerY > rect.top + rect.height / 2 }).length
 }
 function autoScroll() {
