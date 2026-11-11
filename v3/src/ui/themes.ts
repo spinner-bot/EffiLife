@@ -1,3 +1,4 @@
+import type { AppearanceOptions } from '../domain/appearance'
 import catalog from '../../resources/themes/catalog.json'
 import { Registry } from '../extensions/registry'
 
@@ -7,7 +8,8 @@ export interface ThemeDefinition {
   name: Record<string, string>
   mode: string
   palette: { background: string; surface: string; text: string; muted: string; accent: string }
-  decoration?: { gradient: string | null; particles: unknown; renderer: string | null; helpers?: string | null; factory?: string | null }
+  decoration?: { gradient: string | null; particles: unknown; renderer: string | null; helpers?: string | null; factory?: string | null; ambient?: { motif: string; color: string; secondary: string; count: number; scale: number } }
+  appearance?: AppearanceOptions
   legacyType?: string
   css?: string
   author?: string
