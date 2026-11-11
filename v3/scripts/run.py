@@ -57,6 +57,8 @@ def main():
     environment = dict(os.environ)
     environment["PATH"] = str(binaries) + os.pathsep + environment.get("PATH", "")
     environment.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".cache/playwright"))
+    libraries = [str(ROOT / ".tools/browser-libs/usr/lib/x86_64-linux-gnu"), str(ROOT / ".tools/browser-libs/lib/x86_64-linux-gnu")]
+    environment["LD_LIBRARY_PATH"] = os.pathsep.join([*libraries, environment.get("LD_LIBRARY_PATH", "")])
     raise SystemExit(subprocess.call([str(binaries / arguments[0]), *arguments[1:]], cwd=ROOT, env=environment))
 
 if __name__ == "__main__":
