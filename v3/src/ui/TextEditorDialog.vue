@@ -33,6 +33,7 @@ async function submit() {
     <form class="stack" @submit.prevent="submit">
       <label class="field"><span>{{ multiline ? t('form.content') : t('form.title') }}</span><textarea v-if="multiline" v-model="form.title" class="textarea" required /><input v-else v-model="form.title" class="input" required /></label>
       <label v-if="descriptionField" class="field"><span>{{ t('form.description') }}</span><textarea v-model="form.description" class="textarea" /></label>
+      <slot />
       <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <div class="dialog-footer"><UiButton :disabled="busy" @click="close">{{ t('common.cancel') }}</UiButton><UiButton type="submit" variant="primary" :disabled="busy">{{ t('common.save') }}</UiButton></div>
     </form>
