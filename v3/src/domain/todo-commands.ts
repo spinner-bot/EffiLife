@@ -61,6 +61,7 @@ export function applyTodoCommand(workspace: Workspace, command: WorkspaceCommand
   if (command.type === 'deleteTodo') {
     requireCondition(workspace.todos.some(todo => todo.id === command.todoId), 'validation.todoMissing')
     workspace.todos = workspace.todos.filter(todo => todo.id !== command.todoId)
+    for (const record of workspace.records) if (record.todoId === command.todoId) record.todoId = undefined
     for (const todo of workspace.todos) {
       if (todo.previousOccurrenceId === command.todoId) todo.previousOccurrenceId = undefined
       if (todo.nextOccurrenceId === command.todoId) todo.nextOccurrenceId = undefined
