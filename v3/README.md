@@ -43,15 +43,15 @@ python3 v3/tests/native/desktop_smoke.py
 
 ## 验收交付
 
-当前为 v3.0.0 本地验收候选。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[桌面验收记录](docs/progress/0009-native-desktop.md)列出实际通过范围及平台边界。
+当前为修复独立审查问题的 v3.0.1 本地验收候选；v3.0.0 的长期数据可靠性结论已修正。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[桌面验收记录](docs/progress/0009-native-desktop.md)列出实际通过范围及平台边界。
 
 准备好上述工具链后，按以下顺序重建交付：
 
 ```bash
 python3 v3/scripts/run.py npm run verify
 python3 v3/scripts/native.py tauri build --bundles deb
-dpkg-deb -x v3/.cache/native-target/release/bundle/deb/EffiLife_3.0.0_amd64.deb v3/.cache/desktop-package
-python3 v3/tests/native/desktop_smoke.py v3/.cache/desktop-package/usr/bin/effilife-desktop
+dpkg-deb -x v3/.cache/native-target/release/bundle/deb/EffiLife_3.0.1_amd64.deb v3/.cache/desktop-package-3.0.1
+python3 v3/tests/native/desktop_smoke.py v3/.cache/desktop-package-3.0.1/usr/bin/effilife-desktop
 python3 v3/tests/native/webkit_smoke.py
 python3 v3/scripts/run.py node scripts/build-examples.mjs
 python3 v3/scripts/package-delivery.py
@@ -61,3 +61,5 @@ python3 v3/scripts/package-delivery.py
 
 解开交付 ZIP 后，先阅读 `docs/user-guide.html`。浏览器预览可在解压目录执行 `python3 -m http.server 3420 --bind 127.0.0.1 --directory web`，再访问 `http://127.0.0.1:3420`；不要直接以 file:// 打开前端。源码与长期验证记录以仓库提交为准。
 
+
+扩展中继源位于 public/extension-frame.js。修改后运行 `python3 v3/scripts/run.py npm run sync:frame`，一起提交生成的 HTML 与 Tauri CSP；构建会检查内容哈希，拒绝遗漏更新。导入处理预算集中于 shared/import-budgets.json，平台适配器也可传入预算；默认输入 64 MiB、单条解压 32 MiB、累计解压 128 MiB。该限制是本次对旧无限制导入约定的明确修订，不改变包格式。
