@@ -59,7 +59,14 @@ def main():
                 time.sleep(0.1)
         print("Starting actual Tauri desktop smoke:", application, flush=True)
         driver = Driver(endpoint, {"tauri:options": {"application": str(application)}})
-        cleanup.callback(driver.close)
+        sessions = [driver]
+        def close_sessions():
+            for session in sessions:
+                try:
+                    session.close()
+                except RuntimeError:
+                    pass
+        cleanup.callback(close_sessions)
         driver.wait(lambda: driver.script("return document.querySelector('h1')?.textContent === '让每一份投入，都有迹可循。'"), "native application startup")
         features = driver.script("return {native:!!window.__TAURI_INTERNALS__,origin:location.origin,secure:isSecureContext,uuid:typeof crypto.randomUUID}")
         assert features["native"] and features["uuid"] == "function", features
@@ -72,6 +79,11 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('原生桌面真实待办')"), "native IndexedDB persistence")
         driver.script("location.hash='/settings'")
         driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"导入存档\"]'))"))
+        forbidden = output / "unselected-path.d3el"
+        forbidden.unlink(missing_ok=True)
+        driver.script("window.fsProbe=null;window.__TAURI_INTERNALS__.invoke('plugin:fs|write_file',new Uint8Array([1,2,3]),{headers:{path:encodeURIComponent(arguments[0])}}).then(()=>window.fsProbe='unexpected').catch(e=>window.fsProbe=String(e));", str(forbidden))
+        rejection = driver.wait(lambda: driver.script("return window.fsProbe"), "unselected native path rejection")
+        assert "forbidden" in rejection.lower() and not forbidden.exists(), rejection
         driver.button("导出存档")
         xdotool = str(sdk / "usr/bin/xdotool")
         def save_window():
@@ -96,9 +108,35 @@ def main():
             assert hashlib.sha256(payload).hexdigest() == manifest["checksums"]["payload/workspace.json"]
             exported = json.loads(payload)
             assert exported["todos"][0]["title"] == "原生桌面真实待办"
+        driver.script("location.hash='/todos'")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('.quick-capture'))"))
+        driver.fill(driver.element(".quick-capture input"), "导出之后添加的事项")
+        driver.button("添加待办", "document.querySelector('.quick-capture')")
+        driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"))
+        driver.script("location.hash='/settings'")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"导入存档\"]'))"))
+        driver.file(driver.element('input[aria-label="导入存档"]'), destination)
+        dialog = "Array.from(document.querySelectorAll('[role=dialog]')).find(e=>e.getAttribute('aria-hidden')!=='true')"
+        driver.button("确认替换并导入", dialog)
+        driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"), "native archive import")
+        driver.script("location.hash='/todos'")
+        driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===1 && document.querySelector('.list-row').textContent.includes('原生桌面真实待办')"))
+        driver.script("location.hash='/settings'")
+        driver.button("恢复上一份有效备份")
+        driver.button("确认", dialog)
+        driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"))
+        driver.button("北欧极夜")
+        driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
+        driver.close()
+        sessions.clear()
+        driver = Driver(endpoint, {"tauri:options": {"application": str(application)}})
+        sessions.append(driver)
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('h1'))"), "native restart")
+        driver.script("location.hash='/todos'")
+        driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"), "durable backup restore after process restart")
         rect = driver.call("GET", "/window/rect")
         subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / "desktop.png"), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
-        report = {"application": str(application.relative_to(ROOT)), "features": features, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "real GTK save dialog and scoped file write", "export payload and SHA-256"]}
+        report = {"application": str(application.relative_to(ROOT)), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("Tauri desktop smoke passed:", ", ".join(report["checks"]), flush=True)
 
