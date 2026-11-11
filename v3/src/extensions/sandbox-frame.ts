@@ -64,6 +64,11 @@ export const framePrelude = String.raw`
           const message = event.data;
           if (message?.type === 'render') {
             try { render(message.view); } catch { send({ type: 'failure', code: 'extensions.scriptFailed' }); }
+          } else if (message?.type === 'request') {
+            try {
+              if (JSON.stringify(message.request).length > 262144) throw new Error('request');
+              send(message);
+            } catch { failed = true; worker.terminate(); send({ type: 'failure', code: 'extensions.requestLimit' }); }
           } else send(message);
         };
         worker.onerror = event => { event.preventDefault(); send({ type: 'failure', code: 'extensions.scriptFailed' }); };
