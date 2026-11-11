@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { Plan, PlanNode } from '../../domain/models'
-import { descendants, categoryFor } from '../../domain/plans'
-import { dispatch } from '../../application/runtime'
+import { descendants, effectivePlanCategory } from '../../domain/plans'
+import { current, dispatch } from '../../application/runtime'
 import { t, duration, errorMessage } from '../../i18n'
 import { notify } from '../../ui/state'
 import { flattenTree, projectDrop } from './tree-projection'
@@ -115,7 +115,7 @@ onUnmounted(cleanup)
           <button v-if="!plan.archivedAt" type="button" class="drag-handle" :aria-label="t('plans.moveNode', { title: row.node.title })" :disabled="settling" @pointerdown="start($event, row.node, row.depth)" @keydown="keyboard($event, row.node)"><Icon name="drag" :size="18" /></button>
           <button v-if="row.node.kind === 'task'" type="button" class="todo-check" :aria-pressed="Boolean(row.node.completedAt)" :aria-label="(row.node.completedAt ? t('todos.reopen') : t('todos.complete')) + ': ' + row.node.title" :disabled="Boolean(plan.archivedAt)" @click="emit('action', 'complete', row.node)"><Icon v-if="row.node.completedAt" name="check" :size="16" /></button>
           <UiButton v-else variant="ghost" icon :aria-label="row.node.title" :aria-expanded="!collapsed.has(row.id)" @click="toggle(row.id)"><Icon :name="collapsed.has(row.id) ? 'next' : 'expand'" :size="18" /></UiButton>
-          <div class="tree-title"><p class="row-title" :class="{ 'todo-complete': row.node.completedAt }"><CategoryBadge v-if="row.node.kind === 'task'" :category-id="categoryFor(plan, row.id)" /><span class="node-name">{{ row.node.title }}</span></p><p v-if="row.node.description" class="row-detail">{{ row.node.description }}</p><p v-if="row.node.estimatedMinutes" class="row-detail">{{ duration(row.node.estimatedMinutes) }}</p></div>
+          <div class="tree-title"><p class="row-title" :class="{ 'todo-complete': row.node.completedAt }"><CategoryBadge v-if="row.node.kind === 'task'" :category-id="effectivePlanCategory(current, plan, row.id)" /><span class="node-name">{{ row.node.title }}</span></p><p v-if="row.node.description" class="row-detail">{{ row.node.description }}</p><p v-if="row.node.estimatedMinutes" class="row-detail">{{ duration(row.node.estimatedMinutes) }}</p></div>
           <div v-if="!plan.archivedAt" class="tree-actions"><UiButton v-if="row.node.kind === 'task'" variant="ghost" icon :aria-label="t('plans.recordProgress') + ': ' + row.node.title" @click="emit('action', 'record', row.node)"><Icon name="log" :size="18" /></UiButton><ActionMenu :items="menu(row.node)" /></div>
         </div>
       </div>
