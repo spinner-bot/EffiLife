@@ -2,7 +2,7 @@ import type { WorkspaceCommand } from './commands'
 import type { CommandContext, ExtensionAudit, InstalledPackage, OperationResult, Workspace } from './models'
 import { requireCondition } from './errors'
 import { assertCandidate, assertManifest, compareVersions, type ExtensionManifest } from '../extensions/manifest'
-import { assertContent } from '../extensions/content'
+import { assertContent, readLocale } from '../extensions/content'
 import { defaultGrants, isCapability } from '../extensions/capabilities'
 
 function audit(workspace: Workspace, entry: InstalledPackage, action: ExtensionAudit['action'], context: CommandContext) {
@@ -10,7 +10,12 @@ function audit(workspace: Workspace, entry: InstalledPackage, action: ExtensionA
 }
 function fallback(workspace: Workspace, entry: InstalledPackage) {
   if (entry.kind === 'theme' && workspace.preferences.themeId === entry.id) workspace.preferences.themeId = 1
-  if (workspace.preferences.fontId.startsWith('pkg:' + entry.id + ':')) workspace.preferences.fontId = 'default'
+  if (workspace.preferences.fontId.startsWith('pkg:' + entry.kind + ':' + entry.id + ':')) workspace.preferences.fontId = 'default'
+  assertManifest(entry.manifest)
+  const candidate = { manifest: entry.manifest, payload: entry.payload, checksum: entry.checksum || '' }
+  for (const resource of entry.manifest.resources || []) {
+    if (resource.kind === 'locale' && readLocale(candidate, resource.path).id === workspace.preferences.locale) workspace.preferences.locale = 'zh-CN'
+  }
 }
 function status(entry: InstalledPackage, manifest: ExtensionManifest) {
   return manifest.requiredPermissions.every(capability => entry.grants.includes(capability)) ? 'enabled' as const : 'disabled' as const
