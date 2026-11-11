@@ -20,7 +20,7 @@ for (const [label, eol] of [['LF', '\n'], ['CRLF', '\r\n'], ['CR', '\r']] as con
         contentType: 'text/html; charset=utf-8',
         headers: { 'Content-Security-Policy': config.app.security.csp },
       }))
-      await page.goto('/#/settings')
+      await page.goto('/#/more/appearance')
       await page.getByRole('button', { name: '北欧极夜', exact: true }).click()
       await expect(page.locator('.theme-decoration iframe')).toHaveAttribute('data-ready', 'true')
       const frame = page.frameLocator('.theme-decoration iframe')
