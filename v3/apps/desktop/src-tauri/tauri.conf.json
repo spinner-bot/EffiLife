@@ -31,17 +31,10 @@
       "deb"
     ],
     "shortDescription": "Time and events, together.",
+    "longDescription": "Personal life management with linked time records, themed plans, progress logs and independent to-dos.",
     "category": "Productivity",
     "icon": [
       "icons/128x128.png"
-    ],
-    "linux": {
-      "deb": {
-        "depends": [
-          "libwebkit2gtk-4.1-0",
-          "libgtk-3-0"
-        ]
-      }
-    }
+    ]
   }
 }
