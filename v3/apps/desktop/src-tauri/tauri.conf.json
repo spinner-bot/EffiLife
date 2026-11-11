@@ -22,7 +22,11 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'none'; script-src 'self' 'sha256-mcgiMGAo3TxNACEY13ZqhkOO/7wxs1ikIXRA4sBZMsk='; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' data: blob:; font-src 'self' blob: data:; frame-src 'self'; worker-src blob:; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+      "devCsp": "default-src 'none'; script-src 'self' 'sha256-mcgiMGAo3TxNACEY13ZqhkOO/7wxs1ikIXRA4sBZMsk='; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:3420 ws://127.0.0.1:3420; img-src 'self' data: blob:; font-src 'self' blob: data:; frame-src 'self'; worker-src blob:; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'",
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
     }
   },
   "bundle": {

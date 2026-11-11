@@ -28,6 +28,21 @@ describe('actual time accounting', () => {
   it('handles the full day without records', () => {
     expect(recordedMinutes([], '2026-11-11', 'Asia/Shanghai')).toBe(0)
   })
+  it.each([
+    ['America/Santiago', '2026-09-06', '2026-09-06T04:00:00Z', '2026-09-07T03:00:00Z', '2026-09-05'],
+    ['America/Havana', '2026-03-08', '2026-03-08T05:00:00Z', '2026-03-09T04:00:00Z', '2026-03-07'],
+  ])('starts %s at its first existing local time on %s', (zone, date, start, end, previous) => {
+    expect(dayBounds(date!, zone!)).toEqual([Date.parse(start!), Date.parse(end!)])
+    expect(dayBounds(previous!, zone!)[1]).toBe(Date.parse(start!))
+    expect(recordedMinutes([record(start!, end!)], date!, zone!)).toBe(23 * 60)
+  })
+  it('uses the first midnight when midnight occurs twice', () => {
+    expect(dayBounds('2026-11-01', 'America/Havana')).toEqual([Date.parse('2026-11-01T04:00:00Z'), Date.parse('2026-11-02T05:00:00Z')])
+  })
+  it('ends the prior day at a skipped calendar date boundary without inventing that day', () => {
+    expect(dayBounds('2011-12-29', 'Pacific/Apia')).toEqual([Date.parse('2011-12-29T10:00:00Z'), Date.parse('2011-12-30T10:00:00Z')])
+    expect(() => dayBounds('2011-12-30', 'Pacific/Apia')).toThrow('validation.invalidDate')
+  })
   it('rejects invalid times and reversed intervals', () => {
     expect(() => minutesBetween('wrong', '2026-11-11T01:00:00Z')).toThrow('validation.invalidTime')
     expect(() => minutesBetween('2026-11-11T02:00:00Z', '2026-11-11T01:00:00Z')).toThrow('validation.timeOrder')

@@ -22,6 +22,7 @@
   "styles": ["styles/visual.css"]
 }</pre>
 <p>清单位于 ZIP 根目录的 <code>manifest.json</code>。路径仅使用包内相对路径，不接受外链、绝对路径、上级目录、符号链接或大小写冲突。可通过 <code>checksums</code> 声明文件路径与 SHA-256；声明后必须匹配。未知能力、接口版本或不兼容的应用版本会被拒绝。</p>
+<p>3.0.1 起默认导入处理预算为：输入 64 MiB、单条解压 32 MiB、累计解压 128 MiB，条目至多 9999；大于等于 1 MiB 的条目同时检查压缩比。声明与实际输出都受校验，超限停止导入。预算集中于 <code>shared/import-budgets.json</code>，平台可传入其他预算；这是对早期暂不限制导入大小约定的修订，不是包格式字段。</p>
 <p>本地编号按包类型从 100000 开始分配，卸载后不复用。相同名称和作者可以明确选择升级或并存；升级必须提高版本，新增必需能力不会自动获准。</p></article>
 <article><h2>外观与资源能力</h2>
 <table><thead><tr><th>能力</th><th>内容</th><th>规则</th></tr></thead><tbody>
@@ -53,7 +54,8 @@ EffiLife.onChange(state =&gt; {
 });</pre>
 <table><thead><tr><th>request 方法</th><th>权限与参数</th></tr></thead><tbody><tr><td>data.read</td><td>app.data.read；仅生活数据，不含注册表、收据与审计</td></tr><tr><td>data.write</td><td>app.data.write；参数为领域命令，例如 createPlan / recordAction / saveTodo</td></tr><tr><td>settings.read / settings.write</td><td>对应设置权限；写入仅 locale、fontId、timeZone、weekStartsOn</td></tr><tr><td>theme.set</td><td>app.theme；参数为主题编号</td></tr><tr><td>navigate</td><td>app.navigation；参数为应用内路径</td></tr></tbody></table>
 <p>写入在事务内部再次校验当前版本指纹与授权，撤销与写入竞态不能绕过检查。写入与审计原子提交，传输重试去重；注册表、授权与审计不属于扩展可写域。读取或写入失败返回带 code 的 Error。未知接口和越权调用明确拒绝。</p>
-<p>绘制回调最多 30 FPS，减少动态效果时只绘制静态帧；不可见时暂停。心跳超时为 15 秒，通道及视图片段有结构和频率限制。Worker 不提供严格的每实例内存配额，这些机制不能等同于操作系统进程沙箱。当前运行证据来自 Chromium；其他 WebView 与原生交付继续单独验收。</p>
+<p>绘制回调最多 30 FPS，减少动态效果时只绘制静态帧；不可见时暂停。心跳超时为 15 秒，通道及视图片段有结构和频率限制。Worker 不提供严格的每实例内存配额，这些机制不能等同于操作系统进程沙箱。目前已有 Chromium、WebKitGTK 和 Linux Tauri 的实际检查；其他操作系统仍需独立验收。</p>
+<p>主窗口采用默认拒绝的 CSP，只允许本地脚本与固定中继的精确内容哈希；内联样式用于受控主题和组件布局。不透明 iframe 的中继内联内容与哈希由 <code>scripts/sync-frame.mjs</code> 同步，生成结果参与构建门禁。包代码仍只在 Worker 中执行，不能借中继哈希获得任意内联脚本执行权。</p>
 <p>实现依据：<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy">CSP 与 blob Worker 策略继承</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/sandbox">不透明来源隔离</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen">OffscreenCanvas 转交</a>。浏览器回归额外验证从原型恢复的原生 fetch 仍被 CSP 阻止，未产生网络请求。</p></article>
 <small>作者：Codex  (sqs_A100) · 全部源码与后续工具集中在 v3/</small></main></body></html>
 

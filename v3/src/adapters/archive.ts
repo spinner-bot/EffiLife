@@ -2,7 +2,8 @@ import JSZip from 'jszip'
 import type { Workspace } from '../domain/models'
 import { assertWorkspace, isObject } from '../domain/validation'
 import { requireCondition, DomainError } from '../domain/errors'
-import { inspectZip } from '../extensions/zip-structure'
+import { openBoundedZip } from '../extensions/bounded-zip'
+import { checkImportInput, importBudget, type ImportBudget } from '../extensions/import-budget'
 import { importLegacy } from './legacy-import'
 import { extensionFor } from '../extensions/formats'
 import { requireArchiveConsent } from '../extensions/archive-consent'
@@ -49,24 +50,19 @@ function preview(workspace: Workspace, source: ArchivePreview['source'], warning
   }
 }
 
-async function parseZip(bytes: Uint8Array): Promise<unknown> {
-  inspectZip(bytes)
-  const zip = await JSZip.loadAsync(bytes, { checkCRC32: true })
-  const manifestFile = zip.file('manifest.json')
-  if (!manifestFile) {
-    const legacy = zip.file('archive.json')
-    requireCondition(legacy, 'archive.manifestMissing')
-    return JSON.parse(await legacy.async('string'))
+async function parseZip(bytes: Uint8Array, budget: ImportBudget): Promise<unknown> {
+  const zip = await openBoundedZip(bytes, budget)
+  if (!zip.has('manifest.json')) {
+    requireCondition(zip.has('archive.json'), 'archive.manifestMissing')
+    return JSON.parse(await zip.readText('archive.json'))
   }
-  const manifest: unknown = JSON.parse(await manifestFile.async('string'))
+  const manifest: unknown = JSON.parse(await zip.readText('manifest.json'))
   requireCondition(isObject(manifest), 'archive.manifestInvalid')
   if (manifest.type === 'data') {
     requireCondition(manifest.formatVersion === 1 && manifest.schemaVersion === 1 && Array.isArray(manifest.dataFiles) && isObject(manifest.checksums), 'archive.unsupportedFormat')
     requireCondition(manifest.dataFiles.length === 1 && typeof manifest.dataFiles[0] === 'string', 'archive.manifestInvalid')
     const path = manifest.dataFiles[0]
-    const file = zip.file(path)
-    requireCondition(file, 'archive.payloadMissing')
-    const content = await file.async('uint8array')
+    const content = await zip.readBytes(path)
     requireCondition(typeof manifest.checksums[path] === 'string' && await sha256(content) === manifest.checksums[path], 'archive.checksumMismatch')
     const data = JSON.parse(new TextDecoder().decode(content))
     assertWorkspace(data)
@@ -78,9 +74,7 @@ async function parseZip(bytes: Uint8Array): Promise<unknown> {
   for (const name of manifest.datasets) {
     requireCondition(typeof name === 'string' && /^[a-zA-Z0-9_-]+$/.test(name) && !seen.has(name), 'archive.manifestInvalid')
     seen.add(name)
-    const file = zip.file('data/' + name + '.json')
-    requireCondition(file, 'archive.payloadMissing')
-    const content = await file.async('uint8array')
+    const content = await zip.readBytes('data/' + name + '.json')
     if (manifest.dataset_sha256 !== undefined) {
       requireCondition(isObject(manifest.dataset_sha256) && typeof manifest.dataset_sha256[name] === 'string' && await sha256(content) === manifest.dataset_sha256[name], 'archive.checksumMismatch')
     }
@@ -91,12 +85,13 @@ async function parseZip(bytes: Uint8Array): Promise<unknown> {
 }
 
 export async function inspectArchive(
-  bytes: Uint8Array, version: string, timeZone: string,
+  bytes: Uint8Array, version: string, timeZone: string, budget: ImportBudget = importBudget,
 ): Promise<ArchivePreview> {
   let input: unknown
   try {
+    checkImportInput(bytes.byteLength, budget)
     const beginning = new TextDecoder().decode(bytes.subarray(0, 20)).trimStart()
-    input = beginning.startsWith('{') ? JSON.parse(new TextDecoder().decode(bytes)) : await parseZip(bytes)
+    input = beginning.startsWith('{') ? JSON.parse(new TextDecoder().decode(bytes)) : await parseZip(bytes, budget)
   } catch (error) {
     if (error instanceof DomainError) throw error
     throw new DomainError('archive.invalidFile')

@@ -70,6 +70,9 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelector('h1')?.textContent === '让每一份投入，都有迹可循。'"), "native application startup")
         features = driver.script("return {native:!!window.__TAURI_INTERNALS__,origin:location.origin,secure:isSecureContext,uuid:typeof crypto.randomUUID}")
         assert features["native"] and features["uuid"] == "function", features
+        driver.script("window.cspProbe={executed:false,violation:false};document.addEventListener('securitypolicyviolation',e=>{if(e.blockedURI==='inline'&&e.effectiveDirective.startsWith('script-src'))window.cspProbe.violation=true});const probe=document.createElement('script');probe.textContent='window.cspProbe.executed=true';document.body.append(probe);")
+        driver.wait(lambda: driver.script("return window.cspProbe.violation"), "main-window CSP blocks injected inline scripts")
+        assert driver.script("return window.cspProbe.executed") is False
         driver.script("location.hash='/todos'")
         driver.wait(lambda: driver.script("return Boolean(document.querySelector('.quick-capture'))"))
         driver.fill(driver.element(".quick-capture input"), "原生桌面真实待办")
@@ -126,7 +129,16 @@ def main():
         driver.button("确认", dialog)
         driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"))
         driver.button("北欧极夜")
-        driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
+        try:
+            driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
+        except AssertionError:
+            snapshot("theme-failure.png")
+            print("Native frame state:", driver.script("return {frames:Array.from(document.querySelectorAll('iframe')).map(e=>e.outerHTML),notices:Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.textContent)}"), flush=True)
+            frame = driver.script("return document.querySelector('.theme-decoration iframe')")
+            if frame:
+                driver.call("POST", "/frame", {"id": frame})
+                print("Native frame document:", driver.script("return {html:document.documentElement.outerHTML,origin:location.origin,resources:performance.getEntriesByType('resource').map(e=>e.name)}"), flush=True)
+            raise
         driver.close()
         sessions.clear()
         driver = Driver(endpoint, {"tauri:options": {"application": str(application)}})
@@ -136,7 +148,7 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"), "durable backup restore after process restart")
         rect = driver.call("GET", "/window/rect")
         subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / "desktop.png"), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
-        report = {"application": str(application.relative_to(ROOT)), "applicationSha256": hashlib.sha256(application.read_bytes()).hexdigest(), "version": (ROOT / "VERSION").read_text().strip(), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
+        report = {"application": str(application.relative_to(ROOT)), "applicationSha256": hashlib.sha256(application.read_bytes()).hexdigest(), "version": (ROOT / "VERSION").read_text().strip(), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "main-window CSP rejects inline script injection", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("Tauri desktop smoke passed:", ", ".join(report["checks"]), flush=True)
 

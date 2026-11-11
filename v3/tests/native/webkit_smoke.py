@@ -19,6 +19,7 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from native import environment, ROOT
+from artifact_fingerprints import frontend_fingerprint
 from webdriver import Driver
 
 def port():
@@ -40,6 +41,10 @@ class QuietHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT / "dist"), **kwargs)
     def log_message(self, *args):
         pass
+    def end_headers(self):
+        config = json.loads((ROOT / 'apps/desktop/src-tauri/tauri.conf.json').read_text())
+        self.send_header('Content-Security-Policy', config['app']['security']['csp'])
+        super().end_headers()
     def do_GET(self):
         if self.path.startswith('/native-network-probe'):
             QuietHandler.probe_requests += 1
@@ -155,6 +160,7 @@ EffiLife.onMount(async () => {
         report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "real package upload and advanced consent", "opaque DOM and storage isolation", "CSP native fetch blocking", "layout recovery", "390px layout"], "isolation": isolation, "networkRequests": QuietHandler.probe_requests, "overflow": overflow}
         report["version"] = (ROOT / "VERSION").read_text().strip()
         report["frontendIndexSha256"] = hashlib.sha256((ROOT / "dist/index.html").read_bytes()).hexdigest()
+        report["frontendTreeSha256"] = frontend_fingerprint(ROOT / "dist")
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("WebKitGTK smoke passed:", ", ".join(report["checks"]), flush=True)
 

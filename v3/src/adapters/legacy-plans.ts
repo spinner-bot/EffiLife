@@ -13,9 +13,12 @@ export function importLegacyPlans(
     const planId = namespace + rawId
     if (mapping.has(rawId)) { warnings.push('legacy.duplicatePlan'); continue }
     const baseDate = legacyDate(head.date, workspace.updatedAt)
+    let createdAt = workspace.updatedAt
+    try { createdAt = logInstant({ day: 0 }, baseDate, workspace.preferences.timeZone).occurredAt }
+    catch { warnings.push('legacy.localTimeInvalid') }
     const plan: Plan = {
       id: planId, title: string(head.name, 'Plan ' + rawId), description: '',
-      createdAt: logInstant({ day: 0 }, baseDate, workspace.preferences.timeZone).occurredAt,
+      createdAt,
       updatedAt: workspace.updatedAt, nodes: [], logs: [], legacy: structuredClone(raw),
     }
     const tasks = new Map<string, string>()
@@ -45,7 +48,10 @@ export function importLegacyPlans(
           legacyCode: sectionLetter(sectionIndex) + taskIndex,
           deletedAt: task.is_active === false ? workspace.updatedAt : undefined,
         }
-        if (task.finish && typeof task.finish === 'object') node.completedAt = logInstant(object(task.finish), baseDate, workspace.preferences.timeZone).occurredAt
+        if (task.finish && typeof task.finish === 'object') {
+          try { node.completedAt = logInstant(object(task.finish), baseDate, workspace.preferences.timeZone).occurredAt }
+          catch { warnings.push('legacy.localTimeInvalid') }
+        }
         plan.nodes.push(node)
         tasks.set(sectionLetter(sectionIndex) + taskIndex, id)
       }
@@ -54,11 +60,13 @@ export function importLegacyPlans(
       const log = object(value)
       const taskId = tasks.get(string(log.plan))
       if (log.plan !== 'base' && !taskId) warnings.push('legacy.logTaskMissing')
-      const timestamp = logInstant(log, baseDate, workspace.preferences.timeZone)
-      plan.logs.push({
-        id: planId + '-log-' + index, taskId, occurredAt: timestamp.occurredAt,
-        timePrecision: timestamp.precision, content: string(log.content), kind: 'progress', recordIds: [],
-      })
+      try {
+        const timestamp = logInstant(log, baseDate, workspace.preferences.timeZone)
+        plan.logs.push({
+          id: planId + '-log-' + index, taskId, occurredAt: timestamp.occurredAt,
+          timePrecision: timestamp.precision, content: string(log.content), kind: 'progress', recordIds: [],
+        })
+      } catch { warnings.push('legacy.localTimeInvalid') }
     }
     workspace.plans.push(plan)
     mapping.set(rawId, { planId, tasks })

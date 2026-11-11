@@ -170,7 +170,7 @@
   "plans.overwrite": "Overwrite existing descendant categories",
   "plans.rename": "Edit plan",
   "plans.notFound": "This plan could not be found",
-  "plans.deleteNodeConfirm": "Delete this item and its descendants without execution history?",
+  "plans.deleteNodeConfirm": "Delete this item and its descendants without execution history? Related to-dos are kept and detached from these items.",
   "plans.section": "Section",
   "plans.group": "Group",
   "plans.task": "Item",
@@ -384,5 +384,8 @@
   "todos.recordTime": "Record time for this action",
   "validation.todoArchived": "This to-do is archived or cancelled. Restore it before recording.",
   "legacy.todoLinkMissing": "Some time records refer to missing legacy to-dos. The time records and original source were retained.",
-  "legacy.todoLinkConflict": "Some legacy records had conflicting to-do owners. Their own explicit owner takes precedence; the conflicting source was retained."
+  "legacy.todoLinkConflict": "Some legacy records had conflicting to-do owners. Their own explicit owner takes precedence; the conflicting source was retained.",
+  "legacy.localTimeInvalid": "Some legacy times do not exist or are invalid in this time zone. Their records or completion times were not migrated; the original data is retained.",
+  "archive.importBudget": "This file exceeds the import processing budget for this environment. Use a smaller export or an environment configured with a larger processing budget.",
+  "planning.useForDate": "Also assign this plan to the selected date"
 }
