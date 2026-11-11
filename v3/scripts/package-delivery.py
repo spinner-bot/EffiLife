@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import zipfile
 from run import ROOT
+from artifact_fingerprints import frontend_fingerprint
 
 def digest(path):
     result = hashlib.sha256()
@@ -30,7 +31,7 @@ def main():
     webkit = json.loads((ROOT / 'test-results/native-webkit/result.json').read_text())
     if native.get('version') != version or len(native['checks']) < 11 or 'main-window CSP rejects inline script injection' not in native['checks'] or webkit.get('version') != version or len(webkit['checks']) < 8:
         raise SystemExit('Current-version native and WebKit acceptance evidence is required.')
-    if webkit['frontendIndexSha256'] != digest(ROOT / 'dist/index.html'):
+    if webkit['frontendIndexSha256'] != digest(ROOT / 'dist/index.html') or webkit.get('frontendTreeSha256') != frontend_fingerprint(ROOT / 'dist'):
         raise SystemExit('The production frontend changed after WebKit verification.')
     package = ROOT / '.cache/native-target/release/bundle/deb' / ('EffiLife_' + version + '_amd64.deb')
     package_version = subprocess.check_output(['dpkg-deb', '-f', str(package), 'Version'], text=True).strip()
