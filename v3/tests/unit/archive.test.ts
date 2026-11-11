@@ -77,5 +77,13 @@ describe('portable archive pipeline', () => {
     await expect(inspectArchive(new TextEncoder().encode(JSON.stringify({ schemaVersion: 99 })), '3.0.0', 'UTC')).rejects.toThrow('storage.unsupportedSchema')
     await expect(inspectArchive(new Uint8Array([1, 2, 3]), '3.0.0', 'UTC')).rejects.toThrow('archive.invalidZip')
   })
+  it('imports standalone todo exports with checklists scheduling and independent priority flags', async () => {
+    const data = { version: '0.5.0', categories: [{ id: 'work', name: 'Work', color: '#526ac9' }], todos: [{ id: 'legacy', title: 'Weekly review', description: 'Main', notes: 'Extra', created_at: '2026-11-01T00:00:00Z', updated_at: 'invalid', category: 'work', priority: 'urgent-important', status: 'in-progress', pinned: true, sort_order: 3, recurrence: 'weekly', deadline_warning_days: 7, subtasks: [{ id: 'read', title: 'Read', completed: true }] }] }
+    const result = await inspectArchive(new TextEncoder().encode(JSON.stringify(data)), '3.0.0', 'Asia/Shanghai')
+    expect(result.workspace.todos[0]).toMatchObject({ title: 'Weekly review', description: 'Main\n\nExtra', status: 'in-progress', pinned: true, urgent: true, important: true, sortOrder: 3, recurrence: { frequency: 'week', interval: 1 }, deadlineWarningDays: 7, subtasks: [{ title: 'Read', completed: true }] })
+    expect(result.workspace.todos[0]?.subtasks?.[0]?.completedAt).toBeUndefined()
+    expect(result.workspace.categories.find(category => category.id === result.workspace.todos[0]?.categoryId)?.name).toBe('Work')
+    expect(result.workspace.legacy?.source).toEqual(data)
+  })
 })
 

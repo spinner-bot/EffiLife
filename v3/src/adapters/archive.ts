@@ -107,7 +107,7 @@ export async function inspectArchive(
     return preview(consent.workspace, 'v3', consent.changed ? ['extensions.importConsent'] : [])
   }
   requireCondition(isObject(input) && (
-    isObject(input.records) || isObject(input.app) || isObject(input.planHelper) || isObject(input.plan_helper) || Array.isArray(input.main)
+    isObject(input.records) || isObject(input.app) || isObject(input.planHelper) || isObject(input.plan_helper) || Array.isArray(input.main) || Array.isArray(input.todos)
   ), 'archive.unsupportedFormat')
   const imported = importLegacy(input, version, timeZone)
   return preview(imported.workspace, 'legacy', imported.warnings)

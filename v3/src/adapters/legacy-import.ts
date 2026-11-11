@@ -1,4 +1,5 @@
 import type { Workspace } from '../domain/models'
+import type { TodoRecurrence } from '../domain/models'
 import { emptyWorkspace } from '../domain/initial'
 import { assertWorkspace } from '../domain/validation'
 import { importLegacyPlans } from './legacy-plans'
@@ -71,20 +72,30 @@ export function importLegacy(
     const id = 'legacy-todo-' + String(row.id ?? index)
     if (state.todos.some(todo => todo.id === id)) { warnings.push('legacy.todoDuplicate'); continue }
     const links = list(row.related_time_record_ids).map(id => recordIds.get(String(id))).filter((id): id is string => Boolean(id))
-    state.todos.push({
-      id, title: string(row.title, 'Todo'), description: string(row.description || row.notes),
-      categoryId: categories.get(string(row.category)) || category(string(row.category, 'life')),
-      createdAt, updatedAt: string(row.updated_at, createdAt), startAt: string(row.start_time, createdAt),
-      deadline: typeof row.deadline === 'string' && Number.isFinite(Date.parse(row.deadline)) ? row.deadline : undefined,
-      priorityRank: Math.max(0, Math.trunc(number(row.priority_rank, 5))),
-      urgent: Boolean(row.urgent), important: Boolean(row.important),
-      estimatedMinutes: Math.max(0, number(row.estimated_time ?? row.time_estimate)),
-      status: rawStatus === 'completed' ? 'completed' : ['archived', 'cancelled'].includes(rawStatus) ? 'archived' : 'pending',
-      completedAt: typeof row.completed_at === 'string' && Number.isFinite(Date.parse(row.completed_at)) ? row.completed_at : undefined,
-      tags: list(row.tags).filter((tag): tag is string => typeof tag === 'string'), recordIds: links,
-    })
+    const repeat = { daily: 'day', weekly: 'week', monthly: 'month' }[string(row.recurrence)] as TodoRecurrence['frequency'] | undefined
+    if (row.recurrence === 'custom') warnings.push('legacy.todoCustomRecurrence')
     const relatedPlan = planMapping.get(String(row.related_plan_id))
     const relatedTask = relatedPlan?.tasks.get(string(row.related_plan_task_id))
+    const validDate = (value: unknown, fallback: string) => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : fallback
+    state.todos.push({
+      id, title: string(row.title, 'Todo'), description: [...new Set([string(row.description), string(row.notes)].filter(Boolean))].join('\n\n'),
+      categoryId: categories.get(String(row.category ?? 'life')) || category(String(row.category ?? 'life')),
+      createdAt, updatedAt: validDate(row.updated_at, createdAt), startAt: validDate(row.start_time, createdAt),
+      deadline: typeof row.deadline === 'string' && Number.isFinite(Date.parse(row.deadline)) ? row.deadline : undefined,
+      priorityRank: Math.max(0, Math.trunc(number(row.priority_rank, 5))),
+      urgent: typeof row.urgent === 'boolean' ? row.urgent : ['urgent', 'urgent-important'].includes(string(row.priority)), important: typeof row.important === 'boolean' ? row.important : ['important', 'urgent-important'].includes(string(row.priority)),
+      estimatedMinutes: Math.max(0, number(row.estimated_time ?? row.time_estimate)),
+      status: ['in-progress', 'completed', 'archived', 'cancelled'].includes(rawStatus) ? rawStatus as 'in-progress' | 'completed' | 'archived' | 'cancelled' : 'pending',
+      completedAt: typeof row.completed_at === 'string' && Number.isFinite(Date.parse(row.completed_at)) ? row.completed_at : undefined,
+      tags: list(row.tags).filter((tag): tag is string => typeof tag === 'string'), recordIds: links,
+      pinned: row.pinned === true, sortOrder: number(row.sort_order), deadlineWarningDays: Math.max(0, Math.trunc(number(row.deadline_warning_days, 3))),
+      recurrence: repeat ? { frequency: repeat, interval: 1 } : undefined,
+      subtasks: list(row.subtasks).map((raw, position) => {
+        const item = object(raw), completed = item.completed === true
+        return { id: 'legacy-check-' + position + '-' + String(item.id ?? position), title: string(item.title, 'Item ' + (position + 1)), completed, completedAt: completed && typeof item.completed_at === 'string' && Number.isFinite(Date.parse(item.completed_at)) ? item.completed_at : undefined }
+      }),
+      relatedPlanId: relatedPlan?.planId, relatedTaskId: relatedTask,
+    })
     if (relatedPlan && relatedTask) for (const recordId of links) {
       const record = state.records.find(record => record.id === recordId)!
       record.planId = relatedPlan.planId

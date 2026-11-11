@@ -1,7 +1,7 @@
 export type EntityId = string
 export type Instant = string
 export type NodeKind = 'section' | 'group' | 'task'
-export type TodoStatus = 'pending' | 'completed' | 'archived'
+export type TodoStatus = 'pending' | 'in-progress' | 'completed' | 'archived' | 'cancelled'
 
 export interface Category {
   id: EntityId
@@ -72,6 +72,9 @@ export interface TimeRecord {
   operationId?: string
 }
 
+export interface TodoSubtask { id: EntityId; title: string; completed: boolean; completedAt?: Instant }
+export interface TodoRecurrence { frequency: 'day' | 'week' | 'month'; interval: number; anchorDay?: number }
+
 export interface Todo {
   id: EntityId
   title: string
@@ -89,6 +92,15 @@ export interface Todo {
   completedAt?: Instant
   tags: string[]
   recordIds: EntityId[]
+  pinned?: boolean
+  sortOrder?: number
+  subtasks?: TodoSubtask[]
+  recurrence?: TodoRecurrence
+  deadlineWarningDays?: number
+  previousOccurrenceId?: EntityId
+  nextOccurrenceId?: EntityId
+  relatedPlanId?: EntityId
+  relatedTaskId?: EntityId
 }
 
 export interface Preferences {

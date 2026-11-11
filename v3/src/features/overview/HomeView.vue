@@ -5,7 +5,7 @@ import { current, dispatch } from '../../application/runtime'
 import { dateKey } from '../../domain/time'
 import { daySummary, recentActivities } from '../../domain/selectors'
 import { planProgress } from '../../domain/plans'
-import { priorityScore } from '../../domain/priority'
+import { activeTodo, sortTodos } from '../../domain/todos'
 import { t, duration, calendarDate, clock, errorMessage } from '../../i18n'
 import { openRecord, notify } from '../../ui/state'
 import { useNow } from '../../ui/useNow'
@@ -19,10 +19,7 @@ const now = useNow()
 const date = computed(() => dateKey(now.value, current.value.preferences.timeZone))
 const summary = computed(() => daySummary(current.value, date.value))
 const plans = computed(() => current.value.plans.filter(plan => !plan.archivedAt))
-const todos = computed(() => current.value.todos.filter(todo => todo.status === 'pending').sort((a, b) => {
-  const category = (id: string) => current.value.categories.find(item => item.id === id)!
-  return priorityScore(b, category(b.categoryId), now.value) - priorityScore(a, category(a.categoryId), now.value)
-}))
+const todos = computed(() => sortTodos(current.value, current.value.todos.filter(activeTodo), now.value))
 const recent = computed(() => recentActivities(current.value).slice(0, 5))
 async function completeTodo(id: string) {
   try { await dispatch({ type: 'setTodoStatus', todoId: id, status: 'completed' }); notify(t('common.saved')) } catch (error) { notify(errorMessage(error), 'error') }
@@ -49,7 +46,7 @@ async function completeTodo(id: string) {
     <div class="dashboard-right">
       <Panel :title="t('home.todoTitle')">
         <template #actions><RouterLink to="/todos" class="text-link"><Icon name="arrow" :size="18" /><span class="sr-only">{{ t('nav.todos') }}</span></RouterLink></template>
-        <div v-for="todo in todos.slice(0, 4)" :key="todo.id" class="list-row"><button type="button" class="todo-check" :aria-label="t('todos.complete') + ': ' + todo.title" @click="completeTodo(todo.id)" /><div class="grow"><p class="row-title">{{ todo.title }}</p><p v-if="todo.deadline" class="row-detail">{{ calendarDate(dateKey(todo.deadline, current.preferences.timeZone)) }}</p></div></div>
+        <div v-for="todo in todos.slice(0, 4)" :key="todo.id" class="list-row"><button type="button" class="todo-check" :aria-label="t('todos.complete') + ': ' + todo.title" @click="completeTodo(todo.id)" /><div class="grow"><RouterLink :to="{ path: '/todos', query: { todo: todo.id } }" class="row-title"><Icon v-if="todo.pinned" name="pin" :size="13" />{{ todo.title }}</RouterLink><p v-if="todo.deadline" class="row-detail">{{ calendarDate(dateKey(todo.deadline, current.preferences.timeZone)) }}</p></div></div>
         <div v-if="!todos.length" class="panel-body muted small">{{ t('home.noTodos') }}</div>
       </Panel>
       <Panel :title="t('home.recent')">

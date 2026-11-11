@@ -4,7 +4,8 @@ import { requireCondition } from './errors'
 
 const dataCommands = new Set([
   'createPlan', 'updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'setTaskCompletion', 'assignCategory',
-  'recordAction', 'updateRecord', 'deleteRecord', 'updateLog', 'saveTodo', 'setTodoStatus', 'deleteTodo', 'saveCategory',
+  'recordAction', 'updateRecord', 'deleteRecord', 'updateLog', 'deleteLog', 'saveTodo', 'setTodoStatus', 'deleteTodo', 'saveCategory',
+  'setTodoPinned', 'setTodoSubtask',
   'saveTimePlan', 'deleteTimePlan', 'setDateTimePlan', 'saveTimeRule', 'deleteTimeRule',
 ])
 export function authorizedPackage(workspace: Workspace, identity: { kind: string; packageId: number; checksum: string }, capability: string): InstalledPackage {

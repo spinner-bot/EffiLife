@@ -1,6 +1,11 @@
 {
   "node": "v24.22.2",
   "source": "https://nodejs.org/dist",
-  "minimumNodeMajor": 22
+  "minimumNodeMajor": 22,
+  "rust": {
+    "version": "1.99.1",
+    "date": "2026-10-15",
+    "source": "https://static.rust-lang.org"
+  }
 }
 

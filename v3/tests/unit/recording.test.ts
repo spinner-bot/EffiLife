@@ -85,5 +85,16 @@ describe('unified recording', () => {
     f.run({ type: 'updateLog', planId: f.planId, logId: result.logId!, content: 'Clarified from plan view' })
     expect(f.state().records[0]!.note).toBe('Clarified from plan view')
   })
+  it('removes an action and its linked actual time without implicitly reopening its task', () => {
+    const f = fixture()
+    const result = f.run({ type: 'recordAction', planId: f.planId, taskId: f.taskA, content: 'Completed', completeTask: true, startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:40:00Z' })
+    f.run({ type: 'saveTodo', title: 'History link' })
+    f.state().todos[0]!.recordIds = [result.recordId!]
+    f.run({ type: 'deleteLog', planId: f.planId, logId: result.logId! })
+    expect(f.state().plans[0]!.logs).toEqual([])
+    expect(f.state().records).toEqual([])
+    expect(f.state().todos[0]!.recordIds).toEqual([])
+    expect(f.state().plans[0]!.nodes.find(node => node.id === f.taskA)?.completedAt).toBeDefined()
+  })
 })
 

@@ -4,6 +4,8 @@ import { minutesBetween } from './time'
 import { validRule } from './time-planning'
 import type { TimeRule } from './models'
 import { assertPackages } from './package-validation'
+import { assertRecurrence } from './todo-recurrence'
+import type { TodoRecurrence } from './models'
 
 export function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
@@ -94,17 +96,41 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   }
   const todos = rows(value.todos)
   unique(todos.map(todo => todo.id))
+  const todoById = new Map(todos.map(todo => [todo.id, todo]))
   for (const todo of todos) {
     text(todo.title); text(todo.description)
     validInstant(todo.createdAt); validInstant(todo.updatedAt); validInstant(todo.startAt)
     if (todo.deadline !== undefined) validInstant(todo.deadline)
     if (todo.completedAt !== undefined) validInstant(todo.completedAt)
     requireCondition(categoryIds.has(todo.categoryId), 'storage.danglingReference')
-    requireCondition(['pending', 'completed', 'archived'].includes(String(todo.status)), 'storage.invalidWorkspace')
+    requireCondition(['pending', 'in-progress', 'completed', 'archived', 'cancelled'].includes(String(todo.status)), 'storage.invalidWorkspace')
     requireCondition(typeof todo.urgent === 'boolean' && typeof todo.important === 'boolean', 'storage.invalidWorkspace')
     requireCondition(Number.isSafeInteger(todo.priorityRank) && Number(todo.priorityRank) >= 0 && Number.isFinite(todo.estimatedMinutes) && Number(todo.estimatedMinutes) >= 0, 'storage.invalidWorkspace')
     requireCondition(Array.isArray(todo.tags) && todo.tags.every(tag => typeof tag === 'string'), 'storage.invalidWorkspace')
     requireCondition(Array.isArray(todo.recordIds) && todo.recordIds.every(id => recordIds.has(id)), 'storage.danglingReference')
+    if (todo.pinned !== undefined) requireCondition(typeof todo.pinned === 'boolean', 'storage.invalidWorkspace')
+    if (todo.sortOrder !== undefined) requireCondition(Number.isFinite(todo.sortOrder), 'storage.invalidWorkspace')
+    if (todo.deadlineWarningDays !== undefined) requireCondition(Number.isSafeInteger(todo.deadlineWarningDays) && Number(todo.deadlineWarningDays) >= 0, 'storage.invalidWorkspace')
+    if (todo.recurrence !== undefined) { requireCondition(isObject(todo.recurrence), 'storage.invalidWorkspace'); assertRecurrence(todo.recurrence as unknown as TodoRecurrence) }
+    if (todo.subtasks !== undefined) {
+      const subtasks = rows(todo.subtasks)
+      unique(subtasks.map(item => item.id))
+      for (const item of subtasks) { text(item.title); requireCondition(typeof item.completed === 'boolean', 'storage.invalidWorkspace'); if (item.completedAt !== undefined) validInstant(item.completedAt) }
+    }
+    requireCondition(todo.relatedPlanId === undefined || planNodes.has(String(todo.relatedPlanId)), 'storage.danglingReference')
+    requireCondition(todo.relatedTaskId === undefined || planNodes.get(String(todo.relatedPlanId))?.has(todo.relatedTaskId), 'storage.danglingReference')
+    requireCondition(todo.nextOccurrenceId === undefined || todo.nextOccurrenceId !== todo.id && todoById.get(todo.nextOccurrenceId)?.previousOccurrenceId === todo.id, 'storage.danglingReference')
+    requireCondition(todo.previousOccurrenceId === undefined || todo.previousOccurrenceId !== todo.id && todoById.get(todo.previousOccurrenceId)?.nextOccurrenceId === todo.id, 'storage.danglingReference')
+  }
+  const checkedTodos = new Set<unknown>()
+  for (const todo of todos) {
+    const path = new Set<unknown>()
+    let cursor: Record<string, unknown> | undefined = todo
+    while (cursor && !checkedTodos.has(cursor.id)) {
+      requireCondition(!path.has(cursor.id), 'storage.invalidTree')
+      path.add(cursor.id); cursor = todoById.get(cursor.nextOccurrenceId)
+    }
+    for (const id of path) checkedTodos.add(id)
   }
   requireCondition(isObject(value.preferences), 'storage.invalidWorkspace')
   const preferences = value.preferences

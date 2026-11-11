@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Plan, PlanNode } from '../../domain/models'
-import { displayCode } from '../../domain/plans'
+import { descendants, displayCode } from '../../domain/plans'
 import { t, duration } from '../../i18n'
 import UiButton from '../../ui/UiButton.vue'
 import ActionMenu from '../../ui/ActionMenu.vue'
@@ -11,6 +11,9 @@ export type TreeAction = 'record' | 'edit' | 'addTask' | 'addGroup' | 'category'
 const props = withDefaults(defineProps<{ plan: Plan; parentId?: string | null; selected?: string }>(), { parentId: null, selected: '' })
 const emit = defineEmits<{ action: [action: TreeAction, node: PlanNode] }>()
 const collapsed = ref(new Set<string>())
+watch(() => props.selected, selected => {
+  for (const id of collapsed.value) if (descendants(props.plan, id).some(node => node.id === selected)) collapsed.value.delete(id)
+})
 const nodes = computed(() => props.plan.nodes.filter(node => node.parentId === props.parentId && !node.deletedAt).sort((a, b) => a.order - b.order))
 function toggle(id: string) { if (collapsed.value.has(id)) collapsed.value.delete(id); else collapsed.value.add(id) }
 function menu(node: PlanNode) {
@@ -27,7 +30,7 @@ function menu(node: PlanNode) {
 </script>
 <template>
   <div :class="{ 'tree-nested': parentId !== null }">
-    <div v-for="node in nodes" :key="node.id" class="tree-group" :data-selected="selected === node.id || undefined">
+    <div v-for="node in nodes" :key="node.id" class="tree-group" :data-node-id="node.id" :data-selected="selected === node.id || undefined">
       <div class="tree-row">
         <button v-if="node.kind === 'task'" type="button" class="todo-check" :aria-pressed="Boolean(node.completedAt)" :aria-label="(node.completedAt ? t('todos.reopen') : t('todos.complete')) + ': ' + node.title" :disabled="Boolean(plan.archivedAt)" @click="emit('action', 'complete', node)"><Icon v-if="node.completedAt" name="check" :size="16" /></button>
         <UiButton v-else variant="ghost" icon :aria-label="node.title" :aria-expanded="!collapsed.has(node.id)" @click="toggle(node.id)"><Icon :name="collapsed.has(node.id) ? 'next' : 'expand'" :size="18" /></UiButton>

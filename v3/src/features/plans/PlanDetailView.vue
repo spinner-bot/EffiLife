@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import type { NodeKind, PlanNode } from '../../domain/models'
+import type { NodeKind, PlanNode, ProgressLog } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
 import { planProgress, displayCode, categoryFor } from '../../domain/plans'
 import { planMinutes } from '../../domain/selectors'
@@ -17,6 +17,8 @@ import Icon from '../../ui/Icon.vue'
 import TextEditorDialog from '../../ui/TextEditorDialog.vue'
 import PlanTree, { type TreeAction } from './PlanTree.vue'
 import NodeEditor from './NodeEditor.vue'
+import ActionMenu from '../../ui/ActionMenu.vue'
+import LogEditor from './LogEditor.vue'
 
 const route = useRoute()
 const plan = computed(() => current.value.plans.find(item => item.id === route.params.id))
@@ -28,7 +30,20 @@ const categoryId = ref('life')
 const overwrite = ref(false)
 const categoryError = ref('')
 const selected = computed(() => String(route.query.task || ''))
+const selectedLog = computed(() => String(route.query.log || ''))
+const editingLog = shallowRef<ProgressLog>()
 const logs = computed(() => [...(plan.value?.logs || [])].filter(log => !selected.value || log.taskId === selected.value).sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt)))
+watch([selected, selectedLog, () => plan.value?.id], async () => {
+  await nextTick()
+  const selector = selectedLog.value ? '[data-log-id="' + CSS.escape(selectedLog.value) + '"]' : selected.value ? '[data-node-id="' + CSS.escape(selected.value) + '"]' : ''
+  if (selector) document.querySelector<HTMLElement>(selector)?.scrollIntoView({ block: 'center' })
+}, { immediate: true, flush: 'post' })
+function logDate(log: ProgressLog) { const record = current.value.records.find(item => log.recordIds.includes(item.id)); return dateKey(record?.startAt || log.occurredAt, current.value.preferences.timeZone) }
+async function deleteLog(log: ProgressLog) {
+  if (!plan.value || !await confirmAction(t('plans.deleteLog'), t('plans.deleteLogBody'))) return
+  try { await dispatch({ type: 'deleteLog', planId: plan.value.id, logId: log.id }) } catch (failure) { notify(errorMessage(failure), 'error') }
+}
+function logMenu(log: ProgressLog) { return [{ label: t('plans.editLog'), icon: 'edit', action: () => { editingLog.value = log } }, { label: t('plans.deleteLog'), icon: 'delete', danger: true, action: () => deleteLog(log) }] }
 function add(kind: NodeKind, parentId: string | null = null) { Object.assign(editor, { open: true, parentId, kind, node: undefined }) }
 async function action(type: TreeAction, node: PlanNode) {
   if (!plan.value) return
@@ -80,17 +95,18 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
       <Panel :title="t('plans.logs')">
         <template #actions><RouterLink v-if="selected" :to="{ name: 'plan', params: { id: plan.id } }" class="text-link">{{ t('common.all') }}</RouterLink></template>
         <div v-if="logs.length" class="panel-body">
-          <div v-for="log in logs" :key="log.id" class="log-entry">
-            <div class="cluster spread small muted"><span>{{ calendarDate(dateKey(log.occurredAt, current.preferences.timeZone)) }} {{ logTime(log) }}</span><span v-if="log.kind === 'completion'" class="badge success">{{ t('plans.completed') }}</span></div>
+          <div v-for="log in logs" :key="log.id" class="log-entry" :data-log-id="log.id" :data-selected="selectedLog === log.id">
+            <div class="cluster spread small muted"><span>{{ calendarDate(dateKey(log.occurredAt, current.preferences.timeZone)) }} {{ logTime(log) }}</span><div class="cluster"><span v-if="log.kind === 'completion'" class="badge success">{{ t('plans.completed') }}</span><ActionMenu :items="logMenu(log)" /></div></div>
             <RouterLink v-if="log.taskId" :to="{ name: 'plan', params: { id: plan.id }, query: { task: log.taskId } }" class="text-link small">{{ displayCode(plan, log.taskId) }} · {{ plan.nodes.find(node => node.id === log.taskId)?.title }}</RouterLink>
             <p class="log-content">{{ log.content }}</p><p v-if="log.timingReference && !log.recordIds.length" class="small muted">{{ t('record.reference', { minutes: Math.round(log.timingReference.minutes) }) }}</p>
-            <RouterLink v-if="log.recordIds.length" :to="{ path: '/time', query: { record: log.recordIds[0], date: dateKey(log.occurredAt, current.preferences.timeZone) } }" class="text-link small">{{ t('home.viewTime') }}<Icon name="arrow" :size="14" /></RouterLink>
+            <RouterLink v-if="log.recordIds.length" :to="{ path: '/time', query: { record: log.recordIds[0], date: logDate(log) } }" class="text-link small">{{ t('home.viewTime') }}<Icon name="arrow" :size="14" /></RouterLink>
           </div>
         </div>
         <EmptyState v-else :title="t('plans.noLogs')" icon="log" />
       </Panel>
     </div>
     <NodeEditor :open="editor.open" :plan-id="plan.id" :node="editor.node" :parent-id="editor.parentId" :kind="editor.kind" @close="editor.open = false" />
+    <LogEditor :plan-id="plan.id" :log="editingLog" @close="editingLog = undefined" />
     <TextEditorDialog :open="renaming" :title="t('plans.rename')" :initial-title="plan.title" :initial-description="plan.description" :save="rename" @close="renaming = false" />
     <UiDialog :open="Boolean(categoryTarget)" :title="t('plans.assignCategory')" :description="categoryTarget?.title" @close="categoryTarget = undefined">
       <form class="stack" @submit.prevent="saveCategory"><label class="field"><span>{{ t('form.category') }}</span><select v-model="categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label><label class="check-field"><input v-model="overwrite" type="checkbox" /><span>{{ t('plans.overwrite') }}</span></label><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
