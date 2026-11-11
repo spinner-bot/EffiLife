@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { current, dispatch } from '../../application/runtime'
-import { categoryFor, displayCode } from '../../domain/plans'
+import { categoryFor } from '../../domain/plans'
 import { referenceFor, minutesBetween } from '../../domain/time'
 import { activeTodo } from '../../domain/todos'
 import { dateTimeInput, parseDateTimeInput } from '../../ui/datetime'
 import { recording, confirmAction, notify } from '../../ui/state'
-import { t, categoryName, errorMessage } from '../../i18n'
+import { t, errorMessage } from '../../i18n'
+import CategorySelect from '../categories/CategorySelect.vue'
 import UiDialog from '../../ui/UiDialog.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
@@ -103,11 +104,11 @@ async function save() {
     <form class="stack" @submit.prevent="save">
       <div class="form-grid">
         <label class="field"><span>{{ t('record.context') }}</span><select v-model="form.target" class="select" @change="changeContext"><option value="">{{ t('form.noPlan') }}</option><optgroup v-if="plans.length" :label="t('nav.plans')"><option v-for="item in plans" :key="item.id" :value="'plan:' + item.id">{{ item.title }}</option></optgroup><optgroup v-if="todos.length" :label="t('nav.todos')"><option v-for="item in todos" :key="item.id" :value="'todo:' + item.id">{{ item.title }}</option></optgroup></select></label>
-        <label v-if="plan" class="field"><span>{{ t('form.task') }}</span><select v-model="form.taskId" class="select" @change="changeTask"><option value="">{{ t('form.planNote') }}</option><option v-for="item in tasks" :key="item.id" :value="item.id">{{ displayCode(plan, item.id) }} · {{ item.title }}</option></select></label>
+        <label v-if="plan" class="field"><span>{{ t('form.task') }}</span><select v-model="form.taskId" class="select" @change="changeTask"><option value="">{{ t('form.planNote') }}</option><option v-for="item in tasks" :key="item.id" :value="item.id">{{ item.title }}</option></select></label>
         <label v-else class="field"><span>{{ t('form.title') }}</span><input v-model="form.title" class="input" required /></label>
       </div>
       <label class="field"><span>{{ t('form.content') }}</span><textarea v-model="form.content" class="textarea" :placeholder="t('form.contentPlaceholder')" :required="!form.taskId && Boolean(form.planId)" /></label>
-      <label class="field"><span>{{ t('form.category') }}</span><select v-model="form.categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label>
+      <label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="form.categoryId" required /></label>
       <label v-if="plan" class="check-field"><input v-model="form.withTime" type="checkbox" /><span>{{ t('form.withTime') }}</span></label>
       <label v-if="!form.withTime" class="field"><span>{{ t('form.logTime') }}</span><input v-model="form.endAt" class="input" type="datetime-local" required /></label>
       <div v-if="form.withTime" class="stack">
