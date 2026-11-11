@@ -11,6 +11,23 @@ function matchesRange(value: string, target: number): boolean {
     return Number.isInteger(start) && Number.isInteger(end) && target >= start! && target <= end!
   })
 }
+export function validRule(kind: TimeRule['kind'], value: string): boolean {
+  if (kind === 'default') return true
+  if (kind === 'month_week') return /^[1-5]-[1-7]$/.test(value)
+  if (kind === 'year') return value.split(',').every(part => {
+    const date = part.trim()
+    if (!/^\d{2}-\d{2}$/.test(date)) return false
+    const parsed = new Date('2024-' + date + 'T12:00:00Z')
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(5, 10) === date
+  })
+  if (kind !== 'week' && kind !== 'month') return false
+  const maximum = kind === 'week' ? 7 : 12
+  return value.split(',').every(part => {
+    if (!/^\s*\d{1,2}(?:\s*-\s*\d{1,2})?\s*$/.test(part)) return false
+    const [start, end = start] = part.split('-').map(Number)
+    return start! >= 1 && end! <= maximum && start! <= end!
+  })
+}
 export function matchesRule(rule: TimeRule, date: string): boolean {
   const day = new Date(date + 'T12:00:00Z')
   const weekday = day.getUTCDay() || 7
