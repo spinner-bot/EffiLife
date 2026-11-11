@@ -11,6 +11,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     requireCondition(!plan?.archivedAt, 'validation.planArchived')
     const task = plan && command.taskId ? findNode(plan, command.taskId) : undefined
     requireCondition(!task || task.kind === 'task', 'validation.taskRequired')
+    requireCondition(!task?.deletedAt, 'validation.taskDeleted')
     requireCondition(!command.completeTask || task, 'validation.taskRequired')
     requireCondition(Boolean(command.startAt) === Boolean(command.endAt), 'validation.timeIncomplete')
     const hasTime = Boolean(command.startAt && command.endAt)

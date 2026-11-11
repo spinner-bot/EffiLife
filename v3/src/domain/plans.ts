@@ -43,7 +43,7 @@ export function categoryFor(plan: Plan, nodeId: string, fallback = 'life'): stri
 }
 
 export function planProgress(plan: Plan): { total: number; completed: number; percent: number; logs: number } {
-  const tasks = plan.nodes.filter(node => node.kind === 'task')
+  const tasks = plan.nodes.filter(node => node.kind === 'task' && !node.deletedAt)
   const completed = tasks.filter(task => task.completedAt).length
   return { total: tasks.length, completed, percent: tasks.length ? completed / tasks.length * 100 : 0, logs: plan.logs.length }
 }
@@ -62,6 +62,7 @@ function letters(index: number): string {
 export function displayCode(plan: Plan, nodeId: string): string {
   const node = findNode(plan, nodeId)
   if (node.kind !== 'task') return ''
+  if (node.legacyCode) return node.legacyCode
   const sections = plan.nodes.filter(item => item.kind === 'section').sort((a, b) => a.order - b.order)
   let parent = node.parentId ? findNode(plan, node.parentId) : undefined
   const seen = new Set<string>([node.id])
@@ -73,6 +74,9 @@ export function displayCode(plan: Plan, nodeId: string): string {
   const tasks = (parent ? descendants(plan, parent.id) : plan.nodes)
     .filter(item => item.kind === 'task').sort((a, b) => a.order - b.order)
   const section = parent ? sections.findIndex(item => item.id === parent!.id) : 0
-  return letters(Math.max(0, section)) + String(tasks.findIndex(item => item.id === nodeId) + 1)
+  const prefix = letters(Math.max(0, section))
+  const legacyMaximum = Math.max(0, ...tasks.filter(item => item.legacyCode?.startsWith(prefix)).map(item => Number(item.legacyCode!.slice(prefix.length)) || 0))
+  const newTasks = tasks.filter(item => !item.legacyCode)
+  return prefix + String(legacyMaximum + newTasks.findIndex(item => item.id === nodeId) + 1)
 }
 
