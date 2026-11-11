@@ -22,36 +22,31 @@ static const char *relocate(const char *path, char *buffer) {
 }
 
 int execve(const char *path, char *const argv[], char *const envp[]) {
-    static int (*original)(const char *, char *const[], char *const[]);
-    if (!original) original = dlsym(RTLD_NEXT, "execve");
+    int (*original)(const char *, char *const[], char *const[]) = dlsym(RTLD_NEXT, "execve");
     char buffer[PATH_MAX];
     return original(relocate(path, buffer), argv, envp);
 }
 
 int execv(const char *path, char *const argv[]) {
-    static int (*original)(const char *, char *const[]);
-    if (!original) original = dlsym(RTLD_NEXT, "execv");
+    int (*original)(const char *, char *const[]) = dlsym(RTLD_NEXT, "execv");
     char buffer[PATH_MAX];
     return original(relocate(path, buffer), argv);
 }
 
 int execvp(const char *path, char *const argv[]) {
-    static int (*original)(const char *, char *const[]);
-    if (!original) original = dlsym(RTLD_NEXT, "execvp");
+    int (*original)(const char *, char *const[]) = dlsym(RTLD_NEXT, "execvp");
     char buffer[PATH_MAX];
     return original(relocate(path, buffer), argv);
 }
 
 int posix_spawn(pid_t *pid, const char *path, const posix_spawn_file_actions_t *actions, const posix_spawnattr_t *attributes, char *const argv[], char *const envp[]) {
-    static int (*original)(pid_t *, const char *, const posix_spawn_file_actions_t *, const posix_spawnattr_t *, char *const[], char *const[]);
-    if (!original) original = dlsym(RTLD_NEXT, "posix_spawn");
+    int (*original)(pid_t *, const char *, const posix_spawn_file_actions_t *, const posix_spawnattr_t *, char *const[], char *const[]) = dlsym(RTLD_NEXT, "posix_spawn");
     char buffer[PATH_MAX];
     return original(pid, relocate(path, buffer), actions, attributes, argv, envp);
 }
 
 int posix_spawnp(pid_t *pid, const char *path, const posix_spawn_file_actions_t *actions, const posix_spawnattr_t *attributes, char *const argv[], char *const envp[]) {
-    static int (*original)(pid_t *, const char *, const posix_spawn_file_actions_t *, const posix_spawnattr_t *, char *const[], char *const[]);
-    if (!original) original = dlsym(RTLD_NEXT, "posix_spawnp");
+    int (*original)(pid_t *, const char *, const posix_spawn_file_actions_t *, const posix_spawnattr_t *, char *const[], char *const[]) = dlsym(RTLD_NEXT, "posix_spawnp");
     char buffer[PATH_MAX];
     return original(pid, relocate(path, buffer), actions, attributes, argv, envp);
 }
