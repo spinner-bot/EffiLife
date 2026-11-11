@@ -22,6 +22,8 @@ export interface PlanNode {
   categoryId?: EntityId
   estimatedMinutes: number
   completedAt?: Instant
+  deletedAt?: Instant
+  legacyCode?: string
 }
 
 export interface TimingReference {
