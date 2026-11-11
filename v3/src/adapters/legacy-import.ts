@@ -47,6 +47,7 @@ export function importLegacy(
     }
   }
   const recordIds = new Map<string, string>()
+  const todoOwners = new Map<string, string>()
   const records = object(root.records || root.time_records || app.records)
   for (const [date, values] of Object.entries(records)) for (const [index, item] of list(values).entries()) {
     const row = object(item)
@@ -62,6 +63,7 @@ export function importLegacy(
         timing: 'actual', source: 'legacy-import',
       })
       if (row.id !== undefined) recordIds.set(String(row.id), id)
+      if (row.todo_id !== undefined && String(row.todo_id)) todoOwners.set(id, 'legacy-todo-' + String(row.todo_id))
     } catch { warnings.push('legacy.recordInvalid') }
   }
   for (const [index, item] of list(root.todos || app.todos).entries()) {
@@ -102,6 +104,19 @@ export function importLegacy(
       record.taskId = relatedTask
     }
   }
+  for (const [recordId, todoId] of todoOwners) {
+    const todo = state.todos.find(item => item.id === todoId)
+    const record = state.records.find(item => item.id === recordId)!
+    if (todo) { record.todoId = todo.id; todo.recordIds = [...new Set([...todo.recordIds, record.id])] }
+    else warnings.push('legacy.todoLinkMissing')
+  }
+  for (const todo of state.todos) todo.recordIds = todo.recordIds.filter(id => {
+    const record = state.records.find(item => item.id === id)!
+    if (record.todoId && record.todoId !== todo.id) { warnings.push('legacy.todoLinkConflict'); return false }
+    record.todoId = todo.id
+    if (!record.planId && todo.relatedPlanId && todo.relatedTaskId) { record.planId = todo.relatedPlanId; record.taskId = todo.relatedTaskId }
+    return true
+  })
   importLegacyTimePlanning(state, app, category, warnings)
   if (Object.keys(app).length) warnings.push('legacy.originalPreserved')
   assertWorkspace(state)
