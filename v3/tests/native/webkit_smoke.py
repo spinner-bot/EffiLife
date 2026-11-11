@@ -14,6 +14,7 @@ import threading
 import time
 import uuid
 import urllib.request
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from native import environment, ROOT
@@ -33,10 +34,15 @@ def stop(process):
             os.killpg(process.pid, signal.SIGKILL)
 
 class QuietHandler(SimpleHTTPRequestHandler):
+    probe_requests = 0
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / "dist"), **kwargs)
     def log_message(self, *args):
         pass
+    def do_GET(self):
+        if self.path.startswith('/native-network-probe'):
+            QuietHandler.probe_requests += 1
+        super().do_GET()
 
 def main():
     sdk = ROOT / ".tools/native-sdk"
@@ -105,13 +111,47 @@ def main():
         driver.button("北欧极夜")
         driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready === 'true'"), "opaque Worker and OffscreenCanvas")
         snapshot(driver, "theme-1440.png")
+        archive = output / "isolation.zip"
+        manifest = {"type": "theme", "name": {"zh-CN": "隔离探针", "en-US": "Isolation probe"}, "author": "Example", "license": "MIT", "version": "1.0.0", "formatVersion": 1, "apiVersion": 1, "permissions": ["appearance.tokens", "app.layout"], "requiredPermissions": ["appearance.tokens", "app.layout"], "tokens": "tokens.json", "scripts": ["main.js"]}
+        source = """
+EffiLife.onMount(async () => {
+  let proto = self, nativeFetch;
+  while(proto) { const d=Object.getOwnPropertyDescriptor(proto,'fetch'); if(typeof d?.value==='function') nativeFetch=d.value; proto=Object.getPrototypeOf(proto); }
+  let network='unavailable';
+  if(nativeFetch) { try { await nativeFetch.call(self, PROBE_URL); network='unexpected'; } catch { network='blocked'; } }
+  const isolated = typeof document==='undefined' && typeof indexedDB==='undefined';
+  EffiLife.render({html:'<main><h1>Isolated WebKit</h1><p id="probe">'+isolated+' / '+network+'</p><img src='+PROBE_URL+'></main>',css:'main{padding:40px;background:#f8fafc;color:#172033;min-height:100vh}'});
+});
+""".replace("PROBE_URL", json.dumps(base + "/native-network-probe"))
+        with zipfile.ZipFile(archive, "w") as bundle:
+            bundle.writestr("manifest.json", json.dumps(manifest))
+            bundle.writestr("tokens.json", '{"palette":{"accent":"#5370cb"}}')
+            bundle.writestr("main.js", source)
+        driver.file(driver.element('input[type="file"][aria-label="安装扩展包"]'), archive)
+        dialog = "Array.from(document.querySelectorAll('[role=dialog]')).find(e=>e.getAttribute('aria-hidden')!=='true')"
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[value=\\"app.layout\\"]'))"), "extension permission preview")
+        driver.click(driver.element('input[value="app.layout"]'))
+        driver.button("确认安装", dialog)
+        driver.wait(lambda: driver.script("return document.body.textContent.includes('允许此扩展访问应用系统？')"))
+        driver.button("确认", dialog)
+        driver.wait(lambda: driver.script("return !Array.from(document.querySelectorAll('[role=dialog]')).some(e=>e.getClientRects().length)"), "extension installation")
+        driver.button("隔离探针 · Example · 1.0.0 · #100000")
+        driver.wait(lambda: driver.script("return document.querySelector('.theme-replacement iframe')?.dataset.ready === 'true'"), "WebKit replacement layout")
+        driver.call("POST", "/frame", {"id": driver.element('.theme-replacement iframe')})
+        isolation = driver.script("const denied=f=>{try{f();return false}catch(e){return e.name==='SecurityError'}}; return {probe:document.querySelector('#probe')?.textContent,parent:denied(()=>parent.document),storage:denied(()=>localStorage),indexed:denied(()=>indexedDB.open('forbidden')),images:document.querySelectorAll('img').length}")
+        assert isolation["probe"] in {"true / blocked", "true / unavailable"} and isolation["parent"] and isolation["storage"] and isolation["indexed"] and isolation["images"] == 0, isolation
+        assert QuietHandler.probe_requests == 0, QuietHandler.probe_requests
+        driver.call("POST", "/frame", {"id": None})
+        snapshot(driver, "isolation-1440.png")
+        driver.button("恢复默认外观与停用扩展")
+        driver.wait(lambda: driver.script("return !document.querySelector('.theme-replacement iframe')"), "default interface recovery")
         driver.call("POST", "/window/rect", {"width": 390, "height": 950})
         driver.navigate(base + "/#/todos")
         driver.wait(lambda: driver.script("return document.querySelector('h1')?.textContent.includes('把小事放下')"))
         overflow = driver.script("return document.documentElement.scrollWidth - innerWidth")
         assert overflow <= 1, overflow
         snapshot(driver, "todos-390.png")
-        report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "390px layout"], "overflow": overflow}
+        report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "real package upload and advanced consent", "opaque DOM and storage isolation", "CSP native fetch blocking", "layout recovery", "390px layout"], "isolation": isolation, "networkRequests": QuietHandler.probe_requests, "overflow": overflow}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("WebKitGTK smoke passed:", ", ".join(report["checks"]), flush=True)
 
