@@ -1,0 +1,25 @@
+{
+  "type": "function",
+  "name": {
+    "zh-CN": "生活一瞥示例",
+    "en-US": "Life at a glance"
+  },
+  "author": "EffiLife",
+  "license": "MIT",
+  "version": "1.0.0",
+  "formatVersion": 1,
+  "apiVersion": 1,
+  "minAppVersion": "3.0.0",
+  "permissions": [
+    "app.layout",
+    "app.data.read",
+    "app.navigation",
+    "app.events"
+  ],
+  "requiredPermissions": [
+    "app.layout",
+    "app.data.read",
+    "app.navigation"
+  ],
+  "entry": "scripts/main.js"
+}

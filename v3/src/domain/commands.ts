@@ -2,7 +2,7 @@ import type { Instant, NodeKind, Preferences, Todo, TodoStatus, TimePlan, TimeRu
 import type { PackageCandidate } from '../extensions/manifest'
 import type { Capability } from '../extensions/capabilities'
 
-export type WorkspaceCommand =
+export type CoreCommand =
   | { type: 'createPlan'; title: string; description?: string }
   | { type: 'updatePlan'; planId: string; title: string; description: string }
   | { type: 'archivePlan'; planId: string; archived: boolean }
@@ -29,6 +29,17 @@ export type WorkspaceCommand =
   | { type: 'setPackageGrants'; kind: 'theme' | 'resource' | 'function'; packageId: number; grants: Capability[] }
   | { type: 'setPackageStatus'; kind: 'theme' | 'resource' | 'function'; packageId: number; enabled: boolean }
   | { type: 'removePackage'; kind: 'theme' | 'resource' | 'function'; packageId: number }
+  | { type: 'packageRuntimeFailure'; kind: 'theme' | 'function'; packageId: number; checksum: string; detail: string }
+  | { type: 'recoverAppearance' }
+
+export type WorkspaceCommand = CoreCommand | {
+  type: 'extensionCommand'
+  kind: 'theme' | 'function'
+  packageId: number
+  checksum: string
+  scope: 'app.data.write' | 'app.settings.write' | 'app.theme'
+  command: CoreCommand
+}
 
 export interface CommandEnvelope {
   operationId: string

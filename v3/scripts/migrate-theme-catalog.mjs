@@ -17,6 +17,7 @@ const english = {
 const entries = order.map((type, index) => {
   const definition = definitions.find(item => item.type === type)
   const style = context.exports.getThemeStyle({ type })
+  const factory = style.renderCanvas ? vm.runInNewContext('themePresets[' + JSON.stringify(type) + ']?.toString()', context) : null
   return {
     id: index + 1, slug: type, version: '1.0.0', author: 'EffiLife',
     name: { 'zh-CN': definition.name, 'en-US': english[type] || type },
@@ -25,6 +26,10 @@ const entries = order.map((type, index) => {
     decoration: {
       gradient: style.bgGradient || null, particles: style.particles || null,
       renderer: style.renderCanvas ? style.renderCanvas.toString() : null,
+      helpers: style.renderCanvas?.toString().includes('drawFlower') ? vm.runInNewContext('drawFlower.toString()', context) : null,
+      // Block factories initialize mutable particle state captured by their
+      // renderer. Retain the initializer rather than dropping its closure.
+      factory: factory && /^\s*\(\s*\)\s*=>\s*\{/.test(factory) ? factory : null,
     },
     legacyType: type,
   }

@@ -24,6 +24,23 @@ function status(entry: InstalledPackage, manifest: ExtensionManifest) {
   return manifest.requiredPermissions.every(capability => entry.grants.includes(capability)) ? 'enabled' as const : 'disabled' as const
 }
 export function applyPackageCommand(workspace: Workspace, command: WorkspaceCommand, context: CommandContext): OperationResult | undefined {
+  if (command.type === 'recoverAppearance') {
+    for (const entry of workspace.packages) if (entry.status === 'enabled') {
+      entry.status = 'disabled'; entry.updatedAt = context.now
+      audit(workspace, entry, 'disable', context)
+    }
+    Object.assign(workspace.preferences, { themeId: 1, fontId: 'default', locale: 'zh-CN' })
+    return {}
+  }
+  if (command.type === 'packageRuntimeFailure') {
+    const entry = workspace.packages.find(item => item.kind === command.kind && item.id === command.packageId && item.checksum === command.checksum)
+    if (!entry || entry.status !== 'enabled') return {}
+    entry.status = 'broken'; entry.updatedAt = context.now
+    fallback(workspace, entry)
+    audit(workspace, entry, 'failure', context)
+    workspace.extensionAudit!.at(-1)!.detail = command.detail.slice(0, 200)
+    return { entityId: String(entry.id) }
+  }
   if (command.type === 'installPackage') {
     assertCandidate(command.candidate, workspace.productVersion)
     assertContent(command.candidate)

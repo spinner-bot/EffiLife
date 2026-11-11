@@ -322,5 +322,14 @@
   "capability.app.data.read": "读取计划、待办与时间记录",
   "capability.app.data.write": "修改计划、待办与时间记录",
   "capability.app.theme": "切换主题",
-  "capability.app.events": "订阅应用状态变动"
+  "capability.app.events": "订阅应用状态变动",
+  "extensions.safeMode": "安全模式：扩展暂未加载",
+  "extensions.recover": "恢复默认外观与停用扩展",
+  "extensions.enterSafe": "安全模式 · Alt+Shift+0",
+  "extensions.scriptFailed": "扩展脚本出错，已停止并恢复默认界面。",
+  "extensions.scriptTimeout": "扩展长时间未响应，已停止并保留你的数据。",
+  "extensions.requestLimit": "扩展发送请求过于密集，已停止。",
+  "extensions.unsupportedCanvas": "此设备暂不支持隔离画布，已停用装饰脚本。",
+  "extensions.permissionDenied": "当前扩展未获此能力，或其版本、启用状态已改变。",
+  "extensions.invalidRequest": "扩展请求不符合应用接口。"
 }

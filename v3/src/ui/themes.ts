@@ -7,7 +7,7 @@ export interface ThemeDefinition {
   name: Record<string, string>
   mode: string
   palette: { background: string; surface: string; text: string; muted: string; accent: string }
-  decoration?: { gradient: string | null; particles: unknown; renderer: string | null }
+  decoration?: { gradient: string | null; particles: unknown; renderer: string | null; helpers?: string | null; factory?: string | null }
   legacyType?: string
   css?: string
   author?: string

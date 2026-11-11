@@ -27,7 +27,7 @@ export function scopeVisualCss(input: string, id: number): string {
       for (const variable of value.matchAll(/var\(\s*(--[\w-]+)/g)) requireCondition(['--page', '--surface', '--ink', '--muted', '--accent', '--line', '--subtle'].includes(variable[1]!), 'extensions.unsafeCss')
       declarations.push(property + ':' + value)
     }
-    output.push(selectors.map(selector => '[data-active-theme="' + id + '"] ' + selector).join(',') + '{' + declarations.join(';') + '}')
+    output.push(selectors.map(selector => '[data-active-theme="' + id + '"] .app-shell ' + selector).join(',') + '{' + declarations.join(';') + '}')
     position = match.index + match[0].length
   }
   requireCondition(!source.slice(position).trim(), 'extensions.unsafeCss')

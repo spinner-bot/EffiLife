@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { navigation } from './router'
-import { current, workspace, loading, startupError, initialize } from './application/runtime'
+import { current, workspace, loading, startupError, initialize, dispatch } from './application/runtime'
 import { t, setLocale, calendarDate, errorMessage } from './i18n'
 import { dateKey } from './domain/time'
 import { applyTheme } from './ui/themes'
@@ -16,23 +16,36 @@ import FeedbackHost from './ui/FeedbackHost.vue'
 import RecordDialog from './features/recording/RecordDialog.vue'
 import ArchiveTools from './features/settings/ArchiveTools.vue'
 import { reconcileResources } from './extensions/resources'
+import { safeMode, enterSafeMode, leaveSafeMode } from './extensions/safe-mode'
+import ThemeHost from './ui/ThemeHost.vue'
 
 const route = useRoute()
 const version = __APP_VERSION__
+const replacementLayout = ref(false)
+const requestedReplacement = computed(() => !safeMode && current.value.packages.some(entry => entry.kind === 'theme' && entry.id === current.value.preferences.themeId && entry.status === 'enabled' && entry.grants.includes('app.layout')))
+async function recover() {
+  try { await dispatch({ type: 'recoverAppearance' }); if (safeMode) leaveSafeMode() }
+  catch (error) { notify(errorMessage(error), 'error') }
+}
+function recoveryKey(event: KeyboardEvent) { if (event.altKey && event.shiftKey && event.code === 'Digit0') { event.preventDefault(); enterSafeMode() } }
+const colorScheme = matchMedia('(prefers-color-scheme: dark)')
+function schemeChanged() { applyTheme(safeMode ? 1 : current.value.preferences.themeId) }
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
 const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
 watch(() => [current.value.preferences, current.value.packages] as const, async ([preferences, packages]) => {
-  reconcileResources(packages)
-  setLocale(preferences.locale)
-  applyTheme(preferences.themeId)
-  try { await applyFont(preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
+  reconcileResources(safeMode ? [] : packages)
+  setLocale(safeMode ? 'zh-CN' : preferences.locale)
+  applyTheme(safeMode ? 1 : preferences.themeId)
+  try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
 }, { immediate: true })
 watch(title, value => { document.title = value + ' · EffiLife' }, { immediate: true })
 onMounted(() => {
   initialize()
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(current.value.preferences.themeId))
+  window.addEventListener('keydown', recoveryKey)
+  colorScheme.addEventListener('change', schemeChanged)
 })
+onBeforeUnmount(() => { window.removeEventListener('keydown', recoveryKey); colorScheme.removeEventListener('change', schemeChanged) })
 </script>
 <template>
   <a href="#main-content" class="skip-link">{{ t('common.skipContent') }}</a>
@@ -41,7 +54,7 @@ onMounted(() => {
     <EmptyState :title="t('state.startupFailed')" :description="t('state.startupBody')" icon="error"><UiButton variant="primary" @click="initialize">{{ t('common.retry') }}</UiButton></EmptyState>
     <p role="alert" class="form-error">{{ errorMessage(startupError) }}</p><ArchiveTools recovery />
   </div>
-  <div v-else class="app-shell">
+  <div v-else v-show="!replacementLayout" class="app-shell">
     <aside class="app-sidebar" :aria-label="t('common.navigation')">
       <div class="sidebar-brand"><RouterLink to="/" class="brand"><span class="brand-mark"><Icon name="activity" :size="23" /></span>EffiLife</RouterLink><p class="brand-tagline">{{ t('app.tagline') }}</p></div>
       <nav class="nav-list" :aria-label="t('common.navigation')"><RouterLink v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item" :class="{ 'router-link-active': item.path === '/plans' && route.path.startsWith('/plans/') }" :exact-active-class="item.path === '/' ? 'router-link-active' : undefined"><Icon :name="item.icon" :size="20" /><span>{{ t(item.key) }}</span></RouterLink></nav>
@@ -52,6 +65,8 @@ onMounted(() => {
       <main id="main-content" class="app-main" tabindex="-1"><p v-if="startupError" role="alert" class="form-error">{{ errorMessage(startupError) }}</p><RouterView /></main>
     </div>
   </div>
+  <ThemeHost v-if="!loading && workspace" @layout="value => replacementLayout = value" />
+  <div v-if="safeMode || requestedReplacement" class="recovery-dock"><span v-if="safeMode">{{ t('extensions.safeMode') }}</span><UiButton @click="recover">{{ t('extensions.recover') }}</UiButton></div>
   <RecordDialog /><FeedbackHost />
 </template>
 

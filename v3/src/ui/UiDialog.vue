@@ -3,8 +3,10 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, Di
 import Icon from './Icon.vue'
 import UiButton from './UiButton.vue'
 import { t } from '../i18n'
-defineProps<{ open: boolean; title: string; description?: string }>()
+import { useDialogLayer } from './dialog-layers'
+const props = defineProps<{ open: boolean; title: string; description?: string }>()
 const emit = defineEmits<{ close: [] }>()
+const { overlay, content } = useDialogLayer(() => props.open)
 let opener: HTMLElement | null = null
 function focusInput(event: Event) {
   const content = event.target
@@ -26,8 +28,8 @@ function restoreFocus(event: Event) {
 <template>
   <DialogRoot :open="open" @update:open="value => { if (!value) emit('close') }">
     <DialogPortal>
-      <DialogOverlay class="dialog-overlay" />
-      <DialogContent class="dialog-content" @open-auto-focus="focusInput" @close-auto-focus="restoreFocus">
+      <DialogOverlay class="dialog-overlay" :style="overlay" />
+      <DialogContent class="dialog-content" :style="content" @open-auto-focus="focusInput" @close-auto-focus="restoreFocus">
         <DialogTitle class="dialog-heading">{{ title }}</DialogTitle>
         <DialogDescription :class="description ? 'dialog-description' : 'sr-only'">{{ description || title }}</DialogDescription>
         <UiButton class="dialog-close" variant="ghost" icon :aria-label="t('common.close')" @click="emit('close')"><Icon name="close" /></UiButton>

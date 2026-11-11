@@ -77,7 +77,7 @@ describe('extension contracts and installation', () => {
     expect(() => setup().run({ type: 'installPackage', candidate: value })).toThrow('extensions.invalidTokens')
   })
   it('scopes all selectors and rejects CSS geometry escape and resource loading', () => {
-    expect(scopeVisualCss('.panel, .input:hover { color: #eee; }', 100000)).toBe('[data-active-theme="100000"] .panel,[data-active-theme="100000"] .input:hover{color:#eee}')
+    expect(scopeVisualCss('.panel, .input:hover { color: #eee; }', 100000)).toBe('[data-active-theme="100000"] .app-shell .panel,[data-active-theme="100000"] .app-shell .input:hover{color:#eee}')
     for (const css of ['.panel{position:fixed}', '.panel{background-image:url(https://example.com/x)}', '@import "x";', '.panel{color:var(--external-image)}', '.panel{display:none}', '.panel{color:red!important}', '.panel{color:r\\65 d}', '@media(all){.panel{color:red}}']) expect(() => scopeVisualCss(css, 100000), css).toThrow('extensions.unsafeCss')
   })
   it('checks container contents and optional file digests before presenting a preview', async () => {

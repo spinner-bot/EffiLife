@@ -14,6 +14,7 @@ import Icon from '../../ui/Icon.vue'
 import ArchiveTools from './ArchiveTools.vue'
 import PackageTools from './PackageTools.vue'
 import { resourceRevision } from '../../extensions/resources'
+import { enterSafeMode } from '../../extensions/safe-mode'
 
 const version = __APP_VERSION__
 const busy = ref(false)
@@ -48,7 +49,7 @@ async function saveCategory() {
       <label class="field"><span>{{ t('form.timezone') }}</span><input :value="current.preferences.timeZone" list="time-zone-options" class="input" @change="preferences({ timeZone: ($event.target as HTMLInputElement).value })" /><datalist id="time-zone-options"><option v-for="zone in timeZones" :key="zone" :value="zone" /></datalist></label>
     </div></Panel>
     <Panel :title="t('settings.font')"><div class="panel-body stack"><label class="field"><span>{{ t('settings.font') }}</span><select :value="current.preferences.fontId" class="select" @change="preferences({ fontId: ($event.target as HTMLSelectElement).value })"><option v-for="font in fontList" :key="font.id" :value="font.id">{{ font.id === 'system' ? t('settings.systemFont') : font.name }}</option></select></label></div></Panel>
-    <Panel :title="t('settings.theme')" class="settings-full"><div class="panel-body theme-grid"><button v-for="theme in themeList" :key="theme.id" type="button" class="theme-option" :aria-label="themeLabel(theme)" :aria-pressed="current.preferences.themeId === theme.id" @click="preferences({ themeId: theme.id })">
+    <Panel :title="t('settings.theme')" class="settings-full"><template #actions><UiButton variant="ghost" @click="enterSafeMode">{{ t('extensions.enterSafe') }}</UiButton></template><div class="panel-body theme-grid"><button v-for="theme in themeList" :key="theme.id" type="button" class="theme-option" :aria-label="themeLabel(theme)" :aria-pressed="current.preferences.themeId === theme.id" @click="preferences({ themeId: theme.id })">
       <span class="theme-preview" :style="{ background: theme.palette.background }"><span :style="{ background: theme.palette.surface }" /><span :style="{ background: theme.palette.accent }" /></span><span class="theme-name">{{ themeName(theme) }}<Icon v-if="current.preferences.themeId === theme.id" name="check" :size="15" /></span><span v-if="theme.id >= 100000" class="small muted">{{ theme.author }} · {{ theme.version }} · #{{ theme.id }}</span>
     </button></div></Panel>
     <Panel :title="t('settings.categories')"><template #actions><UiButton variant="ghost" icon :aria-label="t('settings.addCategory')" @click="addCategory"><Icon name="plus" :size="18" /></UiButton></template><div v-for="category in current.categories" :key="category.id" class="list-row"><i class="color-dot" :style="{ background: category.color }" /><span class="grow">{{ categoryName(category) }}</span><UiButton variant="ghost" icon :aria-label="t('common.edit') + ': ' + categoryName(category)" @click="editCategory(category.id)"><Icon name="edit" :size="17" /></UiButton></div></Panel>
