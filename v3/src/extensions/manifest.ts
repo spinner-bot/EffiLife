@@ -80,7 +80,7 @@ export function assertManifest(value: unknown, appVersion?: string): asserts val
   for (const key of ['tokens', 'entry']) if (value[key] !== undefined) requireCondition(safePackagePath(value[key]), 'archive.unsafePath')
   for (const key of ['styles', 'scripts']) if (value[key] !== undefined) requireCondition(Array.isArray(value[key]) && value[key].every(safePackagePath), 'archive.unsafePath')
   if (value.extends !== undefined) requireCondition(Number.isSafeInteger(value.extends) && Number(value.extends) >= 0, 'extensions.invalidManifest')
-  if (value.type === 'theme') requireCondition(safePackagePath(value.tokens) && value.permissions.includes('appearance.tokens'), 'extensions.invalidManifest')
+  if (value.type === 'theme') requireCondition(safePackagePath(value.tokens) && value.permissions.includes('appearance.tokens') && (value.requiredPermissions as unknown[]).includes('appearance.tokens'), 'extensions.invalidManifest')
   if (value.type === 'function') requireCondition(safePackagePath(value.entry) && value.permissions.some(item => ['overlay.canvas', 'overlay.interactive', 'app.layout'].includes(String(item))), 'extensions.invalidManifest')
   if (value.styles && (value.styles as unknown[]).length) requireCondition(value.permissions.includes('appearance.css') || value.permissions.includes('app.layout'), 'extensions.invalidManifest')
   if (value.scripts && (value.scripts as unknown[]).length) requireCondition(value.permissions.some(item => ['overlay.canvas', 'overlay.interactive', 'app.layout'].includes(String(item))), 'extensions.invalidManifest')
@@ -92,7 +92,7 @@ export function assertManifest(value: unknown, appVersion?: string): asserts val
       requireCondition(!aliases.has(resource.alias), 'extensions.invalidResource')
       aliases.add(resource.alias)
     }
-    requireCondition(value.permissions.includes('resources.register'), 'extensions.invalidManifest')
+    requireCondition(value.permissions.includes('resources.register') && (value.requiredPermissions as unknown[]).includes('resources.register'), 'extensions.invalidManifest')
   }
   if (value.checksums !== undefined) requireCondition(object(value.checksums) && Object.entries(value.checksums).every(([path, hash]) => safePackagePath(path) && typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash)), 'extensions.invalidManifest')
 }
