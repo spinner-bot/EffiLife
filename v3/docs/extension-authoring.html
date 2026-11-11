@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EffiLife v3 · 扩展作者指南</title>
+<style>body{margin:0;background:#f4f6f8;color:#243141;font:16px/1.8 system-ui,sans-serif}main{max-width:900px;margin:auto;padding:56px 24px}h1{font-size:36px;line-height:1.3}h2{margin-top:40px}article{background:white;border:1px solid #dce3eb;border-radius:16px;padding:28px;margin:24px 0}pre{overflow:auto;padding:20px;background:#172333;color:#e3edf7;border-radius:10px;font-size:14px}code{font-family:ui-monospace,monospace}a{color:#4548b8}small{color:#5a6879}table{border-collapse:collapse;width:100%}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #e1e6ec}@media(max-width:600px){main{padding:24px 16px}article{padding:18px}h1{font-size:28px}}</style></head>
+<body><main><small>EffiLife 3.0.0 · API 1 · 开发中 · 2026-11-11</small><h1>让资源独立扩展，<br>让授权清楚可撤销。</h1>
+<p>主题、语言与字体通过同一个安装入口进入应用。来源由安装渠道决定，包内填写的编号不会成为本地安装身份。所有包内容都先预览，再安装；生活数据由领域命令与事务管理。</p>
+<article><h2>从可运行的示例开始</h2><p>源码示例位于 <a href="../resources/examples/forest/manifest.json">林间留白主题</a>和 <a href="../resources/examples/french/manifest.json">法语资源</a>。在仓库根目录执行：</p>
+<pre>python3 v3/scripts/run.py node scripts/build-examples.mjs</pre>
+<p>产物位于 <code>v3/dist/examples/</code>，可以在设置 → 扩展与资源中安装。构建脚本读取集中扩展名配置，生成逐文件 SHA-256，使用固定归档时间以便重复构建。扩展名事实源是 <code>shared/package-formats.json</code>。</p></article>
+<article><h2>清单契约</h2><pre>{
+  "type": "theme",
+  "name": { "zh-CN": "我的主题", "en-US": "My Theme" },
+  "author": "作者",
+  "license": "MIT",
+  "version": "1.0.0",
+  "formatVersion": 1,
+  "apiVersion": 1,
+  "minAppVersion": "3.0.0",
+  "permissions": ["appearance.tokens", "appearance.css"],
+  "requiredPermissions": ["appearance.tokens"],
+  "tokens": "tokens.json",
+  "styles": ["styles/visual.css"]
+}</pre>
+<p>清单位于 ZIP 根目录的 <code>manifest.json</code>。路径仅使用包内相对路径，不接受外链、绝对路径、上级目录、符号链接或大小写冲突。可通过 <code>checksums</code> 声明文件路径与 SHA-256；声明后必须匹配。未知能力、接口版本或不兼容的应用版本会被拒绝。</p>
+<p>本地编号按包类型从 100000 开始分配，卸载后不复用。相同名称和作者可以明确选择升级或并存；升级必须提高版本，新增必需能力不会自动获准。</p></article>
+<article><h2>当前已验证的外观与资源能力</h2>
+<table><thead><tr><th>能力</th><th>内容</th><th>规则</th></tr></thead><tbody>
+<tr><td><code>appearance.tokens</code></td><td>配色、可选 mode</td><td>主题必需；默认允许，文字对比度会校正</td></tr>
+<tr><td><code>appearance.css</code></td><td>作用域内视觉 CSS</td><td>可选、单独授权；不允许几何属性、外链、at-rule 或转义语法</td></tr>
+<tr><td><code>resources.register</code></td><td>语言和字体</td><td>资源注册必需；默认允许，冲突回滚并提示</td></tr>
+</tbody></table>
+<p>配色文件结构为 <code>{"palette":{"background":"#102a20","surface":"#17382c","text":"#f4fff9","muted":"#bdd3c7","accent":"#47b894"}}</code>。颜色使用六位十六进制；未提供的颜色继承基础主题。可通过清单 <code>extends</code> 引用基础主题的安装编号，解析器检测循环和缺失父主题。</p>
+<p>L1 CSS 当前允许颜色、背景色/渐变、边框颜色/圆角、阴影、透明度等视觉属性。每个选择器自动附加当前主题作用域，不改变宿主几何布局。只有明确授权后才会装载；撤销即时卸载。</p>
+<p>资源清单使用 <code>resources</code> 数组，条目含 <code>kind</code>（locale 或 font）、<code>path</code>、<code>alias</code>、<code>name</code>、<code>license</code>。语言文件包含 BCP 47 <code>id</code>、<code>direction</code> 与字符串 <code>messages</code> 字典，缺少的字段回退英文。字体使用包内 WOFF/WOFF2/TTF/OTF 原始文件，由浏览器本地加载，停用时释放。字体身份包含包类型、编号和别名，避免不同类型包的编号冲突。</p></article>
+<article><h2>授权、恢复与后续运行时</h2><p>安装、升级、授权、启停和卸载均记录审计。必需能力撤销后自动停用；移除当前主题、语言或字体时回退默认值。数据存档导入会重置 L1 及以上授权，存档本身不能授予可执行权限。</p>
+<p>能力目录已预留 L2 装饰与 L3 应用布局/数据接口。当前阶段已验收的是声明式资源和受控 CSS，JavaScript 沙箱、应用宿主桥接、持续崩溃恢复与完整内置装饰迁移继续实现。版本发布状态以 <code>CHANGELOG.md</code> 与阶段证据为准。</p></article>
+<small>作者：Codex  (sqs_A100) · 全部源码与后续工具集中在 v3/</small></main></body></html>
+
