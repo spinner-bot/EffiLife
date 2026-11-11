@@ -33,11 +33,11 @@ debug 程序位于 `.cache/native-target/debug/effilife-desktop`。生产 Linux 
 实际 Tauri 窗口测试另外使用固定的原生驱动：
 
 ```bash
-python3 v3/scripts/native.py cargo install tauri-driver --version 2.1.0 --locked --root /data/Users/zrh/repo/EffiLife/v3/.tools/tauri-driver
+python3 v3/scripts/install-native-driver.py
 python3 v3/tests/native/desktop_smoke.py
 ```
 
-其他工作站将安装路径替换为自己的 v3/.tools/tauri-driver；固定版本见 toolchain.json。测试使用独立数据目录、Xvfb 与软件渲染。以 root 运行时仅测试进程关闭 WebKit 的 Linux 进程沙箱，不能据此宣称操作系统沙箱验收通过。实际已通过的范围见阶段记录，Windows/macOS/移动端尚未实测。
+安装位置自动使用当前项目的 v3/.tools/tauri-driver；固定版本见 toolchain.json。测试使用独立数据目录、Xvfb 与软件渲染。以 root 运行时仅测试进程关闭 WebKit 的 Linux 进程沙箱，不能据此宣称操作系统沙箱验收通过。实际已通过的范围见阶段记录，Windows/macOS/移动端尚未实测。
 
 版本事实源是 VERSION，更新列表见 CHANGELOG.md。实现计划见 docs/implementation-plan.md；阶段证据和当前限制记录在 docs/progress/。旧版代码保留在仓库其他目录，新版后续工作统一在本目录进行。
 
