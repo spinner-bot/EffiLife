@@ -113,6 +113,7 @@ export interface HeaderClockPreferences {
 }
 export interface Preferences {
   headerClock?: HeaderClockPreferences
+  appearance?: Record<string, import('./appearance').AppearanceOptions>
   locale: string
   themeId: number
   fontId: string
