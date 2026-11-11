@@ -7,6 +7,7 @@ import json
 import subprocess
 import urllib.request
 import apt
+import apt_pkg
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / ".cache" / "native-debs"
@@ -14,6 +15,13 @@ SDK = ROOT / ".tools" / "native-sdk"
 ROOTS = ["libwebkit2gtk-4.1-dev", "libgtk-3-dev", "libayatana-appindicator3-dev", "librsvg2-dev", "libssl-dev", "libglib2.0-bin", "patchelf", "xvfb", "xauth", "webkit2gtk-driver"]
 
 def main():
+    CACHE.mkdir(parents=True, exist_ok=True)
+    # Installed workstation libraries may be newer than this Ubuntu mirror.
+    # Resolve a self-contained SDK from downloadable versions, independently
+    # of the server's package status and without changing that status.
+    status = CACHE / "empty-status"
+    status.write_text("")
+    apt_pkg.config.set("Dir::State::status", str(status))
     cache = apt.Cache()
     selected = {}
     pending = [cache[name].candidate for name in ROOTS]
