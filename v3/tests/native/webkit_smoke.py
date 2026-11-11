@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import json
+import hashlib
 import os
 import select
 import signal
@@ -152,6 +153,8 @@ EffiLife.onMount(async () => {
         assert overflow <= 1, overflow
         snapshot(driver, "todos-390.png")
         report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "real package upload and advanced consent", "opaque DOM and storage isolation", "CSP native fetch blocking", "layout recovery", "390px layout"], "isolation": isolation, "networkRequests": QuietHandler.probe_requests, "overflow": overflow}
+        report["version"] = (ROOT / "VERSION").read_text().strip()
+        report["frontendIndexSha256"] = hashlib.sha256((ROOT / "dist/index.html").read_bytes()).hexdigest()
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("WebKitGTK smoke passed:", ", ".join(report["checks"]), flush=True)
 
