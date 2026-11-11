@@ -10,7 +10,7 @@ import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
 const props = defineProps<{ open: boolean; plan?: TimePlan; date: string }>()
 const emit = defineEmits<{ close: [] }>()
-const form = reactive({ name: '', mode: 'allocation' as TimePlan['mode'], items: [] as Array<{ categoryId: string; hours: number }>, backgroundCategoryId: 'life', makeDefault: false })
+const form = reactive({ name: '', mode: 'allocation' as TimePlan['mode'], items: [] as Array<{ categoryId: string; hours: number }>, backgroundCategoryId: 'life', makeDefault: false, useForDate: false })
 const error = ref('')
 const busy = ref(false)
 let initial = ''
@@ -24,6 +24,7 @@ watch(() => props.open, value => {
     items: plan ? plan.items.map(item => ({ categoryId: item.categoryId, hours: item.minutes / 60 })) : current.value.categories.map(category => ({ categoryId: category.id, hours: 0 })),
     backgroundCategoryId: plan?.backgroundCategoryId || 'life',
     makeDefault: Boolean(plan && planningOf(current.value).rules.some(rule => rule.kind === 'default' && rule.planId === plan.id)),
+    useForDate: !plan,
   })
   error.value = ''; initial = JSON.stringify(form); operationId = crypto.randomUUID()
 })
@@ -39,7 +40,7 @@ async function close() {
 async function save() {
   busy.value = true; error.value = ''
   try {
-    await dispatch({ type: 'saveTimePlan', timePlanId: props.plan?.id, name: form.name, mode: form.mode, items: form.items.map(item => ({ categoryId: item.categoryId, minutes: Number(item.hours) * 60 })), backgroundCategoryId: form.backgroundCategoryId, makeDefault: form.makeDefault, useForDate: props.date }, operationId)
+    await dispatch({ type: 'saveTimePlan', timePlanId: props.plan?.id, name: form.name, mode: form.mode, items: form.items.map(item => ({ categoryId: item.categoryId, minutes: Number(item.hours) * 60 })), backgroundCategoryId: form.backgroundCategoryId, makeDefault: form.makeDefault, useForDate: form.useForDate ? props.date : undefined }, operationId)
     emit('close')
   } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
 }
@@ -59,6 +60,7 @@ async function save() {
       <label v-if="form.mode === 'partition'" class="field"><span>{{ t('planning.background') }}</span><select v-model="form.backgroundCategoryId" class="select"><option v-for="item in form.items" :key="item.categoryId" :value="item.categoryId">{{ categoryName(current.categories.find(category => category.id === item.categoryId)!) }}</option></select></label>
       <p v-if="form.mode === 'partition'" class="notice">{{ t('planning.partitionHelp') }}</p>
       <label class="check-field"><input v-model="form.makeDefault" type="checkbox" />{{ t('planning.makeDefault') }}</label>
+      <label class="check-field"><input v-model="form.useForDate" type="checkbox" />{{ t('planning.useForDate') }}</label>
       <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <div class="dialog-footer"><UiButton :disabled="busy" @click="close">{{ t('common.cancel') }}</UiButton><UiButton type="submit" variant="primary" :disabled="busy">{{ t('common.save') }}</UiButton></div>
     </form>
