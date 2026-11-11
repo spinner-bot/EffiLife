@@ -151,7 +151,7 @@
   "plans.create": "新建计划",
   "plans.createTitle": "开始一份主题计划",
   "plans.titlePlaceholder": "例如：数学课程复习",
-  "plans.addSection": "添加章节",
+  "plans.addSection": "添加分组",
   "plans.addGroup": "添加分组",
   "plans.addTask": "添加子项",
   "plans.structure": "计划结构",
@@ -387,5 +387,14 @@
   "legacy.todoLinkConflict": "部分旧记录被多条待办引用，已优先采用记录自身的关联；冲突原文已保留。",
   "legacy.localTimeInvalid": "部分旧时间在所选时区不存在或无效，相关记录或完成时刻未迁入；原始数据已保留。",
   "archive.importBudget": "文件超出当前环境的导入处理预算。请使用更小的导出文件或在配置了更大处理预算的环境中导入。",
-  "planning.useForDate": "同时将此方案指定给当前日期"
+  "planning.useForDate": "同时将此方案指定给当前日期",
+  "category.difficultyHelp": "仅用于待办优先度计算，不改变实际用时；数值越高，类别在优先度计算中的权重越高。",
+  "category.inherit": "继承上一级默认类别",
+  "category.createInline": "＋新建时间类别",
+  "plans.defaultCategory": "背景时间类别",
+  "plans.defaultHelp": "新子项默认继承此类别；分组可单独设置自己的默认类别。",
+  "plans.groupCategory": "统一设置分组内子项类别",
+  "plans.taskCategory": "设置此子项类别",
+  "plans.groupCategoryHelp": "设置本分组的默认类别，同时更新下方所有分组和子项；历史记录不变。",
+  "plans.planCategoryHelp": "修改计划默认类别；已有显式类别保留，其余子项随继承关系更新。历史记录不变。"
 }

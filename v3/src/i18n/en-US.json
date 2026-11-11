@@ -151,7 +151,7 @@
   "plans.create": "New plan",
   "plans.createTitle": "Start a themed plan",
   "plans.titlePlaceholder": "For example: Mathematics revision",
-  "plans.addSection": "Add section",
+  "plans.addSection": "Add group",
   "plans.addGroup": "Add group",
   "plans.addTask": "Add item",
   "plans.structure": "Plan structure",
@@ -387,5 +387,14 @@
   "legacy.todoLinkConflict": "Some legacy records had conflicting to-do owners. Their own explicit owner takes precedence; the conflicting source was retained.",
   "legacy.localTimeInvalid": "Some legacy times do not exist or are invalid in this time zone. Their records or completion times were not migrated; the original data is retained.",
   "archive.importBudget": "This file exceeds the import processing budget for this environment. Use a smaller export or an environment configured with a larger processing budget.",
-  "planning.useForDate": "Also assign this plan to the selected date"
+  "planning.useForDate": "Also assign this plan to the selected date",
+  "category.difficultyHelp": "Used only for todo priority weighting; actual recorded time is unchanged. Higher values increase priority weight.",
+  "category.inherit": "Inherit parent default",
+  "category.createInline": "＋New time category",
+  "plans.defaultCategory": "Default time category",
+  "plans.defaultHelp": "New tasks inherit this category. Groups can override their inherited default.",
+  "plans.groupCategory": "Set categories for this group",
+  "plans.taskCategory": "Set this task category",
+  "plans.groupCategoryHelp": "Sets the group default and all descendant categories. Existing records are unchanged.",
+  "plans.planCategoryHelp": "Changes the plan default while preserving explicit node categories and historical records."
 }
