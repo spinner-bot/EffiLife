@@ -41,5 +41,23 @@ python3 v3/tests/native/desktop_smoke.py
 
 版本事实源是 VERSION，更新列表见 CHANGELOG.md。实现计划见 docs/implementation-plan.md；阶段证据和当前限制记录在 docs/progress/。旧版代码保留在仓库其他目录，新版后续工作统一在本目录进行。
 
-当前状态：正式重构开发中。已完成能力以 CHANGELOG 与验证记录为准。
+## 验收交付
+
+当前为 v3.0.0 本地验收候选。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[桌面验收记录](docs/progress/0009-native-desktop.md)列出实际通过范围及平台边界。
+
+准备好上述工具链后，按以下顺序重建交付：
+
+```bash
+python3 v3/scripts/run.py npm run verify
+python3 v3/scripts/native.py tauri build --bundles deb
+dpkg-deb -x v3/.cache/native-target/release/bundle/deb/EffiLife_3.0.0_amd64.deb v3/.cache/desktop-package
+python3 v3/tests/native/desktop_smoke.py v3/.cache/desktop-package/usr/bin/effilife-desktop
+python3 v3/tests/native/webkit_smoke.py
+python3 v3/scripts/run.py node scripts/build-examples.mjs
+python3 v3/scripts/package-delivery.py
+```
+
+打包前提交全部 v3 改动。交付工具核对版本、包内实际程序 SHA-256 与原生验收结果、生产入口与 WebKit 结果；把安装包、前端、指南、示例、依赖许可和逐文件校验和一起保存至 `.cache/delivery/`。每个提交的交付目录与 ZIP 不覆盖，ZIP 完成后再次校验全部文件。它不上传或公开发布产物。
+
+解开交付 ZIP 后，先阅读 `docs/user-guide.html`。浏览器预览可在解压目录执行 `python3 -m http.server 3420 --bind 127.0.0.1 --directory web`，再访问 `http://127.0.0.1:3420`；不要直接以 file:// 打开前端。源码与长期验证记录以仓库提交为准。
 
