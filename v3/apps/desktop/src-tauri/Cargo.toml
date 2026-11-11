@@ -1,0 +1,26 @@
+[package]
+name = "effilife-desktop"
+version = "3.0.0"
+description = "EffiLife personal life management"
+authors = ["Codex  (sqs_A100)"]
+edition = "2021"
+rust-version = "1.88"
+license = "MIT"
+publish = false
+
+[lib]
+name = "effilife_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+[features]
+default = []
+custom-protocol = ["tauri/custom-protocol"]
+
