@@ -39,7 +39,11 @@ export function themeTokens(theme: ThemeDefinition): Record<string, string> {
   const page = css(background)
   const dark = luminance(background) < 0.15
   const foreground = dark ? '#edf2f7' : '#202a35'
-  const ensure = (color: string, against: string, fallback: string) => contrast(color, against) >= 4.5 ? color : fallback
+  const ensure = (color: string, against: string, fallback: string) => {
+    if (contrast(color, against) >= 4.5) return color
+    if (contrast(fallback, against) >= 4.5) return fallback
+    return contrast('#ffffff', against) >= contrast('#000000', against) ? '#ffffff' : '#000000'
+  }
   const ink = ensure(css(rgb(theme.palette.text)), surface, foreground)
   const muted = ensure(css(rgb(theme.palette.muted)), surface, dark ? '#b8c4d4' : '#5f6b7b')
   const accent = css(rgb(theme.palette.accent))
