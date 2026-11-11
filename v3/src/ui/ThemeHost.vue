@@ -39,10 +39,13 @@ const layers = computed(() => {
   })
 })
 watch(() => layers.value.find(layer => layer.replacement)?.key, () => emit('layout', false), { immediate: true })
+const surfaces = computed(() => layers.value.filter(layer => !layer.layout || layer.replacement))
+const widgets = computed(() => layers.value.filter(layer => layer.layout && !layer.replacement))
 </script>
 <template>
-  <div v-for="layer in layers" :key="layer.key" :class="layer.replacement ? 'theme-replacement' : layer.layout ? 'extension-widget' : 'theme-decoration'" :style="layer.gradient ? { backgroundImage: layer.gradient } : undefined">
+  <div v-for="layer in surfaces" :key="layer.key" :class="layer.replacement ? 'theme-replacement' : 'theme-decoration'" :style="layer.gradient ? { backgroundImage: layer.gradient } : undefined">
     <ExtensionSandbox :entry="layer.entry" :source="layer.source" @ready="() => { if (layer.replacement) emit('layout', true) }" />
   </div>
+  <div v-if="widgets.length" class="extension-widget-stack"><div v-for="layer in widgets" :key="layer.key" class="extension-widget"><ExtensionSandbox :entry="layer.entry" :source="layer.source" /></div></div>
 </template>
 
