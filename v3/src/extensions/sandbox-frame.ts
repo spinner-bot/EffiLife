@@ -7,7 +7,7 @@ export const framePrelude = String.raw`
     connected = true;
     removeEventListener('message', connect);
     const port = event.ports[0], canvas = document.getElementById('canvas'), view = document.getElementById('view');
-    let worker, url, allowed = [], userStyle;
+    let worker, url, allowed = [], userStyle, failed = false, count = 0, windowStart = 0;
     const send = value => port.postMessage(value);
     const safeCss = source => {
       const css = String(source || '').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -30,6 +30,7 @@ export const framePrelude = String.raw`
     }
     function render(data) {
       if (!allowed.includes('app.layout') || !data || typeof data.html !== 'string') return;
+      if (data.html.length > 1048576 || String(data.css || '').length > 262144) throw new Error('view');
       const css = safeCss(data.css);
       const parsed = new DOMParser().parseFromString(data.html, 'text/html');
       const fragment = document.createDocumentFragment();
@@ -57,6 +58,9 @@ export const framePrelude = String.raw`
         url = URL.createObjectURL(new Blob([data.source], { type: 'text/javascript' }));
         worker = new Worker(url);
         worker.onmessage = event => {
+          if (failed) return;
+          if (Date.now() - windowStart > 1000) { windowStart = Date.now(); count = 0; }
+          if (++count > 120) { failed = true; worker.terminate(); send({ type: 'failure', code: 'extensions.requestLimit' }); return; }
           const message = event.data;
           if (message?.type === 'render') {
             try { render(message.view); } catch { send({ type: 'failure', code: 'extensions.scriptFailed' }); }
