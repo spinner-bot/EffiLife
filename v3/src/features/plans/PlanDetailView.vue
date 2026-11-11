@@ -3,7 +3,7 @@ import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { NodeKind, PlanNode, ProgressLog } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
-import { planProgress, categoryFor } from '../../domain/plans'
+import { planProgress, effectivePlanCategory } from '../../domain/plans'
 import { planMinutes } from '../../domain/selectors'
 import { dateKey } from '../../domain/time'
 import { t, duration, calendarDate, clock, errorMessage } from '../../i18n'
@@ -48,7 +48,7 @@ function add(kind: NodeKind, parentId: string | null = null) { Object.assign(edi
 function assignCategory(node?: PlanNode) {
   if (!plan.value) return
   categoryTarget.value = { id: node?.id ?? null, title: node?.title ?? plan.value.title, kind: !node ? 'plan' : node.kind === 'task' ? 'task' : 'group' }
-  categoryId.value = categoryFor(plan.value, node?.id)
+  categoryId.value = effectivePlanCategory(current.value, plan.value, node?.id)
   categoryError.value = ''
 }
 async function action(type: TreeAction, node: PlanNode) {
