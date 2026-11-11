@@ -14,6 +14,7 @@ import ActionMenu from '../../ui/ActionMenu.vue'
 import Icon from '../../ui/Icon.vue'
 import TimeOverview from './TimeOverview.vue'
 import EditRecordDialog from './EditRecordDialog.vue'
+import TimePlanningPanel from './TimePlanningPanel.vue'
 
 const route = useRoute()
 const date = ref(String(route.query.date || dateKey(new Date(), current.value.preferences.timeZone)))
@@ -43,6 +44,7 @@ function menu(record: TimeRecord) {
   <PageHeader :title="t('time.title')" :subtitle="t('time.subtitle')"><label class="field"><span class="sr-only">{{ t('form.date') }}</span><input v-model="date" type="date" class="input" required /></label></PageHeader>
   <div class="stack">
     <Panel :title="t('home.dayBalance')"><TimeOverview v-if="date" :date="date" /></Panel>
+    <TimePlanningPanel v-if="date" :date="date" />
     <p v-if="overlaps > 0" class="notice">{{ t('time.overlap', { minutes: Math.round(overlaps) }) }}</p>
     <Panel :title="t('time.records')">
       <div v-for="record in records" :key="record.id" class="list-row" :data-selected="route.query.record === record.id || undefined">
