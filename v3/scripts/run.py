@@ -52,8 +52,11 @@ def main():
     arguments = sys.argv[1:] or ["node", "--version"]
     if arguments[0] not in {"node", "npm", "npx"}:
         raise SystemExit("Usage: python3 scripts/run.py node|npm|npx [arguments]")
+    if arguments[0] == "npm" and len(arguments) > 1 and arguments[1] in {"install", "ci"}:
+        raise SystemExit(subprocess.call([sys.executable, str(ROOT / "scripts/install.py"), *arguments[1:]], cwd=ROOT))
     environment = dict(os.environ)
     environment["PATH"] = str(binaries) + os.pathsep + environment.get("PATH", "")
+    environment.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".cache/playwright"))
     raise SystemExit(subprocess.call([str(binaries / arguments[0]), *arguments[1:]], cwd=ROOT, env=environment))
 
 if __name__ == "__main__":
