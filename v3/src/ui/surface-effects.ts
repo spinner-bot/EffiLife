@@ -1,7 +1,8 @@
 import { defaultAppearance, type AppearanceOptions } from '../domain/appearance'
 import type { ThemeDefinition } from './themes'
 export function appearanceFor(theme: ThemeDefinition, overrides?: Record<string, AppearanceOptions>): AppearanceOptions {
-  return structuredClone(overrides?.[String(theme.id)] || theme.appearance || defaultAppearance())
+  const value = overrides?.[String(theme.id)] || theme.appearance || defaultAppearance()
+  return { effect: value.effect, parameters: { ...value.parameters }, animation: { ...value.animation } }
 }
 const renderers: Record<string, (parameters: Record<string, number>) => Record<string, string>> = {
   solid: p => ({ '--card-surface': 'var(--surface)', '--card-filter': 'none', '--card-radius': p.radius + 'px', '--card-shadow': '0 5px 22px rgb(0 0 0 / ' + p.shadow! * .12 + ')' }),

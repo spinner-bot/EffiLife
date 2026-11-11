@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, toRaw, watch } from 'vue'
 import { current, dispatch } from '../../application/runtime'
 import { defaultAppearance, effectDefaults, surfaceEffects } from '../../domain/appearance'
 import { appearanceFor, surfaceTokens } from '../../ui/surface-effects'
@@ -30,7 +30,7 @@ async function close() {
 async function save() {
   if (!props.theme) return
   busy.value = true
-  try { await dispatch({ type: 'savePreferences', preferences: { appearance: { ...current.value.preferences.appearance, [String(props.theme.id)]: structuredClone(draft) } } }); emit('close') } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
+  try { await dispatch({ type: 'savePreferences', preferences: { appearance: { ...current.value.preferences.appearance, [String(props.theme.id)]: structuredClone(toRaw(draft)) } } }); emit('close') } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
 }
 </script>
 <template>
