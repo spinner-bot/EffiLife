@@ -129,7 +129,16 @@ def main():
         driver.button("确认", dialog)
         driver.wait(lambda: driver.script("return !document.querySelector('[role=dialog]')"))
         driver.button("北欧极夜")
-        driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
+        try:
+            driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready==='true'"), "native decorative worker")
+        except AssertionError:
+            snapshot("theme-failure.png")
+            print("Native frame state:", driver.script("return {frames:Array.from(document.querySelectorAll('iframe')).map(e=>e.outerHTML),notices:Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.textContent)}"), flush=True)
+            frame = driver.script("return document.querySelector('.theme-decoration iframe')")
+            if frame:
+                driver.call("POST", "/frame", {"id": frame})
+                print("Native frame document:", driver.script("return {html:document.documentElement.outerHTML,origin:location.origin,resources:performance.getEntriesByType('resource').map(e=>e.name)}"), flush=True)
+            raise
         driver.close()
         sessions.clear()
         driver = Driver(endpoint, {"tauri:options": {"application": str(application)}})
