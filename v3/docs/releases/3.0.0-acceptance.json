@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "product": "EffiLife",
+  "version": "3.0.0",
+  "status": "local-acceptance-candidate",
+  "date": "2026-11-12",
+  "author": "Codex  (sqs_A100)",
+  "sourceCommit": "eaca815776b0d1d490c2d6328100c3afeca40b06",
+  "platform": "linux-amd64",
+  "archive": {
+    "path": ".cache/delivery/EffiLife-3.0.0-eaca8157-linux-amd64.zip",
+    "bytes": 18532374,
+    "sha256": "9d8a110306d1b3c55fffde416a367fb8f8c611f6b9227df11425141991a7f75d",
+    "payloadFiles": 633
+  },
+  "debianPackage": {
+    "filename": "EffiLife_3.0.0_amd64.deb",
+    "bytes": 9211374,
+    "sha256": "90867c0210eeb3fdd8e966c5918a1e32b6bf7d4253ac55b96d17ab875835ea50"
+  },
+  "executableSha256": "ed4c517bfbb58bd17b55711654dc51535da6e639120ac3690379f518a2cf2c9c",
+  "verification": {
+    "unitTests": 88,
+    "chromiumTests": 23,
+    "webkitChecks": 8,
+    "tauriChecks": 10,
+    "types": "passed",
+    "productionBuild": "passed",
+    "standaloneWebPreview": "passed"
+  },
+  "boundaries": [
+    "Package contents and actual extracted program verified; no system installation performed.",
+    "Windows, macOS and mobile runtimes not verified.",
+    "Root headless lab disables Linux WebKit process sandbox; no OS sandbox certification.",
+    "No automatic cloud sync or public release publishing."
+  ]
+}
