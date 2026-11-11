@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import type { ArchivePreview } from '../../adapters/archive'
 import { inspectArchive, exportArchive } from '../../adapters/archive'
 import { current, workspace, service, refresh } from '../../application/runtime'
@@ -12,7 +12,7 @@ import UiDialog from '../../ui/UiDialog.vue'
 import Icon from '../../ui/Icon.vue'
 defineProps<{ recovery?: boolean }>()
 const input = ref<HTMLInputElement>()
-const preview = ref<ArchivePreview>()
+const preview = shallowRef<ArchivePreview>()
 const error = ref('')
 const busy = ref(false)
 const accept = [...acceptedExtensions('data'), 'json'].map(extension => '.' + extension).join(',')
