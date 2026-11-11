@@ -8,18 +8,20 @@ import { planProgress } from '../../domain/plans'
 import { priorityScore } from '../../domain/priority'
 import { t, duration, calendarDate, clock, errorMessage } from '../../i18n'
 import { openRecord, notify } from '../../ui/state'
+import { useNow } from '../../ui/useNow'
 import PageHeader from '../../ui/PageHeader.vue'
 import Panel from '../../ui/Panel.vue'
 import EmptyState from '../../ui/EmptyState.vue'
 import Icon from '../../ui/Icon.vue'
 import TimeOverview from '../time/TimeOverview.vue'
 
-const date = computed(() => dateKey(new Date(), current.value.preferences.timeZone))
+const now = useNow()
+const date = computed(() => dateKey(now.value, current.value.preferences.timeZone))
 const summary = computed(() => daySummary(current.value, date.value))
 const plans = computed(() => current.value.plans.filter(plan => !plan.archivedAt))
 const todos = computed(() => current.value.todos.filter(todo => todo.status === 'pending').sort((a, b) => {
   const category = (id: string) => current.value.categories.find(item => item.id === id)!
-  return priorityScore(b, category(b.categoryId), new Date().toISOString()) - priorityScore(a, category(a.categoryId), new Date().toISOString())
+  return priorityScore(b, category(b.categoryId), now.value) - priorityScore(a, category(a.categoryId), now.value)
 }))
 const recent = computed(() => recentActivities(current.value).slice(0, 5))
 async function completeTodo(id: string) {

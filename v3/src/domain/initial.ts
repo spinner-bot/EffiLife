@@ -4,6 +4,7 @@ export function emptyWorkspace(productVersion: string, now = new Date().toISOStr
   return {
     schemaVersion: 1, productVersion, revision: 0, updatedAt: now,
     plans: [], records: [], todos: [], receipts: {}, packages: [], packageTombstones: [],
+    timePlanning: { plans: [], rules: [], overrides: {} },
     categories: [
       { id: 'work', name: '', labelKey: 'category.work', color: '#526ac9', icon: 'briefcase', difficulty: 5 },
       { id: 'study', name: '', labelKey: 'category.study', color: '#3e8b78', icon: 'book', difficulty: 5 },

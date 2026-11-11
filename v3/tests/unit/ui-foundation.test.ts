@@ -15,7 +15,8 @@ describe('extensible UI foundations', () => {
   it('keeps complete Chinese and English catalogs and resolves literal message keys', () => {
     expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort())
     const keys = sourceFiles(resolve('src')).flatMap(path => [...readFileSync(path, 'utf8').matchAll(/\bt\(['"]([^'"]+)['"]/g)].map(match => match[1]!))
-    expect([...new Set(keys)].filter(key => !(key in zh))).toEqual([])
+    expect([...new Set(keys)].filter(key => key.endsWith('.') ? !Object.keys(zh).some(entry => entry.startsWith(key)) : !(key in zh))).toEqual([])
+    for (const key of [...Array.from({ length: 7 }, (_, index) => 'weekday.' + (index + 1)), ...['week', 'month', 'year', 'month_week', 'default'].map(kind => 'planning.rule.' + kind)]) expect(key in zh, key).toBe(true)
   })
   it('can register a locale without adding language branches to the application', () => {
     locales.register({ id: 'fr-FR', name: 'Français', direction: 'ltr', messages: { 'nav.home': 'Vue générale' } })

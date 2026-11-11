@@ -2,6 +2,7 @@ import type { Workspace } from '../domain/models'
 import { emptyWorkspace } from '../domain/initial'
 import { assertWorkspace } from '../domain/validation'
 import { importLegacyPlans } from './legacy-plans'
+import { importLegacyTimePlanning } from './legacy-time-planning'
 import { list, object, string, number, localInstant } from './legacy-utils'
 
 export function importLegacy(
@@ -90,6 +91,7 @@ export function importLegacy(
       record.taskId = relatedTask
     }
   }
+  importLegacyTimePlanning(state, app, category, warnings)
   if (Object.keys(app).length) warnings.push('legacy.originalPreserved')
   assertWorkspace(state)
   return { workspace: state, warnings: [...new Set(warnings)] }

@@ -99,6 +99,27 @@ export interface Preferences {
   weekStartsOn: number
 }
 
+export interface TimePlan {
+  id: EntityId
+  name: string
+  mode: 'allocation' | 'partition'
+  items: Array<{ categoryId: EntityId; minutes: number }>
+  backgroundCategoryId?: EntityId
+}
+
+export interface TimeRule {
+  id: EntityId
+  kind: 'week' | 'month' | 'year' | 'month_week' | 'default'
+  value: string
+  planId: EntityId
+}
+
+export interface TimePlanning {
+  plans: TimePlan[]
+  rules: TimeRule[]
+  overrides: Record<string, EntityId>
+}
+
 export interface OperationResult {
   entityId?: EntityId
   recordId?: EntityId
@@ -138,6 +159,7 @@ export interface Workspace {
   packages: InstalledPackage[]
   packageTombstones: Array<{ kind: InstalledPackage['kind']; id: number }>
   legacy?: { importedAt: Instant; source: unknown }
+  timePlanning?: TimePlanning
 }
 
 export interface CommandContext {

@@ -1,6 +1,8 @@
 import type { Workspace } from './models'
 import { requireCondition } from './errors'
 import { minutesBetween } from './time'
+import { validRule } from './time-planning'
+import type { TimeRule } from './models'
 
 export function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
@@ -115,5 +117,26 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   for (const receipt of Object.values(value.receipts)) requireCondition(isObject(receipt) && typeof receipt.fingerprint === 'string' && isObject(receipt.result), 'storage.invalidWorkspace')
   rows(value.packages)
   rows(value.packageTombstones)
+  if (value.timePlanning !== undefined) {
+    requireCondition(isObject(value.timePlanning), 'storage.invalidWorkspace')
+    const planning = value.timePlanning
+    const timePlans = rows(planning.plans)
+    unique(timePlans.map(plan => plan.id))
+    const ids = new Set(timePlans.map(plan => plan.id))
+    for (const plan of timePlans) {
+      text(plan.name)
+      requireCondition(plan.mode === 'allocation' || plan.mode === 'partition', 'storage.invalidWorkspace')
+      const items = rows(plan.items)
+      unique(items.map(item => item.categoryId))
+      requireCondition(items.length > 0, 'storage.invalidWorkspace')
+      for (const item of items) requireCondition(categoryIds.has(item.categoryId) && Number.isFinite(item.minutes) && Number(item.minutes) >= 0, 'storage.invalidWorkspace')
+      requireCondition(plan.mode !== 'partition' || items.some(item => item.categoryId === plan.backgroundCategoryId), 'storage.danglingReference')
+    }
+    const rules = rows(planning.rules)
+    unique(rules.map(rule => rule.id))
+    for (const rule of rules) requireCondition(typeof rule.value === 'string' && ids.has(rule.planId) && validRule(rule.kind as TimeRule['kind'], rule.value), 'storage.invalidWorkspace')
+    requireCondition(isObject(planning.overrides), 'storage.invalidWorkspace')
+    for (const [date, id] of Object.entries(planning.overrides)) requireCondition(/^\d{4}-\d{2}-\d{2}$/.test(date) && ids.has(id), 'storage.danglingReference')
+  }
 }
 
