@@ -376,5 +376,9 @@
   "plans.editLogBody": "修改这次行动的描述；关联的实际时间记录会同步显示。",
   "plans.deleteLog": "删除本次行动？",
   "plans.deleteLogBody": "同时删除这条日志及直接关联的时间记录。子项的完成状态保留，需要时可单独重新打开。",
-  "todos.filters": "筛选与排序"
+  "todos.filters": "筛选与排序",
+  "record.context": "关联事项",
+  "record.completeTodo": "同时标记这条待办完成",
+  "todos.recordTime": "记录本次用时",
+  "validation.todoArchived": "这条待办已归档或取消，请先恢复再记录。"
 }
