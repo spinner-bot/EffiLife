@@ -47,7 +47,8 @@ test('runs all retained built-in decorative renderers in opaque worker frames', 
       await expect(frame).toHaveAttribute('data-ready', 'true')
     } else await expect(frame).toHaveCount(0)
   }
-  await page.screenshot({ path: info.outputPath('retained-decoration-1440.png'), fullPage: true })
+  await page.evaluate(() => scrollTo(0, 0))
+  await page.screenshot({ path: info.outputPath('retained-decoration-1440.png'), fullPage: false })
 })
 test('lets an authorized replacement layout write through the audited host API and recover', async ({ page }) => {
   await install(page, `
