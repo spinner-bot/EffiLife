@@ -56,7 +56,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     if (todo) {
       if (recordId) todo.recordIds.push(recordId)
       todo.updatedAt = context.now
-      if (command.completeTodo) applyTodoCommand(workspace, { type: 'setTodoStatus', todoId: todo.id, status: 'completed' }, { ...context, now: occurredAt })
+      if (command.completeTodo) applyTodoCommand(workspace, { type: 'setTodoStatus', todoId: todo.id, status: 'completed', occurredAt }, context)
     }
     return { recordId, logId, entityId: task?.id || plan?.id || recordId }
   }
