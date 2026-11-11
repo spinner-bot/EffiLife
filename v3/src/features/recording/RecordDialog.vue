@@ -73,6 +73,7 @@ async function save() {
       type: 'recordAction', title: form.title || undefined, content: form.content,
       planId: form.planId || undefined, taskId: form.taskId || undefined,
       categoryId: form.categoryId, completeTask: Boolean(form.taskId && form.complete),
+      occurredAt: parseDateTimeInput(form.endAt, timeZone),
       startAt: form.withTime ? parseDateTimeInput(form.startAt, timeZone) : undefined,
       endAt: form.withTime ? parseDateTimeInput(form.endAt, timeZone) : undefined,
       timing: form.reference ? 'confirmed-reference' : 'actual',
@@ -93,6 +94,7 @@ async function save() {
       <label class="field"><span>{{ t('form.content') }}</span><textarea v-model="form.content" class="textarea" :placeholder="t('form.contentPlaceholder')" :required="!form.taskId && Boolean(form.planId)" /></label>
       <label class="field"><span>{{ t('form.category') }}</span><select v-model="form.categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label>
       <label v-if="plan" class="check-field"><input v-model="form.withTime" type="checkbox" /><span>{{ t('form.withTime') }}</span></label>
+      <label v-if="!form.withTime" class="field"><span>{{ t('form.logTime') }}</span><input v-model="form.endAt" class="input" type="datetime-local" required /></label>
       <div v-if="form.withTime" class="stack">
         <div class="form-grid">
           <label class="field"><span>{{ t('form.start') }}</span><input v-model="form.startAt" class="input" type="datetime-local" required @input="form.reference = false" /></label>
