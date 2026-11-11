@@ -8,7 +8,7 @@ export function applyTimePlanCommand(workspace: Workspace, command: WorkspaceCom
   if (!['saveTimePlan', 'deleteTimePlan', 'setDateTimePlan', 'saveTimeRule', 'deleteTimeRule', 'reorderTimeRules'].includes(command.type)) return undefined
   const planning = workspace.timePlanning ||= { plans: [], rules: [], overrides: {} }
   const finish = (result: OperationResult): OperationResult => {
-    const fallback = planning.rules.find(rule => rule.kind === 'default')
+    const fallback = [...planning.rules].reverse().find(rule => rule.kind === 'default')
     planning.rules = planning.rules.filter(rule => rule.kind !== 'default')
     if (fallback) planning.rules.push(fallback)
     else if (planning.plans.length) planning.rules.push({ id: context.id(), kind: 'default', value: '', planId: planning.plans[0]!.id })
@@ -40,7 +40,7 @@ export function applyTimePlanCommand(workspace: Workspace, command: WorkspaceCom
     }
     case 'deleteTimePlan': {
       requireCondition(planning.plans.some(plan => plan.id === command.timePlanId), 'validation.timePlanMissing')
-      const fallback = planning.rules.find(rule => rule.kind === 'default')
+      const fallback = [...planning.rules].reverse().find(rule => rule.kind === 'default')
       if (fallback?.planId === command.timePlanId) {
         requireCondition(command.replacementId && command.replacementId !== command.timePlanId && planning.plans.some(plan => plan.id === command.replacementId), 'validation.defaultPlanReplacement')
         fallback.planId = command.replacementId

@@ -13,7 +13,7 @@ import SortableList from '../../ui/SortableList.vue'
 import TimeRuleEditor from './TimeRuleEditor.vue'
 const planning = computed(() => planningOf(current.value))
 const ordinary = computed(() => planning.value.rules.filter(rule => rule.kind !== 'default'))
-const fallback = computed(() => planning.value.rules.find(rule => rule.kind === 'default') || (planning.value.plans[0] ? { id: '', kind: 'default' as const, value: '', planId: planning.value.plans[0].id } : undefined))
+const fallback = computed(() => [...planning.value.rules].reverse().find(rule => rule.kind === 'default') || (planning.value.plans[0] ? { id: '', kind: 'default' as const, value: '', planId: planning.value.plans[0].id } : undefined))
 const editing = ref<TimeRule>(), open = ref(false)
 function edit(rule?: TimeRule) { editing.value = rule; open.value = true }
 function description(rule: TimeRule) {
