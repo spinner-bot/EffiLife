@@ -51,6 +51,10 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     minutesBetween(command.startAt, command.endAt)
     record.title = requireTitle(command.title)
     record.note = command.note.trim()
+    if (record.planId && record.logId) {
+      const log = workspace.plans.find(plan => plan.id === record.planId)?.logs.find(item => item.id === record.logId)
+      if (log) log.content = record.note || record.title
+    }
     record.categoryId = command.categoryId
     record.startAt = instant(command.startAt)
     record.endAt = instant(command.endAt)
@@ -68,6 +72,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     const log = plan.logs.find(item => item.id === command.logId)
     requireCondition(log, 'validation.logMissing')
     log.content = requireTitle(command.content)
+    for (const record of workspace.records) if (record.logId === log.id && record.planId === plan.id) record.note = log.content
     plan.updatedAt = context.now
     return { logId: log.id }
   }

@@ -75,5 +75,15 @@ describe('unified recording', () => {
     expect(f.state().records).toHaveLength(0)
     expect(f.state().plans[0]!.logs[0]!.recordIds).toEqual([])
   })
+
+  it('keeps the same action description consistent when editing either view', () => {
+    const f = fixture()
+    const result = f.run({ type: 'recordAction', planId: f.planId, taskId: f.taskA, content: 'Original progress', startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:40:00Z' })
+    const record = f.state().records[0]!
+    f.run({ type: 'updateRecord', recordId: result.recordId!, title: record.title, note: 'Clarified from time view', categoryId: record.categoryId, startAt: record.startAt, endAt: record.endAt })
+    expect(f.state().plans[0]!.logs[0]!.content).toBe('Clarified from time view')
+    f.run({ type: 'updateLog', planId: f.planId, logId: result.logId!, content: 'Clarified from plan view' })
+    expect(f.state().records[0]!.note).toBe('Clarified from plan view')
+  })
 })
 
