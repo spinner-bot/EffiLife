@@ -40,6 +40,10 @@ class QuietHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(ROOT / "dist"), **kwargs)
     def log_message(self, *args):
         pass
+    def end_headers(self):
+        config = json.loads((ROOT / 'apps/desktop/src-tauri/tauri.conf.json').read_text())
+        self.send_header('Content-Security-Policy', config['app']['security']['csp'])
+        super().end_headers()
     def do_GET(self):
         if self.path.startswith('/native-network-probe'):
             QuietHandler.probe_requests += 1
