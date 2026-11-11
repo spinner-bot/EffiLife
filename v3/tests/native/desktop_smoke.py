@@ -30,7 +30,7 @@ def main():
         directory = profile / key
         directory.mkdir(parents=True, mode=0o700)
         env["XDG_" + ("RUNTIME_DIR" if key == "run" else key.upper() + "_HOME")] = str(directory)
-    env.update({"GDK_BACKEND": "x11", "LIBGL_ALWAYS_SOFTWARE": "1", "WEBKIT_DISABLE_DMABUF_RENDERER": "1", "WEBKIT_DISABLE_COMPOSITING_MODE": "1", "XKB_CONFIG_ROOT": str(sdk / "usr/share/X11/xkb"), "TAURI_WEBVIEW_AUTOMATION": "true"})
+    env.update({"GDK_BACKEND": "x11", "LIBGL_ALWAYS_SOFTWARE": "1", "WEBKIT_DISABLE_DMABUF_RENDERER": "1", "WEBKIT_DISABLE_COMPOSITING_MODE": "1", "XKB_CONFIG_ROOT": str(sdk / "usr/share/X11/xkb"), "WEBKIT_INJECTED_BUNDLE_PATH": str(sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/injected-bundle"), "TAURI_WEBVIEW_AUTOMATION": "true"})
     if os.geteuid() == 0:
         env["WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS"] = "1"
     with ExitStack() as cleanup:
@@ -46,7 +46,6 @@ def main():
         def snapshot(name):
             subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / name), "0", "0", "1440", "1000"], env=env, check=True)
         driver_port, native_port = port(), port()
-        webkit = sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
         relocate_webkit(ROOT, env)
         command = [str(sdk / "usr/bin/dbus-run-session"), "--", str(ROOT / ".tools/tauri-driver/bin/tauri-driver"), "--port", str(driver_port), "--native-port", str(native_port), "--native-driver", str(sdk / "usr/bin/WebKitWebDriver")]
         process = subprocess.Popen(command, stdout=log, stderr=log, env=env, cwd=output, start_new_session=True)
