@@ -49,6 +49,18 @@ it('returns durable state even if post-commit notification or a later read fails
 
 it('normalizes reactive archive snapshots before replacing persistent data', async () => {
   const service = new WorkspaceService(new MemoryRepository(emptyWorkspace('3.0.0')))
-  await expect(service.replace(reactive(emptyWorkspace('3.0.0')))).resolves.toBeUndefined()
+  await expect(service.replace(reactive(emptyWorkspace('3.0.0')))).resolves.toMatchObject({ revision: 1, schemaVersion: 1 })
   expect((await service.read()).revision).toBe(1)
+})
+
+it('acknowledges import and restore even when any subsequent primary read fails', async () => {
+  const repository = new MemoryRepository(emptyWorkspace('3.0.0'))
+  const service = new WorkspaceService(repository)
+  await service.dispatch({ operationId: 'before-import', command: { type: 'createPlan', title: 'Retained backup' } })
+  const read = vi.spyOn(repository, 'read').mockRejectedValue(new Error('later read failed'))
+  expect((await service.replace(emptyWorkspace('3.0.0'))).plans).toEqual([])
+  const restored = await service.restoreBackup()
+  expect(restored.plans[0]?.title).toBe('Retained backup')
+  expect(restored.revision).toBe(3)
+  expect(read).not.toHaveBeenCalled()
 })
