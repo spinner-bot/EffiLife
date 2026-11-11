@@ -54,8 +54,6 @@ onUnmounted(cleanup)
 </template>
 <style>
 .sortable-row { display: flex; align-items: center; gap: .5rem; min-height: 64px; padding: .5rem .75rem; border-bottom: 1px solid var(--line); }
-.drag-handle { display: grid; place-items: center; padding: .5rem; border: 0; border-radius: .4rem; background: transparent; color: var(--muted); cursor: grab; touch-action: none; flex: 0 0 auto; }
-.drag-handle:hover, .drag-handle:focus-visible { background: var(--subtle); color: var(--ink); }
 .sort-gap { background: color-mix(in srgb, var(--muted) 14%, transparent); border: 1px dashed var(--muted); border-radius: var(--radius-sm); }
 .sort-ghost { position: fixed; z-index: 900; pointer-events: none; opacity: .9; display: flex; align-items: center; gap: .75rem; padding: .5rem 1rem; box-shadow: 0 16px 40px #0003; }
 .sort-move { transition: transform 220ms ease; }.sort-enter-active, .sort-leave-active { transition: opacity 150ms ease; }.sort-enter-from,.sort-leave-to { opacity: 0; }.sort-leave-active { position: absolute; }
