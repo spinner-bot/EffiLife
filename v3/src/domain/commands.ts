@@ -11,8 +11,8 @@ export type CoreCommand =
   | { type: 'deleteNode'; planId: string; nodeId: string }
   | { type: 'setTaskCompletion'; planId: string; taskId: string; completed: boolean }
   | { type: 'assignCategory'; planId: string; nodeId: string | null; categoryId: string; overwrite: boolean }
-  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; todoId?: string; completeTodo?: boolean; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; timing?: 'actual' | 'confirmed-reference' }
-  | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant }
+  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; todoId?: string; completeTodo?: boolean; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; expectedMinutes?: number; timing?: 'actual' | 'confirmed-reference' }
+  | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant; expectedMinutes?: number }
   | { type: 'deleteRecord'; recordId: string }
   | { type: 'updateLog'; planId: string; logId: string; content: string }
   | { type: 'deleteLog'; planId: string; logId: string }

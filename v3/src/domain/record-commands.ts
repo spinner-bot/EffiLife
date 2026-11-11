@@ -35,7 +35,8 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     const logId = plan ? context.id() : undefined
     let recordId: string | undefined
     if (hasTime) {
-      minutesBetween(command.startAt!, command.endAt!)
+      const minutes = minutesBetween(command.startAt!, command.endAt!)
+      requireCondition(command.expectedMinutes === undefined || (Number.isFinite(command.expectedMinutes) && Math.abs(command.expectedMinutes - minutes) < 1e-6), 'validation.durationMismatch')
       recordId = context.id()
       workspace.records.push({
         id: recordId, title, note: command.content.trim(), categoryId,
@@ -64,7 +65,8 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     const record = workspace.records.find(item => item.id === command.recordId)
     requireCondition(record, 'validation.recordMissing')
     requireCondition(workspace.categories.some(category => category.id === command.categoryId), 'validation.categoryMissing')
-    minutesBetween(command.startAt, command.endAt)
+    const minutes = minutesBetween(command.startAt, command.endAt)
+    requireCondition(command.expectedMinutes === undefined || (Number.isFinite(command.expectedMinutes) && Math.abs(command.expectedMinutes - minutes) < 1e-6), 'validation.durationMismatch')
     record.title = requireTitle(command.title)
     record.note = command.note.trim()
     if (record.planId && record.logId) {
