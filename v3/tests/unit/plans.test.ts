@@ -21,6 +21,19 @@ function setup() {
 }
 
 describe('hierarchical plan categories', () => {
+  it('creates valid plan defaults and lets groups override or resume inheritance', () => {
+    const f = setup()
+    expect(f.state().plans[0]!.categoryId).toBe('life')
+    const second = f.run({ type: 'createPlan', title: 'Work', categoryId: 'work' })
+    expect(f.state().plans.find(plan => plan.id === second)!.categoryId).toBe('work')
+    expect(() => f.run({ type: 'createPlan', title: 'Invalid', categoryId: 'missing' })).toThrow('validation.categoryMissing')
+    f.run({ type: 'updateNode', planId: f.planId, nodeId: f.groupId, title: 'Prepare', description: '', estimatedMinutes: 0, categoryId: 'exercise' })
+    const task = f.run({ type: 'addNode', planId: f.planId, parentId: f.groupId, kind: 'task', title: 'Walk' })
+    expect(categoryFor(f.state().plans[0]!, task)).toBe('exercise')
+    f.run({ type: 'updateNode', planId: f.planId, nodeId: f.groupId, title: 'Prepare', description: '', estimatedMinutes: 0, categoryId: null })
+    expect(categoryFor(f.state().plans[0]!, task)).toBe('life')
+    expect(categoryFor(f.state().plans[0]!, f.taskId)).toBe('study')
+  })
   it('detaches todo task references when deleting an ancestor and preserves the plan link', () => {
     const f = setup()
     const todoId = f.run({ type: 'saveTodo', title: 'Related todo' })
