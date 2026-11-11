@@ -371,5 +371,9 @@
   "validation.invalidRecurrence": "Choose days, weeks or months and a positive whole-number interval.",
   "validation.invalidSubtasks": "A checklist item identity or state is invalid.",
   "validation.subtaskMissing": "This checklist item could not be found.",
-  "legacy.todoCustomRecurrence": "The legacy custom repeat has no saved interval. Original content was retained; configure a repeat schedule in the to-do editor."
+  "legacy.todoCustomRecurrence": "The legacy custom repeat has no saved interval. Original content was retained; configure a repeat schedule in the to-do editor.",
+  "plans.editLog": "Edit progress log",
+  "plans.editLogBody": "Update this action’s description. Linked actual time records display the same content.",
+  "plans.deleteLog": "Delete this action?",
+  "plans.deleteLogBody": "Remove this log and its directly linked time records. The task’s completion state is retained and can be reopened separately."
 }
