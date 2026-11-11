@@ -8,6 +8,7 @@ import { dateKey } from './domain/time'
 import { applyTheme } from './ui/themes'
 import { applyFont } from './ui/fonts'
 import { openRecord, notify } from './ui/state'
+import { useNow } from './ui/useNow'
 import Icon from './ui/Icon.vue'
 import UiButton from './ui/UiButton.vue'
 import EmptyState from './ui/EmptyState.vue'
@@ -18,7 +19,8 @@ import ArchiveTools from './features/settings/ArchiveTools.vue'
 const route = useRoute()
 const version = __APP_VERSION__
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
-const today = computed(() => calendarDate(dateKey(new Date(), current.value.preferences.timeZone), { weekday: 'long' }))
+const now = useNow()
+const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
 watch(() => current.value.preferences, async preferences => {
   setLocale(preferences.locale)
   applyTheme(preferences.themeId)
