@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Plan, PlanNode } from '../../domain/models'
-import { descendants, displayCode } from '../../domain/plans'
+import { descendants, categoryFor } from '../../domain/plans'
 import { t, duration } from '../../i18n'
+import CategoryBadge from '../categories/CategoryBadge.vue'
 import UiButton from '../../ui/UiButton.vue'
 import ActionMenu from '../../ui/ActionMenu.vue'
 import Icon from '../../ui/Icon.vue'
@@ -34,7 +35,7 @@ function menu(node: PlanNode) {
       <div class="tree-row">
         <button v-if="node.kind === 'task'" type="button" class="todo-check" :aria-pressed="Boolean(node.completedAt)" :aria-label="(node.completedAt ? t('todos.reopen') : t('todos.complete')) + ': ' + node.title" :disabled="Boolean(plan.archivedAt)" @click="emit('action', 'complete', node)"><Icon v-if="node.completedAt" name="check" :size="16" /></button>
         <UiButton v-else variant="ghost" icon :aria-label="node.title" :aria-expanded="!collapsed.has(node.id)" @click="toggle(node.id)"><Icon :name="collapsed.has(node.id) ? 'next' : 'expand'" :size="18" /></UiButton>
-        <div class="tree-title"><p class="row-title" :class="{ 'todo-complete': node.completedAt }"><span v-if="node.kind === 'task'" class="muted small">{{ displayCode(plan, node.id) }} · </span>{{ node.title }}</p><p v-if="node.description" class="row-detail">{{ node.description }}</p><p v-if="node.estimatedMinutes" class="row-detail">{{ duration(node.estimatedMinutes) }}</p></div>
+        <div class="tree-title"><p class="row-title" :class="{ 'todo-complete': node.completedAt }"><CategoryBadge v-if="node.kind === 'task'" :category-id="categoryFor(plan, node.id)" />{{ node.title }}</p><p v-if="node.description" class="row-detail">{{ node.description }}</p><p v-if="node.estimatedMinutes" class="row-detail">{{ duration(node.estimatedMinutes) }}</p></div>
         <div v-if="!plan.archivedAt" class="tree-actions"><UiButton v-if="node.kind === 'task'" variant="ghost" icon :aria-label="t('plans.recordProgress') + ': ' + node.title" @click="emit('action', 'record', node)"><Icon name="log" :size="18" /></UiButton><ActionMenu :items="menu(node)" /></div>
       </div>
       <PlanTree v-if="node.kind !== 'task' && !collapsed.has(node.id)" :plan="plan" :parent-id="node.id" :selected="selected" @action="(action, target) => emit('action', action, target)" />
