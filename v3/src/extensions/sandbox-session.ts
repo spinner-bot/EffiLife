@@ -1,4 +1,3 @@
-import { sandboxDocument } from './sandbox-frame'
 import { workerPrelude } from './worker-prelude'
 import type { Capability } from './capabilities'
 import type { SandboxRequest } from '../application/sandbox-bridge'
@@ -30,7 +29,7 @@ export class SandboxSession {
     frame.setAttribute('referrerpolicy', 'no-referrer')
     frame.setAttribute('allow', "camera 'none'; microphone 'none'; geolocation 'none'; clipboard-read 'none'; clipboard-write 'none'")
     frame.className = 'extension-frame'
-    frame.srcdoc = sandboxDocument(crypto.randomUUID().replaceAll('-', ''))
+    frame.src = new URL('./extension-frame.html', document.baseURI).href
     frame.onload = () => {
       if (!this.connected && !this.disposed) { this.connected = true; frame.contentWindow?.postMessage('effilife-connect', '*', [this.channel.port2]) }
     }
