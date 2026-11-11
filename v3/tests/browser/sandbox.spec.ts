@@ -23,7 +23,7 @@ async function install(page: Page, source: string, grants: Capability[], type: '
   await page.goto('/#/settings')
   await page.getByLabel('安装扩展包', { exact: true }).setInputFiles({ name: 'sandbox.' + extensionFor(type), mimeType: 'application/zip', buffer: Buffer.from(await zip.generateAsync({ type: 'uint8array' })) })
   const dialog = page.getByRole('dialog', { name: '检查即将安装的扩展' })
-  await dialog.getByRole('checkbox').check()
+  for (const checkbox of await dialog.getByRole('checkbox').all()) await checkbox.check()
   await dialog.getByRole('button', { name: '确认安装', exact: true }).click()
   if (grants.some(capability => capability.startsWith('app.'))) await page.getByRole('dialog', { name: '允许此扩展访问应用系统？' }).getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).not.toBeVisible()
