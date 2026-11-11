@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "product": "EffiLife",
   "version": "3.0.0",
-  "status": "local-acceptance-candidate",
+  "status": "superseded-after-independent-review",
   "date": "2026-11-12",
   "author": "Codex  (sqs_A100)",
   "sourceCommit": "eaca815776b0d1d490c2d6328100c3afeca40b06",
@@ -33,5 +33,7 @@
     "Windows, macOS and mobile runtimes not verified.",
     "Root headless lab disables Linux WebKit process sandbox; no OS sandbox certification.",
     "No automatic cloud sync or public release publishing."
-  ]
+  ],
+  "supersededBy": "3.0.1",
+  "reviewCorrection": "Midnight DST boundaries, invalid legacy wall times and linked task deletion were not covered by the original acceptance. Original artifact hashes are retained."
 }

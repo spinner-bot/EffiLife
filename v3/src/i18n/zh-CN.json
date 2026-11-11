@@ -170,7 +170,7 @@
   "plans.overwrite": "同时覆盖下方已有类别",
   "plans.rename": "编辑计划",
   "plans.notFound": "这份计划暂时无法找到",
-  "plans.deleteNodeConfirm": "删除这个没有执行历史的条目及其下级？",
+  "plans.deleteNodeConfirm": "删除这个没有执行历史的条目及其下级？ 相关待办会保留，并解除这些子项的关联。",
   "plans.section": "章节",
   "plans.group": "分组",
   "plans.task": "子项",
@@ -384,5 +384,8 @@
   "todos.recordTime": "记录本次用时",
   "validation.todoArchived": "这条待办已归档或取消，请先恢复再记录。",
   "legacy.todoLinkMissing": "部分时间记录引用的旧待办不存在；时间记录和原文已保留。",
-  "legacy.todoLinkConflict": "部分旧记录被多条待办引用，已优先采用记录自身的关联；冲突原文已保留。"
+  "legacy.todoLinkConflict": "部分旧记录被多条待办引用，已优先采用记录自身的关联；冲突原文已保留。",
+  "legacy.localTimeInvalid": "部分旧时间在所选时区不存在或无效，相关记录或完成时刻未迁入；原始数据已保留。",
+  "archive.importBudget": "文件超出当前环境的导入处理预算。请使用更小的导出文件或在配置了更大处理预算的环境中导入。",
+  "planning.useForDate": "同时将此方案指定给当前日期"
 }

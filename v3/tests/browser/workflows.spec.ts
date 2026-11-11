@@ -1,4 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+
+const version = readFileSync(new URL('../../VERSION', import.meta.url), 'utf8').trim()
 
 const browserErrors = new WeakMap<Page, string[]>()
 test.beforeEach(async ({ page }) => {
@@ -143,7 +146,7 @@ test('persists locale and theme through the shared registry', async ({ page }, i
   await page.reload()
   await expect(page.getByRole('combobox', { name: 'Language', exact: true })).toHaveValue('en-US')
   await expect(page.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText('Version 3.0.0', { exact: false })).toBeVisible()
+  await expect(page.getByText('Version ' + version, { exact: false })).toBeVisible()
   await page.screenshot({ path: info.outputPath('settings-dark-1440.png'), fullPage: true })
 })
 

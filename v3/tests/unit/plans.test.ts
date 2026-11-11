@@ -3,6 +3,7 @@ import { emptyWorkspace } from '../../src/domain/initial'
 import { execute } from '../../src/domain/engine'
 import { categoryFor, displayCode } from '../../src/domain/plans'
 import type { WorkspaceCommand } from '../../src/domain/commands'
+import { assertWorkspace } from '../../src/domain/validation'
 
 function setup() {
   let sequence = 0
@@ -20,6 +21,19 @@ function setup() {
 }
 
 describe('hierarchical plan categories', () => {
+  it('detaches todo task references when deleting an ancestor and preserves the plan link', () => {
+    const f = setup()
+    const todoId = f.run({ type: 'saveTodo', title: 'Related todo' })
+    const todo = f.state().todos.find(item => item.id === todoId)!
+    todo.relatedPlanId = f.planId
+    todo.relatedTaskId = f.taskId
+    assertWorkspace(f.state())
+    f.run({ type: 'deleteNode', planId: f.planId, nodeId: f.sectionId })
+    expect(f.state().plans[0]!.nodes).toHaveLength(0)
+    expect(f.state().todos[0]).toMatchObject({ id: todoId, relatedPlanId: f.planId })
+    expect(f.state().todos[0]!.relatedTaskId).toBeUndefined()
+    expect(() => assertWorkspace(f.state())).not.toThrow()
+  })
   it('assigns the whole plan without rewriting history or explicit child choices', () => {
     const f = setup()
     const loose = f.run({ type: 'addNode', planId: f.planId, parentId: null, kind: 'task', title: 'Loose' })

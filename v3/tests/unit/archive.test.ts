@@ -14,6 +14,31 @@ const rawPlan = {
 }
 
 describe('portable archive pipeline', () => {
+  it('warns about nonexistent legacy wall times without moving them into the prior day', async () => {
+    const original = {
+      records: {
+        '2026-09-06': [{ start: '00:30', end: '00:45', content: 'Invalid gap' }, { start: '01:00', end: '01:30', content: 'Valid after gap' }],
+        '2026-09-05': [{ start: '23:30', end: '01:30', content: 'Overnight across DST' }],
+      },
+      planHelper: { plans: [{
+        head: { index: 1, name: 'DST', date: [2026, 9, 6] },
+        main: [{ plan: [null, { content: 'Task', is_active: true, finish: { day: 0, time: [0, 45] } }] }],
+        log: [{ day: 0, time: [0, 30], plan: 'A1', content: 'Invalid log' }, { day: 0, time: [1, 30], plan: 'A1', content: 'Valid log' }, { day: 0, time: [99, 99], plan: 'base', content: 'Date only' }],
+      }] },
+    }
+    const result = await inspectArchive(new TextEncoder().encode(JSON.stringify(original)), '3.0.1', 'America/Santiago')
+    expect(result.warnings).toContain('legacy.localTimeInvalid')
+    expect(result.workspace.records.map(row => [row.title, row.startAt, row.endAt])).toEqual([
+      ['Valid after gap', '2026-09-06T04:00:00.000Z', '2026-09-06T04:30:00.000Z'],
+      ['Overnight across DST', '2026-09-06T03:30:00.000Z', '2026-09-06T04:30:00.000Z'],
+    ])
+    expect(result.workspace.plans[0]!.logs.map(log => [log.content, log.occurredAt])).toEqual([
+      ['Valid log', '2026-09-06T04:30:00.000Z'], ['Date only', '2026-09-06T04:00:00.000Z'],
+    ])
+    expect(result.workspace.plans[0]!.nodes.find(node => node.kind === 'task')!.completedAt).toBeUndefined()
+    expect(result.workspace.legacy?.source).toEqual(original)
+    expect(() => assertWorkspace(result.workspace)).not.toThrow()
+  })
   it('round-trips a v3 workspace without losing configuration or receipts', async () => {
     const state = emptyWorkspace('3.0.0', '2026-11-11T00:00:00Z', 'Asia/Shanghai')
     const result = await exportArchive(state, '3.0.0')

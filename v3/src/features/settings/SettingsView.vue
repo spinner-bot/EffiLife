@@ -21,6 +21,7 @@ const busy = ref(false)
 const error = ref('')
 const categoryOpen = ref(false)
 const form = reactive({ categoryId: '', name: '', color: '#526ac9', difficulty: 5 })
+let originalCategoryName = ''
 const timeZones = Intl.supportedValuesOf('timeZone')
 const themeList = computed(() => { resourceRevision.value; return themes.values() })
 const fontList = computed(() => { resourceRevision.value; return fonts.values() })
@@ -34,11 +35,12 @@ function addCategory() { Object.assign(form, { categoryId: '', name: '', color: 
 function editCategory(id: string) {
   const category = current.value.categories.find(item => item.id === id)!
   Object.assign(form, { categoryId: id, name: categoryName(category), color: category.color, difficulty: category.difficulty })
+  originalCategoryName = form.name
   error.value = ''; categoryOpen.value = true
 }
 async function saveCategory() {
   busy.value = true
-  try { await dispatch({ ...form, type: 'saveCategory', categoryId: form.categoryId || undefined }); categoryOpen.value = false } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
+  try { await dispatch({ ...form, type: 'saveCategory', name: form.categoryId && form.name === originalCategoryName ? undefined : form.name, categoryId: form.categoryId || undefined }); categoryOpen.value = false } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
 }
 </script>
 <template>

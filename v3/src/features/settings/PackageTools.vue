@@ -3,6 +3,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { current, dispatch } from '../../application/runtime'
 import type { InstalledPackage } from '../../domain/models'
 import { inspectExtension } from '../../adapters/extension-package'
+import { checkImportInput } from '../../extensions/import-budget'
 import { acceptedExtensions } from '../../extensions/formats'
 import { capabilities, defaultGrants, isCapability, type Capability } from '../../extensions/capabilities'
 import { assertManifest, type PackageCandidate } from '../../extensions/manifest'
@@ -41,6 +42,7 @@ async function read(event: Event) {
   if (!file) return
   busy.value = true
   try {
+    checkImportInput(file.size)
     preview.value = await inspectExtension(new Uint8Array(await file.arrayBuffer()), __APP_VERSION__)
     grants.value = defaultGrants(preview.value.manifest.permissions)
     updateId.value = ''; error.value = ''; operationId = crypto.randomUUID()

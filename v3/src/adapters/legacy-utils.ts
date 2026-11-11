@@ -1,4 +1,6 @@
 import { isObject } from '../domain/validation'
+import { dayBounds, zonedInstant } from '../domain/time'
+import { DomainError } from '../domain/errors'
 
 export const object = (value: unknown): Record<string, unknown> => isObject(value) ? value : {}
 export const list = (value: unknown): unknown[] => Array.isArray(value) ? value : []
@@ -15,22 +17,8 @@ export function legacyDate(value: unknown, fallback: string): string {
 }
 
 export function localInstant(date: string, time: string, timeZone: string): string {
-  const desired = Date.parse(date + 'T' + time + (time.length === 5 ? ':00' : '') + 'Z')
-  if (!Number.isFinite(desired)) throw new Error('archive.invalidLegacyTime')
-  let candidate = desired
-  const formatter = new Intl.DateTimeFormat('en-GB', {
-    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
-  })
-  for (let index = 0; index < 4; index++) {
-    const parts = formatter.formatToParts(new Date(candidate))
-    const field = (name: string) => Number(parts.find(part => part.type === name)!.value)
-    const actual = Date.UTC(field('year'), field('month') - 1, field('day'), field('hour'), field('minute'), field('second'))
-    const adjusted = desired - (actual - candidate)
-    if (adjusted === candidate) break
-    candidate = adjusted
-  }
-  return new Date(candidate).toISOString()
+  try { return zonedInstant(date + 'T' + time, timeZone) }
+  catch { throw new DomainError('legacy.localTimeInvalid') }
 }
 
 export function logInstant(raw: Record<string, unknown>, baseDate: string, timeZone: string) {
@@ -43,7 +31,7 @@ export function logInstant(raw: Record<string, unknown>, baseDate: string, timeZ
   const minute = number(time[1], 99)
   const precision = hour === 99 ? 'date' : minute === 99 ? 'hour' : 'minute'
   const clock = String(hour === 99 ? 0 : hour).padStart(2, '0') + ':' + String(minute === 99 ? 0 : minute).padStart(2, '0')
-  return { occurredAt: localInstant(date, clock, timeZone), precision } as const
+  return { occurredAt: precision === 'date' ? new Date(dayBounds(date, timeZone)[0]).toISOString() : localInstant(date, clock, timeZone), precision } as const
 }
 
 export function sectionLetter(index: number): string {
