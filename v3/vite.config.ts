@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const version = readFileSync(new URL('./VERSION', import.meta.url), 'utf8').trim()
 const manifest = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+const desktop = JSON.parse(readFileSync(new URL('./apps/desktop/src-tauri/tauri.conf.json', import.meta.url), 'utf8'))
 if (!/^\d+\.\d+\.\d+$/.test(version) || manifest.version !== version) {
   throw new Error('Product version metadata is invalid')
 }
@@ -14,6 +15,7 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: { strictPort: true, watch: { ignored: ['**/src-tauri/**', '**/.tools/**', '**/.cache/**'] } },
+  preview: { headers: { 'Content-Security-Policy': desktop.app.security.csp } },
   build: {
     target: 'es2022',
     rollupOptions: { output: { manualChunks(id) {
