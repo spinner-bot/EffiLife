@@ -5,6 +5,7 @@ import { current, dispatch } from '../../application/runtime'
 import { planningOf } from '../../domain/time-planning'
 import { t, categoryName, errorMessage } from '../../i18n'
 import { confirmAction } from '../../ui/state'
+import CategorySelect from '../categories/CategorySelect.vue'
 import UiDialog from '../../ui/UiDialog.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
@@ -51,7 +52,7 @@ async function save() {
       <label class="field"><span>{{ t('form.title') }}</span><input v-model="form.name" class="input" required /></label>
       <label class="field"><span>{{ t('planning.mode') }}</span><select v-model="form.mode" class="select"><option value="allocation">{{ t('planning.allocation') }}</option><option value="partition">{{ t('planning.partition') }}</option></select></label>
       <div v-for="(item, index) in form.items" :key="index" class="budget-input-row">
-        <label class="field"><span class="sr-only">{{ t('form.category') }} {{ index + 1 }}</span><select v-model="item.categoryId" class="select"><option v-for="category in current.categories" :key="category.id" :value="category.id">{{ categoryName(category) }}</option></select></label>
+        <label class="field"><span class="sr-only">{{ t('form.category') }} {{ index + 1 }}</span><CategorySelect v-model="item.categoryId" required /></label>
         <label class="field"><span class="sr-only">{{ categoryName(current.categories.find(category => category.id === item.categoryId)!) }} {{ t('planning.targetHours') }}</span><input v-model.number="item.hours" class="input" type="number" min="0" step="0.25" required /></label>
         <UiButton variant="ghost" icon :aria-label="t('planning.removeItem') + ' ' + (index + 1)" @click="form.items.splice(index, 1)"><Icon name="close" :size="17" /></UiButton>
       </div>
