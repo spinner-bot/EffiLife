@@ -18,7 +18,7 @@ export type WorkspaceCommand =
   | { type: 'deleteTodo'; todoId: string }
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
   | { type: 'saveCategory'; categoryId?: string; name: string; color: string; difficulty: number; icon?: string }
-  | { type: 'saveTimePlan'; timePlanId?: string; name: string; mode: TimePlan['mode']; items: TimePlan['items']; backgroundCategoryId?: string }
+  | { type: 'saveTimePlan'; timePlanId?: string; name: string; mode: TimePlan['mode']; items: TimePlan['items']; backgroundCategoryId?: string; useForDate?: string; makeDefault?: boolean }
   | { type: 'deleteTimePlan'; timePlanId: string }
   | { type: 'setDateTimePlan'; date: string; timePlanId: string | null }
   | { type: 'saveTimeRule'; ruleId?: string; kind: TimeRule['kind']; value: string; timePlanId: string }
