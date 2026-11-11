@@ -70,11 +70,15 @@ export function applyTodoCommand(workspace: Workspace, command: WorkspaceCommand
   if (command.type === 'setTodoPinned' || command.type === 'setTodoSubtask') {
     const todo = workspace.todos.find(item => item.id === command.todoId)
     requireCondition(todo, 'validation.todoMissing')
-    if (command.type === 'setTodoPinned') todo.pinned = Boolean(command.pinned)
+    if (command.type === 'setTodoPinned') {
+      requireCondition(typeof command.pinned === 'boolean', 'validation.invalidSubtasks')
+      todo.pinned = command.pinned
+    }
     else {
       const item = todo.subtasks?.find(item => item.id === command.subtaskId)
       requireCondition(item, 'validation.subtaskMissing')
-      item.completed = Boolean(command.completed)
+      requireCondition(typeof command.completed === 'boolean', 'validation.invalidSubtasks')
+      item.completed = command.completed
       item.completedAt = item.completed ? context.now : undefined
     }
     todo.updatedAt = context.now
