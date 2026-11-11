@@ -5,6 +5,7 @@ from pathlib import Path
 import hashlib
 import json
 import subprocess
+import sys
 import urllib.request
 import apt
 import apt_pkg
@@ -79,10 +80,13 @@ def main():
                     raise
     with ThreadPoolExecutor(max_workers=8) as pool:
         paths = list(pool.map(obtain, records))
-    for index, path in enumerate(paths):
+    installed = SDK / "packages.json"
+    previous = {row["name"]: row["sha256"] for row in json.loads(installed.read_text())} if installed.exists() and "--force" not in sys.argv else {}
+    changed = [(row, path) for row, path in zip(records, paths) if previous.get(row["name"]) != row["sha256"]]
+    for index, (row, path) in enumerate(changed):
         subprocess.run(["dpkg-deb", "-x", str(path), str(SDK)], check=True)
         if index % 25 == 0:
-            print("Unpacked", index + 1, "/", len(paths), flush=True)
+            print("Unpacked", index + 1, "/", len(changed), flush=True)
     (SDK / "packages.json").write_text(json.dumps(records, indent=2) + "\n")
     print("Local native SDK prepared:", SDK, flush=True)
 
