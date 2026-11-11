@@ -99,7 +99,7 @@ export function assertManifest(value: unknown, appVersion?: string): asserts val
 export function assertCandidate(value: unknown, appVersion?: string): asserts value is PackageCandidate {
   requireCondition(object(value), 'extensions.invalidManifest')
   assertManifest(value.manifest, appVersion)
-  requireCondition(object(value.payload) && Object.entries(value.payload).every(([path, bytes]) => safePackagePath(path) && typeof bytes === 'string' && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(bytes)), 'extensions.invalidPayload')
+  requireCondition(object(value.payload) && Object.entries(value.payload).every(([path, bytes]) => safePackagePath(path) && typeof bytes === 'string' && bytes.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(bytes)), 'extensions.invalidPayload')
   requireCondition(typeof value.checksum === 'string' && /^[a-f0-9]{64}$/.test(value.checksum), 'extensions.invalidPayload')
   const manifest = value.manifest
   const paths = [manifest.tokens, manifest.entry, ...(manifest.styles || []), ...(manifest.scripts || []), ...(manifest.resources || []).map(item => item.path)].filter((path): path is string => Boolean(path))
