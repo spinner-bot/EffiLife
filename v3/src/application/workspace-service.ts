@@ -18,7 +18,11 @@ export class WorkspaceService {
     return result
   }
   async replace(workspace: Workspace) {
-    await this.repository.replace(workspace)
+    let snapshot: Workspace
+    try { snapshot = JSON.parse(JSON.stringify(workspace)) as Workspace } catch {
+      throw new DomainError('storage.invalidWorkspace')
+    }
+    await this.repository.replace(snapshot)
     this.events?.publish()
   }
   async restoreBackup() {
