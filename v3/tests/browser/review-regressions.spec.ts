@@ -39,7 +39,7 @@ test('keeps a metadata-edited built-in category localized but preserves a custom
   await expect(page.getByRole('button', { name: 'Edit: Work', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Edit: Work', exact: true }).click()
   dialog = page.getByRole('dialog', { name: 'Edit', exact: true })
-  await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('我的工作')
+  await dialog.getByRole('textbox', { name: 'Title', exact: true }).fill('我的工作')
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('zh-CN')
