@@ -41,5 +41,15 @@ describe('hierarchical plan categories', () => {
     expect(f.state().plans[0]!.logs[0]!.taskId).toBe(f.taskId)
     expect(() => f.run({ type: 'deleteNode', planId: f.planId, nodeId: f.sectionId })).toThrow('validation.taskHasHistory')
   })
+  it('keeps display codes distinct for root items and section items', () => {
+    const f = setup()
+    const rootTask = f.run({ type: 'addNode', planId: f.planId, parentId: null, kind: 'task', title: 'Loose item' })
+    const plan = f.state().plans[0]!
+    expect(displayCode(plan, rootTask)).not.toBe(displayCode(plan, f.taskId))
+    const rootFirst = setup()
+    const extra = rootFirst.run({ type: 'addNode', planId: rootFirst.planId, parentId: null, kind: 'task', title: 'Extra' })
+    const third = rootFirst.run({ type: 'addNode', planId: rootFirst.planId, parentId: rootFirst.sectionId, kind: 'task', title: 'Another section item' })
+    expect(new Set([extra, third, rootFirst.taskId].map(id => displayCode(rootFirst.state().plans[0]!, id))).size).toBe(3)
+  })
 })
 
