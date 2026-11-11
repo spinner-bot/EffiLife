@@ -42,6 +42,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   const logOwners = new Map<string, { planId: unknown; taskId: unknown; recordIds: unknown[] }>()
   for (const plan of plans) {
     text(plan.title); text(plan.description); validInstant(plan.createdAt); validInstant(plan.updatedAt)
+    requireCondition(plan.categoryId === undefined || categoryIds.has(plan.categoryId), 'storage.danglingReference')
     if (plan.archivedAt !== undefined) validInstant(plan.archivedAt)
     const nodes = rows(plan.nodes)
     unique(nodes.map(node => node.id))
