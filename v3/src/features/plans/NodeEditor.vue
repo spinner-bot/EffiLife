@@ -36,7 +36,7 @@ async function save() {
       <label class="field"><span>{{ t('form.title') }}</span><input v-model="form.title" class="input" required /></label>
       <label class="field"><span>{{ t('form.description') }}</span><textarea v-model="form.description" class="textarea" /></label>
       <label v-if="kind === 'task'" class="field"><span>{{ t('form.estimated') }}</span><input v-model.number="form.estimatedMinutes" type="number" min="0" class="input" /></label>
-      <label class="field"><span>{{ t(kind === 'task' ? 'form.category' : 'plans.defaultCategory') }}</span><CategorySelect v-model="form.categoryId" inherit /><span class="small muted">{{ t('plans.defaultHelp') }}</span></label>
+      <label class="field"><span>{{ t(kind === 'task' ? 'form.category' : 'plans.defaultCategory') }}</span><CategorySelect v-model="form.categoryId" :aria-label="t(kind === 'task' ? 'form.category' : 'plans.defaultCategory')" inherit /><span class="small muted">{{ t('plans.defaultHelp') }}</span></label>
       <p v-if="error" role="alert" class="form-error">{{ error }}</p>
       <div class="dialog-footer"><UiButton :disabled="busy" @click="close">{{ t('common.cancel') }}</UiButton><UiButton type="submit" variant="primary" :disabled="busy">{{ t('common.save') }}</UiButton></div>
     </form>

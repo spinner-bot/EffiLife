@@ -39,6 +39,6 @@ async function create(value: { title: string; description: string }) {
     </RouterLink>
   </div>
   <section v-else class="panel"><EmptyState :title="archived ? t('common.empty') : t('home.emptyPlansTitle')" :description="archived ? undefined : t('home.emptyPlansBody')" icon="plans"><UiButton v-if="!archived" variant="primary" @click="creating = true"><Icon name="plus" :size="18" />{{ t('plans.create') }}</UiButton></EmptyState></section>
-  <TextEditorDialog :open="creating" :title="t('plans.createTitle')" :save="create" @close="creating = false"><label class="field"><span>{{ t('plans.defaultCategory') }}</span><CategorySelect v-model="categoryId" required /><span class="small muted">{{ t('plans.defaultHelp') }}</span></label></TextEditorDialog>
+  <TextEditorDialog :open="creating" :title="t('plans.createTitle')" :save="create" @close="creating = false"><label class="field"><span>{{ t('plans.defaultCategory') }}</span><CategorySelect v-model="categoryId" :aria-label="t('plans.defaultCategory')" required /><span class="small muted">{{ t('plans.defaultHelp') }}</span></label></TextEditorDialog>
 </template>
 
