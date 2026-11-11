@@ -8,7 +8,7 @@ test('creates categories in place and inherits plan and group defaults after rel
   const plan = page.getByRole('dialog', { name: '开始一份主题计划' })
   await plan.getByLabel('名称', { exact: true }).fill('旅行计划')
   await plan.getByLabel('背景时间类别', { exact: true }).selectOption('__create__')
-  const category = page.getByRole('dialog', { name: '添加时间类别', exact: true })
+  const category = page.getByRole('dialog', { name: '新增类别', exact: true })
   await category.getByLabel('名称', { exact: true }).fill('出行')
   await category.getByRole('button', { name: '保存', exact: true }).click()
   await expect(plan.getByLabel('名称', { exact: true })).toHaveValue('旅行计划')
