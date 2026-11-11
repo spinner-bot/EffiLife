@@ -165,6 +165,8 @@
   "plans.recordProgress": "记录进展",
   "plans.totalTime": "已记录投入",
   "plans.assignCategory": "统一设置时间类别",
+  "plans.assignPlanCategory": "设置整个计划的时间类别",
+  "plans.categoryScope": "用于之后的记录，历史用时记录保留原有类别。",
   "plans.overwrite": "同时覆盖下方已有类别",
   "plans.rename": "编辑计划",
   "plans.notFound": "这份计划暂时无法找到",
