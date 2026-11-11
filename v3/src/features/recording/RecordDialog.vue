@@ -34,9 +34,9 @@ const elapsed = computed(() => {
 })
 watch(() => recording.sequence, () => {
   Object.assign(form, blank(), { planId: recording.planId, taskId: recording.taskId, todoId: recording.todoId, target: recording.planId ? 'plan:' + recording.planId : recording.todoId ? 'todo:' + recording.todoId : '' })
-  if (recording.planId && recording.taskId) {
+  if (recording.planId) {
     const selected = plans.value.find(item => item.id === recording.planId)
-    if (selected) form.categoryId = categoryFor(selected, recording.taskId)
+    if (selected) form.categoryId = categoryFor(selected, recording.taskId || undefined)
   }
   if (recording.todoId) { const selected = current.value.todos.find(item => item.id === recording.todoId); if (selected) { form.categoryId = selected.categoryId; form.title = selected.title } }
   initial = JSON.stringify(form)
@@ -49,12 +49,12 @@ function changeContext() {
   form.taskId = ''
   const selected = current.value.todos.find(item => item.id === form.todoId)
   form.title = selected?.title || ''
-  form.categoryId = selected?.categoryId || 'life'
+  form.categoryId = plan.value ? categoryFor(plan.value) : selected?.categoryId || 'life'
   if (!form.planId) form.withTime = true
   form.complete = false
 }
 function changeTask() {
-  if (plan.value && form.taskId) form.categoryId = categoryFor(plan.value, form.taskId)
+  if (plan.value) form.categoryId = categoryFor(plan.value, form.taskId || undefined)
   form.complete = false
 }
 function useReference() {
