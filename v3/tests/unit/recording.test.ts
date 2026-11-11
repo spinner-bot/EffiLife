@@ -21,6 +21,17 @@ function fixture() {
 }
 
 describe('unified recording', () => {
+  it('rejects stale duration on creation and editing without changing logs or records', () => {
+    const f = fixture()
+    const command = { type: 'recordAction' as const, planId: f.planId, taskId: f.taskA, content: 'Study', startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:40:00Z' }
+    const before = structuredClone(f.state())
+    expect(() => f.run({ ...command, expectedMinutes: 60 })).toThrow('validation.durationMismatch')
+    expect(f.state()).toEqual(before)
+    const id = f.run({ ...command, expectedMinutes: 40 }).recordId!
+    const saved = structuredClone(f.state())
+    expect(() => f.run({ type: 'updateRecord', recordId: id, title: 'Changed', note: '', categoryId: 'work', startAt: command.startAt, endAt: command.endAt, expectedMinutes: 30 })).toThrow('validation.durationMismatch')
+    expect(f.state()).toEqual(saved)
+  })
   it('creates actual time and an unfinished progress log together', () => {
     const f = fixture()
     const result = f.run({ type: 'recordAction', planId: f.planId, taskId: f.taskA, content: 'First three sections', startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:40:00Z' })
