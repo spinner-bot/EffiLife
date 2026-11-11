@@ -136,7 +136,7 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelectorAll('.list-row').length===2"), "durable backup restore after process restart")
         rect = driver.call("GET", "/window/rect")
         subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / "desktop.png"), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
-        report = {"application": str(application.relative_to(ROOT)), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
+        report = {"application": str(application.relative_to(ROOT)), "applicationSha256": hashlib.sha256(application.read_bytes()).hexdigest(), "version": (ROOT / "VERSION").read_text().strip(), "features": features, "deniedWrite": rejection, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "unselected path write denied", "real GTK save dialog and scoped file write", "export payload and SHA-256", "native archive import", "backup restore", "native decorative worker", "durability across native process restart"]}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("Tauri desktop smoke passed:", ", ".join(report["checks"]), flush=True)
 
