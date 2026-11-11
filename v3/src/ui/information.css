@@ -35,5 +35,6 @@
 .data-table th, .data-table td { text-align: start; padding: var(--space-4); border-bottom: 1px solid var(--line); }
 .data-table th { font-weight: 500; color: var(--muted); }
 .quick-capture { display: flex; gap: var(--space-3); align-items: center; }
+.budget-input-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px 42px; gap: var(--space-3); align-items: center; }
 @media (max-width: 600px) { .time-overview { grid-template-columns: minmax(0, 1fr); padding: var(--space-6); gap: var(--space-5); } .time-ring { margin-inline: auto; } .list-row { padding-inline: var(--space-4); gap: var(--space-3); } .tree-group { padding-inline: var(--space-4); } .tree-actions { flex-wrap: wrap; justify-content: flex-end; } .quick-capture { flex-wrap: wrap; } .quick-capture .input { flex: 1; min-width: 170px; } }
 
