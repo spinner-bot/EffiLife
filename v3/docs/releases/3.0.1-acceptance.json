@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "product": "EffiLife",
+  "version": "3.0.1",
+  "status": "local-acceptance-candidate",
+  "date": "2026-11-12",
+  "author": "Codex  (sqs_A100)",
+  "replaces": "3.0.0",
+  "reviewFindingsAddressed": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "sourceCommit": "ad1604bb77b218800d28412602f4b7205521b29e",
+  "platform": "linux-amd64",
+  "archive": {
+    "path": ".cache/delivery/EffiLife-3.0.1-ad1604bb-linux-amd64.zip",
+    "bytes": 18550592,
+    "sha256": "26ca69528cbf9035ab7f3876335de20c4116320ae5391af97e48e44b4b24ecbe",
+    "payloadFiles": 640
+  },
+  "debianPackage": {
+    "filename": "EffiLife_3.0.1_amd64.deb",
+    "bytes": 9217118,
+    "sha256": "346d2343f5c777d31b0aaf0e749d332cd65e8e6a2de4f361ae01597bb40f8fc6"
+  },
+  "executableSha256": "2256c60adf4b52faf7283de9e10074b840676689b9ca0bae6eb633ff7b836f3b",
+  "frontendTreeSha256": "551cffff51837df79fd942ba6c1f325f032f017885aa92a8f748fa9aacfe4c77",
+  "verification": {
+    "unitTests": 99,
+    "chromiumTests": 28,
+    "webkitChecks": 8,
+    "tauriChecks": 11,
+    "types": "passed",
+    "productionBuild": "passed",
+    "trustedRelayHashGate": "passed",
+    "modifiedAssetDeliveryGate": "rejected as expected"
+  },
+  "importBudget": {
+    "maxInputBytes": 67108864,
+    "maxEntryBytes": 33554432,
+    "maxExpandedBytes": 134217728,
+    "maxEntries": 9999,
+    "maxCompressionRatio": 200,
+    "ratioCheckFromBytes": 1048576
+  },
+  "boundaries": [
+    "Existing UTC values, custom category names and historical date overrides are not rewritten by guessing original intent.",
+    "Package contents and actual extracted program verified; no system installation performed.",
+    "Windows, macOS and mobile runtimes not verified.",
+    "Root headless lab disables Linux WebKit process sandbox; no OS sandbox certification.",
+    "No automatic cloud sync or public release publishing."
+  ]
+}
