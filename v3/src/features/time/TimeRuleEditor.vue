@@ -31,14 +31,14 @@ async function close() {
 async function save() {
   busy.value = true; error.value = ''
   const value = form.kind === 'week' ? [...form.weekdays].sort().join(',') : form.kind === 'month' ? [...form.months].sort((a, b) => a - b).join(',') : form.kind === 'year' ? form.yearlyDate.slice(5) : form.kind === 'month_week' ? form.weekOfMonth + '-' + form.weekday : ''
-  try { await dispatch({ type: 'saveTimeRule', ruleId: props.rule?.id, kind: form.kind, value, timePlanId: form.planId }, operationId); emit('close') } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
+  try { await dispatch({ type: 'saveTimeRule', ruleId: props.rule?.id || undefined, kind: form.kind, value, timePlanId: form.planId }, operationId); emit('close') } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
 }
 </script>
 <template>
   <UiDialog :open="open" :title="t('planning.ruleEditor')" @close="close">
     <form class="stack" @submit.prevent="save">
       <label class="field"><span>{{ t('planning.template') }}</span><select v-model="form.planId" class="select" required><option v-for="plan in planningOf(current).plans" :key="plan.id" :value="plan.id">{{ plan.name }}</option></select></label>
-      <label class="field"><span>{{ t('planning.repeat') }}</span><select v-model="form.kind" class="select"><option v-for="kind in ['week', 'month', 'year', 'month_week', 'default']" :key="kind" :value="kind">{{ t('planning.rule.' + kind) }}</option></select></label>
+      <label class="field"><span>{{ t('planning.repeat') }}</span><select v-model="form.kind" class="select" :disabled="rule?.kind === 'default'"><option v-for="kind in rule?.kind === 'default' ? ['default'] : ['week', 'month', 'year', 'month_week']" :key="kind" :value="kind">{{ t('planning.rule.' + kind) }}</option></select></label>
       <div v-if="form.kind === 'week'" class="cluster"><label v-for="day in 7" :key="day" class="check-field"><input v-model="form.weekdays" type="checkbox" :value="day" />{{ t('weekday.' + day) }}</label></div>
       <div v-if="form.kind === 'month'" class="cluster"><label v-for="month in 12" :key="month" class="check-field"><input v-model="form.months" type="checkbox" :value="month" />{{ t('planning.monthNumber', { month }) }}</label></div>
       <label v-if="form.kind === 'year'" class="field"><span>{{ t('planning.yearDate') }}</span><input v-model="form.yearlyDate" type="date" class="input" required /></label>
