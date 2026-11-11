@@ -62,7 +62,12 @@ def main():
             raise RuntimeError("Xvfb failed; see process.log")
         env["DISPLAY"] = ":" + number
         driver_port = port()
-        process = subprocess.Popen([str(sdk / "usr/bin/dbus-run-session"), "--", str(sdk / "usr/bin/WebKitWebDriver"), "--port=" + str(driver_port)], stdout=log, stderr=log, env=env, start_new_session=True)
+        # Release WebKit uses a compiled absolute subprocess directory. PRoot
+        # maps that directory for this process tree without creating anything
+        # in the workstation's /usr filesystem.
+        webkit = sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
+        command = [str(sdk / "usr/bin/proot"), "-b", str(webkit) + ":/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1", str(sdk / "usr/bin/dbus-run-session"), "--", str(sdk / "usr/bin/WebKitWebDriver"), "--port=" + str(driver_port)]
+        process = subprocess.Popen(command, stdout=log, stderr=log, env=env, start_new_session=True)
         cleanup.callback(stop, process)
         endpoint = "http://127.0.0.1:" + str(driver_port)
         for attempt in range(100):
