@@ -1,4 +1,4 @@
-import formats from '../../shared/package-formats.json'
+import formats from '../../shared/package-formats.json' with { type: 'json' }
 export type PackageKind = keyof typeof formats.formats
 export const packageFormats = formats.formats
 export function extensionFor(kind: PackageKind): string { return packageFormats[kind].current }
