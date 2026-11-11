@@ -31,6 +31,12 @@
 .theme-preview span { height: 22px; width: 28px; border-radius: 4px; }
 .theme-name { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; font-size: var(--text-xs); gap: var(--space-2); }
 .theme-option > .muted { display: block; padding: 0 12px 10px; font-size: 10px; overflow-wrap: anywhere; }
+.todo-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.todo-checklist { margin-top: 12px; }
+.todo-checklist summary { color: var(--muted); font-size: var(--text-xs); cursor: pointer; }
+.todo-checklist .check-field { margin-top: 8px; }
+.list-row[data-selected='true'] { background: var(--subtle); box-shadow: inset 3px 0 var(--accent); }
+@media (max-width: 480px) { .todo-filters { grid-template-columns: minmax(0, 1fr); } }
 .table-wrap { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .data-table th, .data-table td { text-align: start; padding: var(--space-4); border-bottom: 1px solid var(--line); }
