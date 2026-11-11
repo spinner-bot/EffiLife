@@ -15,13 +15,15 @@ import EmptyState from './ui/EmptyState.vue'
 import FeedbackHost from './ui/FeedbackHost.vue'
 import RecordDialog from './features/recording/RecordDialog.vue'
 import ArchiveTools from './features/settings/ArchiveTools.vue'
+import { reconcileResources } from './extensions/resources'
 
 const route = useRoute()
 const version = __APP_VERSION__
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
 const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
-watch(() => current.value.preferences, async preferences => {
+watch(() => [current.value.preferences, current.value.packages] as const, async ([preferences, packages]) => {
+  reconcileResources(packages)
   setLocale(preferences.locale)
   applyTheme(preferences.themeId)
   try { await applyFont(preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
