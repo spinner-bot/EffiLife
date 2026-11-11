@@ -11,10 +11,6 @@ function audit(workspace: Workspace, entry: InstalledPackage, action: ExtensionA
 function fallback(workspace: Workspace, entry: InstalledPackage) {
   if (entry.kind === 'theme' && workspace.preferences.themeId === entry.id) workspace.preferences.themeId = 1
   if (workspace.preferences.fontId.startsWith('pkg:' + entry.id + ':')) workspace.preferences.fontId = 'default'
-  if (entry.kind === 'resource' && (entry.manifest.resources as Array<{ kind: string; path: string }> | undefined)?.some(resource => resource.kind === 'locale')) {
-    // Locale fallback is resolved by the runtime; retain the preference when
-    // disabling unrelated resource packages.
-  }
 }
 function status(entry: InstalledPackage, manifest: ExtensionManifest) {
   return manifest.requiredPermissions.every(capability => entry.grants.includes(capability)) ? 'enabled' as const : 'disabled' as const
@@ -28,7 +24,8 @@ export function applyPackageCommand(workspace: Workspace, command: WorkspaceComm
     requireCondition(command.updateId === undefined || old, 'extensions.packageMissing')
     if (old) {
       assertManifest(old.manifest)
-      requireCondition(old.author === manifest.author && JSON.stringify(old.manifest.name) === JSON.stringify(manifest.name), 'extensions.identityMismatch')
+      const name = manifest.name['en-US'] || Object.values(manifest.name)[0]!
+      requireCondition(old.author === manifest.author && old.name === name, 'extensions.identityMismatch')
       requireCondition(compareVersions(manifest.version, old.version) > 0, 'extensions.versionNotNewer')
     }
     const used = [...workspace.packages, ...workspace.packageTombstones].filter(item => item.kind === manifest.type).map(item => item.id)
