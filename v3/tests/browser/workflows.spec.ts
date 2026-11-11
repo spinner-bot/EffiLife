@@ -36,7 +36,7 @@ async function createTask(page: Page) {
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await page.getByRole('button', { name: '更多操作', exact: true }).first().click()
-  await page.getByRole('menuitem', { name: '统一设置时间类别', exact: true }).click()
+  await page.getByRole('menuitem', { name: '统一设置分组内子项类别', exact: true }).click()
   dialog = page.getByRole('dialog', { name: '统一设置分组内子项类别', exact: true })
   await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption('study')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()

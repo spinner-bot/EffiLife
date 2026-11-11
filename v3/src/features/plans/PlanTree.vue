@@ -20,7 +20,7 @@ function toggle(id: string) { if (collapsed.value.has(id)) collapsed.value.delet
 function menu(node: PlanNode) {
   const items = [
     { label: t('common.edit'), icon: 'edit', action: () => emit('action', 'edit', node) },
-    { label: t('plans.assignCategory'), icon: 'tag', action: () => emit('action', 'category', node) },
+    { label: t(node.kind === 'task' ? 'plans.taskCategory' : 'plans.groupCategory'), icon: 'tag', action: () => emit('action', 'category', node) },
   ]
   if (node.kind !== 'task') items.unshift(
     { label: t('plans.addTask'), icon: 'plus', action: () => emit('action', 'addTask', node) },
