@@ -7,6 +7,7 @@ import { notify } from '../../ui/state'
 import PageHeader from '../../ui/PageHeader.vue'
 import Panel from '../../ui/Panel.vue'
 import ArchiveTools from './ArchiveTools.vue'
+import HeaderClockSettings from './HeaderClockSettings.vue'
 import PackageTools from './PackageTools.vue'
 import { resourceRevision } from '../../extensions/resources'
 const version = __APP_VERSION__
@@ -24,6 +25,7 @@ async function preferences(value: Partial<Preferences>) {
       <label class="field"><span>{{ t('form.timezone') }}</span><input :value="current.preferences.timeZone" list="time-zone-options" class="input" @change="preferences({ timeZone: ($event.target as HTMLInputElement).value })" /><datalist id="time-zone-options"><option v-for="zone in timeZones" :key="zone" :value="zone" /></datalist></label>
     </div></Panel>
     <div class="stack"><Panel :title="t('settings.data')"><div class="panel-body"><ArchiveTools /></div></Panel><Panel :title="t('settings.about')"><div class="panel-body stack"><strong>EffiLife</strong><p class="muted small">{{ t('settings.version', { version }) }} · {{ t('app.tagline') }}</p></div></Panel></div>
+    <HeaderClockSettings />
     <PackageTools />
   </div>
 </template>

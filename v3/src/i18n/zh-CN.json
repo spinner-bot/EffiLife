@@ -424,5 +424,19 @@
   "planning.defaultHelp": "当某一天没有手动指定方案、也没有命中普通日程规则时，使用这个默认方案。它不会覆盖已有的日期指定；首个方案自动作为兜底。",
   "planning.dateHelp": "将此方案单独指定给当前查看的日期 {date}，优先于日程规则。这里的当前日期指所选日期，不一定是今天。",
   "planning.optionsHelp": "两项可以同时选择：一项改变未匹配日期的兜底方案，另一项只指定当前所选日期。",
-  "validation.durationMismatch": "开始时间、结束时间与用时不一致，请检查后保存。"
+  "validation.durationMismatch": "开始时间、结束时间与用时不一致，请检查后保存。",
+  "clock.title": "顶栏时间与日期",
+  "clock.display": "显示内容",
+  "clock.date": "仅日期",
+  "clock.time": "仅时间",
+  "clock.both": "时间与日期",
+  "clock.hourCycle": "时制",
+  "clock.24": "24 小时制",
+  "clock.12": "12 小时制",
+  "clock.showPeriod": "12 小时制显示 AM / PM（本地化时段）",
+  "clock.align": "显示位置",
+  "clock.right": "右置",
+  "clock.center": "居中",
+  "time.categoryBreakdown": "类别用时与行动",
+  "time.ringOverlap": "圆环按各记录时长展示构成；中心总用时已扣除重叠区间。"
 }

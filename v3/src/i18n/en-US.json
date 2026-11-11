@@ -424,5 +424,19 @@
   "planning.defaultHelp": "Used for dates with no manual assignment or matching ordinary rule. Existing date assignments remain unchanged. The first plan becomes the fallback.",
   "planning.dateHelp": "Assigns this plan specifically to the viewed date {date}, taking precedence over schedule rules. The selected date may differ from today.",
   "planning.optionsHelp": "Both options can be enabled: one sets the fallback, the other assigns only the selected date.",
-  "validation.durationMismatch": "Start, end and duration do not match. Check the interval before saving."
+  "validation.durationMismatch": "Start, end and duration do not match. Check the interval before saving.",
+  "clock.title": "Header time & date",
+  "clock.display": "Display",
+  "clock.date": "Date only",
+  "clock.time": "Time only",
+  "clock.both": "Time and date",
+  "clock.hourCycle": "Hour cycle",
+  "clock.24": "24-hour",
+  "clock.12": "12-hour",
+  "clock.showPeriod": "Show AM / PM (localized day period)",
+  "clock.align": "Position",
+  "clock.right": "Right",
+  "clock.center": "Center",
+  "time.categoryBreakdown": "Time by category & action",
+  "time.ringOverlap": "Segments show each record’s duration; the center total excludes overlapping intervals."
 }
