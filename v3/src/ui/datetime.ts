@@ -1,4 +1,4 @@
-import { localInstant } from '../adapters/legacy-utils'
+import { zonedInstant } from '../domain/time'
 
 export function dateTimeInput(value: string, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -8,8 +8,6 @@ export function dateTimeInput(value: string, timeZone: string): string {
   return field('year') + '-' + field('month') + '-' + field('day') + 'T' + field('hour') + ':' + field('minute')
 }
 export function parseDateTimeInput(value: string, timeZone: string): string {
-  const [date, time] = value.split('T')
-  if (!date || !time) throw new Error('validation.invalidTime')
-  return localInstant(date, time, timeZone)
+  return zonedInstant(value, timeZone)
 }
 
