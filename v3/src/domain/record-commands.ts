@@ -1,6 +1,6 @@
 import type { CommandContext, OperationResult, Workspace } from './models'
 import type { WorkspaceCommand } from './commands'
-import { findPlan, findNode, categoryFor } from './plans'
+import { findPlan, findNode, effectivePlanCategory } from './plans'
 import { requireCondition, requireTitle } from './errors'
 import { instant, minutesBetween, referenceFor } from './time'
 import { applyTodoCommand } from './todo-commands'
@@ -29,7 +29,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     requireCondition(plan || hasTime, 'validation.timeRequired')
     const occurredAt = instant(command.occurredAt || command.endAt || context.now)
     const title = requireTitle(command.title || task?.title || todo?.title || command.content)
-    const categoryId = command.categoryId || (plan ? categoryFor(plan, task?.id) : todo?.categoryId || 'life')
+    const categoryId = command.categoryId || (plan ? effectivePlanCategory(workspace, plan, task?.id) : todo?.categoryId || 'life')
     requireCondition(workspace.categories.some(category => category.id === categoryId), 'validation.categoryMissing')
     const hint = referenceFor(workspace, occurredAt)
     const logId = plan ? context.id() : undefined
