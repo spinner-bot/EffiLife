@@ -2,7 +2,7 @@ import type { Plan, PlanNode, Workspace } from '../domain/models'
 import { list, object, string, number, legacyDate, logInstant, sectionLetter } from './legacy-utils'
 
 export function importLegacyPlans(
-  workspace: Workspace, values: unknown[], warnings: string[],
+  workspace: Workspace, values: unknown[], warnings: string[], namespace = 'legacy-plan-',
 ): Map<string, { planId: string; tasks: Map<string, string> }> {
   const mapping = new Map<string, { planId: string; tasks: Map<string, string> }>()
   for (const [position, value] of values.entries()) {
@@ -10,7 +10,7 @@ export function importLegacyPlans(
     const head = object(raw.head)
     if (!Array.isArray(raw.main)) { warnings.push('legacy.planInvalid'); continue }
     const rawId = String(head.index ?? position + 1)
-    const planId = 'legacy-plan-' + rawId
+    const planId = namespace + rawId
     if (mapping.has(rawId)) { warnings.push('legacy.duplicatePlan'); continue }
     const baseDate = legacyDate(head.date, workspace.updatedAt)
     const plan: Plan = {
@@ -35,7 +35,6 @@ export function importLegacyPlans(
       for (const [taskIndex, taskValue] of list(section.plan).entries()) {
         if (!taskValue || typeof taskValue !== 'object') continue
         const task = object(taskValue)
-        if (task.is_active === false) continue
         const id = sectionId + '-task-' + taskIndex
         const enclosing = groups.filter(group => group.start <= taskIndex && group.end >= taskIndex)
           .sort((a, b) => (a.end - a.start) - (b.end - b.start))[0]
@@ -43,6 +42,8 @@ export function importLegacyPlans(
           id, parentId: enclosing?.id || sectionId, kind: 'task',
           title: string(task.content, 'Task ' + taskIndex), description: '',
           order: plan.nodes.length, estimatedMinutes: Math.max(0, number(task.t_m) * 6),
+          legacyCode: sectionLetter(sectionIndex) + taskIndex,
+          deletedAt: task.is_active === false ? workspace.updatedAt : undefined,
         }
         if (task.finish && typeof task.finish === 'object') node.completedAt = logInstant(object(task.finish), baseDate, workspace.preferences.timeZone).occurredAt
         plan.nodes.push(node)
