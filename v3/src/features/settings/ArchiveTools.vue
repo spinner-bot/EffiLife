@@ -5,6 +5,7 @@ import { inspectArchive, exportArchive } from '../../adapters/archive'
 import { current, workspace, replaceWorkspace, restoreWorkspace } from '../../application/runtime'
 import { acceptedExtensions } from '../../extensions/formats'
 import { saveDataFile } from '../../platform/files'
+import { checkImportInput } from '../../extensions/import-budget'
 import { t, errorMessage } from '../../i18n'
 import { notify, confirmAction } from '../../ui/state'
 import UiButton from '../../ui/UiButton.vue'
@@ -28,7 +29,7 @@ async function readFile(event: Event) {
   const file = target.files?.[0]
   if (!file) return
   busy.value = true; error.value = ''
-  try { preview.value = await inspectArchive(new Uint8Array(await file.arrayBuffer()), __APP_VERSION__, current.value.preferences.timeZone) } catch (failure) { notify(errorMessage(failure), 'error') } finally { busy.value = false; target.value = '' }
+  try { checkImportInput(file.size); preview.value = await inspectArchive(new Uint8Array(await file.arrayBuffer()), __APP_VERSION__, current.value.preferences.timeZone) } catch (failure) { notify(errorMessage(failure), 'error') } finally { busy.value = false; target.value = '' }
 }
 async function importData() {
   if (!preview.value) return
