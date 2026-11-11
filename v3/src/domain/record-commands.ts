@@ -3,6 +3,7 @@ import type { WorkspaceCommand } from './commands'
 import { findPlan, findNode, categoryFor } from './plans'
 import { requireCondition, requireTitle } from './errors'
 import { instant, minutesBetween, referenceFor } from './time'
+import { applyTodoCommand } from './todo-commands'
 
 function removeRecords(workspace: Workspace, ids: Set<string>) {
   workspace.records = workspace.records.filter(item => !ids.has(item.id))
@@ -16,6 +17,10 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     const plan = command.planId ? findPlan(workspace, command.planId) : undefined
     requireCondition(!plan?.archivedAt, 'validation.planArchived')
     const task = plan && command.taskId ? findNode(plan, command.taskId) : undefined
+    const todo = command.todoId ? workspace.todos.find(item => item.id === command.todoId) : undefined
+    requireCondition(!command.todoId || todo, 'validation.todoMissing')
+    requireCondition(!todo || !['archived', 'cancelled'].includes(todo.status), 'validation.todoArchived')
+    requireCondition(!command.completeTodo || todo, 'validation.todoMissing')
     requireCondition(!task || task.kind === 'task', 'validation.taskRequired')
     requireCondition(!task?.deletedAt, 'validation.taskDeleted')
     requireCondition(!command.completeTask || task, 'validation.taskRequired')
@@ -23,8 +28,8 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
     const hasTime = Boolean(command.startAt && command.endAt)
     requireCondition(plan || hasTime, 'validation.timeRequired')
     const occurredAt = instant(command.occurredAt || command.endAt || context.now)
-    const title = requireTitle(command.title || task?.title || command.content)
-    const categoryId = command.categoryId || (plan && task ? categoryFor(plan, task.id) : 'life')
+    const title = requireTitle(command.title || task?.title || todo?.title || command.content)
+    const categoryId = command.categoryId || (plan && task ? categoryFor(plan, task.id) : todo?.categoryId || 'life')
     requireCondition(workspace.categories.some(category => category.id === categoryId), 'validation.categoryMissing')
     const hint = referenceFor(workspace, occurredAt)
     const logId = plan ? context.id() : undefined
@@ -35,7 +40,7 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
       workspace.records.push({
         id: recordId, title, note: command.content.trim(), categoryId,
         startAt: instant(command.startAt!), endAt: instant(command.endAt!),
-        planId: plan?.id, taskId: task?.id, logId,
+        planId: plan?.id, taskId: task?.id, logId, todoId: todo?.id,
         timing: command.timing || 'actual', source: 'manual',
       })
     }
@@ -47,6 +52,11 @@ export function applyRecordCommand(workspace: Workspace, command: WorkspaceComma
       })
       plan.updatedAt = context.now
       if (task && command.completeTask) task.completedAt = occurredAt
+    }
+    if (todo) {
+      if (recordId) todo.recordIds.push(recordId)
+      todo.updatedAt = context.now
+      if (command.completeTodo) applyTodoCommand(workspace, { type: 'setTodoStatus', todoId: todo.id, status: 'completed' }, { ...context, now: occurredAt })
     }
     return { recordId, logId, entityId: task?.id || plan?.id || recordId }
   }
