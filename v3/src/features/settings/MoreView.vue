@@ -8,7 +8,7 @@ const entries = [
   { path: 'time-plans', title: 'planning.manage', icon: 'calendar', help: 'more.plansHelp' },
   { path: 'rules', title: 'planning.rules', icon: 'repeat', help: 'more.rulesHelp' },
   { path: 'appearance', title: 'more.appearance', icon: 'theme', help: 'more.appearanceHelp' },
-  { path: 'settings', title: 'settings.title', icon: 'settings', help: 'more.settingsHelp' },
+  { path: 'settings', title: 'nav.settings', icon: 'settings', help: 'more.settingsHelp' },
 ]
 </script>
 <template>
