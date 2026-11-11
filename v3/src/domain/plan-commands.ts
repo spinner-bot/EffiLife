@@ -5,8 +5,10 @@ import { requireCondition, requireTitle } from './errors'
 
 export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand, context: CommandContext): OperationResult | undefined {
   if (command.type === 'createPlan') {
+    const categoryId = command.categoryId || workspace.categories.find(category => category.id === 'life')?.id || workspace.categories[0]?.id
+    requireCondition(categoryId && workspace.categories.some(category => category.id === categoryId), 'validation.categoryMissing')
     const id = context.id()
-    workspace.plans.push({ id, title: requireTitle(command.title), description: command.description?.trim() || '', createdAt: context.now, updatedAt: context.now, nodes: [], logs: [] })
+    workspace.plans.push({ id, title: requireTitle(command.title), description: command.description?.trim() || '', createdAt: context.now, updatedAt: context.now, categoryId, nodes: [], logs: [] })
     return { entityId: id }
   }
   if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
@@ -34,6 +36,10 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
     case 'updateNode': {
       const node = findNode(plan, command.nodeId)
       requireCondition(Number.isFinite(command.estimatedMinutes) && command.estimatedMinutes >= 0, 'validation.invalidDuration')
+      if (command.categoryId !== undefined) {
+        requireCondition(command.categoryId === null || workspace.categories.some(category => category.id === command.categoryId), 'validation.categoryMissing')
+        node.categoryId = command.categoryId || undefined
+      }
       node.title = requireTitle(command.title)
       node.description = command.description.trim()
       node.estimatedMinutes = command.estimatedMinutes
