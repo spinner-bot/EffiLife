@@ -63,10 +63,15 @@ test.describe('touch dragging', () => {
     const box = await row(page, '手势子项').locator('.drag-handle').boundingBox()
     const client = await context.newCDPSession(page)
     const x = box!.x + box!.width / 2, y = box!.y + box!.height / 2
+    await page.evaluate(() => {
+      const events: unknown[] = []; Object.assign(window, { touchEvidence: events })
+      for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) window.addEventListener(type, event => { const pointer = event as PointerEvent; events.push({ type, id: pointer.pointerId, x: pointer.clientX, y: pointer.clientY, target: (event.target as HTMLElement).className }) }, true)
+    })
     await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
     for (let step = 1; step <= 10; step++) await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 22 * step / 10, y: y + 10 * step / 10 }] })
     await expect(page.locator('.tree-drop-gap')).toHaveAttribute('data-depth', '1')
     await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await test.info().attach('touch-events', { body: JSON.stringify(await page.evaluate(() => (window as unknown as { touchEvidence: unknown[] }).touchEvidence)), contentType: 'application/json' })
     await expect(row(page, '手势子项')).toHaveAttribute('data-depth', '1')
     await page.reload()
     await expect(row(page, '手势子项')).toHaveAttribute('data-depth', '1')
