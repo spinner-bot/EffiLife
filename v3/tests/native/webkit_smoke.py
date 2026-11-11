@@ -129,7 +129,7 @@ EffiLife.onMount(async () => {
             bundle.writestr("main.js", source)
         driver.file(driver.element('input[type="file"][aria-label="安装扩展包"]'), archive)
         dialog = "Array.from(document.querySelectorAll('[role=dialog]')).find(e=>e.getAttribute('aria-hidden')!=='true')"
-        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[value=\\"app.layout\\"]'))"), "extension permission preview")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector(arguments[0]))", 'input[value="app.layout"]'), "extension permission preview")
         driver.click(driver.element('input[value="app.layout"]'))
         driver.button("确认安装", dialog)
         driver.wait(lambda: driver.script("return document.body.textContent.includes('允许此扩展访问应用系统？')"))
