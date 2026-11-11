@@ -22,6 +22,7 @@ export class SandboxSession {
   private watchdog: ReturnType<typeof setInterval>
   private count = 0
   private windowStart = 0
+  private readonly motionQuery = matchMedia('(prefers-reduced-motion: reduce)')
   constructor(private readonly container: HTMLElement, private readonly options: SandboxOptions) {
     const frame = this.frame
     frame.title = options.title
@@ -39,7 +40,7 @@ export class SandboxSession {
     this.observer = new ResizeObserver(() => this.update())
     this.observer.observe(container)
     document.addEventListener('visibilitychange', this.visibility)
-    matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', this.motion)
+    this.motionQuery.addEventListener('change', this.motion)
     if (options.capabilities.includes('overlay.interactive')) window.addEventListener('pointermove', this.pointer, { passive: true })
     this.watchdog = setInterval(() => {
       if (!document.hidden && Date.now() - this.lastHeartbeat > 15000) this.fail('extensions.scriptTimeout')
@@ -48,7 +49,7 @@ export class SandboxSession {
   private send(value: unknown) { if (!this.disposed) this.channel.port1.postMessage(value) }
   private state() {
     const rect = this.container.getBoundingClientRect()
-    return { width: Math.max(1, rect.width), height: Math.max(1, rect.height), dpr: Math.min(2, devicePixelRatio || 1), visible: !document.hidden, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches, theme: this.options.theme }
+    return { width: Math.max(1, rect.width), height: Math.max(1, rect.height), dpr: Math.min(2, devicePixelRatio || 1), visible: !document.hidden, reducedMotion: this.motionQuery.matches, theme: this.options.theme }
   }
   update(theme?: Record<string, string>) {
     if (theme) this.options.theme = theme
@@ -94,7 +95,7 @@ export class SandboxSession {
     clearInterval(this.watchdog)
     this.observer.disconnect()
     document.removeEventListener('visibilitychange', this.visibility)
-    matchMedia('(prefers-reduced-motion: reduce)').removeEventListener('change', this.motion)
+    this.motionQuery.removeEventListener('change', this.motion)
     window.removeEventListener('pointermove', this.pointer)
     this.channel.port1.close()
     this.frame.remove()
