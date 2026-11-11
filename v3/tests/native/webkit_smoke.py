@@ -113,7 +113,9 @@ def main():
         driver.call("POST", "/refresh", {})
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('WebKit 真实待办')"), "IndexedDB persistence")
         snapshot(driver, "todos-1440.png")
-        driver.navigate(base + "/#/settings")
+        driver.navigate(base + "/#/more/appearance")
+        driver.button("通透玻璃")
+        driver.wait(lambda: driver.script("return document.documentElement.dataset.surfaceEffect==='glass' && getComputedStyle(document.querySelector('.panel')).backdropFilter.includes('blur')"), "WebKit glass material")
         driver.button("北欧极夜")
         driver.wait(lambda: driver.script("return document.querySelector('.theme-decoration iframe')?.dataset.ready === 'true'"), "opaque Worker and OffscreenCanvas")
         snapshot(driver, "theme-1440.png")
@@ -133,6 +135,8 @@ EffiLife.onMount(async () => {
             bundle.writestr("manifest.json", json.dumps(manifest))
             bundle.writestr("tokens.json", '{"palette":{"accent":"#5370cb"}}')
             bundle.writestr("main.js", source)
+        driver.navigate(base + "/#/more/settings")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"安装扩展包\"]'))"))
         driver.file(driver.element('input[type="file"][aria-label="安装扩展包"]'), archive)
         dialog = "Array.from(document.querySelectorAll('[role=dialog]')).find(e=>e.getAttribute('aria-hidden')!=='true')"
         driver.wait(lambda: driver.script("return Boolean(document.querySelector(arguments[0]))", 'input[value="app.layout"]'), "extension permission preview")
@@ -141,6 +145,7 @@ EffiLife.onMount(async () => {
         driver.wait(lambda: driver.script("return document.body.textContent.includes('允许此扩展访问应用系统？')"))
         driver.button("确认", dialog)
         driver.wait(lambda: driver.script("return !Array.from(document.querySelectorAll('[role=dialog]')).some(e=>e.getClientRects().length)"), "extension installation")
+        driver.navigate(base + "/#/more/appearance")
         driver.button("隔离探针 · Example · 1.0.0 · #100000")
         driver.wait(lambda: driver.script("return document.querySelector('.theme-replacement iframe')?.dataset.ready === 'true'"), "WebKit replacement layout")
         driver.call("POST", "/frame", {"id": driver.element('.theme-replacement iframe')})
@@ -157,7 +162,7 @@ EffiLife.onMount(async () => {
         overflow = driver.script("return document.documentElement.scrollWidth - innerWidth")
         assert overflow <= 1, overflow
         snapshot(driver, "todos-390.png")
-        report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "real package upload and advanced consent", "opaque DOM and storage isolation", "CSP native fetch blocking", "layout recovery", "390px layout"], "isolation": isolation, "networkRequests": QuietHandler.probe_requests, "overflow": overflow}
+        report = {"engine": "WebKitGTK 2.50.4", "features": features, "checks": ["production startup", "real IndexedDB capture and reload", "isolated decorative Worker ready", "real package upload and advanced consent", "opaque DOM and storage isolation", "CSP native fetch blocking", "layout recovery", "390px layout", "glass material filtering"], "isolation": isolation, "networkRequests": QuietHandler.probe_requests, "overflow": overflow}
         report["version"] = (ROOT / "VERSION").read_text().strip()
         report["frontendIndexSha256"] = hashlib.sha256((ROOT / "dist/index.html").read_bytes()).hexdigest()
         report["frontendTreeSha256"] = frontend_fingerprint(ROOT / "dist")
