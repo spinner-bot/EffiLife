@@ -423,5 +423,6 @@
   "planning.dateHelpTitle": "What does assigning the selected date do?",
   "planning.defaultHelp": "Used for dates with no manual assignment or matching ordinary rule. Existing date assignments remain unchanged. The first plan becomes the fallback.",
   "planning.dateHelp": "Assigns this plan specifically to the viewed date {date}, taking precedence over schedule rules. The selected date may differ from today.",
-  "planning.optionsHelp": "Both options can be enabled: one sets the fallback, the other assigns only the selected date."
+  "planning.optionsHelp": "Both options can be enabled: one sets the fallback, the other assigns only the selected date.",
+  "validation.durationMismatch": "Start, end and duration do not match. Check the interval before saving."
 }
