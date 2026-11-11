@@ -1,0 +1,25 @@
+{
+  "type": "theme",
+  "name": {
+    "zh-CN": "林间留白",
+    "en-US": "Forest Notes"
+  },
+  "author": "EffiLife",
+  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "formatVersion": 1,
+  "apiVersion": 1,
+  "minAppVersion": "3.0.0",
+  "slug": "forest-notes",
+  "permissions": [
+    "appearance.tokens",
+    "appearance.css"
+  ],
+  "requiredPermissions": [
+    "appearance.tokens"
+  ],
+  "tokens": "tokens.json",
+  "styles": [
+    "styles/visual.css"
+  ]
+}

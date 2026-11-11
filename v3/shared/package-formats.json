@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "formats": {
+    "data": {
+      "current": "d3el",
+      "accepted": [
+        "d3el",
+        "efl"
+      ],
+      "mime": "application/x-effilife-data"
+    },
+    "resource": {
+      "current": "r3el",
+      "accepted": [
+        "r3el"
+      ],
+      "mime": "application/x-effilife-resource"
+    },
+    "theme": {
+      "current": "t3el",
+      "accepted": [
+        "t3el"
+      ],
+      "mime": "application/x-effilife-theme"
+    },
+    "function": {
+      "current": "f3el",
+      "accepted": [
+        "f3el"
+      ],
+      "mime": "application/x-effilife-function"
+    }
+  }
+}
+

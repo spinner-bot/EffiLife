@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EffiLife v3 · 扩展作者指南</title>
+<style>body{margin:0;background:#f4f6f8;color:#243141;font:16px/1.8 system-ui,sans-serif}main{max-width:900px;margin:auto;padding:56px 24px}h1{font-size:36px;line-height:1.3}h2{margin-top:40px}article{background:white;border:1px solid #dce3eb;border-radius:16px;padding:28px;margin:24px 0}pre{overflow:auto;padding:20px;background:#172333;color:#e3edf7;border-radius:10px;font-size:14px}code{font-family:ui-monospace,monospace}a{color:#4548b8}small{color:#5a6879}table{border-collapse:collapse;width:100%}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #e1e6ec}@media(max-width:600px){main{padding:24px 16px}article{padding:18px}h1{font-size:28px}}</style></head>
+<body><main><small>EffiLife 3.0.0 · API 1 · 开发中 · 2026-11-11</small><h1>让资源独立扩展，<br>让授权清楚可撤销。</h1>
+<p>主题、语言与字体通过同一个安装入口进入应用。来源由安装渠道决定，包内填写的编号不会成为本地安装身份。所有包内容都先预览，再安装；生活数据由领域命令与事务管理。</p>
+<article><h2>从可运行的示例开始</h2><p>源码示例位于 <a href="../resources/examples/forest/manifest.json">林间留白主题</a>和 <a href="../resources/examples/french/manifest.json">法语资源</a>。在仓库根目录执行：</p>
+<pre>python3 v3/scripts/run.py node scripts/build-examples.mjs</pre>
+<p>产物位于 <code>v3/dist/examples/</code>，可以在设置 → 扩展与资源中安装。构建脚本读取集中扩展名配置，生成逐文件 SHA-256，使用固定归档时间以便重复构建。扩展名事实源是 <code>shared/package-formats.json</code>。</p></article>
+<article><h2>清单契约</h2><pre>{
+  "type": "theme",
+  "name": { "zh-CN": "我的主题", "en-US": "My Theme" },
+  "author": "作者",
+  "license": "MIT",
+  "version": "1.0.0",
+  "formatVersion": 1,
+  "apiVersion": 1,
+  "minAppVersion": "3.0.0",
+  "permissions": ["appearance.tokens", "appearance.css"],
+  "requiredPermissions": ["appearance.tokens"],
+  "tokens": "tokens.json",
+  "styles": ["styles/visual.css"]
+}</pre>
+<p>清单位于 ZIP 根目录的 <code>manifest.json</code>。路径仅使用包内相对路径，不接受外链、绝对路径、上级目录、符号链接或大小写冲突。可通过 <code>checksums</code> 声明文件路径与 SHA-256；声明后必须匹配。未知能力、接口版本或不兼容的应用版本会被拒绝。</p>
+<p>本地编号按包类型从 100000 开始分配，卸载后不复用。相同名称和作者可以明确选择升级或并存；升级必须提高版本，新增必需能力不会自动获准。</p></article>
+<article><h2>外观与资源能力</h2>
+<table><thead><tr><th>能力</th><th>内容</th><th>规则</th></tr></thead><tbody>
+<tr><td><code>appearance.tokens</code></td><td>配色、可选 mode</td><td>主题必需；默认允许，文字对比度会校正</td></tr>
+<tr><td><code>appearance.css</code></td><td>作用域内视觉 CSS</td><td>可选、单独授权；不允许几何属性、外链、at-rule 或转义语法</td></tr>
+<tr><td><code>resources.register</code></td><td>语言和字体</td><td>资源注册必需；默认允许，冲突回滚并提示</td></tr>
+</tbody></table>
+<p>配色文件结构为 <code>{"palette":{"background":"#102a20","surface":"#17382c","text":"#f4fff9","muted":"#bdd3c7","accent":"#47b894"}}</code>。颜色使用六位十六进制；未提供的颜色继承基础主题。可通过清单 <code>extends</code> 引用基础主题的安装编号，解析器检测循环和缺失父主题。</p>
+<p>L1 CSS 当前允许颜色、背景色/渐变、边框颜色/圆角、阴影、透明度等视觉属性。每个选择器自动附加当前主题作用域，不改变宿主几何布局。只有明确授权后才会装载；撤销即时卸载。</p>
+<p>资源清单使用 <code>resources</code> 数组，条目含 <code>kind</code>（locale 或 font）、<code>path</code>、<code>alias</code>、<code>name</code>、<code>license</code>。语言文件包含 BCP 47 <code>id</code>、<code>direction</code> 与字符串 <code>messages</code> 字典，缺少的字段回退英文。字体使用包内 WOFF/WOFF2/TTF/OTF 原始文件，由浏览器本地加载，停用时释放。字体身份包含包类型、编号和别名，避免不同类型包的编号冲突。</p></article>
+<article><h2>授权、恢复与后续运行时</h2><p>安装、升级、授权、启停和卸载均记录审计。必需能力撤销后自动停用；移除当前主题、语言或字体时回退默认值。数据存档导入会重置 L1 及以上授权，存档本身不能授予可执行权限。</p>
+<p>L2 装饰与 L3 应用接口已接入隔离 Worker。脚本通过 MessageChannel 与受信任的 iframe 中继通信；iframe 不共享来源，禁止直接访问宿主 DOM、存储或网络。L3 可以提供任意容器排布的 HTML/CSS 界面，HTML 会移除脚本、外链、事件处理属性和可导航资源元素；只有受控中继接触 iframe DOM。主题替换整个界面，功能包使用独立卡片。</p>
+<p>高级授权需要二次确认。恢复默认按钮位于扩展作用域外；脚本启动中也可使用。<code>Alt+Shift+0</code> 或地址参数 <code>?safe=1</code> 可进入不加载扩展的安全模式；点击恢复会停用扩展并恢复默认主题、字体与语言。无响应脚本由宿主停止，失败状态持久化，刷新不会反复执行。</p></article>
+<article><h2>脚本 API 1</h2><p>功能包清单使用 <code>entry</code>；主题使用 <code>scripts</code> 数组。代码是普通 JavaScript，不执行模块导入。示例见 <a href="../resources/examples/life-card/manifest.json">生活一瞥功能卡片</a>。</p><pre>EffiLife.onMount(async () =&gt; {
+  const data = await EffiLife.request('data.read');
+  EffiLife.render({
+    html: '&lt;main&gt;&lt;h1&gt;' + data.plans.length + ' plans&lt;/h1&gt;&lt;/main&gt;',
+    css: 'main{padding:24px;color:#203045;background:#f7f9fc}'
+  });
+});
+EffiLife.onFrame(({ctx,width,height,time,theme}) =&gt; {
+  // 需要 overlay.canvas；受可见性与减少动态效果设置控制。
+});
+EffiLife.onAction(async event =&gt; {
+  // data-action 触发 click/submit；submit 的表单值在 event.values。
+});
+EffiLife.onChange(state =&gt; {
+  // 生命周期/尺寸/主题变动；app.events 授权后还包含更新修订。
+});</pre>
+<table><thead><tr><th>request 方法</th><th>权限与参数</th></tr></thead><tbody><tr><td>data.read</td><td>app.data.read；仅生活数据，不含注册表、收据与审计</td></tr><tr><td>data.write</td><td>app.data.write；参数为领域命令，例如 createPlan / recordAction / saveTodo</td></tr><tr><td>settings.read / settings.write</td><td>对应设置权限；写入仅 locale、fontId、timeZone、weekStartsOn</td></tr><tr><td>theme.set</td><td>app.theme；参数为主题编号</td></tr><tr><td>navigate</td><td>app.navigation；参数为应用内路径</td></tr></tbody></table>
+<p>写入在事务内部再次校验当前版本指纹与授权，撤销与写入竞态不能绕过检查。写入与审计原子提交，传输重试去重；注册表、授权与审计不属于扩展可写域。读取或写入失败返回带 code 的 Error。未知接口和越权调用明确拒绝。</p>
+<p>绘制回调最多 30 FPS，减少动态效果时只绘制静态帧；不可见时暂停。心跳超时为 15 秒，通道及视图片段有结构和频率限制。Worker 不提供严格的每实例内存配额，这些机制不能等同于操作系统进程沙箱。当前运行证据来自 Chromium；其他 WebView 与原生交付继续单独验收。</p>
+<p>实现依据：<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy">CSP 与 blob Worker 策略继承</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/sandbox">不透明来源隔离</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen">OffscreenCanvas 转交</a>。浏览器回归额外验证从原型恢复的原生 fetch 仍被 CSP 阻止，未产生网络请求。</p></article>
+<small>作者：Codex  (sqs_A100) · 全部源码与后续工具集中在 v3/</small></main></body></html>
+

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "EffiLife",
+  "version": "../../../package.json",
+  "identifier": "com.effilife.desktop.v3",
+  "build": {
+    "beforeDevCommand": "python3 ../../scripts/run.py npm run dev",
+    "devUrl": "http://127.0.0.1:3420",
+    "beforeBuildCommand": "python3 ../../scripts/run.py npm run build",
+    "frontendDist": "../../../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "EffiLife",
+        "width": 1360,
+        "height": 900,
+        "minWidth": 360,
+        "minHeight": 600,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "deb"
+    ],
+    "shortDescription": "Time and events, together.",
+    "longDescription": "Personal life management with linked time records, themed plans, progress logs and independent to-dos.",
+    "category": "Productivity",
+    "icon": [
+      "icons/128x128.png"
+    ]
+  }
+}

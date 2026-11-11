@@ -1,0 +1,14 @@
+{
+  "id": "fr-FR",
+  "direction": "ltr",
+  "messages": {
+    "nav.home": "Vue générale",
+    "nav.plans": "Projets",
+    "nav.time": "Temps",
+    "nav.todos": "À faire",
+    "nav.settings": "Réglages",
+    "common.save": "Enregistrer",
+    "common.cancel": "Annuler",
+    "settings.language": "Langue"
+  }
+}
