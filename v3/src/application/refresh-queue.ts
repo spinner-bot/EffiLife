@@ -5,9 +5,10 @@ export function refreshQueue(read: () => Promise<void>): () => Promise<void> {
   return () => {
     requested = true
     if (!active) {
-      active = (async () => {
-        do { requested = false; await read() } while (requested)
-      })().finally(() => { active = undefined })
+      active = Promise.resolve().then(async () => {
+        try { do { requested = false; await read() } while (requested) }
+        finally { active = undefined }
+      })
     }
     return active
   }
