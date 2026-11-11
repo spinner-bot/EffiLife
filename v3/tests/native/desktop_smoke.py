@@ -47,7 +47,7 @@ def main():
         driver_port, native_port = port(), port()
         webkit = sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
         command = [str(sdk / "usr/bin/proot"), "-b", str(webkit) + ":/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1", str(sdk / "usr/bin/dbus-run-session"), "--", str(ROOT / ".tools/tauri-driver/bin/tauri-driver"), "--port", str(driver_port), "--native-port", str(native_port), "--native-driver", str(sdk / "usr/bin/WebKitWebDriver")]
-        process = subprocess.Popen(command, stdout=log, stderr=log, env=env, start_new_session=True)
+        process = subprocess.Popen(command, stdout=log, stderr=log, env=env, cwd=output, start_new_session=True)
         cleanup.callback(stop, process)
         endpoint = "http://127.0.0.1:" + str(driver_port)
         for attempt in range(100):
@@ -80,8 +80,8 @@ def main():
         snapshot("save-dialog.png")
         destination = output / "native-export.d3el"
         destination.unlink(missing_ok=True)
-        subprocess.run([xdotool, "windowfocus", "--sync", window, "key", "--clearmodifiers", "ctrl+l"], env=env, check=True)
-        subprocess.run([xdotool, "type", "--clearmodifiers", "--delay", "1", str(destination)], env=env, check=True)
+        subprocess.run([xdotool, "windowfocus", "--sync", window, "key", "--clearmodifiers", "ctrl+a"], env=env, check=True)
+        subprocess.run([xdotool, "type", "--clearmodifiers", "--delay", "1", destination.name], env=env, check=True)
         subprocess.run([xdotool, "key", "--clearmodifiers", "Return"], env=env, check=True)
         # GTK may first accept the location entry before activating Save.
         time.sleep(0.3)
