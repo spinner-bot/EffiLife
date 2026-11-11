@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from native import environment, ROOT
 from webdriver import Driver
 from webkit_smoke import port, stop
+from sdk_paths import relocate_webkit
 
 def main():
     sdk = ROOT / ".tools/native-sdk"
@@ -46,7 +47,8 @@ def main():
             subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / name), "0", "0", "1440", "1000"], env=env, check=True)
         driver_port, native_port = port(), port()
         webkit = sdk / "usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
-        command = [str(sdk / "usr/bin/proot"), "-b", str(webkit) + ":/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1", str(sdk / "usr/bin/dbus-run-session"), "--", str(ROOT / ".tools/tauri-driver/bin/tauri-driver"), "--port", str(driver_port), "--native-port", str(native_port), "--native-driver", str(sdk / "usr/bin/WebKitWebDriver")]
+        relocate_webkit(ROOT, env)
+        command = [str(sdk / "usr/bin/dbus-run-session"), "--", str(ROOT / ".tools/tauri-driver/bin/tauri-driver"), "--port", str(driver_port), "--native-port", str(native_port), "--native-driver", str(sdk / "usr/bin/WebKitWebDriver")]
         process = subprocess.Popen(command, stdout=log, stderr=log, env=env, cwd=output, start_new_session=True)
         cleanup.callback(stop, process)
         endpoint = "http://127.0.0.1:" + str(driver_port)
