@@ -1,0 +1,6 @@
+{
+  "node": "v24.22.2",
+  "source": "https://nodejs.org/dist",
+  "minimumNodeMajor": 22
+}
+
