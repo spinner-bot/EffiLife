@@ -380,5 +380,7 @@
   "record.context": "Related item",
   "record.completeTodo": "Also complete this to-do",
   "todos.recordTime": "Record time for this action",
-  "validation.todoArchived": "This to-do is archived or cancelled. Restore it before recording."
+  "validation.todoArchived": "This to-do is archived or cancelled. Restore it before recording.",
+  "legacy.todoLinkMissing": "Some time records refer to missing legacy to-dos. The time records and original source were retained.",
+  "legacy.todoLinkConflict": "Some legacy records had conflicting to-do owners. Their own explicit owner takes precedence; the conflicting source was retained."
 }
