@@ -13,6 +13,7 @@ import PageHeader from '../../ui/PageHeader.vue'
 import Panel from '../../ui/Panel.vue'
 import EmptyState from '../../ui/EmptyState.vue'
 import Icon from '../../ui/Icon.vue'
+import CategoryBadge from '../categories/CategoryBadge.vue'
 import TimeOverview from '../time/TimeOverview.vue'
 
 const now = useNow()
@@ -46,11 +47,11 @@ async function completeTodo(id: string) {
     <div class="dashboard-right">
       <Panel :title="t('home.todoTitle')">
         <template #actions><RouterLink to="/todos" class="text-link"><Icon name="arrow" :size="18" /><span class="sr-only">{{ t('nav.todos') }}</span></RouterLink></template>
-        <div v-for="todo in todos.slice(0, 4)" :key="todo.id" class="list-row"><button type="button" class="todo-check" :aria-label="t('todos.complete') + ': ' + todo.title" @click="completeTodo(todo.id)" /><div class="grow"><RouterLink :to="{ path: '/todos', query: { todo: todo.id } }" class="row-title"><Icon v-if="todo.pinned" name="pin" :size="13" />{{ todo.title }}</RouterLink><p v-if="todo.deadline" class="row-detail">{{ calendarDate(dateKey(todo.deadline, current.preferences.timeZone)) }}</p></div></div>
+        <div v-for="todo in todos.slice(0, 4)" :key="todo.id" class="list-row"><button type="button" class="todo-check" :aria-label="t('todos.complete') + ': ' + todo.title" @click="completeTodo(todo.id)" /><div class="grow"><RouterLink :to="{ path: '/todos', query: { todo: todo.id } }" class="row-title"><CategoryBadge :category-id="todo.categoryId" /><Icon v-if="todo.pinned" name="pin" :size="13" />{{ todo.title }}</RouterLink><p v-if="todo.deadline" class="row-detail">{{ calendarDate(dateKey(todo.deadline, current.preferences.timeZone)) }}</p></div></div>
         <div v-if="!todos.length" class="panel-body muted small">{{ t('home.noTodos') }}</div>
       </Panel>
       <Panel :title="t('home.recent')">
-        <div v-for="activity in recent" :key="activity.id" class="list-row"><span class="row-mark"><Icon :name="activity.minutes ? 'time' : 'log'" :size="18" /></span><div class="grow"><RouterLink v-if="activity.planId" :to="{ path: '/plans/' + activity.planId, query: { task: activity.taskId } }" class="row-title">{{ activity.title }}</RouterLink><p v-else class="row-title">{{ activity.title }}</p><div class="row-detail"><span>{{ clock(activity.at, current.preferences.timeZone) }}</span><span>{{ activity.minutes ? duration(activity.minutes) : t('form.logOnly') }}</span></div></div></div>
+        <div v-for="activity in recent" :key="activity.id" class="list-row"><span class="row-mark"><Icon :name="activity.minutes ? 'time' : 'log'" :size="18" /></span><div class="grow"><RouterLink v-if="activity.planId" :to="{ path: '/plans/' + activity.planId, query: { task: activity.taskId } }" class="row-title"><CategoryBadge v-if="activity.categoryId" :category-id="activity.categoryId" />{{ activity.title }}</RouterLink><p v-else class="row-title"><CategoryBadge v-if="activity.categoryId" :category-id="activity.categoryId" />{{ activity.title }}</p><div class="row-detail"><strong>{{ clock(activity.at, current.preferences.timeZone) }}</strong><span>{{ activity.minutes ? duration(activity.minutes) : t('form.logOnly') }}</span></div></div></div>
         <EmptyState v-if="!recent.length" :title="t('home.emptyRecordsTitle')" icon="log"><button type="button" class="button ghost" @click="openRecord()">{{ t('common.record') }}<Icon name="arrow" :size="16" /></button></EmptyState>
       </Panel>
     </div>
