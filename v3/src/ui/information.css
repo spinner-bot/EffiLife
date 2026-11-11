@@ -36,6 +36,8 @@
 .todo-checklist summary { color: var(--muted); font-size: var(--text-xs); cursor: pointer; }
 .todo-checklist .check-field { margin-top: 8px; }
 .list-row[data-selected='true'] { background: var(--subtle); box-shadow: inset 3px 0 var(--accent); }
+.tree-group[data-selected='true'] > .tree-row, .log-entry[data-selected='true'] { background: var(--subtle); box-shadow: inset 3px 0 var(--accent); border-radius: var(--radius-sm); }
+.log-entry[data-selected='true'] { padding: 12px; }
 @media (max-width: 480px) { .todo-filters { grid-template-columns: minmax(0, 1fr); } }
 .table-wrap { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
