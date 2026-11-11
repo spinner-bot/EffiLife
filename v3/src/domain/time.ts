@@ -22,24 +22,40 @@ export function dateKey(value: string | Date, timeZone: string): string {
   return field('year') + '-' + field('month') + '-' + field('day')
 }
 
-function midnight(date: string, timeZone: string): number {
+function midnight(date: string, timeZone: string, allowSkippedDate = false): number {
   requireCondition(/^\d{4}-\d{2}-\d{2}$/.test(date), 'validation.invalidDate')
-  const [year, month, day] = date.split('-').map(Number)
-  const desired = Date.UTC(year!, month! - 1, day!)
-  let candidate = desired
+  const desired = Date.parse(date + 'T00:00:00Z')
+  requireCondition(Number.isFinite(desired) && new Date(desired).toISOString().slice(0, 10) === date, 'validation.invalidDate')
   const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
   })
-  for (let iteration = 0; iteration < 4; iteration++) {
+  const localAsUTC = (candidate: number) => {
     const parts = formatter.formatToParts(new Date(candidate))
     const field = (name: string) => Number(parts.find(part => part.type === name)!.value)
-    const localAsUTC = Date.UTC(field('year'), field('month') - 1, field('day'), field('hour'), field('minute'), field('second'))
-    const corrected = desired - (localAsUTC - candidate)
-    if (corrected === candidate) break
-    candidate = corrected
+    return Date.parse(String(field('year')).padStart(4, '0') + '-' + String(field('month')).padStart(2, '0') + '-' + String(field('day')).padStart(2, '0') + 'T' + [field('hour'), field('minute'), field('second')].map(value => String(value).padStart(2, '0')).join(':') + 'Z')
   }
-  requireCondition(dateKey(new Date(candidate), timeZone) === date, 'validation.invalidDate')
+  // Probe both sides of transitions instead of oscillating across a missing
+  // midnight. Multiple exact matches are a fold: the day starts at the first.
+  const candidates = new Set<number>()
+  for (let hour = -48; hour <= 48; hour += 6) {
+    const probe = desired + hour * 3600000
+    candidates.add(desired - (localAsUTC(probe) - probe))
+  }
+  const exact = [...candidates].filter(value => localAsUTC(value) === desired)
+  if (exact.length) return Math.min(...exact)
+  // Missing midnight: find the transition itself, including gaps that start
+  // on the previous evening. Never shift the requested day into the past.
+  let before = Math.min(...candidates) - 1000
+  let after = Math.max(...candidates)
+  requireCondition(localAsUTC(before) < desired && localAsUTC(after) >= desired, 'validation.invalidDate')
+  while (after - before > 1000) {
+    const middle = Math.floor((before + after) / 2000) * 1000
+    if (localAsUTC(middle) < desired) before = middle
+    else after = middle
+  }
+  const candidate = after
+  requireCondition(allowSkippedDate || dateKey(new Date(candidate), timeZone) === date, 'validation.invalidDate')
   return candidate
 }
 
@@ -47,7 +63,7 @@ export function dayBounds(date: string, timeZone: string): [number, number] {
   const next = new Date(date + 'T12:00:00.000Z')
   requireCondition(Number.isFinite(next.getTime()), 'validation.invalidDate')
   next.setUTCDate(next.getUTCDate() + 1)
-  return [midnight(date, timeZone), midnight(next.toISOString().slice(0, 10), timeZone)]
+  return [midnight(date, timeZone), midnight(next.toISOString().slice(0, 10), timeZone, true)]
 }
 
 export function intervalsForDate(records: TimeRecord[], date: string, timeZone: string): Array<[number, number]> {
