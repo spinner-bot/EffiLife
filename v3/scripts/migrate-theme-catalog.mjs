@@ -25,6 +25,7 @@ const entries = order.map((type, index) => {
     decoration: {
       gradient: style.bgGradient || null, particles: style.particles || null,
       renderer: style.renderCanvas ? style.renderCanvas.toString() : null,
+      helpers: style.renderCanvas?.toString().includes('drawFlower') ? vm.runInNewContext('drawFlower.toString()', context) : null,
     },
     legacyType: type,
   }
