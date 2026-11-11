@@ -2,6 +2,7 @@ import type { CommandContext, OperationResult, Workspace } from './models'
 import type { WorkspaceCommand } from './commands'
 import { requireCondition, requireTitle } from './errors'
 import { dayBounds } from './time'
+import { validRule } from './time-planning'
 
 export function applyTimePlanCommand(workspace: Workspace, command: WorkspaceCommand, context: CommandContext): OperationResult | undefined {
   if (!['saveTimePlan', 'deleteTimePlan', 'setDateTimePlan', 'saveTimeRule', 'deleteTimeRule'].includes(command.type)) return undefined
@@ -44,7 +45,7 @@ export function applyTimePlanCommand(workspace: Workspace, command: WorkspaceCom
       const current = command.ruleId ? planning.rules.find(rule => rule.id === command.ruleId) : undefined
       requireCondition(!command.ruleId || current, 'validation.ruleMissing')
       const rule = { id: current?.id || context.id(), kind: command.kind, value: command.value.trim(), planId: command.timePlanId }
-      requireCondition(rule.kind === 'default' || rule.value.length > 0, 'validation.ruleInvalid')
+      requireCondition(validRule(rule.kind, rule.value), 'validation.ruleInvalid')
       if (rule.kind === 'default') planning.rules = planning.rules.filter(item => item.kind !== 'default' || item.id === rule.id)
       if (current) Object.assign(current, rule)
       else planning.rules.push(rule)
