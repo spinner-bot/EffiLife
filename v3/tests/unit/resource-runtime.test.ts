@@ -68,4 +68,11 @@ it('resets imported executable grants without changing the source or its audit h
   expect(result.workspace.preferences.themeId).toBe(1)
   expect(workspace.packages[0]?.grants).toContain('app.layout')
 })
+it('keeps a future-version package disabled even if it came inside a valid data archive', () => {
+  const value = entry(100000)
+  value.manifest.minAppVersion = '4.0.0'
+  reconcileResources([value], '3.0.0')
+  expect(themes.get(value.id)).toBeUndefined()
+  expect(resourceFailures.value[0]?.code).toBe('extensions.incompatible')
+})
 
