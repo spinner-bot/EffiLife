@@ -34,13 +34,14 @@ export class WorkspaceService {
     return (await this.dispatchCommitted(envelope)).result
   }
   async replace(workspace: Workspace) {
-    await this.repository.replace(plainDto(workspace))
+    const committed = await this.repository.replace(plainDto(workspace))
     this.notify()
+    return committed
   }
   async restoreBackup() {
     const backup = await this.repository.readBackup()
     if (!backup) throw new DomainError('storage.noBackup')
-    await this.replace(backup)
+    return this.replace(backup)
   }
   subscribe(listener: () => void) { return this.events?.subscribe(listener) || (() => {}) }
   dispose() { this.repository.close(); this.events?.dispose() }
