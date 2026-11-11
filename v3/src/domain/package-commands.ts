@@ -14,7 +14,10 @@ function fallback(workspace: Workspace, entry: InstalledPackage) {
   assertManifest(entry.manifest)
   const candidate = { manifest: entry.manifest, payload: entry.payload, checksum: entry.checksum || '' }
   for (const resource of entry.manifest.resources || []) {
-    if (resource.kind === 'locale' && readLocale(candidate, resource.path).id === workspace.preferences.locale) workspace.preferences.locale = 'zh-CN'
+    if (resource.kind === 'locale') {
+      try { if (readLocale(candidate, resource.path).id === workspace.preferences.locale) workspace.preferences.locale = 'zh-CN' }
+      catch { /* A broken resource must remain removable. */ }
+    }
   }
 }
 function status(entry: InstalledPackage, manifest: ExtensionManifest) {
