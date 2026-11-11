@@ -22,7 +22,7 @@ def main():
     status = CACHE / "empty-status"
     status.write_text("")
     apt_pkg.config.set("Dir::State::status", str(status))
-    cache = apt.Cache()
+    cache = apt.Cache(memonly=True)
     selected = {}
     pending = [cache[name].candidate for name in ROOTS]
     while pending:
