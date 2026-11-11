@@ -43,7 +43,7 @@ python3 v3/tests/native/desktop_smoke.py
 
 ## 验收交付
 
-当前为修复独立审查问题的 v3.0.1 本地验收候选；v3.0.0 的长期数据可靠性结论已修正。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[桌面验收记录](docs/progress/0009-native-desktop.md)列出实际通过范围及平台边界。
+当前为修复独立审查问题的 v3.0.1 本地验收候选；v3.0.0 的长期数据可靠性结论已修正。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[独立审查修复记录](docs/progress/0011-independent-review.md)列出逐项结果、实际通过范围及平台边界。
 
 准备好上述工具链后，按以下顺序重建交付：
 
