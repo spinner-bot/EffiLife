@@ -165,6 +165,8 @@
   "plans.recordProgress": "Record progress",
   "plans.totalTime": "Recorded investment",
   "plans.assignCategory": "Assign time category",
+  "plans.assignPlanCategory": "Set the time category for this plan",
+  "plans.categoryScope": "Applies to future recordings. Existing time records keep their categories.",
   "plans.overwrite": "Overwrite existing descendant categories",
   "plans.rename": "Edit plan",
   "plans.notFound": "This plan could not be found",
@@ -376,5 +378,11 @@
   "plans.editLogBody": "Update this action’s description. Linked actual time records display the same content.",
   "plans.deleteLog": "Delete this action?",
   "plans.deleteLogBody": "Remove this log and its directly linked time records. The task’s completion state is retained and can be reopened separately.",
-  "todos.filters": "Filters & sorting"
+  "todos.filters": "Filters & sorting",
+  "record.context": "Related item",
+  "record.completeTodo": "Also complete this to-do",
+  "todos.recordTime": "Record time for this action",
+  "validation.todoArchived": "This to-do is archived or cancelled. Restore it before recording.",
+  "legacy.todoLinkMissing": "Some time records refer to missing legacy to-dos. The time records and original source were retained.",
+  "legacy.todoLinkConflict": "Some legacy records had conflicting to-do owners. Their own explicit owner takes precedence; the conflicting source was retained."
 }

@@ -13,9 +13,9 @@ export const resourceRevision = shallowRef(0)
 export const resourceFailures = shallowRef<Array<{ kind: string; id: number; code: string }>>([])
 const cleanup = new Map<string, () => void>()
 let fingerprint = ''
-function candidateFor(entry: InstalledPackage): PackageCandidate {
+function candidateFor(entry: InstalledPackage, appVersion?: string): PackageCandidate {
   const value = { manifest: entry.manifest, payload: entry.payload, checksum: entry.checksum }
-  assertCandidate(value)
+  assertCandidate(value, appVersion)
   assertContent(value)
   return value
 }
@@ -45,10 +45,10 @@ function installResources(entry: InstalledPackage, candidate: PackageCandidate, 
     }
   }
 }
-export function reconcileResources(entries: readonly InstalledPackage[]): void {
+export function reconcileResources(entries: readonly InstalledPackage[], appVersion?: string): void {
   // A data archive may contain changed bytes with copied metadata. Compare the
   // content too; claimed fingerprints are not a trusted cache invalidation key.
-  const signature = JSON.stringify(entries)
+  const signature = JSON.stringify([appVersion, entries])
   if (signature === fingerprint) return
   fingerprint = signature
   for (const dispose of cleanup.values()) dispose()
@@ -62,7 +62,7 @@ export function reconcileResources(entries: readonly InstalledPackage[]): void {
     for (const entry of [...waiting]) {
       const dispose: Array<() => void> = []
       try {
-        const candidate = candidateFor(entry)
+        const candidate = candidateFor(entry, appVersion)
         const granted = effectiveCapabilities(candidate.manifest.permissions, entry.grants.filter(isCapability))
         if (entry.kind === 'theme') {
           const parent = themes.get(candidate.manifest.extends ?? 1)

@@ -25,7 +25,7 @@ const plan = computed(() => current.value.plans.find(item => item.id === route.p
 const progress = computed(() => plan.value ? planProgress(plan.value) : { total: 0, completed: 0, percent: 0, logs: 0 })
 const editor = reactive({ open: false, parentId: null as string | null, kind: 'task' as NodeKind, node: undefined as PlanNode | undefined })
 const renaming = ref(false)
-const categoryTarget = ref<PlanNode>()
+const categoryTarget = ref<{ id: string | null; title: string }>()
 const categoryId = ref('life')
 const overwrite = ref(false)
 const categoryError = ref('')
@@ -45,12 +45,19 @@ async function deleteLog(log: ProgressLog) {
 }
 function logMenu(log: ProgressLog) { return [{ label: t('plans.editLog'), icon: 'edit', action: () => { editingLog.value = log } }, { label: t('plans.deleteLog'), icon: 'delete', danger: true, action: () => deleteLog(log) }] }
 function add(kind: NodeKind, parentId: string | null = null) { Object.assign(editor, { open: true, parentId, kind, node: undefined }) }
+function assignCategory(node?: PlanNode) {
+  if (!plan.value) return
+  categoryTarget.value = { id: node?.id ?? null, title: node?.title ?? plan.value.title }
+  categoryId.value = categoryFor(plan.value, node?.id)
+  overwrite.value = false
+  categoryError.value = ''
+}
 async function action(type: TreeAction, node: PlanNode) {
   if (!plan.value) return
   if (type === 'record') { openRecord({ planId: plan.value.id, taskId: node.id }); return }
   if (type === 'edit') { Object.assign(editor, { open: true, parentId: node.parentId, kind: node.kind, node }); return }
   if (type === 'addTask' || type === 'addGroup') { add(type === 'addTask' ? 'task' : 'group', node.id); return }
-  if (type === 'category') { categoryTarget.value = node; categoryId.value = categoryFor(plan.value, node.id); overwrite.value = false; categoryError.value = ''; return }
+  if (type === 'category') { assignCategory(node); return }
   try {
     if (type === 'complete') await dispatch({ type: 'setTaskCompletion', planId: plan.value.id, taskId: node.id, completed: !node.completedAt })
     if (type === 'delete' && await confirmAction(t('plans.deleteNodeConfirm'))) await dispatch({ type: 'deleteNode', planId: plan.value.id, nodeId: node.id })
@@ -77,6 +84,7 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
   <template v-if="plan">
     <RouterLink to="/plans" class="text-link" style="margin-bottom: var(--space-5)">{{ t('common.back') }} · {{ t('nav.plans') }}</RouterLink>
     <PageHeader :title="plan.title" :subtitle="plan.description">
+      <UiButton variant="ghost" :aria-label="t('plans.assignPlanCategory')" @click="assignCategory()"><Icon name="tag" :size="18" /></UiButton>
       <UiButton variant="ghost" :aria-label="t('plans.rename')" @click="renaming = true"><Icon name="edit" :size="18" /></UiButton>
       <UiButton @click="archive"><Icon :name="plan.archivedAt ? 'restore' : 'archive'" :size="18" />{{ plan.archivedAt ? t('common.restore') : t('common.archive') }}</UiButton>
       <UiButton v-if="!plan.archivedAt" variant="primary" @click="openRecord({ planId: plan.id })"><Icon name="log" :size="18" />{{ t('plans.recordProgress') }}</UiButton>
@@ -109,7 +117,7 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
     <LogEditor :plan-id="plan.id" :log="editingLog" @close="editingLog = undefined" />
     <TextEditorDialog :open="renaming" :title="t('plans.rename')" :initial-title="plan.title" :initial-description="plan.description" :save="rename" @close="renaming = false" />
     <UiDialog :open="Boolean(categoryTarget)" :title="t('plans.assignCategory')" :description="categoryTarget?.title" @close="categoryTarget = undefined">
-      <form class="stack" @submit.prevent="saveCategory"><label class="field"><span>{{ t('form.category') }}</span><select v-model="categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label><label class="check-field"><input v-model="overwrite" type="checkbox" /><span>{{ t('plans.overwrite') }}</span></label><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
+      <form class="stack" @submit.prevent="saveCategory"><label class="field"><span>{{ t('form.category') }}</span><select v-model="categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label><label class="check-field"><input v-model="overwrite" type="checkbox" /><span>{{ t('plans.overwrite') }}</span></label><p class="small muted">{{ t('plans.categoryScope') }}</p><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
     </UiDialog>
   </template>
   <EmptyState v-else :title="t('plans.notFound')" icon="plans"><RouterLink to="/plans" class="text-link">{{ t('common.back') }}</RouterLink></EmptyState>

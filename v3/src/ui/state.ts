@@ -1,9 +1,10 @@
 import { reactive, shallowRef } from 'vue'
 
-export const recording = reactive({ open: false, planId: '', taskId: '', sequence: 0 })
-export function openRecord(context: { planId?: string; taskId?: string } = {}) {
+export const recording = reactive({ open: false, planId: '', taskId: '', todoId: '', sequence: 0 })
+export function openRecord(context: { planId?: string; taskId?: string; todoId?: string } = {}) {
   recording.planId = context.planId || ''
   recording.taskId = context.taskId || ''
+  recording.todoId = context.todoId || ''
   recording.sequence++
   recording.open = true
 }

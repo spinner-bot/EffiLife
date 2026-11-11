@@ -3,6 +3,7 @@ import { emptyWorkspace } from '../../src/domain/initial'
 import { execute } from '../../src/domain/engine'
 import type { Workspace } from '../../src/domain/models'
 import type { WorkspaceCommand } from '../../src/domain/commands'
+import { assertWorkspace } from '../../src/domain/validation'
 
 function fixture() {
   let next = 0
@@ -95,6 +96,29 @@ describe('unified recording', () => {
     expect(f.state().records).toEqual([])
     expect(f.state().todos[0]!.recordIds).toEqual([])
     expect(f.state().plans[0]!.nodes.find(node => node.id === f.taskA)?.completedAt).toBeDefined()
+  })
+  it('links actual time to an independent todo without creating plan progress or completing it implicitly', () => {
+    const f = fixture(), id = f.run({ type: 'saveTodo', title: 'Collect parcel', categoryId: 'life' }).entityId!
+    const result = f.run({ type: 'recordAction', todoId: id, content: 'Collected one parcel', startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:20:00Z' })
+    expect(f.state().records[0]).toMatchObject({ title: 'Collect parcel', todoId: id, categoryId: 'life' })
+    expect(f.state().todos[0]).toMatchObject({ status: 'pending', recordIds: [result.recordId] })
+    expect(f.state().plans[0]!.logs).toEqual([])
+    expect(() => assertWorkspace(f.state())).not.toThrow()
+    f.run({ type: 'deleteTodo', todoId: id })
+    expect(f.state().records).toHaveLength(1)
+    expect(f.state().records[0]?.todoId).toBeUndefined()
+    expect(() => assertWorkspace(f.state())).not.toThrow()
+  })
+  it('backfills historical todo completion while creating only a future repeat occurrence', () => {
+    const f = fixture(), id = f.run({ type: 'saveTodo', title: 'Daily errand', deadline: '2026-11-01T01:00:00Z', recurrence: { frequency: 'day', interval: 1 } }).entityId!
+    f.run({ type: 'recordAction', todoId: id, completeTodo: true, content: 'Historical errand', startAt: '2026-11-01T00:40:00Z', endAt: '2026-11-01T01:00:00Z' })
+    expect(f.state().todos[0]).toMatchObject({ status: 'completed', completedAt: '2026-11-01T01:00:00.000Z' })
+    expect(f.state().todos[1]).toMatchObject({ status: 'pending', deadline: '2026-11-12T01:00:00.000Z', createdAt: '2026-11-11T01:00:00.000Z', recordIds: [] })
+    expect(() => assertWorkspace(f.state())).not.toThrow()
+    const before = structuredClone(f.state())
+    f.run({ type: 'setTodoStatus', todoId: id, status: 'archived' })
+    expect(() => f.run({ type: 'recordAction', todoId: id, content: 'Invalid', startAt: '2026-11-11T01:00:00Z', endAt: '2026-11-11T01:20:00Z' })).toThrow('validation.todoArchived')
+    expect(f.state().records).toEqual(before.records)
   })
 })
 

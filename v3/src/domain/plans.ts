@@ -30,8 +30,8 @@ export function descendants(plan: Plan, parentId: string): PlanNode[] {
   return result
 }
 
-export function categoryFor(plan: Plan, nodeId: string, fallback = 'life'): string {
-  let node: PlanNode | undefined = findNode(plan, nodeId)
+export function categoryFor(plan: Plan, nodeId?: string, fallback = 'life'): string {
+  let node: PlanNode | undefined = nodeId === undefined ? undefined : findNode(plan, nodeId)
   const seen = new Set<string>()
   while (node) {
     requireCondition(!seen.has(node.id), 'validation.treeCycle')
@@ -39,7 +39,7 @@ export function categoryFor(plan: Plan, nodeId: string, fallback = 'life'): stri
     if (node.categoryId) return node.categoryId
     node = node.parentId ? findNode(plan, node.parentId) : undefined
   }
-  return fallback
+  return plan.categoryId || fallback
 }
 
 export function planProgress(plan: Plan): { total: number; completed: number; percent: number; logs: number } {

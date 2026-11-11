@@ -165,6 +165,8 @@
   "plans.recordProgress": "记录进展",
   "plans.totalTime": "已记录投入",
   "plans.assignCategory": "统一设置时间类别",
+  "plans.assignPlanCategory": "设置整个计划的时间类别",
+  "plans.categoryScope": "用于之后的记录，历史用时记录保留原有类别。",
   "plans.overwrite": "同时覆盖下方已有类别",
   "plans.rename": "编辑计划",
   "plans.notFound": "这份计划暂时无法找到",
@@ -376,5 +378,11 @@
   "plans.editLogBody": "修改这次行动的描述；关联的实际时间记录会同步显示。",
   "plans.deleteLog": "删除本次行动？",
   "plans.deleteLogBody": "同时删除这条日志及直接关联的时间记录。子项的完成状态保留，需要时可单独重新打开。",
-  "todos.filters": "筛选与排序"
+  "todos.filters": "筛选与排序",
+  "record.context": "关联事项",
+  "record.completeTodo": "同时标记这条待办完成",
+  "todos.recordTime": "记录本次用时",
+  "validation.todoArchived": "这条待办已归档或取消，请先恢复再记录。",
+  "legacy.todoLinkMissing": "部分时间记录引用的旧待办不存在；时间记录和原文已保留。",
+  "legacy.todoLinkConflict": "部分旧记录被多条待办引用，已优先采用记录自身的关联；冲突原文已保留。"
 }

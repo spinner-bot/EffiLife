@@ -40,6 +40,39 @@ async function createTask(page: Page) {
   await expect(dialog).not.toBeVisible()
 }
 
+test('assigns categories from the whole plan while preserving explicit branches', async ({ page }) => {
+  await createTask(page)
+  const assign = async (category: string, overwrite = false) => {
+    await page.getByRole('button', { name: '设置整个计划的时间类别', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: '统一设置时间类别', exact: true })
+    await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption(category)
+    await dialog.getByLabel('同时覆盖下方已有类别', { exact: true }).setChecked(overwrite)
+    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+  }
+  const checkRecording = async (category: string, task?: string) => {
+    await page.getByRole('button', { name: task ? '记录进展: ' + task : '记录进展', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: '记录一次行动' })
+    await expect(dialog.getByRole('combobox', { name: '时间类别', exact: true })).toHaveValue(category)
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toBeVisible()
+  }
+  await assign('work')
+  await checkRecording('study', '极限与连续')
+  await checkRecording('work')
+  await page.getByRole('button', { name: '添加子项', exact: true }).first().click()
+  const dialog = page.getByRole('dialog', { name: '添加子项', exact: true })
+  await dialog.getByLabel('名称', { exact: true }).fill('新根任务')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await checkRecording('work', '新根任务')
+  await assign('rest', true)
+  await checkRecording('rest', '极限与连续')
+  await checkRecording('rest', '新根任务')
+  await page.reload()
+  await checkRecording('rest')
+})
+
 test('starts with honest empty data and bundled readable fonts', async ({ page }, info) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('让每一份投入，都有迹可循。')
@@ -236,4 +269,14 @@ test('edits and removes a cross-midnight logged action consistently across both 
   await expect(page.getByRole('button', { name: '标记完成: 极限与连续', exact: true })).toHaveAttribute('aria-pressed', 'false')
   await page.goto('/#/time?date=2026-11-11')
   await expect(page.getByText('这一天，还没有时间记录', { exact: true })).toBeVisible()
+})
+
+test('skips navigation by keyboard without changing the current hash route', async ({ page }) => {
+  await page.goto('/#/time?date=2026-11-11')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: '跳到主要内容', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('main')).toBeFocused()
+  await expect(page).toHaveURL(/#\/time\?date=2026-11-11$/)
 })

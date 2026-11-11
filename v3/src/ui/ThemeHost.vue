@@ -4,7 +4,7 @@ import { current } from '../application/runtime'
 import type { InstalledPackage } from '../domain/models'
 import { builtinDecoration } from '../extensions/builtin-decoration'
 import { assertManifest, payloadBytes } from '../extensions/manifest'
-import { resourceRevision } from '../extensions/resources'
+import { resourceFailures, resourceRevision } from '../extensions/resources'
 import { themes } from './themes'
 import { safeMode } from '../extensions/safe-mode'
 import ExtensionSandbox from './ExtensionSandbox.vue'
@@ -24,7 +24,7 @@ const layers = computed(() => {
   resourceRevision.value
   if (safeMode) return []
   const selected = current.value.preferences.themeId
-  const entries = current.value.packages.filter(entry => entry.status === 'enabled' && (entry.kind === 'function' || entry.kind === 'theme' && entry.id === selected && themes.get(entry.id)))
+  const entries = current.value.packages.filter(entry => entry.status === 'enabled' && !resourceFailures.value.some(failure => failure.kind === entry.kind && failure.id === entry.id) && (entry.kind === 'function' || entry.kind === 'theme' && entry.id === selected && themes.get(entry.id)))
   if (builtin.value) entries.push(builtin.value)
   return entries.flatMap(entry => {
     assertManifest(entry.manifest)

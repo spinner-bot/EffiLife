@@ -85,5 +85,15 @@ describe('portable archive pipeline', () => {
     expect(result.workspace.categories.find(category => category.id === result.workspace.todos[0]?.categoryId)?.name).toBe('Work')
     expect(result.workspace.legacy?.source).toEqual(data)
   })
+  it('reconciles legacy record owners without losing actual time on conflicting forward links', async () => {
+    const data = { records: { '2026-11-11': [{ id: 'r1', todo_id: 'owner', start: '09:00', end: '09:30', content: 'Errand', tag: 'life' }] }, todos: [{ id: 'owner', title: 'Owner', created_at: '2026-11-01T00:00:00Z' }, { id: 'other', title: 'Other', created_at: '2026-11-01T00:00:00Z', related_time_record_ids: ['r1'] }] }
+    const result = await inspectArchive(new TextEncoder().encode(JSON.stringify(data)), '3.0.0', 'Asia/Shanghai')
+    expect(result.workspace.records).toHaveLength(1)
+    expect(result.workspace.records[0]?.todoId).toBe('legacy-todo-owner')
+    expect(result.workspace.todos[0]?.recordIds).toEqual([result.workspace.records[0]?.id])
+    expect(result.workspace.todos[1]?.recordIds).toEqual([])
+    expect(result.warnings).toContain('legacy.todoLinkConflict')
+    expect(() => assertWorkspace(result.workspace)).not.toThrow()
+  })
 })
 

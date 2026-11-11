@@ -2,7 +2,7 @@
 import { ref, shallowRef } from 'vue'
 import type { ArchivePreview } from '../../adapters/archive'
 import { inspectArchive, exportArchive } from '../../adapters/archive'
-import { current, workspace, service, refresh } from '../../application/runtime'
+import { current, workspace, replaceWorkspace, restoreWorkspace } from '../../application/runtime'
 import { acceptedExtensions } from '../../extensions/formats'
 import { saveDataFile } from '../../platform/files'
 import { t, errorMessage } from '../../i18n'
@@ -33,12 +33,12 @@ async function readFile(event: Event) {
 async function importData() {
   if (!preview.value) return
   busy.value = true
-  try { await service.replace(preview.value.workspace); await refresh(); preview.value = undefined; notify(t('settings.imported')) } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
+  try { await replaceWorkspace(preview.value.workspace); preview.value = undefined; notify(t('settings.imported')) } catch (failure) { error.value = errorMessage(failure) } finally { busy.value = false }
 }
 async function restore() {
   if (!await confirmAction(t('settings.restore'), t('settings.restoreConfirm'))) return
   busy.value = true
-  try { await service.restoreBackup(); await refresh(); notify(t('settings.restored')) } catch (failure) { notify(errorMessage(failure), 'error') } finally { busy.value = false }
+  try { await restoreWorkspace(); notify(t('settings.restored')) } catch (failure) { notify(errorMessage(failure), 'error') } finally { busy.value = false }
 }
 function warning(key: string) { const message = t(key); return message === key ? t('settings.migrationGeneral') : message }
 </script>

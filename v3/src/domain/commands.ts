@@ -10,8 +10,8 @@ export type CoreCommand =
   | { type: 'updateNode'; planId: string; nodeId: string; title: string; description: string; estimatedMinutes: number }
   | { type: 'deleteNode'; planId: string; nodeId: string }
   | { type: 'setTaskCompletion'; planId: string; taskId: string; completed: boolean }
-  | { type: 'assignCategory'; planId: string; nodeId: string; categoryId: string; overwrite: boolean }
-  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; timing?: 'actual' | 'confirmed-reference' }
+  | { type: 'assignCategory'; planId: string; nodeId: string | null; categoryId: string; overwrite: boolean }
+  | { type: 'recordAction'; title?: string; content: string; occurredAt?: Instant; planId?: string; taskId?: string; todoId?: string; completeTodo?: boolean; startAt?: Instant; endAt?: Instant; categoryId?: string; completeTask?: boolean; timing?: 'actual' | 'confirmed-reference' }
   | { type: 'updateRecord'; recordId: string; title: string; note: string; categoryId: string; startAt: Instant; endAt: Instant }
   | { type: 'deleteRecord'; recordId: string }
   | { type: 'updateLog'; planId: string; logId: string; content: string }
@@ -19,7 +19,7 @@ export type CoreCommand =
   | { type: 'saveTodo'; todoId?: string; title: string; description?: string; categoryId?: string; deadline?: Instant | null; priorityRank?: number; urgent?: boolean; important?: boolean; estimatedMinutes?: number; tags?: string[]; pinned?: boolean; sortOrder?: number; subtasks?: Array<{ id: string; title: string; completed: boolean }>; recurrence?: TodoRecurrence | null; deadlineWarningDays?: number }
   | { type: 'setTodoPinned'; todoId: string; pinned: boolean }
   | { type: 'setTodoSubtask'; todoId: string; subtaskId: string; completed: boolean }
-  | { type: 'setTodoStatus'; todoId: string; status: TodoStatus }
+  | { type: 'setTodoStatus'; todoId: string; status: TodoStatus; occurredAt?: Instant }
   | { type: 'deleteTodo'; todoId: string }
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
   | { type: 'saveCategory'; categoryId?: string; name: string; color: string; difficulty: number; icon?: string }

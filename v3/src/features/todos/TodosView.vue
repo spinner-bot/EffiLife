@@ -8,7 +8,7 @@ import { activeTodo, matchesTodo, sortTodos, todoMinutes, type TodoSort } from '
 import { dateKey } from '../../domain/time'
 import { t, calendarDate, categoryName, duration, errorMessage } from '../../i18n'
 import { useNow } from '../../ui/useNow'
-import { confirmAction, notify } from '../../ui/state'
+import { confirmAction, notify, openRecord } from '../../ui/state'
 import PageHeader from '../../ui/PageHeader.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Panel from '../../ui/Panel.vue'
@@ -53,7 +53,7 @@ async function complete(todo: Todo) {
 async function changeStatus(todo: Todo, value: TodoStatus) { try { await dispatch({ type: 'setTodoStatus', todoId: todo.id, status: value }) } catch (failure) { notify(errorMessage(failure), 'error') } }
 async function pin(todo: Todo) { try { await dispatch({ type: 'setTodoPinned', todoId: todo.id, pinned: !todo.pinned }) } catch (failure) { notify(errorMessage(failure), 'error') } }
 async function check(todo: Todo, subtaskId: string, completed: boolean) { try { await dispatch({ type: 'setTodoSubtask', todoId: todo.id, subtaskId, completed }) } catch (failure) { notify(errorMessage(failure), 'error') } }
-function timeLink(todo: Todo) { const record = current.value.records.find(record => todo.recordIds.includes(record.id)); return { path: '/time', query: record ? { date: dateKey(record.startAt, current.value.preferences.timeZone), record: record.id } : {} } }
+function timeLink(todo: Todo) { const record = current.value.records.filter(record => todo.recordIds.includes(record.id)).sort((a, b) => Date.parse(b.endAt) - Date.parse(a.endAt))[0]; return { path: '/time', query: record ? { date: dateKey(record.startAt, current.value.preferences.timeZone), record: record.id } : {} } }
 function dueSoon(todo: Todo) { const remaining = todo.deadline ? Date.parse(todo.deadline) - Date.parse(now.value) : Infinity; return activeTodo(todo) && remaining > 0 && remaining <= (todo.deadlineWarningDays ?? 3) * 86400000 }
 async function remove(todo: Todo) {
   if (!await confirmAction(t('todos.deleteConfirm'))) return
@@ -62,6 +62,7 @@ async function remove(todo: Todo) {
 function menu(todo: Todo) {
   return [
     { label: t('common.edit'), icon: 'edit', action: () => edit(todo) },
+    ...(!['archived', 'cancelled'].includes(todo.status) ? [{ label: t('todos.recordTime'), icon: 'time', action: () => openRecord({ todoId: todo.id }) }] : []),
     { label: t(todo.pinned ? 'todos.unpin' : 'todos.pin'), icon: 'pin', action: () => pin(todo) },
     ...(activeTodo(todo) ? [{ label: t(todo.status === 'in-progress' ? 'todos.pause' : 'todos.start'), icon: 'activity', action: () => changeStatus(todo, todo.status === 'in-progress' ? 'pending' : 'in-progress') }] : []),
     { label: todo.status === 'archived' || todo.status === 'cancelled' ? t('common.restore') : t('common.archive'), icon: 'archive', action: () => changeStatus(todo, todo.status === 'archived' || todo.status === 'cancelled' ? 'pending' : 'archived') },

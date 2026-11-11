@@ -42,6 +42,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   const logOwners = new Map<string, { planId: unknown; taskId: unknown; recordIds: unknown[] }>()
   for (const plan of plans) {
     text(plan.title); text(plan.description); validInstant(plan.createdAt); validInstant(plan.updatedAt)
+    requireCondition(plan.categoryId === undefined || categoryIds.has(plan.categoryId), 'storage.danglingReference')
     if (plan.archivedAt !== undefined) validInstant(plan.archivedAt)
     const nodes = rows(plan.nodes)
     unique(nodes.map(node => node.id))
@@ -77,6 +78,9 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   }
   const records = rows(value.records)
   unique(records.map(record => record.id))
+  const todos = rows(value.todos)
+  unique(todos.map(todo => todo.id))
+  const todoById = new Map(todos.map(todo => [todo.id, todo]))
   for (const record of records) {
     text(record.title); text(record.note); validInstant(record.startAt); validInstant(record.endAt)
     minutesBetween(record.startAt, record.endAt)
@@ -85,6 +89,10 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
     requireCondition(['manual', 'legacy-import', 'archive'].includes(String(record.source)), 'storage.invalidWorkspace')
     requireCondition(record.planId === undefined || planNodes.has(String(record.planId)), 'storage.danglingReference')
     requireCondition(record.taskId === undefined || planNodes.get(String(record.planId))?.has(record.taskId), 'storage.danglingReference')
+    if (record.todoId !== undefined) {
+      const owner = todoById.get(record.todoId)
+      requireCondition(owner && Array.isArray(owner.recordIds) && owner.recordIds.includes(record.id), 'storage.danglingReference')
+    }
     if (record.logId !== undefined) {
       const log = logOwners.get(String(record.logId))
       requireCondition(log && log.planId === record.planId && log.taskId === record.taskId && log.recordIds.includes(record.id), 'storage.danglingReference')
@@ -94,9 +102,6 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   for (const [id, log] of logOwners) for (const recordId of log.recordIds) {
     requireCondition(recordIds.has(recordId) && records.find(record => record.id === recordId)?.logId === id, 'storage.danglingReference')
   }
-  const todos = rows(value.todos)
-  unique(todos.map(todo => todo.id))
-  const todoById = new Map(todos.map(todo => [todo.id, todo]))
   for (const todo of todos) {
     text(todo.title); text(todo.description)
     validInstant(todo.createdAt); validInstant(todo.updatedAt); validInstant(todo.startAt)
@@ -108,6 +113,12 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
     requireCondition(Number.isSafeInteger(todo.priorityRank) && Number(todo.priorityRank) >= 0 && Number.isFinite(todo.estimatedMinutes) && Number(todo.estimatedMinutes) >= 0, 'storage.invalidWorkspace')
     requireCondition(Array.isArray(todo.tags) && todo.tags.every(tag => typeof tag === 'string'), 'storage.invalidWorkspace')
     requireCondition(Array.isArray(todo.recordIds) && todo.recordIds.every(id => recordIds.has(id)), 'storage.danglingReference')
+    for (const id of todo.recordIds) {
+      const record = records.find(record => record.id === id)!
+      // Older v3 and legacy archives only had the forward list. Preserve it
+      // until the next edit; all newly written reverse links are consistent.
+      requireCondition(record.todoId === undefined || record.todoId === todo.id, 'storage.danglingReference')
+    }
     if (todo.pinned !== undefined) requireCondition(typeof todo.pinned === 'boolean', 'storage.invalidWorkspace')
     if (todo.sortOrder !== undefined) requireCondition(Number.isFinite(todo.sortOrder), 'storage.invalidWorkspace')
     if (todo.deadlineWarningDays !== undefined) requireCondition(Number.isSafeInteger(todo.deadlineWarningDays) && Number(todo.deadlineWarningDays) >= 0, 'storage.invalidWorkspace')

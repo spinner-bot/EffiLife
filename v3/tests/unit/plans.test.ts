@@ -20,6 +20,23 @@ function setup() {
 }
 
 describe('hierarchical plan categories', () => {
+  it('assigns the whole plan without rewriting history or explicit child choices', () => {
+    const f = setup()
+    const loose = f.run({ type: 'addNode', planId: f.planId, parentId: null, kind: 'task', title: 'Loose' })
+    f.run({ type: 'recordAction', planId: f.planId, taskId: f.taskId, content: 'Before', startAt: '2026-11-11T00:00:00Z', endAt: '2026-11-11T00:10:00Z' })
+    f.run({ type: 'assignCategory', planId: f.planId, nodeId: null, categoryId: 'work', overwrite: false })
+    expect(categoryFor(f.state().plans[0]!)).toBe('work')
+    expect(categoryFor(f.state().plans[0]!, loose)).toBe('work')
+    expect(categoryFor(f.state().plans[0]!, f.taskId)).toBe('study')
+    const later = f.run({ type: 'addNode', planId: f.planId, parentId: null, kind: 'task', title: 'Later' })
+    expect(categoryFor(f.state().plans[0]!, later)).toBe('work')
+    f.run({ type: 'recordAction', planId: f.planId, content: 'Plan-level action', startAt: '2026-11-11T00:10:00Z', endAt: '2026-11-11T00:20:00Z' })
+    expect(f.state().records[1]!.categoryId).toBe('work')
+    f.run({ type: 'assignCategory', planId: f.planId, nodeId: null, categoryId: 'rest', overwrite: true })
+    expect(f.state().plans[0]!.nodes.every(node => categoryFor(f.state().plans[0]!, node.id) === 'rest')).toBe(true)
+    expect(f.state().records.map(record => record.categoryId)).toEqual(['study', 'work'])
+    expect(() => f.run({ type: 'assignCategory', planId: f.planId, nodeId: null, categoryId: 'missing', overwrite: true })).toThrow('validation.categoryMissing')
+  })
   it('keeps explicit child choices unless bulk overwrite is requested', () => {
     const f = setup()
     f.run({ type: 'assignCategory', planId: f.planId, nodeId: f.sectionId, categoryId: 'work', overwrite: false })

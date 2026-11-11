@@ -52,6 +52,7 @@ export interface Plan {
   createdAt: Instant
   updatedAt: Instant
   archivedAt?: Instant
+  categoryId?: EntityId
   nodes: PlanNode[]
   logs: ProgressLog[]
   legacy?: unknown
@@ -67,6 +68,7 @@ export interface TimeRecord {
   planId?: EntityId
   taskId?: EntityId
   logId?: EntityId
+  todoId?: EntityId
   timing: 'actual' | 'confirmed-reference'
   source: 'manual' | 'legacy-import' | 'archive'
   operationId?: string

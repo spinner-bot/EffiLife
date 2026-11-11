@@ -54,9 +54,9 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
     }
     case 'assignCategory': {
       requireCondition(workspace.categories.some(category => category.id === command.categoryId), 'validation.categoryMissing')
-      const parent = findNode(plan, command.nodeId)
+      const parent = command.nodeId === null ? plan : findNode(plan, command.nodeId)
       parent.categoryId = command.categoryId
-      if (command.overwrite) for (const child of descendants(plan, parent.id)) child.categoryId = command.categoryId
+      if (command.overwrite) for (const child of command.nodeId === null ? plan.nodes : descendants(plan, parent.id)) child.categoryId = command.categoryId
       break
     }
   }

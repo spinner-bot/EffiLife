@@ -5,7 +5,7 @@
     "en-US": "French example"
   },
   "author": "EffiLife",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "version": "1.0.0",
   "formatVersion": 1,
   "apiVersion": 1,
@@ -22,7 +22,7 @@
       "path": "locales/fr.json",
       "alias": "french",
       "name": "Français (exemple)",
-      "license": "MIT"
+      "license": "UNLICENSED"
     }
   ]
 }

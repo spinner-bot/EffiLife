@@ -63,7 +63,8 @@ describe('atomic IndexedDB persistence', () => {
       }
     })
     await expect(f.service.read()).rejects.toThrow('storage.unsupportedSchema')
-    await f.service.restoreBackup()
+    const restored = await f.service.restoreBackup()
+    expect(restored.revision).toBeGreaterThanOrEqual(2)
     expect((await f.service.read()).plans.map(plan => plan.title)).toEqual(['Retain'])
   })
   it('backs up replacement data in the same transaction', async () => {

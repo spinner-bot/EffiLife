@@ -28,13 +28,14 @@ async function recover() {
   catch (error) { notify(errorMessage(error), 'error') }
 }
 function recoveryKey(event: KeyboardEvent) { if (event.altKey && event.shiftKey && event.code === 'Digit0') { event.preventDefault(); enterSafeMode() } }
+function skipContent() { const main = document.getElementById('main-content'); main?.focus(); main?.scrollIntoView({ block: 'start' }) }
 const colorScheme = matchMedia('(prefers-color-scheme: dark)')
 function schemeChanged() { applyTheme(safeMode ? 1 : current.value.preferences.themeId) }
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
 const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
 watch(() => [current.value.preferences, current.value.packages] as const, async ([preferences, packages]) => {
-  reconcileResources(safeMode ? [] : packages)
+  reconcileResources(safeMode ? [] : packages, version)
   setLocale(safeMode ? 'zh-CN' : preferences.locale)
   applyTheme(safeMode ? 1 : preferences.themeId)
   try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
@@ -48,7 +49,7 @@ onMounted(() => {
 onBeforeUnmount(() => { window.removeEventListener('keydown', recoveryKey); colorScheme.removeEventListener('change', schemeChanged) })
 </script>
 <template>
-  <a href="#main-content" class="skip-link">{{ t('common.skipContent') }}</a>
+  <a href="#main-content" class="skip-link" @click.prevent="skipContent">{{ t('common.skipContent') }}</a>
   <div v-if="loading" style="min-height: 100dvh; display: grid; place-items: center"><p role="status">{{ t('common.loading') }}</p></div>
   <div v-else-if="startupError && !workspace" class="app-main stack" style="max-width: 800px">
     <EmptyState :title="t('state.startupFailed')" :description="t('state.startupBody')" icon="error"><UiButton variant="primary" @click="initialize">{{ t('common.retry') }}</UiButton></EmptyState>
