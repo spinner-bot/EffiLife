@@ -19,7 +19,7 @@ export type CoreCommand =
   | { type: 'saveTodo'; todoId?: string; title: string; description?: string; categoryId?: string; deadline?: Instant | null; priorityRank?: number; urgent?: boolean; important?: boolean; estimatedMinutes?: number; tags?: string[]; pinned?: boolean; sortOrder?: number; subtasks?: Array<{ id: string; title: string; completed: boolean }>; recurrence?: TodoRecurrence | null; deadlineWarningDays?: number }
   | { type: 'setTodoPinned'; todoId: string; pinned: boolean }
   | { type: 'setTodoSubtask'; todoId: string; subtaskId: string; completed: boolean }
-  | { type: 'setTodoStatus'; todoId: string; status: TodoStatus }
+  | { type: 'setTodoStatus'; todoId: string; status: TodoStatus; occurredAt?: Instant }
   | { type: 'deleteTodo'; todoId: string }
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
   | { type: 'saveCategory'; categoryId?: string; name: string; color: string; difficulty: number; icon?: string }
