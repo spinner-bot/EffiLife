@@ -380,5 +380,7 @@
   "record.context": "关联事项",
   "record.completeTodo": "同时标记这条待办完成",
   "todos.recordTime": "记录本次用时",
-  "validation.todoArchived": "这条待办已归档或取消，请先恢复再记录。"
+  "validation.todoArchived": "这条待办已归档或取消，请先恢复再记录。",
+  "legacy.todoLinkMissing": "部分时间记录引用的旧待办不存在；时间记录和原文已保留。",
+  "legacy.todoLinkConflict": "部分旧记录被多条待办引用，已优先采用记录自身的关联；冲突原文已保留。"
 }
