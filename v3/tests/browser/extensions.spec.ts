@@ -31,10 +31,12 @@ test('installs a local theme, grants visual CSS, revokes it and recovers on unin
     'tokens.json': JSON.stringify({ palette: { background: '#102a20', surface: '#17382c', text: '#ffffff', accent: '#47b894' } }),
     'styles/main.css': '.panel { border-radius: 28px; }',
   })
+  await page.goto('/#/more/appearance')
   const theme = page.getByRole('button', { name: '森林 · Example · 1.0.0 · #100000', exact: true })
   await theme.click()
   await expect(theme).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.panel').first()).toHaveCSS('border-radius', '14px')
+  await page.goto('/#/more/settings')
   const row = page.locator('.list-row').filter({ has: page.getByText('森林', { exact: true }) })
   await row.getByRole('button', { name: '权限', exact: true }).click()
   let dialog = page.getByRole('dialog', { name: '权限', exact: true })
@@ -51,6 +53,7 @@ test('installs a local theme, grants visual CSS, revokes it and recovers on unin
   await expect(page.locator('.panel').first()).toHaveCSS('border-radius', '14px')
   await row.getByRole('button', { name: '删除: 森林', exact: true }).click()
   await page.getByRole('dialog', { name: '卸载「森林」？' }).getByRole('button', { name: '确认', exact: true }).click()
+  await page.goto('/#/more/appearance')
   await expect(theme).toHaveCount(0)
   await expect(page.getByRole('button', { name: '浅色', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })
@@ -64,9 +67,11 @@ test('loads packaged locale and font bytes and restores defaults when disabled',
       { kind: 'font', alias: 'reading', path: 'fonts/reading.woff2', name: 'Reading font', license: 'OFL-1.1' },
     ],
   }, { 'locales/fr.json': JSON.stringify({ id: 'fr-FR', direction: 'ltr', messages: { 'nav.home': 'Mon quotidien' } }), 'fonts/reading.woff2': bytes })
+  await page.goto('/#/more/appearance')
   await page.getByRole('combobox', { name: '字体', exact: true }).selectOption('pkg:resource:100000:reading')
   await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue('--font-body'))).toContain('EffiLife_resource_100000_reading')
   expect(await page.evaluate(() => document.fonts.check('15px "EffiLife_resource_100000_reading"'))).toBe(true)
+  await page.goto('/#/more/settings')
   await page.getByRole('combobox', { name: '语言', exact: true }).selectOption('fr-FR')
   await expect(page.getByRole('link', { name: 'Mon quotidien', exact: true })).toBeVisible()
   await page.reload()
@@ -74,7 +79,8 @@ test('loads packaged locale and font bytes and restores defaults when disabled',
   const row = page.locator('.list-row').filter({ has: page.getByText('French resources', { exact: true }) })
   await row.getByRole('button', { name: 'Disable', exact: true }).click()
   await expect(page.getByRole('combobox', { name: '语言', exact: true })).toHaveValue('zh-CN')
-  await expect(page.getByRole('combobox', { name: '字体', exact: true })).toHaveValue('default')
   await expect(page.getByRole('option', { name: 'Français', exact: true })).toHaveCount(0)
+  await page.goto('/#/more/appearance')
+  await expect(page.getByRole('combobox', { name: '字体', exact: true })).toHaveValue('default')
 })
 
