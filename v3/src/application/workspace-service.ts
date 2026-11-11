@@ -4,6 +4,10 @@ import type { CommandContext, Workspace } from '../domain/models'
 import { execute } from '../domain/engine'
 import { DomainError } from '../domain/errors'
 
+function plainDto<T>(value: T): T {
+  try { return JSON.parse(JSON.stringify(value)) as T } catch { throw new DomainError('storage.invalidWorkspace') }
+}
+
 export class WorkspaceService {
   constructor(
     readonly repository: WorkspaceRepository,
@@ -13,16 +17,13 @@ export class WorkspaceService {
   read() { return this.repository.read() }
   async dispatch(envelope: CommandEnvelope) {
     const context = this.context()
-    const result = await this.repository.transact(current => execute(current, envelope, context))
+    const command = plainDto(envelope)
+    const result = await this.repository.transact(current => execute(current, command, context))
     this.events?.publish()
     return result
   }
   async replace(workspace: Workspace) {
-    let snapshot: Workspace
-    try { snapshot = JSON.parse(JSON.stringify(workspace)) as Workspace } catch {
-      throw new DomainError('storage.invalidWorkspace')
-    }
-    await this.repository.replace(snapshot)
+    await this.repository.replace(plainDto(workspace))
     this.events?.publish()
   }
   async restoreBackup() {
