@@ -64,3 +64,5 @@
   .app-topbar .topbar-date { display: block; grid-column: 1 / -1; grid-row: 2; margin: 0; justify-self: end; max-width: 100%; white-space: normal; }
   .app-topbar[data-clock-align="center"] .topbar-date { justify-self: center; text-align: center; }
 }
+
+.panel { background: var(--card-surface, var(--surface)); backdrop-filter: var(--card-filter, none); -webkit-backdrop-filter: var(--card-filter, none); border-radius: var(--card-radius, var(--radius)); box-shadow: var(--card-shadow, none); }
