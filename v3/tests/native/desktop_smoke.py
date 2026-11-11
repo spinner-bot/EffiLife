@@ -3,6 +3,7 @@
 from contextlib import ExitStack
 from pathlib import Path
 import json
+import hashlib
 import os
 import select
 import subprocess
@@ -10,6 +11,7 @@ import sys
 import time
 import urllib.request
 import uuid
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from native import environment, ROOT
@@ -65,9 +67,33 @@ def main():
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('原生桌面真实待办')"))
         driver.call("POST", "/refresh", {})
         driver.wait(lambda: driver.script("return document.querySelector('.list-row')?.textContent.includes('原生桌面真实待办')"), "native IndexedDB persistence")
+        driver.script("location.hash='/settings'")
+        driver.wait(lambda: driver.script("return Boolean(document.querySelector('input[aria-label=\"导入存档\"]'))"))
+        driver.button("导出存档")
+        xdotool = str(sdk / "usr/bin/xdotool")
+        def save_window():
+            result = subprocess.run([xdotool, "search", "--onlyvisible", "--name", "Save|保存"], env=env, capture_output=True, text=True)
+            return result.stdout.strip().splitlines()[-1] if result.returncode == 0 and result.stdout.strip() else None
+        window = driver.wait(save_window, "native GTK save dialog")
+        destination = output / "native-export.d3el"
+        destination.unlink(missing_ok=True)
+        subprocess.run([xdotool, "windowfocus", "--sync", window, "key", "--clearmodifiers", "ctrl+l"], env=env, check=True)
+        subprocess.run([xdotool, "type", "--clearmodifiers", "--delay", "1", str(destination)], env=env, check=True)
+        subprocess.run([xdotool, "key", "--clearmodifiers", "Return"], env=env, check=True)
+        # GTK may first accept the location entry before activating Save.
+        time.sleep(0.3)
+        if not destination.exists():
+            subprocess.run([xdotool, "key", "--clearmodifiers", "alt+s"], env=env, check=True)
+        driver.wait(lambda: destination.is_file() and destination.stat().st_size > 0, "native file write")
+        with zipfile.ZipFile(destination) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+            payload = archive.read("payload/workspace.json")
+            assert hashlib.sha256(payload).hexdigest() == manifest["checksums"]["payload/workspace.json"]
+            exported = json.loads(payload)
+            assert exported["todos"][0]["title"] == "原生桌面真实待办"
         rect = driver.call("GET", "/window/rect")
         subprocess.run([sys.executable, str(ROOT / "scripts/capture-display.py"), str(output / "desktop.png"), *[str(rect[key]) for key in ["x", "y", "width", "height"]]], env=env, check=True)
-        report = {"application": str(application.relative_to(ROOT)), "features": features, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload"]}
+        report = {"application": str(application.relative_to(ROOT)), "features": features, "checks": ["actual Tauri startup", "native origin capabilities", "IndexedDB capture and reload", "real GTK save dialog and scoped file write", "export payload and SHA-256"]}
         (output / "result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         print("Tauri desktop smoke passed:", ", ".join(report["checks"]), flush=True)
 
