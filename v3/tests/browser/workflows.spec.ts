@@ -45,12 +45,12 @@ async function createTask(page: Page) {
 
 test('assigns categories from the whole plan while preserving explicit branches', async ({ page }) => {
   await createTask(page)
-  const assign = async (category: string) => {
+  const assign = async (category: string, wholePlan = false) => {
     await page.getByRole('button', { name: '设置整个计划的时间类别', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: '背景时间类别', exact: true })
     await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption(category)
     await expect(dialog.getByRole('checkbox')).toHaveCount(0)
-    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await dialog.getByRole('button', { name: wholePlan ? '统一设置全部分组与子项（覆盖现有类别）' : '保存', exact: true }).click()
     await expect(dialog).not.toBeVisible()
   }
   const checkRecording = async (category: string, task?: string) => {
@@ -72,8 +72,11 @@ test('assigns categories from the whole plan while preserving explicit branches'
   await assign('rest')
   await checkRecording('study', '极限与连续')
   await checkRecording('rest', '新根任务')
+  await assign('exercise', true)
+  await checkRecording('exercise', '极限与连续')
+  await checkRecording('exercise', '新根任务')
   await page.reload()
-  await checkRecording('rest')
+  await checkRecording('exercise')
 })
 
 test('starts with honest empty data and bundled readable fonts', async ({ page }, info) => {
