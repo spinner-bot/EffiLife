@@ -46,7 +46,7 @@ function start(event: PointerEvent, node: PlanNode, depth: number) {
   width.value = rect.width; height.value = rect.height; offsetX = event.clientX - rect.left; offsetY = event.clientY - rect.top
   startX = event.clientX; startY = event.clientY; initialDepth = depth; pointerId = event.pointerId; pending = node.id
   indent = innerWidth <= 600 ? 16 : 24
-  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  ;root.value!.setPointerCapture(event.pointerId)
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', release); window.addEventListener('pointercancel', cancel); window.addEventListener('keydown', escape)
 }
 function locate() {

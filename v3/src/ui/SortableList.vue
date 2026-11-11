@@ -18,7 +18,7 @@ function start(event: PointerEvent, id: string) {
   const rect = row.getBoundingClientRect()
   height.value = rect.height; width.value = rect.width; offsetY = event.clientY - rect.top; offsetX = event.clientX - rect.left
   pending = id; pointerId = event.pointerId; startY = event.clientY; startX = event.clientX
-  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+  ;root.value!.setPointerCapture(event.pointerId)
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', release); window.addEventListener('pointercancel', cancel)
 }
 function move(event: PointerEvent) {
