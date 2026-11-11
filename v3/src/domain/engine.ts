@@ -7,6 +7,7 @@ import { applyTimePlanCommand } from './time-plan-commands'
 import { applyPackageCommand } from './package-commands'
 import { requireCondition, requireTitle, DomainError } from './errors'
 import { instant } from './time'
+import { unwrapExtensionCommand } from './extension-access'
 
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical)
@@ -28,7 +29,8 @@ export function execute(
   }
   const workspace = structuredClone(original)
   const normalizedContext = { ...context, now: instant(context.now) }
-  const command = envelope.command
+  const extension = envelope.command.type === 'extensionCommand' ? envelope.command : undefined
+  const command = extension ? unwrapExtensionCommand(workspace, extension) : envelope.command
   let result = applyPlanCommand(workspace, command, normalizedContext)
     ?? applyRecordCommand(workspace, command, normalizedContext)
     ?? applyTodoCommand(workspace, command, normalizedContext)
@@ -62,6 +64,7 @@ export function execute(
     if (record && !record.operationId) record.operationId = envelope.operationId
   }
   workspace.receipts[envelope.operationId] = { fingerprint, result: cleanResult }
+  if (extension) (workspace.extensionAudit ||= []).push({ id: context.id(), kind: extension.kind, packageId: extension.packageId, action: 'write', occurredAt: normalizedContext.now, capabilities: [extension.scope], detail: command.type })
   workspace.revision = original.revision + 1
   workspace.updatedAt = normalizedContext.now
   return { workspace, result: cleanResult }
