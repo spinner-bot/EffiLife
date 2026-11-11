@@ -54,7 +54,7 @@ export function applyTodoCommand(workspace: Workspace, command: WorkspaceCommand
       todo.nextOccurrenceId = nextId
     }
     todo.status = command.status
-    todo.completedAt = command.status === 'completed' ? context.now : undefined
+    todo.completedAt = command.status === 'completed' ? instant(command.occurredAt || context.now) : undefined
     todo.updatedAt = context.now
     return { entityId: todo.id }
   }
