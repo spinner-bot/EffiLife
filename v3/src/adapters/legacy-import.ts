@@ -5,6 +5,7 @@ import { assertWorkspace } from '../domain/validation'
 import { importLegacyPlans } from './legacy-plans'
 import { importLegacyTimePlanning } from './legacy-time-planning'
 import { list, object, string, number, localInstant } from './legacy-utils'
+import { DomainError } from '../domain/errors'
 
 export function importLegacy(
   source: unknown, version: string, timeZone: string, now = new Date().toISOString(),
@@ -53,8 +54,15 @@ export function importLegacy(
     const row = object(item)
     try {
       const startAt = localInstant(date, string(row.start || row['开始']), timeZone)
-      let endAt = localInstant(date, string(row.end || row['结束']), timeZone)
-      if (Date.parse(endAt) < Date.parse(startAt)) endAt = new Date(Date.parse(endAt) + 86400000).toISOString()
+      const startClock = string(row.start || row['开始'])
+      const endClock = string(row.end || row['结束'])
+      let endDate = date
+      if (Date.parse(date + 'T' + endClock + 'Z') < Date.parse(date + 'T' + startClock + 'Z')) {
+        const next = new Date(date + 'T12:00:00Z')
+        next.setUTCDate(next.getUTCDate() + 1)
+        endDate = next.toISOString().slice(0, 10)
+      }
+      const endAt = localInstant(endDate, endClock, timeZone)
       if (Date.parse(endAt) <= Date.parse(startAt)) { warnings.push('legacy.recordTimeMissing'); continue }
       const id = 'legacy-record-' + date + '-' + index
       state.records.push({
@@ -64,7 +72,7 @@ export function importLegacy(
       })
       if (row.id !== undefined) recordIds.set(String(row.id), id)
       if (row.todo_id !== undefined && String(row.todo_id)) todoOwners.set(id, 'legacy-todo-' + String(row.todo_id))
-    } catch { warnings.push('legacy.recordInvalid') }
+    } catch (error) { warnings.push(error instanceof DomainError && error.code === 'legacy.localTimeInvalid' ? error.code : 'legacy.recordInvalid') }
   }
   for (const [index, item] of list(root.todos || app.todos).entries()) {
     const row = object(item)
