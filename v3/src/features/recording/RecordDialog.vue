@@ -2,7 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { current, dispatch } from '../../application/runtime'
 import { DomainError } from '../../domain/errors'
-import { categoryFor } from '../../domain/plans'
+import { effectivePlanCategory } from '../../domain/plans'
 import { referenceFor, minutesBetween } from '../../domain/time'
 import { activeTodo } from '../../domain/todos'
 import { dateTimeInput, parseDateTimeInput } from '../../ui/datetime'
@@ -40,7 +40,7 @@ watch(() => recording.sequence, () => {
   Object.assign(form, blank(), { planId: recording.planId, taskId: recording.taskId, todoId: recording.todoId, target: recording.planId ? 'plan:' + recording.planId : recording.todoId ? 'todo:' + recording.todoId : '' })
   if (recording.planId) {
     const selected = plans.value.find(item => item.id === recording.planId)
-    if (selected) form.categoryId = categoryFor(selected, recording.taskId || undefined)
+    if (selected) form.categoryId = effectivePlanCategory(current.value, selected, recording.taskId || undefined)
   }
   if (recording.todoId) { const selected = current.value.todos.find(item => item.id === recording.todoId); if (selected) { form.categoryId = selected.categoryId; form.title = selected.title } }
   initial = JSON.stringify(form)
@@ -53,12 +53,12 @@ function changeContext() {
   form.taskId = ''
   const selected = current.value.todos.find(item => item.id === form.todoId)
   form.title = selected?.title || ''
-  form.categoryId = plan.value ? categoryFor(plan.value) : selected?.categoryId || 'life'
+  form.categoryId = plan.value ? effectivePlanCategory(current.value, plan.value) : selected?.categoryId || 'life'
   if (!form.planId) form.withTime = true
   form.complete = false
 }
 function changeTask() {
-  if (plan.value) form.categoryId = categoryFor(plan.value, form.taskId || undefined)
+  if (plan.value) form.categoryId = effectivePlanCategory(current.value, plan.value, form.taskId || undefined)
   form.complete = false
 }
 function useReference() {
