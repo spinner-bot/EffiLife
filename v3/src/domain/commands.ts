@@ -23,7 +23,7 @@ export type CoreCommand =
   | { type: 'setTodoStatus'; todoId: string; status: TodoStatus; occurredAt?: Instant }
   | { type: 'deleteTodo'; todoId: string }
   | { type: 'savePreferences'; preferences: Partial<Preferences> }
-  | { type: 'saveCategory'; categoryId?: string; name?: string; color: string; difficulty: number; icon?: string }
+  | { type: 'saveCategory'; categoryId?: string; name?: string; description?: string; color: string; difficulty: number; icon?: string }
   | { type: 'saveTimePlan'; timePlanId?: string; name: string; mode: TimePlan['mode']; items: TimePlan['items']; backgroundCategoryId?: string; useForDate?: string; makeDefault?: boolean }
   | { type: 'deleteTimePlan'; timePlanId: string; replacementId?: string }
   | { type: 'setDateTimePlan'; date: string; timePlanId: string | null }

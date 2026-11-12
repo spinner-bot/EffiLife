@@ -35,6 +35,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   const categoryIds = new Set(categories.map(category => category.id))
   for (const category of categories) {
     text(category.name); text(category.color); text(category.icon)
+    if (category.description !== undefined) text(category.description)
     requireCondition(Number.isFinite(category.difficulty) && Number(category.difficulty) >= 0, 'storage.invalidWorkspace')
   }
   const plans = rows(value.plans)

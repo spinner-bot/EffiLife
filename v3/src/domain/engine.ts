@@ -54,8 +54,12 @@ export function execute(
     requireCondition(!command.categoryId || current, 'validation.categoryMissing')
     requireCondition(/^#[a-f0-9]{6}$/i.test(command.color), 'validation.invalidColor')
     requireCondition(Number.isFinite(command.difficulty) && command.difficulty >= 0, 'validation.invalidDifficulty')
-    const value = { id: current?.id || context.id(), name: current && command.name === undefined ? current.name : requireTitle(command.name || ''), color: command.color, difficulty: command.difficulty, icon: command.icon || current?.icon || 'circle' }
-    if (current) Object.assign(current, value, { labelKey: command.name === undefined ? current.labelKey : undefined })
+    const description = (command.description ?? current?.description ?? '').trim()
+    const value = { id: current?.id || context.id(), name: current && command.name === undefined ? current.name : requireTitle(command.name || ''), color: command.color, difficulty: command.difficulty, icon: command.icon || current?.icon || 'circle', ...(description ? { description } : {}) }
+    if (current) {
+      Object.assign(current, value, { labelKey: command.name === undefined ? current.labelKey : undefined })
+      if (!description) delete current.description
+    }
     else workspace.categories.push(value)
     result = { entityId: value.id }
   }

@@ -10,6 +10,7 @@ export interface Category {
   color: string
   icon: string
   difficulty: number
+  description?: string
 }
 
 export interface PlanNode {
