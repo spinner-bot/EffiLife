@@ -17,6 +17,21 @@ if (existsSync(nativePath)) {
 }
 const changes = readFileSync(resolve(root, 'CHANGELOG.md'), 'utf8')
 if (!changes.includes('[' + version + ']')) throw new Error('Current product version has no changelog entry')
+const structured = JSON.parse(readFileSync(resolve(root, 'src/data/changelog.json'), 'utf8'))
+if (!structured.generations || !Object.keys(structured.generations).length) throw new Error('CHANGELOG.json needs generations')
+for (const [id, generation] of Object.entries(structured.generations)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(generation.date)) throw new Error('CHANGELOG.json generation ' + id + ' needs an ISO date')
+  if (typeof generation.content !== 'string' || !generation.content.trim()) throw new Error('CHANGELOG.json generation ' + id + ' needs content')
+}
+if (!structured.products || !Object.keys(structured.products).length) throw new Error('CHANGELOG.json needs products')
+for (const [productId, product] of Object.entries(structured.products)) {
+  if (!product.versions || !Object.keys(product.versions).length) throw new Error('CHANGELOG.json ' + productId + ' needs versions')
+  for (const [id, entry] of Object.entries(product.versions)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) throw new Error('CHANGELOG.json ' + productId + '@' + id + ' needs an ISO date')
+    if (typeof entry.content !== 'string' || !entry.content.trim()) throw new Error('CHANGELOG.json ' + productId + '@' + id + ' needs content')
+  }
+}
+if (!structured.products['effilife-v3']?.versions?.[version]) throw new Error('CHANGELOG.json effilife-v3 is missing the current version')
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   console.log('EffiLife v' + version + ': version and changelog are consistent')
 }
