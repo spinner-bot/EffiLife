@@ -1,6 +1,6 @@
 [package]
 name = "effilife-desktop"
-version = "3.2.4"
+version = "3.2.5"
 description = "EffiLife personal life management"
 authors = ["Codex  (sqs_A100)"]
 edition = "2021"
