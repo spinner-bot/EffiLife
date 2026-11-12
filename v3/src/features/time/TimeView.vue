@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import type { TimeRecord } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
 import { dateKey, dayBounds, overlapMinutes, minutesBetween } from '../../domain/time'
@@ -17,7 +17,7 @@ import CategoryBadge from '../categories/CategoryBadge.vue'
 import EditRecordDialog from './EditRecordDialog.vue'
 import TimePlanningPanel from './TimePlanningPanel.vue'
 
-const route = useRoute()
+const route = useRoute(), router = useRouter()
 function validDate(value: unknown) {
   if (typeof value === 'string') {
     try { dayBounds(value, current.value.preferences.timeZone); return value } catch { /* Keep invalid links outside the live query. */ }
@@ -47,6 +47,7 @@ async function remove(record: TimeRecord) {
 }
 function menu(record: TimeRecord) {
   return [
+    { label: t('record.openDetail'), icon: 'next', action: () => router.push({ name: 'record', params: { id: record.id } }) },
     { label: t('common.edit'), icon: 'edit', action: () => { editing.value = record } },
     { label: t('common.delete'), icon: 'delete', danger: true, action: () => remove(record) },
   ]
@@ -61,9 +62,9 @@ function todoFor(record: TimeRecord) { return current.value.todos.find(todo => t
     <p v-if="overlaps > 0" class="notice">{{ t('time.overlap', { minutes: Math.round(overlaps) }) }}</p>
     <Panel :title="t('time.records')">
       <div v-for="record in records" :key="record.id" class="list-row compact-record" :data-record-id="record.id" :data-selected="route.query.record === record.id || undefined">
-        <div class="grow"><div class="cluster spread record-heading"><p class="row-title"><CategoryBadge :category-id="record.categoryId" />{{ record.title }}</p><div class="cluster record-links"><RouterLink v-if="todoFor(record)" :to="{ path: '/todos', query: { todo: todoFor(record)!.id } }" class="text-link small" :aria-label="todoFor(record)!.title" :title="todoFor(record)!.title"><Icon name="todos" :size="16" /></RouterLink><RouterLink v-if="record.planId" :to="{ name: 'plan', params: { id: record.planId }, query: { task: record.taskId, log: record.logId } }" class="text-link small" :aria-label="current.plans.find(item => item.id === record.planId)?.title" :title="current.plans.find(item => item.id === record.planId)?.title"><Icon name="plans" :size="16" /></RouterLink></div></div>
+        <RouterLink :to="{ name: 'record', params: { id: record.id } }" class="grow compact-record-link" :aria-label="t('record.openDetail') + ': ' + record.title"><div class="cluster spread record-heading"><p class="row-title"><CategoryBadge :category-id="record.categoryId" />{{ record.title }}</p><div class="cluster record-links"><RouterLink v-if="todoFor(record)" :to="{ path: '/todos', query: { todo: todoFor(record)!.id } }" class="text-link small" :aria-label="todoFor(record)!.title" :title="todoFor(record)!.title"><Icon name="todos" :size="16" /></RouterLink><RouterLink v-if="record.planId" :to="{ name: 'plan', params: { id: record.planId }, query: { task: record.taskId, log: record.logId } }" class="text-link small" :aria-label="current.plans.find(item => item.id === record.planId)?.title" :title="current.plans.find(item => item.id === record.planId)?.title"><Icon name="plans" :size="16" /></RouterLink></div></div>
           <p class="row-detail compact-record-detail"><strong :title="record.startAt + ' — ' + record.endAt">{{ clock(record.startAt, current.preferences.timeZone) }} — {{ clock(record.endAt, current.preferences.timeZone) }} · {{ duration(minutesBetween(record.startAt, record.endAt)) }}<span v-if="record.timing !== 'actual'"> · {{ t('record.estimated') }}</span></strong><span v-if="record.note" class="record-description" :title="record.note">{{ record.note }}</span><span class="sr-only">{{ t(record.timing === 'actual' ? 'record.actual' : 'record.estimated') }}</span></p>
-        </div><ActionMenu :items="menu(record)" />
+        </RouterLink><ActionMenu :items="menu(record)" />
       </div>
       <EmptyState v-if="!records.length" :title="t('time.emptyTitle')" :description="t('time.emptyBody')" icon="time"><UiButton variant="primary" @click="openRecord()">{{ t('common.record') }}<Icon name="plus" :size="17" /></UiButton></EmptyState>
     </Panel>
@@ -72,6 +73,7 @@ function todoFor(record: TimeRecord) { return current.value.todos.find(todo => t
 </template>
 
 <style scoped>
+.compact-record-link { display: block; color: inherit; text-decoration: none; border-radius: .4rem; transition: background var(--motion-fast); }.compact-record-link:hover { background: var(--subtle); }.compact-record-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .record-heading { gap: .5rem; flex-wrap: nowrap; align-items: baseline; }.record-heading .row-title { min-width: 0; overflow-wrap: anywhere; }.record-links { flex-shrink: 0; }.compact-record-detail { flex-wrap: nowrap; min-width: 0; gap: .6rem; }.compact-record-detail strong { font-weight: 650; flex-shrink: 0; }.record-description { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; }
 @media(max-width: 520px) { .compact-record-detail { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.record-description { margin-inline-start: .5rem; } }
 </style>

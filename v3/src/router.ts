@@ -15,6 +15,7 @@ export const router = createRouter({
     { path: '/plans', name: 'plans', component: () => import('./features/plans/PlansView.vue'), meta: { title: 'nav.plans' } },
     { path: '/plans/:id', name: 'plan', component: () => import('./features/plans/PlanDetailView.vue'), meta: { title: 'nav.plans' } },
     { path: '/time', name: 'time', component: () => import('./features/time/TimeView.vue'), meta: { title: 'nav.time' } },
+    { path: '/time/records/:id', name: 'record', component: () => import('./features/time/RecordDetailView.vue'), meta: { title: 'time.records' } },
     { path: '/todos', name: 'todos', component: () => import('./features/todos/TodosView.vue'), meta: { title: 'nav.todos' } },
     { path: '/more', component: () => import('./features/settings/MoreView.vue'), meta: { title: 'nav.more' } },
     { path: '/more/categories', component: () => import('./features/categories/CategoriesView.vue'), meta: { title: 'settings.categories' } },
