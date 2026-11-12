@@ -59,6 +59,7 @@
   "form.color": "Color",
   "form.difficulty": "Category difficulty",
   "settings.migrationGeneral": "Some legacy data needs compatibility handling; original content is retained.",
+  "app.name": "EffiLife",
   "app.tagline": "Time and life, connected",
   "nav.home": "Overview",
   "nav.plans": "Plans",

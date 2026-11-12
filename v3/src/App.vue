@@ -45,7 +45,7 @@ watch(() => [current.value.preferences, current.value.packages] as const, async 
   applySurface(safeMode ? defaultAppearance() : appearanceFor(themes.get(preferences.themeId) || themes.get(1)!, preferences.appearance))
   try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
 }, { immediate: true })
-watch(title, value => { document.title = value + ' · EffiLife' }, { immediate: true })
+watch([title, currentLocale], () => { document.title = title.value + ' · ' + t('app.name') }, { immediate: true })
 onMounted(() => {
   initialize()
   window.addEventListener('keydown', recoveryKey)
@@ -62,12 +62,12 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', recoveryKey); colo
   </div>
   <div v-else v-show="!replacementLayout" class="app-shell">
     <aside class="app-sidebar" :aria-label="t('common.navigation')">
-      <div class="sidebar-brand"><RouterLink to="/" class="brand"><span class="brand-mark"><Icon name="activity" :size="23" /></span>EffiLife</RouterLink><p class="brand-tagline">{{ t('app.tagline') }}</p></div>
+      <div class="sidebar-brand"><RouterLink to="/" class="brand"><span class="brand-mark"><Icon name="activity" :size="23" /></span>{{ t('app.name') }}</RouterLink><p class="brand-tagline">{{ t('app.tagline') }}</p></div>
       <nav class="nav-list" :aria-label="t('common.navigation')"><RouterLink v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item" :class="{ 'router-link-active': (item.path === '/plans' && route.path.startsWith('/plans/')) || (item.path === '/more' && route.path.startsWith('/more/')) }" :exact-active-class="item.path === '/' ? 'router-link-active' : undefined"><Icon :name="item.icon" :size="20" /><span>{{ t(item.key) }}</span></RouterLink></nav>
-      <div class="sidebar-bottom"><p class="sidebar-version">EffiLife v{{ version }}</p></div>
+      <div class="sidebar-bottom"><p class="sidebar-version">{{ t('app.name') }} v{{ version }}</p></div>
     </aside>
     <div class="app-body">
-      <header class="app-topbar" :data-clock-align="clockOptions.align"><span class="breadcrumb">EffiLife <span aria-hidden="true">/</span> {{ title }}</span><RouterLink to="/" class="mobile-brand">EffiLife</RouterLink><time class="muted small topbar-date" :datetime="now" :data-display="clockOptions.display">{{ today }}</time><div class="topbar-actions"><UiButton variant="primary" @click="openRecord()"><Icon name="plus" :size="18" />{{ t('common.record') }}</UiButton></div></header>
+      <header class="app-topbar" :data-clock-align="clockOptions.align"><span class="breadcrumb">{{ t('app.name') }} <span aria-hidden="true">/</span> {{ title }}</span><RouterLink to="/" class="mobile-brand">{{ t('app.name') }}</RouterLink><time class="muted small topbar-date" :datetime="now" :data-display="clockOptions.display">{{ today }}</time><div class="topbar-actions"><UiButton variant="primary" @click="openRecord()"><Icon name="plus" :size="18" />{{ t('common.record') }}</UiButton></div></header>
       <main id="main-content" class="app-main" tabindex="-1"><p v-if="startupError" role="alert" class="form-error">{{ errorMessage(startupError) }}</p><RouterView /></main>
     </div>
   </div>
