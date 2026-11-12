@@ -1,0 +1,97 @@
+import { test, expect } from '@playwright/test'
+
+test('category management reads as identity, difficulty and description, and returns to More', async ({ page }, info) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('/#/more/categories')
+  const row = page.locator('.category-manage-row').filter({ hasText: '工作' }).first()
+  await expect(row.locator('.category-identity')).toContainText('工作')
+  await expect(row.locator('.badge')).toContainText('难度')
+  await expect(row).toContainText('还没有描述')
+  await page.getByRole('button', { name: '编辑: 工作', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel(/说明/).fill('专注写代码和评审的时间')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(row).toContainText('专注写代码和评审的时间')
+  await page.reload()
+  await expect(row).toContainText('专注写代码和评审的时间')
+  await page.screenshot({ path: info.outputPath('category-management.png'), fullPage: true })
+  await page.getByRole('link', { name: '返回', exact: true }).click()
+  await expect(page).toHaveURL(/#\/more$/)
+  expect(errors).toEqual([])
+})
+
+test('every secondary management page offers a back link to More', async ({ page }) => {
+  for (const path of ['categories', 'time-plans', 'rules', 'appearance', 'settings']) {
+    await page.goto('/#/more/' + path)
+    const back = page.getByRole('link', { name: '返回', exact: true })
+    await expect(back).toBeVisible()
+    await back.click()
+    await expect(page).toHaveURL(/#\/more$/)
+  }
+})
+
+test('record rows and ring legends open a real detail page', async ({ page }, info) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('/#/time?date=2026-11-11')
+  await page.getByRole('button', { name: '记录行动', exact: true }).first().click()
+  const dialog = page.getByRole('dialog', { name: '记录一次行动' })
+  await dialog.getByLabel('名称', { exact: true }).fill('阅读一章')
+  await dialog.getByLabel('这次做了什么？').fill('整理理解要点')
+  await dialog.getByLabel('开始时间', { exact: true }).fill('2026-11-11T09:00')
+  await dialog.getByLabel('结束时间', { exact: true }).fill('2026-11-11T10:00')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+
+  await page.locator('.record-legend-link').first().click()
+  await expect(page).toHaveURL(/#\/time\/records\//)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('阅读一章')
+  await expect(page.locator('.detail-grid')).toContainText('1 小时')
+  await expect(page.getByText('整理理解要点')).toBeVisible()
+  await page.screenshot({ path: info.outputPath('record-detail.png'), fullPage: true })
+
+  await page.getByRole('link', { name: '返回', exact: true }).click()
+  await expect(page).toHaveURL(/#\/time\?date=2026-11-11$/)
+  await page.locator('.compact-record-link').first().click()
+  await expect(page).toHaveURL(/#\/time\/records\//)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('阅读一章')
+  expect(errors).toEqual([])
+})
+
+test('planned categories keep a white unstarted ring and fill against the target', async ({ page }, info) => {
+  await page.goto('/#/time?date=2026-11-11')
+  const panel = page.locator('.panel').filter({ has: page.getByRole('heading', { name: '分配方案', exact: true }) })
+  await panel.getByRole('button', { name: '更多操作' }).click()
+  await page.getByRole('menuitem', { name: '新建分配方案', exact: true }).click()
+  const plan = page.getByRole('dialog', { name: '新建分配方案' })
+  await plan.getByLabel('名称', { exact: true }).fill('工作日')
+  await plan.getByLabel('工作 目标小时数').fill('2')
+  await plan.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(plan).not.toBeVisible()
+
+  const card = page.locator('.category-ring-card').filter({ has: page.getByRole('heading', { name: '工作', exact: true }) })
+  await expect(card).toHaveAttribute('data-started', 'false')
+  await expect(card.locator('.ring-idle')).toHaveText('还未开始')
+  await expect(card.locator('circle[stroke-dasharray]')).toHaveCount(0)
+  await page.screenshot({ path: info.outputPath('unstarted-ring.png'), fullPage: true })
+
+  await page.getByRole('button', { name: '记录行动', exact: true }).first().click()
+  const dialog = page.getByRole('dialog', { name: '记录一次行动' })
+  await dialog.getByLabel('名称', { exact: true }).fill('写代码')
+  await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption('work')
+  await dialog.getByLabel('开始时间', { exact: true }).fill('2026-11-11T09:00')
+  await dialog.getByLabel('结束时间', { exact: true }).fill('2026-11-11T09:30')
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+
+  await expect(card).toHaveAttribute('data-started', 'true')
+  await expect(card.locator('.ring-value')).toHaveText('30 分钟')
+  await expect(card.locator('.ring-center')).toContainText('还差 1 小时 30 分钟')
+  const arc = card.locator('circle[stroke-dasharray]')
+  await expect(arc).toHaveCount(1)
+  await expect(arc).toHaveAttribute('stroke-dasharray', /^25(?:\.0+)? 100$/)
+  await page.reload()
+  await expect(card).toHaveAttribute('data-started', 'true')
+  await expect(card.locator('.ring-center')).toContainText('还差 1 小时 30 分钟')
+})

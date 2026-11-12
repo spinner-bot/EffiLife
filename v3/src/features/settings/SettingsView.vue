@@ -18,7 +18,7 @@ async function preferences(value: Partial<Preferences>) {
 }
 </script>
 <template>
-  <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
+  <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" back="/more" />
   <div class="settings-grid">
     <Panel :title="t('settings.language')"><div class="panel-body stack">
       <label class="field"><span>{{ t('settings.language') }}</span><select :value="current.preferences.locale" class="select" @change="preferences({ locale: ($event.target as HTMLSelectElement).value })"><option v-for="locale in localeList" :key="locale.id" :value="locale.id">{{ locale.name }}</option></select></label>
