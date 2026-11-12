@@ -2,7 +2,7 @@
 
 - 用户已于 2026-11-11 审阅设计并授权正式重构、自主决策、测试、优化与持续迭代。
 - 后续所有新版本源码、文档、测试、工具和产物工作均放在 v3/ 下。旧版保留为兼容与回退参考。
-- 从 v3.0.0 建立版本记录；VERSION 为版本事实源，CHANGELOG.md 持续维护版本与更新内容的对应，`src/data/changelog.json` 同步维护按代际与产品模块索引的机器可读清单（每个版本号一条 date 与 content，由 `src/domain/changelog.ts` 提供类型化解析，版本门禁校验）。
+- 从 v3.0.0 建立版本记录；VERSION 为版本事实源，CHANGELOG.md 持续维护版本与更新内容的对应，`src/data/changelog.json` 同步维护按代际与产品模块索引的机器可读清单；每个版本号同时记录 `user`（面向用户）与 `developer`（面向开发）两套口径，由 `src/domain/changelog.ts` 提供类型化解析，版本门禁校验。
 - 作者：Codex  (sqs_A100)。每个文件或完整小改动立即提交；长文件按职责小步骤提交，不积压修改。
 - 在 feat/frontend-platform 开发；阶段验收后通过 git merge --no-ff 合入 main，并推送阶段结果；严禁 fast-forward 合并或重写历史。
 - 设计已获启动授权，无需逐项询问常规细节；继续完善实现和测试。

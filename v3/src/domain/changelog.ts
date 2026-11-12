@@ -1,7 +1,7 @@
 import data from '../data/changelog.json'
 
-export interface ChangelogEntry { date: string; content: string; note?: string }
-export interface ChangelogGeneration { name: string; date: string; content: string }
+export interface ChangelogEntry { date: string; user: string; developer: string; note?: string }
+export interface ChangelogGeneration { name: string; date: string; user: string; developer: string }
 export interface ChangelogProduct { name: string; generation: number; versions: Record<string, ChangelogEntry> }
 export interface Changelog {
   schema: string
