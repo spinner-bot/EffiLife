@@ -6,6 +6,7 @@ import { applyTodoCommand } from './todo-commands'
 import { applyTimePlanCommand } from './time-plan-commands'
 import { applyPackageCommand } from './package-commands'
 import { requireCondition, requireTitle, DomainError } from './errors'
+import { assertOptionalPreferences } from './preferences'
 import { instant } from './time'
 import { unwrapExtensionCommand } from './extension-access'
 
@@ -44,6 +45,7 @@ export function execute(
     try { new Intl.DateTimeFormat(value.locale, { timeZone: value.timeZone }).format() } catch {
       throw new DomainError('validation.invalidPreferences')
     }
+    assertOptionalPreferences(value, 'validation.invalidPreferences')
     workspace.preferences = value
     result = {}
   }

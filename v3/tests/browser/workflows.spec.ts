@@ -23,8 +23,8 @@ async function createPlan(page: Page, title = '数学课程复习') {
 
 async function createTask(page: Page) {
   await createPlan(page)
-  await page.getByRole('button', { name: '添加章节', exact: true }).first().click()
-  let dialog = page.getByRole('dialog', { name: '添加章节', exact: true })
+  await page.getByRole('button', { name: '添加分组', exact: true }).first().click()
+  let dialog = page.getByRole('dialog', { name: '添加分组', exact: true })
   await dialog.getByLabel('名称', { exact: true }).fill('微积分')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
@@ -36,8 +36,8 @@ async function createTask(page: Page) {
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await page.getByRole('button', { name: '更多操作', exact: true }).first().click()
-  await page.getByRole('menuitem', { name: '统一设置时间类别', exact: true }).click()
-  dialog = page.getByRole('dialog', { name: '统一设置时间类别', exact: true })
+  await page.getByRole('menuitem', { name: '统一设置分组内子项类别', exact: true }).click()
+  dialog = page.getByRole('dialog', { name: '统一设置分组内子项类别', exact: true })
   await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption('study')
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
@@ -45,12 +45,12 @@ async function createTask(page: Page) {
 
 test('assigns categories from the whole plan while preserving explicit branches', async ({ page }) => {
   await createTask(page)
-  const assign = async (category: string, overwrite = false) => {
+  const assign = async (category: string, wholePlan = false) => {
     await page.getByRole('button', { name: '设置整个计划的时间类别', exact: true }).click()
-    const dialog = page.getByRole('dialog', { name: '统一设置时间类别', exact: true })
+    const dialog = page.getByRole('dialog', { name: '背景时间类别', exact: true })
     await dialog.getByRole('combobox', { name: '时间类别', exact: true }).selectOption(category)
-    await dialog.getByLabel('同时覆盖下方已有类别', { exact: true }).setChecked(overwrite)
-    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(dialog.getByRole('checkbox')).toHaveCount(0)
+    await dialog.getByRole('button', { name: wholePlan ? '统一设置全部分组与子项（覆盖现有类别）' : '保存', exact: true }).click()
     await expect(dialog).not.toBeVisible()
   }
   const checkRecording = async (category: string, task?: string) => {
@@ -69,11 +69,14 @@ test('assigns categories from the whole plan while preserving explicit branches'
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await checkRecording('work', '新根任务')
-  await assign('rest', true)
-  await checkRecording('rest', '极限与连续')
+  await assign('rest')
+  await checkRecording('study', '极限与连续')
   await checkRecording('rest', '新根任务')
+  await assign('exercise', true)
+  await checkRecording('exercise', '极限与连续')
+  await checkRecording('exercise', '新根任务')
   await page.reload()
-  await checkRecording('rest')
+  await checkRecording('exercise')
 })
 
 test('starts with honest empty data and bundled readable fonts', async ({ page }, info) => {
@@ -141,11 +144,13 @@ test('persists locale and theme through the shared registry', async ({ page }, i
   await page.goto('/#/settings')
   await page.getByRole('combobox', { name: '语言', exact: true }).selectOption('en-US')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Make it feel like yours.')
+  await page.goto('/#/more/appearance')
   await page.getByRole('button', { name: 'Midnight', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.reload()
-  await expect(page.getByRole('combobox', { name: 'Language', exact: true })).toHaveValue('en-US')
   await expect(page.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.goto('/#/more/settings')
+  await expect(page.getByRole('combobox', { name: 'Language', exact: true })).toHaveValue('en-US')
   await expect(page.getByText('Version ' + version, { exact: false })).toBeVisible()
   await page.screenshot({ path: info.outputPath('settings-dark-1440.png'), fullPage: true })
 })
@@ -178,7 +183,7 @@ test('exports, previews replacement, imports and restores the prior workspace', 
 test('keeps major screens within seven viewport widths', async ({ page }, info) => {
   for (const width of [320, 390, 768, 1024, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 950 })
-    for (const path of ['/', '/plans', '/time', '/todos', '/settings']) {
+    for (const path of ['/', '/plans', '/time', '/todos', '/more', '/more/categories', '/more/time-plans', '/more/rules', '/more/appearance', '/more/settings']) {
       await page.goto('/#' + path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

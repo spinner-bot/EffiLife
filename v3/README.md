@@ -2,6 +2,8 @@
 
 面向个人持续生活管理，以时间和事件两条主线关联实际行动，保留主题计划、进展日志与零散待办的独立价值。
 
+第一轮体验优化范围、逐项处理与验证见 [HTML 实施与验收](docs/round-1-plan.html)；原始反馈与用户更正继续保留。v3.1.0 包含类别继承、更多管理、记录与时钟、结构拖动和主题高级外观，完整交付证据由 `docs/releases/3.1.0-acceptance.json` 记录。
+
 ## 开发与验证
 
 在仓库根执行：
@@ -43,15 +45,15 @@ python3 v3/tests/native/desktop_smoke.py
 
 ## 验收交付
 
-当前为修复独立审查问题的 v3.0.1 本地验收候选；v3.0.0 的长期数据可靠性结论已修正。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[独立审查修复记录](docs/progress/0011-independent-review.md)列出逐项结果、实际通过范围及平台边界。
+当前迭代为 v3.1.0 第一轮体验优化，承接 v3.0.1 的正确性修复与 3.0.2 的跨换行构建修复；v3.0.0 的长期数据可靠性结论已修正。[HTML 使用指南](docs/user-guide.html)覆盖完整产品动线；[独立审查修复记录](docs/progress/0011-independent-review.md)列出逐项结果、实际通过范围及平台边界。
 
 准备好上述工具链后，按以下顺序重建交付：
 
 ```bash
 python3 v3/scripts/run.py npm run verify
 python3 v3/scripts/native.py tauri build --bundles deb
-dpkg-deb -x v3/.cache/native-target/release/bundle/deb/EffiLife_3.0.1_amd64.deb v3/.cache/desktop-package-3.0.1
-python3 v3/tests/native/desktop_smoke.py v3/.cache/desktop-package-3.0.1/usr/bin/effilife-desktop
+dpkg-deb -x v3/.cache/native-target/release/bundle/deb/EffiLife_3.1.0_amd64.deb v3/.cache/desktop-package-3.1.0
+python3 v3/tests/native/desktop_smoke.py v3/.cache/desktop-package-3.1.0/usr/bin/effilife-desktop
 python3 v3/tests/native/webkit_smoke.py
 python3 v3/scripts/run.py node scripts/build-examples.mjs
 python3 v3/scripts/package-delivery.py

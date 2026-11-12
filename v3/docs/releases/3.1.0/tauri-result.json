@@ -1,0 +1,27 @@
+{
+  "application": ".cache/desktop-package-3.1.0/usr/bin/effilife-desktop",
+  "applicationSha256": "1d681765f0ef0d2de4a5748e719234f24b57ce1c5df01ec3125b7266ac2d3889",
+  "version": "3.1.0",
+  "features": {
+    "uuid": "function",
+    "native": true,
+    "secure": true,
+    "origin": "tauri://localhost"
+  },
+  "deniedWrite": "forbidden path: /data/Users/zrh/repo/EffiLife/v3/test-results/native-desktop/unselected-path.d3el",
+  "checks": [
+    "actual Tauri startup",
+    "native origin capabilities",
+    "main-window CSP rejects inline script injection",
+    "IndexedDB capture and reload",
+    "unselected path write denied",
+    "real GTK save dialog and scoped file write",
+    "export payload and SHA-256",
+    "native archive import",
+    "backup restore",
+    "native decorative worker",
+    "More management hierarchy",
+    "native glass material and advanced settings persisted",
+    "durability across native process restart"
+  ]
+}

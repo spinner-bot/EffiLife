@@ -50,3 +50,19 @@
 @media (max-width: 800px) { .dashboard-right { align-items: stretch; } }
 @media (max-width: 360px) { .topbar-date { display: none; } }
 
+
+.app-topbar { position: relative; }
+.breadcrumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-date { margin-inline-start: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.app-topbar[data-clock-align="center"] { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); }
+.app-topbar[data-clock-align="center"] .topbar-date { margin: 0; justify-self: center; }
+.app-topbar[data-clock-align="center"] .topbar-actions { justify-self: end; }
+@media(max-width: 800px) {
+  .app-topbar, .app-topbar[data-clock-align="center"] { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .6rem 1rem; }
+  .app-topbar .mobile-brand { grid-column: 1; grid-row: 1; }
+  .app-topbar .topbar-actions { grid-column: 2; grid-row: 1; justify-self: end; }
+  .app-topbar .topbar-date { display: block; grid-column: 1 / -1; grid-row: 2; margin: 0; justify-self: end; max-width: 100%; white-space: normal; }
+  .app-topbar[data-clock-align="center"] .topbar-date { justify-self: center; text-align: center; }
+}
+
+.panel { background: var(--card-surface, var(--surface)); -webkit-backdrop-filter: var(--card-filter, none); backdrop-filter: var(--card-filter, none); border-radius: var(--card-radius, var(--radius)); box-shadow: var(--card-shadow, none); }

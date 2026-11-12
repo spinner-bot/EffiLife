@@ -3,10 +3,10 @@ import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import type { NodeKind, PlanNode, ProgressLog } from '../../domain/models'
 import { current, dispatch } from '../../application/runtime'
-import { planProgress, displayCode, categoryFor } from '../../domain/plans'
+import { planProgress, effectivePlanCategory } from '../../domain/plans'
 import { planMinutes } from '../../domain/selectors'
 import { dateKey } from '../../domain/time'
-import { t, duration, calendarDate, clock, categoryName, errorMessage } from '../../i18n'
+import { t, duration, calendarDate, clock, errorMessage } from '../../i18n'
 import { openRecord, notify, confirmAction } from '../../ui/state'
 import PageHeader from '../../ui/PageHeader.vue'
 import UiButton from '../../ui/UiButton.vue'
@@ -16,6 +16,7 @@ import EmptyState from '../../ui/EmptyState.vue'
 import Icon from '../../ui/Icon.vue'
 import TextEditorDialog from '../../ui/TextEditorDialog.vue'
 import PlanTree, { type TreeAction } from './PlanTree.vue'
+import CategorySelect from '../categories/CategorySelect.vue'
 import NodeEditor from './NodeEditor.vue'
 import ActionMenu from '../../ui/ActionMenu.vue'
 import LogEditor from './LogEditor.vue'
@@ -25,9 +26,8 @@ const plan = computed(() => current.value.plans.find(item => item.id === route.p
 const progress = computed(() => plan.value ? planProgress(plan.value) : { total: 0, completed: 0, percent: 0, logs: 0 })
 const editor = reactive({ open: false, parentId: null as string | null, kind: 'task' as NodeKind, node: undefined as PlanNode | undefined })
 const renaming = ref(false)
-const categoryTarget = ref<{ id: string | null; title: string }>()
+const categoryTarget = ref<{ id: string | null; title: string; kind: 'plan' | 'group' | 'task' }>()
 const categoryId = ref('life')
-const overwrite = ref(false)
 const categoryError = ref('')
 const selected = computed(() => String(route.query.task || ''))
 const selectedLog = computed(() => String(route.query.log || ''))
@@ -47,9 +47,8 @@ function logMenu(log: ProgressLog) { return [{ label: t('plans.editLog'), icon: 
 function add(kind: NodeKind, parentId: string | null = null) { Object.assign(editor, { open: true, parentId, kind, node: undefined }) }
 function assignCategory(node?: PlanNode) {
   if (!plan.value) return
-  categoryTarget.value = { id: node?.id ?? null, title: node?.title ?? plan.value.title }
-  categoryId.value = categoryFor(plan.value, node?.id)
-  overwrite.value = false
+  categoryTarget.value = { id: node?.id ?? null, title: node?.title ?? plan.value.title, kind: !node ? 'plan' : node.kind === 'task' ? 'task' : 'group' }
+  categoryId.value = effectivePlanCategory(current.value, plan.value, node?.id)
   categoryError.value = ''
 }
 async function action(type: TreeAction, node: PlanNode) {
@@ -63,9 +62,9 @@ async function action(type: TreeAction, node: PlanNode) {
     if (type === 'delete' && await confirmAction(t('plans.deleteNodeConfirm'))) await dispatch({ type: 'deleteNode', planId: plan.value.id, nodeId: node.id })
   } catch (failure) { notify(errorMessage(failure), 'error') }
 }
-async function saveCategory() {
+async function saveCategory(wholePlan = false) {
   if (!plan.value || !categoryTarget.value) return
-  try { await dispatch({ type: 'assignCategory', planId: plan.value.id, nodeId: categoryTarget.value.id, categoryId: categoryId.value, overwrite: overwrite.value }); categoryTarget.value = undefined } catch (failure) { categoryError.value = errorMessage(failure) }
+  try { await dispatch({ type: 'assignCategory', planId: plan.value.id, nodeId: categoryTarget.value.id, categoryId: categoryId.value, overwrite: categoryTarget.value.kind === 'group' || (categoryTarget.value.kind === 'plan' && wholePlan) }); categoryTarget.value = undefined } catch (failure) { categoryError.value = errorMessage(failure) }
 }
 async function archive() {
   if (!plan.value) return
@@ -105,7 +104,7 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
         <div v-if="logs.length" class="panel-body">
           <div v-for="log in logs" :key="log.id" class="log-entry" :data-log-id="log.id" :data-selected="selectedLog === log.id">
             <div class="cluster spread small muted"><span>{{ calendarDate(dateKey(log.occurredAt, current.preferences.timeZone)) }} {{ logTime(log) }}</span><div class="cluster"><span v-if="log.kind === 'completion'" class="badge success">{{ t('plans.completed') }}</span><ActionMenu :items="logMenu(log)" /></div></div>
-            <RouterLink v-if="log.taskId" :to="{ name: 'plan', params: { id: plan.id }, query: { task: log.taskId } }" class="text-link small">{{ displayCode(plan, log.taskId) }} · {{ plan.nodes.find(node => node.id === log.taskId)?.title }}</RouterLink>
+            <RouterLink v-if="log.taskId" :to="{ name: 'plan', params: { id: plan.id }, query: { task: log.taskId } }" class="text-link small">{{ plan.nodes.find(node => node.id === log.taskId)?.title }}</RouterLink>
             <p class="log-content">{{ log.content }}</p><p v-if="log.timingReference && !log.recordIds.length" class="small muted">{{ t('record.reference', { minutes: Math.round(log.timingReference.minutes) }) }}</p>
             <RouterLink v-if="log.recordIds.length" :to="{ path: '/time', query: { record: log.recordIds[0], date: logDate(log) } }" class="text-link small">{{ t('home.viewTime') }}<Icon name="arrow" :size="14" /></RouterLink>
           </div>
@@ -116,8 +115,8 @@ function logTime(log: { occurredAt: string; timePrecision?: string }) {
     <NodeEditor :open="editor.open" :plan-id="plan.id" :node="editor.node" :parent-id="editor.parentId" :kind="editor.kind" @close="editor.open = false" />
     <LogEditor :plan-id="plan.id" :log="editingLog" @close="editingLog = undefined" />
     <TextEditorDialog :open="renaming" :title="t('plans.rename')" :initial-title="plan.title" :initial-description="plan.description" :save="rename" @close="renaming = false" />
-    <UiDialog :open="Boolean(categoryTarget)" :title="t('plans.assignCategory')" :description="categoryTarget?.title" @close="categoryTarget = undefined">
-      <form class="stack" @submit.prevent="saveCategory"><label class="field"><span>{{ t('form.category') }}</span><select v-model="categoryId" class="select"><option v-for="item in current.categories" :key="item.id" :value="item.id">{{ categoryName(item) }}</option></select></label><label class="check-field"><input v-model="overwrite" type="checkbox" /><span>{{ t('plans.overwrite') }}</span></label><p class="small muted">{{ t('plans.categoryScope') }}</p><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
+    <UiDialog :open="Boolean(categoryTarget)" :title="t(categoryTarget?.kind === 'group' ? 'plans.groupCategory' : categoryTarget?.kind === 'task' ? 'plans.taskCategory' : 'plans.defaultCategory')" :description="categoryTarget?.title" @close="categoryTarget = undefined">
+      <form class="stack" @submit.prevent="saveCategory()"><label class="field"><span>{{ t('form.category') }}</span><CategorySelect v-model="categoryId" required /></label><p class="small muted">{{ t(categoryTarget?.kind === 'group' ? 'plans.groupCategoryHelp' : categoryTarget?.kind === 'plan' ? 'plans.planCategoryHelp' : 'plans.categoryScope') }}</p><p v-if="categoryError" class="form-error" role="alert">{{ categoryError }}</p><UiButton v-if="categoryTarget?.kind === 'plan'" @click="saveCategory(true)">{{ t('plans.applyAllCategories') }}</UiButton><div class="dialog-footer"><UiButton type="submit" variant="primary">{{ t('common.save') }}</UiButton></div></form>
     </UiDialog>
   </template>
   <EmptyState v-else :title="t('plans.notFound')" icon="plans"><RouterLink to="/plans" class="text-link">{{ t('common.back') }}</RouterLink></EmptyState>

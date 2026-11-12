@@ -1,3 +1,5 @@
+import { ambient } from './ambient-decoration'
+import { defaultAppearance, type AppearanceOptions } from '../domain/appearance'
 import type { InstalledPackage } from '../domain/models'
 import type { ThemeDefinition } from '../ui/themes'
 import type { ExtensionManifest } from './manifest'
@@ -24,11 +26,12 @@ function particles(config: { enabled?: boolean; type: string; count: number; spe
     ctx.restore()
   }
 }
-export async function builtinDecoration(theme: ThemeDefinition): Promise<InstalledPackage | undefined> {
+export async function builtinDecoration(theme: ThemeDefinition, options: AppearanceOptions = theme.appearance || defaultAppearance()): Promise<InstalledPackage | undefined> {
   const decoration = theme.decoration
-  if (!decoration || !(decoration.renderer || decoration.particles || decoration.gradient)) return undefined
+  if (!options.animation.enabled || !decoration || !(decoration.renderer || decoration.particles || decoration.gradient || decoration.ambient)) return undefined
   const renderer = decoration.factory ? '(' + decoration.factory + ')().renderCanvas' : decoration.renderer || '() => {}'
-  const source = (decoration.helpers || '') + '\nconst renderer = ' + renderer + ';\nconst particles = ' + particles.toString() + ';\nEffiLife.onFrame(({ctx,width,height,time}) => { renderer(ctx,width,height,time); particles(' + JSON.stringify(decoration.particles) + ',ctx,width,height,time); });'
+  const particleConfig = decoration.particles ? { ...decoration.particles as Record<string, unknown>, count: Math.round(Number((decoration.particles as { count: number }).count) * options.animation.density) } : null
+  const source = (decoration.helpers || '') + '\nconst renderer = ' + renderer + ';\nconst particles = ' + particles.toString() + ';\nconst ambient = ' + ambient.toString() + ';\nEffiLife.onFrame(({ctx,width,height,time}) => { const adjustedTime = time * ' + options.animation.speed + '; renderer(ctx,width,height,adjustedTime); particles(' + JSON.stringify(particleConfig) + ',ctx,width,height,adjustedTime); ambient(' + JSON.stringify(decoration.ambient || null) + ',ctx,width,height,adjustedTime,' + options.animation.density + '); });'
   const manifest: ExtensionManifest = {
     type: 'theme', name: theme.name, author: 'EffiLife', license: 'UNLICENSED', version: '1.0.0', formatVersion: 1, apiVersion: 1,
     permissions: ['appearance.tokens', 'overlay.canvas'], requiredPermissions: ['appearance.tokens', 'overlay.canvas'],

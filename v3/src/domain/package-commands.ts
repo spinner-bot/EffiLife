@@ -29,7 +29,7 @@ export function applyPackageCommand(workspace: Workspace, command: WorkspaceComm
       entry.status = 'disabled'; entry.updatedAt = context.now
       audit(workspace, entry, 'disable', context)
     }
-    Object.assign(workspace.preferences, { themeId: 1, fontId: 'default', locale: 'zh-CN' })
+    Object.assign(workspace.preferences, { themeId: 1, fontId: 'default', locale: 'zh-CN', appearance: undefined })
     return {}
   }
   if (command.type === 'packageRuntimeFailure') {

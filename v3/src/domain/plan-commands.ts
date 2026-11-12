@@ -5,11 +5,13 @@ import { requireCondition, requireTitle } from './errors'
 
 export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand, context: CommandContext): OperationResult | undefined {
   if (command.type === 'createPlan') {
+    const categoryId = command.categoryId || workspace.categories.find(category => category.id === 'life')?.id || workspace.categories[0]?.id
+    requireCondition(categoryId && workspace.categories.some(category => category.id === categoryId), 'validation.categoryMissing')
     const id = context.id()
-    workspace.plans.push({ id, title: requireTitle(command.title), description: command.description?.trim() || '', createdAt: context.now, updatedAt: context.now, nodes: [], logs: [] })
+    workspace.plans.push({ id, title: requireTitle(command.title), description: command.description?.trim() || '', createdAt: context.now, updatedAt: context.now, categoryId, nodes: [], logs: [] })
     return { entityId: id }
   }
-  if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
+  if (!['updatePlan', 'archivePlan', 'addNode', 'updateNode', 'deleteNode', 'moveNode', 'setTaskCompletion', 'assignCategory'].includes(command.type)) return undefined
   requireCondition('planId' in command && command.planId, 'validation.planMissing')
   const plan = findPlan(workspace, command.planId)
   plan.updatedAt = context.now
@@ -34,9 +36,33 @@ export function applyPlanCommand(workspace: Workspace, command: WorkspaceCommand
     case 'updateNode': {
       const node = findNode(plan, command.nodeId)
       requireCondition(Number.isFinite(command.estimatedMinutes) && command.estimatedMinutes >= 0, 'validation.invalidDuration')
+      if (command.categoryId !== undefined) {
+        requireCondition(command.categoryId === null || workspace.categories.some(category => category.id === command.categoryId), 'validation.categoryMissing')
+        node.categoryId = command.categoryId || undefined
+      }
       node.title = requireTitle(command.title)
       node.description = command.description.trim()
       node.estimatedMinutes = command.estimatedMinutes
+      break
+    }
+    case 'moveNode': {
+      requireCondition(!plan.archivedAt, 'validation.planArchived')
+      const node = findNode(plan, command.nodeId)
+      requireCondition(!node.deletedAt, 'validation.taskDeleted')
+      const subtree = new Set([node.id, ...descendants(plan, node.id).map(child => child.id)])
+      requireCondition(!command.parentId || !subtree.has(command.parentId), 'validation.treeCycle')
+      if (command.parentId) {
+        const parent = findNode(plan, command.parentId)
+        requireCondition(parent.kind !== 'task' && !parent.deletedAt, 'validation.invalidParent')
+      }
+      const oldParent = node.parentId
+      const siblings = plan.nodes.filter(item => item.parentId === command.parentId && item.id !== node.id && !item.deletedAt).sort((a, b) => a.order - b.order)
+      const index = command.beforeId ? siblings.findIndex(item => item.id === command.beforeId) : siblings.length
+      requireCondition(index >= 0, 'validation.invalidParent')
+      node.parentId = command.parentId
+      siblings.splice(index, 0, node)
+      for (const [order, sibling] of siblings.entries()) sibling.order = order
+      if (oldParent !== command.parentId) plan.nodes.filter(item => item.parentId === oldParent && !item.deletedAt).sort((a, b) => a.order - b.order).forEach((item, order) => { item.order = order })
       break
     }
     case 'deleteNode': {

@@ -1,0 +1,6 @@
+# Keep CSP inputs and generated output canonical even with core.autocrlf=true.
+public/extension-frame.js text eol=lf
+public/extension-frame.css text eol=lf
+public/extension-frame.html text eol=lf
+apps/desktop/src-tauri/tauri.conf.json text eol=lf
+scripts/sync-frame.mjs text eol=lf

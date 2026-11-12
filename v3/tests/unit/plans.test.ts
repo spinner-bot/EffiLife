@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyWorkspace } from '../../src/domain/initial'
 import { execute } from '../../src/domain/engine'
-import { categoryFor, displayCode } from '../../src/domain/plans'
+import { categoryFor, displayCode, effectivePlanCategory } from '../../src/domain/plans'
 import type { WorkspaceCommand } from '../../src/domain/commands'
 import { assertWorkspace } from '../../src/domain/validation'
 
@@ -21,6 +21,29 @@ function setup() {
 }
 
 describe('hierarchical plan categories', () => {
+  it('resolves an old plan without a root default against a custom category catalog', () => {
+    const state = emptyWorkspace('3.1.0')
+    state.categories = state.categories.filter(category => category.id === 'study')
+    state.plans = [{ id: 'old', title: 'Old plan', description: '', createdAt: '2026-11-11T00:00:00Z', updatedAt: '2026-11-11T00:00:00Z', nodes: [], logs: [] }]
+    assertWorkspace(state)
+    expect(effectivePlanCategory(state, state.plans[0]!)).toBe('study')
+    const result = execute(state, { operationId: 'old-record', command: { type: 'recordAction', planId: 'old', content: 'Progress', startAt: '2026-11-11T00:00:00Z', endAt: '2026-11-11T00:30:00Z' } }, { now: '2026-11-11T01:00:00Z', id: (() => { let id = 0; return () => 'old-' + ++id })() })
+    expect(result.workspace.records[0]!.categoryId).toBe('study')
+    assertWorkspace(result.workspace)
+  })
+  it('creates valid plan defaults and lets groups override or resume inheritance', () => {
+    const f = setup()
+    expect(f.state().plans[0]!.categoryId).toBe('life')
+    const second = f.run({ type: 'createPlan', title: 'Work', categoryId: 'work' })
+    expect(f.state().plans.find(plan => plan.id === second)!.categoryId).toBe('work')
+    expect(() => f.run({ type: 'createPlan', title: 'Invalid', categoryId: 'missing' })).toThrow('validation.categoryMissing')
+    f.run({ type: 'updateNode', planId: f.planId, nodeId: f.groupId, title: 'Prepare', description: '', estimatedMinutes: 0, categoryId: 'exercise' })
+    const task = f.run({ type: 'addNode', planId: f.planId, parentId: f.groupId, kind: 'task', title: 'Walk' })
+    expect(categoryFor(f.state().plans[0]!, task)).toBe('exercise')
+    f.run({ type: 'updateNode', planId: f.planId, nodeId: f.groupId, title: 'Prepare', description: '', estimatedMinutes: 0, categoryId: null })
+    expect(categoryFor(f.state().plans[0]!, task)).toBe('life')
+    expect(categoryFor(f.state().plans[0]!, f.taskId)).toBe('study')
+  })
   it('detaches todo task references when deleting an ancestor and preserves the plan link', () => {
     const f = setup()
     const todoId = f.run({ type: 'saveTodo', title: 'Related todo' })

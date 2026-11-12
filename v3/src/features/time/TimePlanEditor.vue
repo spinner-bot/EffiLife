@@ -5,6 +5,7 @@ import { current, dispatch } from '../../application/runtime'
 import { planningOf } from '../../domain/time-planning'
 import { t, categoryName, errorMessage } from '../../i18n'
 import { confirmAction } from '../../ui/state'
+import CategorySelect from '../categories/CategorySelect.vue'
 import UiDialog from '../../ui/UiDialog.vue'
 import UiButton from '../../ui/UiButton.vue'
 import Icon from '../../ui/Icon.vue'
@@ -12,6 +13,8 @@ const props = defineProps<{ open: boolean; plan?: TimePlan; date: string }>()
 const emit = defineEmits<{ close: [] }>()
 const form = reactive({ name: '', mode: 'allocation' as TimePlan['mode'], items: [] as Array<{ categoryId: string; hours: number }>, backgroundCategoryId: 'life', makeDefault: false, useForDate: false })
 const error = ref('')
+const help = ref<'default' | 'date'>()
+const protectedDefault = computed(() => Boolean(props.plan && planningOf(current.value).rules.some(rule => rule.kind === 'default' && rule.planId === props.plan!.id)))
 const busy = ref(false)
 let initial = ''
 let operationId = ''
@@ -23,7 +26,7 @@ watch(() => props.open, value => {
     name: plan?.name || '', mode: plan?.mode || 'allocation',
     items: plan ? plan.items.map(item => ({ categoryId: item.categoryId, hours: item.minutes / 60 })) : current.value.categories.map(category => ({ categoryId: category.id, hours: 0 })),
     backgroundCategoryId: plan?.backgroundCategoryId || 'life',
-    makeDefault: Boolean(plan && planningOf(current.value).rules.some(rule => rule.kind === 'default' && rule.planId === plan.id)),
+    makeDefault: !planningOf(current.value).plans.length || Boolean(plan && planningOf(current.value).rules.some(rule => rule.kind === 'default' && rule.planId === plan.id)),
     useForDate: !plan,
   })
   error.value = ''; initial = JSON.stringify(form); operationId = crypto.randomUUID()
@@ -51,19 +54,20 @@ async function save() {
       <label class="field"><span>{{ t('form.title') }}</span><input v-model="form.name" class="input" required /></label>
       <label class="field"><span>{{ t('planning.mode') }}</span><select v-model="form.mode" class="select"><option value="allocation">{{ t('planning.allocation') }}</option><option value="partition">{{ t('planning.partition') }}</option></select></label>
       <div v-for="(item, index) in form.items" :key="index" class="budget-input-row">
-        <label class="field"><span class="sr-only">{{ t('form.category') }} {{ index + 1 }}</span><select v-model="item.categoryId" class="select"><option v-for="category in current.categories" :key="category.id" :value="category.id">{{ categoryName(category) }}</option></select></label>
+        <label class="field"><span class="sr-only">{{ t('form.category') }} {{ index + 1 }}</span><CategorySelect v-model="item.categoryId" required /></label>
         <label class="field"><span class="sr-only">{{ categoryName(current.categories.find(category => category.id === item.categoryId)!) }} {{ t('planning.targetHours') }}</span><input v-model.number="item.hours" class="input" type="number" min="0" step="0.25" required /></label>
         <UiButton variant="ghost" icon :aria-label="t('planning.removeItem') + ' ' + (index + 1)" @click="form.items.splice(index, 1)"><Icon name="close" :size="17" /></UiButton>
       </div>
       <div class="cluster spread"><UiButton variant="ghost" :disabled="form.items.length >= current.categories.length" @click="addItem"><Icon name="plus" :size="16" />{{ t('planning.addItem') }}</UiButton><span class="muted small">{{ t('planning.totalHours', { hours: total }) }}</span></div>
       <p v-if="total > 24" class="notice">{{ t('planning.overbooked') }}</p>
-      <label v-if="form.mode === 'partition'" class="field"><span>{{ t('planning.background') }}</span><select v-model="form.backgroundCategoryId" class="select"><option v-for="item in form.items" :key="item.categoryId" :value="item.categoryId">{{ categoryName(current.categories.find(category => category.id === item.categoryId)!) }}</option></select></label>
+      <label v-if="form.mode === 'partition'" class="field"><span>{{ t('planning.background') }}</span><CategorySelect v-model="form.backgroundCategoryId" :allowed="form.items.map(item => item.categoryId)" @created="id => form.items.push({ categoryId: id, hours: 0 })" required /></label>
       <p v-if="form.mode === 'partition'" class="notice">{{ t('planning.partitionHelp') }}</p>
-      <label class="check-field"><input v-model="form.makeDefault" type="checkbox" />{{ t('planning.makeDefault') }}</label>
-      <label class="check-field"><input v-model="form.useForDate" type="checkbox" />{{ t('planning.useForDate') }}</label>
+      <div class="cluster"><label class="check-field"><input v-model="form.makeDefault" type="checkbox" :disabled="protectedDefault || !planningOf(current).plans.length" />{{ t('planning.makeDefault') }}</label><UiButton variant="ghost" icon :aria-label="t('planning.defaultHelpTitle')" @click="help = 'default'"><Icon name="help" :size="17" /></UiButton></div>
+      <div class="cluster"><label class="check-field"><input v-model="form.useForDate" type="checkbox" />{{ t('planning.useForDate') }}</label><UiButton variant="ghost" icon :aria-label="t('planning.dateHelpTitle')" @click="help = 'date'"><Icon name="help" :size="17" /></UiButton></div>
       <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       <div class="dialog-footer"><UiButton :disabled="busy" @click="close">{{ t('common.cancel') }}</UiButton><UiButton type="submit" variant="primary" :disabled="busy">{{ t('common.save') }}</UiButton></div>
     </form>
   </UiDialog>
+  <UiDialog :open="Boolean(help)" :title="t(help === 'default' ? 'planning.defaultHelpTitle' : 'planning.dateHelpTitle')" @close="help = undefined"><p>{{ t(help === 'default' ? 'planning.defaultHelp' : 'planning.dateHelp', { date }) }}</p><p class="muted small" style="margin-top: 1rem">{{ t('planning.optionsHelp') }}</p><div class="dialog-footer"><UiButton @click="help = undefined">{{ t('common.close') }}</UiButton></div></UiDialog>
 </template>
 

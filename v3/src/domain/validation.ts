@@ -1,3 +1,4 @@
+import { assertOptionalPreferences } from './preferences'
 import type { Workspace } from './models'
 import { requireCondition } from './errors'
 import { minutesBetween } from './time'
@@ -145,6 +146,7 @@ export function assertWorkspace(value: unknown): asserts value is Workspace {
   }
   requireCondition(isObject(value.preferences), 'storage.invalidWorkspace')
   const preferences = value.preferences
+  assertOptionalPreferences(preferences, 'storage.invalidWorkspace')
   text(preferences.locale); text(preferences.fontId); text(preferences.timeZone)
   requireCondition(Number.isSafeInteger(preferences.themeId) && Number(preferences.themeId) >= 0, 'storage.invalidWorkspace')
   requireCondition(Number.isInteger(preferences.weekStartsOn) && Number(preferences.weekStartsOn) >= 0 && Number(preferences.weekStartsOn) <= 6, 'storage.invalidWorkspace')

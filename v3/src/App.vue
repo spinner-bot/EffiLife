@@ -3,9 +3,12 @@ import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { navigation } from './router'
 import { current, workspace, loading, startupError, initialize, dispatch } from './application/runtime'
-import { t, setLocale, calendarDate, errorMessage } from './i18n'
-import { dateKey } from './domain/time'
-import { applyTheme } from './ui/themes'
+import { t, setLocale, currentLocale, errorMessage } from './i18n'
+import { defaultHeaderClock } from './domain/preferences'
+import { headerClockText } from './ui/header-clock'
+import { applyTheme, themes } from './ui/themes'
+import { applySurface, appearanceFor } from './ui/surface-effects'
+import { defaultAppearance } from './domain/appearance'
 import { applyFont } from './ui/fonts'
 import { openRecord, notify } from './ui/state'
 import { useNow } from './ui/useNow'
@@ -33,11 +36,13 @@ const colorScheme = matchMedia('(prefers-color-scheme: dark)')
 function schemeChanged() { applyTheme(safeMode ? 1 : current.value.preferences.themeId) }
 const title = computed(() => t(String(route.meta.title || 'nav.home')))
 const now = useNow()
-const today = computed(() => calendarDate(dateKey(now.value, current.value.preferences.timeZone), { weekday: 'long' }))
+const clockOptions = computed(() => current.value.preferences.headerClock || defaultHeaderClock)
+const today = computed(() => headerClockText(now.value, currentLocale.value, current.value.preferences.timeZone, clockOptions.value))
 watch(() => [current.value.preferences, current.value.packages] as const, async ([preferences, packages]) => {
   reconcileResources(safeMode ? [] : packages, version)
   setLocale(safeMode ? 'zh-CN' : preferences.locale)
   applyTheme(safeMode ? 1 : preferences.themeId)
+  applySurface(safeMode ? defaultAppearance() : appearanceFor(themes.get(preferences.themeId) || themes.get(1)!, preferences.appearance))
   try { await applyFont(safeMode ? 'default' : preferences.fontId) } catch (error) { notify(errorMessage(error), 'error') }
 }, { immediate: true })
 watch(title, value => { document.title = value + ' · EffiLife' }, { immediate: true })
@@ -58,11 +63,11 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', recoveryKey); colo
   <div v-else v-show="!replacementLayout" class="app-shell">
     <aside class="app-sidebar" :aria-label="t('common.navigation')">
       <div class="sidebar-brand"><RouterLink to="/" class="brand"><span class="brand-mark"><Icon name="activity" :size="23" /></span>EffiLife</RouterLink><p class="brand-tagline">{{ t('app.tagline') }}</p></div>
-      <nav class="nav-list" :aria-label="t('common.navigation')"><RouterLink v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item" :class="{ 'router-link-active': item.path === '/plans' && route.path.startsWith('/plans/') }" :exact-active-class="item.path === '/' ? 'router-link-active' : undefined"><Icon :name="item.icon" :size="20" /><span>{{ t(item.key) }}</span></RouterLink></nav>
+      <nav class="nav-list" :aria-label="t('common.navigation')"><RouterLink v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item" :class="{ 'router-link-active': (item.path === '/plans' && route.path.startsWith('/plans/')) || (item.path === '/more' && route.path.startsWith('/more/')) }" :exact-active-class="item.path === '/' ? 'router-link-active' : undefined"><Icon :name="item.icon" :size="20" /><span>{{ t(item.key) }}</span></RouterLink></nav>
       <div class="sidebar-bottom"><p class="sidebar-version">EffiLife v{{ version }}</p></div>
     </aside>
     <div class="app-body">
-      <header class="app-topbar"><span class="breadcrumb">EffiLife <span aria-hidden="true">/</span> {{ title }}</span><RouterLink to="/" class="mobile-brand">EffiLife</RouterLink><div class="topbar-actions"><span class="muted small topbar-date">{{ today }}</span><UiButton variant="primary" @click="openRecord()"><Icon name="plus" :size="18" />{{ t('common.record') }}</UiButton></div></header>
+      <header class="app-topbar" :data-clock-align="clockOptions.align"><span class="breadcrumb">EffiLife <span aria-hidden="true">/</span> {{ title }}</span><RouterLink to="/" class="mobile-brand">EffiLife</RouterLink><time class="muted small topbar-date" :datetime="now" :data-display="clockOptions.display">{{ today }}</time><div class="topbar-actions"><UiButton variant="primary" @click="openRecord()"><Icon name="plus" :size="18" />{{ t('common.record') }}</UiButton></div></header>
       <main id="main-content" class="app-main" tabindex="-1"><p v-if="startupError" role="alert" class="form-error">{{ errorMessage(startupError) }}</p><RouterView /></main>
     </div>
   </div>

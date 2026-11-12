@@ -35,14 +35,14 @@ async function install(page: Page, source: string, grants: Capability[], type: '
   await dialog.getByRole('button', { name: '确认安装', exact: true }).click()
   if (grants.some(capability => capability.startsWith('app.'))) await page.getByRole('dialog', { name: '允许此扩展访问应用系统？' }).getByRole('button', { name: '确认', exact: true }).click()
   await expect(dialog).not.toBeVisible()
-  if (type === 'theme') await page.getByRole('button', { name: '隔离界面 · Example · 1.0.0 · #100000', exact: true }).click()
+  if (type === 'theme') { await page.goto('/#/more/appearance'); await page.getByRole('button', { name: '隔离界面 · Example · 1.0.0 · #100000', exact: true }).click() }
 }
 test('runs all retained built-in decorative renderers in opaque worker frames', async ({ page }, info) => {
-  await page.goto('/#/settings')
+  await page.goto('/#/more/appearance')
   for (const theme of catalog) {
     await page.getByRole('button', { name: theme.name['zh-CN'], exact: true }).click()
     const frame = page.locator('.theme-decoration iframe')
-    if (theme.decoration.renderer || theme.decoration.particles || theme.decoration.gradient) {
+    if (theme.decoration.renderer || theme.decoration.particles || theme.decoration.gradient || 'ambient' in theme.decoration) {
       await expect(frame).toHaveAttribute('sandbox', 'allow-scripts')
       await expect(frame).toHaveAttribute('data-ready', 'true')
     } else await expect(frame).toHaveCount(0)
@@ -93,10 +93,10 @@ test('terminates a stuck worker without freezing the host and keeps it stopped a
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   const row = page.locator('.list-row').filter({ has: page.getByText('隔离界面', { exact: true }) })
   await expect(row).toContainText('加载失败', { timeout: 25000 })
-  await expect(page.locator('.theme-decoration iframe')).toHaveCount(0)
+  await expect(page.locator('.theme-decoration iframe[title="隔离界面"]')).toHaveCount(0)
   await page.reload()
   await expect(row).toContainText('加载失败')
-  await expect(page.locator('.theme-decoration iframe')).toHaveCount(0)
+  await expect(page.locator('.theme-decoration iframe[title="隔离界面"]')).toHaveCount(0)
 })
 
 test('enforces opaque origins and CSP even against native network API recovery', async ({ page }) => {
