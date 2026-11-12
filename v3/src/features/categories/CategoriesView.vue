@@ -11,7 +11,7 @@ const editing = ref<string>(), open = ref(false)
 function edit(id?: string) { editing.value = id; open.value = true }
 </script>
 <template>
-  <PageHeader :title="t('settings.categories')" :subtitle="t('more.categoriesHelp')"><UiButton variant="primary" @click="edit()"><Icon name="plus" :size="18" />{{ t('settings.addCategory') }}</UiButton></PageHeader>
+  <PageHeader :title="t('settings.categories')" :subtitle="t('more.categoriesHelp')" back="/more"><UiButton variant="primary" @click="edit()"><Icon name="plus" :size="18" />{{ t('settings.addCategory') }}</UiButton></PageHeader>
   <section class="panel">
     <div v-for="category in current.categories" :key="category.id" class="list-row category-manage-row">
       <span class="grow category-manage-body">

@@ -31,7 +31,7 @@ async function reorder(ruleIds: string[]) {
 function menu(rule: TimeRule) { return [{ label: t('common.edit'), icon: 'edit', action: () => edit(rule) }, { label: t('common.delete'), icon: 'delete', danger: true, action: () => remove(rule) }] }
 </script>
 <template>
-  <PageHeader :title="t('planning.rules')" :subtitle="t('planning.ruleOrderHelp')"><UiButton variant="primary" :disabled="!planning.plans.length" @click="edit()"><Icon name="plus" :size="18" />{{ t('planning.addRule') }}</UiButton></PageHeader>
+  <PageHeader :title="t('planning.rules')" :subtitle="t('planning.ruleOrderHelp')" back="/more"><UiButton variant="primary" :disabled="!planning.plans.length" @click="edit()"><Icon name="plus" :size="18" />{{ t('planning.addRule') }}</UiButton></PageHeader>
   <section class="panel"><SortableList :ids="ordinary.map(rule => rule.id)" @reorder="reorder"><template #default="{ id }"><div class="cluster spread"><p class="small grow">{{ description(ordinary.find(rule => rule.id === id)!) }}</p><ActionMenu :items="menu(ordinary.find(rule => rule.id === id)!)" /></div></template></SortableList>
     <div class="list-row fallback-rule"><Icon name="lock" :size="18" /><div class="grow"><p class="row-title">{{ t('planning.fallback') }}</p><p class="row-detail">{{ fallback ? description(fallback) : t('planning.fallbackEmpty') }}</p><p class="small muted">{{ t('planning.fallbackHelp') }}</p></div><UiButton v-if="fallback" variant="ghost" :aria-label="t('planning.editFallback')" @click="edit(fallback)"><Icon name="edit" :size="18" /></UiButton><RouterLink v-else to="/more/time-plans" class="text-link">{{ t('planning.manage') }}</RouterLink></div>
   </section>

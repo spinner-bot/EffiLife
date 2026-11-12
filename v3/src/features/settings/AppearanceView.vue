@@ -31,7 +31,7 @@ async function preferences(value: Partial<Preferences>) {
 }
 </script>
 <template>
-  <PageHeader :title="t('more.appearance')" />
+  <PageHeader :title="t('more.appearance')" back="/more" />
   <div class="settings-grid">
     <Panel :title="t('settings.font')"><div class="panel-body stack"><label class="field"><span>{{ t('settings.font') }}</span><select :value="current.preferences.fontId" class="select" @change="preferences({ fontId: ($event.target as HTMLSelectElement).value })"><option v-for="font in fontList" :key="font.id" :value="font.id">{{ font.id === 'system' ? t('settings.systemFont') : font.name }}</option></select></label></div></Panel>
     <Panel :title="t('appearance.material')"><div class="panel-body material-grid"><div v-for="effect in surfaceEffects" :key="effect.id" class="appearance-choice"><button type="button" class="material-option" :class="'material-' + effect.id" :aria-pressed="appearance.effect === effect.id" @click="material(effect.id)"><span class="material-mini"><i /></span><strong>{{ t(effect.label) }}</strong></button><button v-if="appearance.effect === effect.id" type="button" class="advanced-trigger" :aria-label="t('appearance.cardAdvanced')" @click="editAdvanced"><Icon name="settings" :size="15" /><span>{{ t('appearance.advanced') }}</span></button></div></div></Panel>
